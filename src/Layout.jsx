@@ -1,24 +1,39 @@
-
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom'; // 1. Ye naya import add karna hai
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 
-const Layout = ({ children }) => {
+const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
+  // Default state ko ab false rakha hai taaki mobile par pehle se open na mile
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarExpanded(!isSidebarExpanded);
+  };
+
   return (
-    // Main container full screen height ka hoga
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 relative">
       
-      {/* Sidebar ab left side mein full height (upar tak) cover karega */}
-      <Sidebar />
+      {/* --- MOBILE OVERLAY START --- */}
+      {/* Yeh sirf mobile (md:hidden) par dikhega jab sidebar open hoga. Ispe click karne se sidebar band ho jayega */}
+      {isSidebarExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsSidebarExpanded(false)}
+        ></div>
+      )}
+      {/* --- MOBILE OVERLAY END --- */}
+
+      <Sidebar isExpanded={isSidebarExpanded} />
       
-      {/* Right side ka content area */}
-      <div className="flex flex-col flex-1 w-full overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Navbar toggleSidebar={toggleSidebar} />
         
-        {/* Navbar ab sirf right side wale column ke top par aayega */}
-        <Navbar />
-        
-        {/* Main page content */}
-        <main className="flex-1 overflow-y-auto bg-white">
-          {children}
+        <main className="flex-1 overflow-y-auto bg-[#f4f6f9] p-4">
+          
+          {/* 3. YAHAN CHANGE HUA HAI: {children} ki jagah <Outlet /> laga diya */}
+          <Outlet /> 
+
         </main>
       </div>
     </div>
