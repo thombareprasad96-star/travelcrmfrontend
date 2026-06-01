@@ -75,7 +75,7 @@ const Sidebar = ({ isExpanded }) => {
             {showSidebar && openDropdown === 'Leads' && (
               <ul className="mt-1 space-y-1 pb-2">
                 <li><Link to="allleads" className="flex items-center gap-3 px-3 py-2 pl-10 text-sm hover:bg-gray-800 rounded whitespace-nowrap"><Circle size={14} /><span>All leads</span></Link></li>
-                <li><Link to="/add-lead" className="flex items-center gap-3 px-3 py-2 pl-10 text-sm hover:bg-gray-800 rounded whitespace-nowrap"><Circle size={14} /><span>Add new lead</span></Link></li>
+                <li><Link to="/CreateLead" className="flex items-center gap-3 px-3 py-2 pl-10 text-sm hover:bg-gray-800 rounded whitespace-nowrap"><Circle size={14} /><span>Add new lead</span></Link></li>
               </ul>
             )}
           </li>
