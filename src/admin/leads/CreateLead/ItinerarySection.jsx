@@ -1,4 +1,12 @@
-import { FiPlus, FiTrash2, FiMapPin, FiMap, FiMoon } from "react-icons/fi";
+import { useState } from "react";
+import {
+  FiPlus,
+  FiTrash2,
+  FiMapPin,
+  FiMap,
+  FiMoon,
+  FiX
+} from "react-icons/fi";
 import { MdRoute } from "react-icons/md";
 
 const DESTINATIONS = [
@@ -22,7 +30,81 @@ const CITIES = {
   "Dubai (UAE)": ["Downtown Dubai", "Dubai Marina", "Deira", "Jumeirah"],
 };
 
-export default function ItinerarySection({ itinerary, onAdd, onRemove, onUpdate }) {
+export default function ItinerarySection({
+  itinerary,
+  onAdd,
+  onRemove,
+  onUpdate,
+}) {
+
+  const [showDestinationModal, setShowDestinationModal] = useState(false);
+
+  const [destinationForm, setDestinationForm] = useState({
+    country: "",
+    international: false,
+    destinationName: "",
+    cities: [],
+    image: null,
+  });
+
+  const [cityInput, setCityInput] = useState("");
+
+  const [destinations, setDestinations] = useState(DESTINATIONS);
+
+  const [citiesData, setCitiesData] = useState(CITIES);
+
+  const [showCityModal, setShowCityModal] = useState(false);
+
+  const [cityDestination, setCityDestination] = useState("");
+
+  const [newCity, setNewCity] = useState("");
+
+  const handleAddDestination = () => {
+  if (!destinationForm.destinationName.trim()) return;
+
+  const destinationName =
+    destinationForm.destinationName.trim();
+
+  if (!destinations.includes(destinationName)) {
+    setDestinations([
+      ...destinations,
+      destinationName,
+    ]);
+
+    setCitiesData({
+      ...citiesData,
+      [destinationName]: [...destinationForm.cities],
+    });
+  }
+
+  setDestinationForm({
+    country: "",
+    international: false,
+    destinationName: "",
+    cities: [],
+    image: null,
+  });
+
+  setCityInput("");
+
+  setShowDestinationModal(false);
+};
+
+  const handleAddCity = () => {
+    if (!cityDestination || !newCity.trim()) return;
+
+    setCitiesData({
+      ...citiesData,
+      [cityDestination]: [
+        ...(citiesData[cityDestination] || []),
+        newCity,
+      ],
+    });
+
+    setNewCity("");
+    setCityDestination("");
+    setShowCityModal(false);
+  };
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="bg-gradient-to-r from-indigo-600 to-violet-500 px-6 py-4 flex items-center justify-between">
@@ -50,7 +132,7 @@ export default function ItinerarySection({ itinerary, onAdd, onRemove, onUpdate 
         )}
 
         {itinerary.map((row, index) => {
-          const cities = CITIES[row.destination] || [];
+          const cities = citiesData[row.destination] || [];
 
           return (
             <div key={row.id}
@@ -77,9 +159,21 @@ export default function ItinerarySection({ itinerary, onAdd, onRemove, onUpdate 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Destination */}
                 <div className="sm:col-span-1">
-                  <label className="flex items-center gap-1 text-xs font-semibold text-slate-500 mb-1.5">
-                    <FiMap className="w-3 h-3 text-indigo-400" /> Destination
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                   <label className="flex items-center gap-1 text-xs font-semibold text-slate-500">
+                     <FiMap className="w-3 h-3 text-indigo-400" />
+                       Destination
+                   </label>
+
+               <button
+                type="button"
+                onClick={() => setShowDestinationModal(true)}
+                className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700"
+               >
+              <FiPlus />
+               Add
+              </button>
+             </div>
                   <div className="relative">
                     <select
                       value={row.destination}
@@ -88,7 +182,7 @@ export default function ItinerarySection({ itinerary, onAdd, onRemove, onUpdate 
                         focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 outline-none appearance-none transition-all"
                     >
                       <option value="">Select destination</option>
-                      {DESTINATIONS.map((d) => <option key={d}>{d}</option>)}
+                      {destinations.map((d) => <option key={d}>{d}</option>)}
                     </select>
                     <svg className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -98,9 +192,21 @@ export default function ItinerarySection({ itinerary, onAdd, onRemove, onUpdate 
 
                 {/* City */}
                 <div className="sm:col-span-1">
-                  <label className="flex items-center gap-1 text-xs font-semibold text-slate-500 mb-1.5">
-                    <FiMapPin className="w-3 h-3 text-indigo-400" /> City
+                  <div className="flex items-center justify-between mb-1.5">
+                  <label className="flex items-center gap-1 text-xs font-semibold text-slate-500">
+                    <FiMapPin className="w-3 h-3 text-indigo-400" />
+                      City
                   </label>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCityModal(true)}
+                  className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700"
+                >
+                <FiPlus />
+                   Add
+                </button>
+                </div>
                   {cities.length > 0 ? (
                     <div className="relative">
                       <select
@@ -186,6 +292,293 @@ export default function ItinerarySection({ itinerary, onAdd, onRemove, onUpdate 
           Add Destination
         </button>
       </div>
+
+      {/* Destination Modal */}
+{/* Destination Modal */}
+{showDestinationModal && (
+  <div
+  className="
+  fixed inset-0 z-50
+  bg-black/50
+  flex items-center justify-center
+  p-2 sm:p-4
+  overflow-y-auto
+"
+>
+    <div
+  className="
+    bg-white rounded-xl shadow-xl
+    w-full max-w-4xl
+    max-h-[90vh]
+    overflow-y-auto
+  "
+>
+
+      <div className="flex justify-between items-center p-5 border-b">
+        <h2 className="text-2xl font-semibold">
+          Add New Destination
+        </h2>
+
+        <button
+          onClick={() => setShowDestinationModal(false)}
+          className="text-gray-500 hover:text-red-500 text-xl"
+        >
+          <FiX />
+        </button>
+      </div>
+
+      <div className="p-4 md:p-6 space-y-5">
+
+        <div>
+          <label className="font-semibold block mb-2">
+            Country <span className="text-red-500">*</span>
+          </label>
+
+          <div className="flex flex-col md:flex-row gap-4 md:items-center">
+            <select
+              className="flex-1 border rounded-lg p-3"
+              value={destinationForm.country}
+              onChange={(e) =>
+                setDestinationForm({
+                  ...destinationForm,
+                  country: e.target.value,
+                })
+              }
+            >
+              <option value="">Select Country</option>
+              <option>India</option>
+              <option>Nepal</option>
+              <option>Bhutan</option>
+              <option>Thailand</option>
+              <option>Dubai</option>
+            </select>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={destinationForm.international}
+                onChange={(e) =>
+                  setDestinationForm({
+                    ...destinationForm,
+                    international: e.target.checked,
+                  })
+                }
+              />
+              International
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className="font-semibold block mb-2">
+            Destination Name
+            <span className="text-red-500">*</span>
+          </label>
+
+          <input
+            type="text"
+            placeholder="e.g. Kerala, Rajasthan"
+            className="w-full border rounded-lg p-3"
+            value={destinationForm.destinationName}
+            onChange={(e) =>
+              setDestinationForm({
+                ...destinationForm,
+                destinationName: e.target.value,
+              })
+            }
+          />
+        </div>
+
+        <div>
+          <label className="font-semibold block mb-2">
+            Cities
+            <span className="text-red-500">*</span>
+          </label>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              placeholder="Type city and click Add"
+              className="flex-1 border rounded-lg p-3"
+              value={cityInput}
+              onChange={(e) =>
+                setCityInput(e.target.value)
+              }
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!cityInput.trim()) return;
+
+                setDestinationForm({
+                  ...destinationForm,
+                  cities: [
+                    ...destinationForm.cities,
+                    cityInput,
+                  ],
+                });
+
+                setCityInput("");
+              }}
+              className="
+bg-blue-600 text-white
+px-4 py-3
+rounded-lg
+sm:w-auto
+w-full
+"
+            >
+              Add
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {destinationForm.cities.map((city, index) => (
+              <span
+                key={index}
+                className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
+              >
+                {city}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="font-semibold block mb-2">
+            Destination Image
+          </label>
+
+          <div
+  className="
+  border-2 border-dashed
+  border-blue-300
+  rounded-lg
+  p-4 md:p-10
+  text-center
+"
+>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setDestinationForm({
+                  ...destinationForm,
+                  image: e.target.files[0],
+                })
+              }
+            />
+
+            <p className="text-gray-500 mt-2">
+              JPG, PNG, JPEG
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div
+  className="
+  border-t p-4
+  flex flex-col-reverse
+  sm:flex-row
+  justify-end
+  gap-3
+"
+>
+        <button
+          onClick={() => setShowDestinationModal(false)}
+          className="
+px-5 py-3
+bg-gray-200
+rounded-lg
+w-full sm:w-auto
+"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleAddDestination}
+          className="
+px-5 py-3
+bg-blue-600
+text-white
+rounded-lg
+w-full sm:w-auto
+"
+        >
+          Create Destination
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
+{/* City Modal */}
+{showCityModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl w-full max-w-md p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold">
+          Add New City
+        </h3>
+
+        <button
+          onClick={() => setShowCityModal(false)}
+        >
+          <FiX />
+        </button>
+      </div>
+
+      <select
+        value={cityDestination}
+        onChange={(e) =>
+          setCityDestination(e.target.value)
+        }
+        className="w-full border rounded-lg px-3 py-2 mb-3"
+      >
+        <option value="">
+          Select Destination
+        </option>
+
+        {destinations.map((d) => (
+          <option key={d} value={d}>
+            {d}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="text"
+        placeholder="City Name"
+        value={newCity}
+        onChange={(e) =>
+          setNewCity(e.target.value)
+        }
+        className="w-full border rounded-lg px-3 py-2"
+      />
+
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={() => setShowCityModal(false)}
+          className="px-4 py-2 bg-gray-200 rounded"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleAddCity}
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Create City
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
