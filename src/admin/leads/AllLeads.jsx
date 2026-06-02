@@ -1,195 +1,390 @@
-import React from 'react';
+
+
+
+
+
+
+
+import React, { useState } from 'react';
 import { 
   Users, Trophy, PieChart, TrendingUp, Search, Flame, Snowflake, 
   DownloadCloud, FileText, Plus, ChevronUp, ChevronRight, ChevronLeft,
-  Inbox
+  Inbox, User, ArrowUpRight, ArrowUpDown, ArrowUp, ArrowDown, Calendar,ChevronDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
 const Leads = () => {
+  // Helper: Live date generate karne ke liye taaki "Today/Yesterday" filter test ho sake
+  const getRelativeDate = (daysOffset) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysOffset);
+    return date.toISOString().split('T')[0];
+  };
+
+  const [leads, setLeads] = useState([
+    { id: '1001', name: 'Rohan Sharma', destination: 'Kathmandu', travelers: 2, amount: '₹45,000', stage: 'New Lead', createdAt: getRelativeDate(0) }, // Today
+    { id: '1002', name: 'Anjali Patel', destination: 'Pokhara', travelers: 4, amount: '₹82,000', stage: 'Contacted', createdAt: getRelativeDate(-1) }, // Yesterday
+    { id: '1003', name: 'Vikram Singh', destination: 'Everest Base Camp', travelers: 1, amount: '₹1,20,000', stage: 'Fresh', createdAt: getRelativeDate(-3) }, // Last 7 Days
+    { id: '1004', name: 'Siddharth Malhotra', destination: 'Chitwan', travelers: 3, amount: '₹65,000', stage: 'New Lead', createdAt: '2026-05-15' }, // Older Custom Date
+  ]);
+
+  // States for Filters & Sorting
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); 
+  
+  // 👉 NAYA: Date Filter States
+  const [dateFilter, setDateFilter] = useState('all'); 
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Toggle sort order between Ascending and Descending
+  const toggleDateSort = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  };
+
+  // Filter leads based on Search Term AND Date Filter
+  const filteredLeads = leads.filter(lead => {
+    // 1. Check Search Term
+    const matchesSearch = 
+      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.id.includes(searchTerm) ||
+      lead.destination.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // 2. Check Date Match
+    let matchesDate = true;
+    const leadDate = new Date(lead.createdAt);
+    leadDate.setHours(0, 0, 0, 0); // Reset time for accurate day comparison
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    if (dateFilter === 'today') {
+      matchesDate = leadDate.getTime() === today.getTime();
+    } else if (dateFilter === 'yesterday') {
+      matchesDate = leadDate.getTime() === yesterday.getTime();
+    } else if (dateFilter === 'last_7_days') {
+      matchesDate = leadDate >= sevenDaysAgo && leadDate <= today;
+    } else if (dateFilter === 'custom') {
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999); // Include full end day
+        matchesDate = leadDate >= start && leadDate <= end;
+      }
+    }
+
+    return matchesSearch && matchesDate;
+  });
+
+  // Sort the filtered leads
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
+    const dateA = new Date(a.createdAt);
+    const dateB = new Date(b.createdAt);
+    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+  });
+
+  // Helper for rendering sort arrow
+  const renderSortIcon = () => {
+    if (sortOrder === 'asc') return <ArrowUp size={14} className="text-blue-600" />;
+    if (sortOrder === 'desc') return <ArrowDown size={14} className="text-blue-600" />;
+    return <ArrowUpDown size={14} className="text-slate-400" />;
+  };
+
   return (
-    <div className="min-h-screen bg-[#f3f4f6] font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] font-sans p-4 sm:p-6 lg:p-8">
       
-      {/* Page Header & Breadcrumb */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-white border-b border-gray-200 shadow-sm">
-        <h1 className="text-2xl font-semibold text-gray-800">Leads</h1>
-        <div className="text-sm text-gray-500 mt-2 sm:mt-0">
-          <span className="text-indigo-600 cursor-pointer hover:underline font-medium">Home</span> / <span>Leads</span>
+      {/* --- Page Header & Breadcrumb --- */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+            <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-sm shadow-blue-600/20">
+              <Users size={22} strokeWidth={2.5} />
+            </div>
+            Leads Management
+          </h1>
+          <div className="text-sm text-slate-500 mt-2 font-medium flex items-center gap-2">
+            <span className="text-blue-600 hover:text-blue-800 cursor-pointer transition-colors">Home</span> 
+            <span className="text-slate-300">/</span> 
+            <span className="text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded-md shadow-sm">Leads</span>
+          </div>
         </div>
+
+        <Link 
+          to="/CreateLead" 
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <Plus size={18} strokeWidth={2.5} /> 
+          Create Lead
+        </Link>
       </div>
 
-      {/* Main Content Container */}
-      <div className="p-4 sm:p-6 space-y-6">
+      {/* --- Main Content Container --- */}
+      <div className="space-y-6">
 
-        {/* Analytics Section */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-          <div className="p-3 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50 bg-gray-50/50">
-            <div className="flex items-center gap-2 text-gray-700 font-semibold text-sm">
-              <TrendingUp size={16} className="text-indigo-600" /> Analytics Overview
+        {/* --- Analytics Section --- */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-2 text-slate-800 font-bold text-sm uppercase tracking-wider">
+              <TrendingUp size={18} className="text-blue-600" /> Analytics Overview
             </div>
-            <ChevronUp size={18} className="text-gray-400" />
+            <ChevronUp size={20} className="text-slate-400" />
           </div>
           
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white">
-            {/* Blue Card */}
-            <div className="bg-blue-500 text-white p-5 rounded-lg shadow-sm flex justify-between items-start relative overflow-hidden transition-transform hover:-translate-y-1">
-              <div className="z-10">
-                <div className="text-3xl font-bold mb-1">0</div>
-                <div className="text-sm font-medium text-blue-100">Total Leads (All Time)</div>
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 bg-slate-50/50">
+            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-blue-200 hover:shadow-md transition-all">
+              <div>
+                <div className="text-sm font-semibold text-slate-500 mb-1">Total Leads</div>
+                <div className="text-3xl font-black text-slate-900 flex items-baseline gap-2">
+                  {leads.length} <span className="text-xs font-bold text-emerald-500 flex items-center"><ArrowUpRight size={14}/> 0%</span>
+                </div>
               </div>
-              <Users size={56} className="absolute -right-2 -top-2 opacity-20" />
+              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                <Users size={24} strokeWidth={2} />
+              </div>
             </div>
 
-            {/* Emerald Card */}
-            <div className="bg-emerald-500 text-white p-5 rounded-lg shadow-sm flex justify-between items-start relative overflow-hidden transition-transform hover:-translate-y-1">
-              <div className="z-10">
-                <div className="text-3xl font-bold mb-1">0</div>
-                <div className="text-sm font-medium text-emerald-100">Completed Bookings</div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-emerald-200 hover:shadow-md transition-all">
+              <div>
+                <div className="text-sm font-semibold text-slate-500 mb-1">Bookings</div>
+                <div className="text-3xl font-black text-slate-900 flex items-baseline gap-2">
+                  0 <span className="text-xs font-bold text-slate-400 flex items-center">-</span>
+                </div>
               </div>
-              <Trophy size={56} className="absolute -right-2 -top-2 opacity-20" />
+              <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                <Trophy size={24} strokeWidth={2} />
+              </div>
             </div>
 
-            {/* Amber Card */}
-            <div className="bg-amber-500 text-white p-5 rounded-lg shadow-sm flex justify-between items-start relative overflow-hidden transition-transform hover:-translate-y-1">
-              <div className="z-10">
-                <div className="text-3xl font-bold mb-1">0%</div>
-                <div className="text-sm font-medium text-amber-100">Conversion Rate</div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-amber-200 hover:shadow-md transition-all">
+              <div>
+                <div className="text-sm font-semibold text-slate-500 mb-1">Conversion</div>
+                <div className="text-3xl font-black text-slate-900">0%</div>
               </div>
-              <PieChart size={56} className="absolute -right-2 -top-2 opacity-20" />
+              <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                <PieChart size={24} strokeWidth={2} />
+              </div>
             </div>
 
-            {/* Rose Card */}
-            <div className="bg-rose-500 text-white p-5 rounded-lg shadow-sm flex justify-between items-start relative overflow-hidden transition-transform hover:-translate-y-1">
-              <div className="z-10">
-                <div className="text-3xl font-bold mb-1">0%</div>
-                <div className="text-sm font-medium text-rose-100">Win Rate (All Time)</div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-purple-200 hover:shadow-md transition-all">
+              <div>
+                <div className="text-sm font-semibold text-slate-500 mb-1">Win Rate</div>
+                <div className="text-3xl font-black text-slate-900">0%</div>
               </div>
-              <TrendingUp size={56} className="absolute -right-2 -top-2 opacity-20" />
+              <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                <TrendingUp size={24} strokeWidth={2} />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Leads List Section */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        {/* --- Leads Directory Section --- */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           
-          {/* Header & Action Buttons */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border-b border-gray-200 gap-4 bg-gray-50/50">
-            <h2 className="text-lg font-semibold text-gray-800">Leads Directory</h2>
-            <div className="flex flex-wrap gap-2">
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm">
-                <DownloadCloud size={16} /> Import Wizard
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-5 border-b border-slate-100 gap-4">
+            <h2 className="text-lg font-bold text-slate-900">Leads Directory</h2>
+            <div className="flex flex-wrap gap-3">
+              <button className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors border border-slate-200 shadow-sm">
+                <DownloadCloud size={16} className="text-slate-500" /> Import
               </button>
-              <button className="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm">
-                <FileText size={16} /> View Logs
-              </button>
-              <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm">
-               <Link 
-  to="/add-lead" 
-  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm"
->
-  <Plus size={16} /> Create Lead
-</Link>
+              <button className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors border border-slate-200 shadow-sm">
+                <FileText size={16} className="text-slate-500" /> Logs
               </button>
             </div>
           </div>
 
-          {/* Filters Bar */}
-          <div className="p-4 border-b border-gray-100 flex flex-wrap gap-4 items-center bg-white">
-            <div className="relative flex-1 min-w-[280px] max-w-md">
+          {/* --- Filters Bar --- */}
+          <div className="p-5 border-b border-slate-100 flex flex-wrap gap-4 items-center bg-slate-50/50">
+            
+            {/* Search Input */}
+            <div className="relative flex-1 min-w-[250px] max-w-sm group">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                <Search size={18} />
+              </div>
               <input 
                 type="text" 
-                placeholder="Search by name, phone, email, ID..." 
-                className="w-full border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" 
+                placeholder="Search leads by name, email, or ID..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 placeholder-slate-400 text-slate-900 font-medium shadow-sm" 
               />
-              <Search size={16} className="absolute right-3 top-2.5 text-gray-400" />
             </div>
             
-            <select className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 min-w-[150px] focus:outline-none focus:border-indigo-500">
-              <option>All Users</option>
-            </select>
-            
-            <div className="flex items-center gap-4 text-sm ml-2">
-              <label className="flex items-center gap-1.5 cursor-pointer text-gray-600 hover:text-gray-900">
-                <input type="checkbox" className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500" /> 
-                <Flame size={16} className="text-orange-500" /> Hot
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer text-gray-600 hover:text-gray-900">
-                <input type="checkbox" className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500" /> 
-                <Snowflake size={16} className="text-blue-500" /> Cold
-              </label>
+            {/* 👉 NAYA: Date Dropdown */}
+            <div className="relative min-w-[160px]">
+              <select 
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 font-medium appearance-none cursor-pointer shadow-sm transition-all"
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="last_7_days">Last 7 Days</option>
+                <option value="custom">Custom Date</option>
+              </select>
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Calendar size={18} />
+              </div>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={14} />
+              </div>
             </div>
+
+            {/* 👉 NAYA: Custom Date Pickers (Conditional) */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                <input 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                />
+                <span className="text-slate-400 text-sm font-medium">to</span>
+                <input 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                />
+              </div>
+            )}
+            
+            {/* User Dropdown */}
+            <div className="relative min-w-[150px]">
+              <select className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 font-medium appearance-none cursor-pointer shadow-sm transition-all">
+                <option>All Assignees</option>
+              </select>
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <User size={18} />
+              </div>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={14} />
+              </div>
+            </div>
+            
           </div>
 
           {/* Status Tabs */}
-          <div className="px-4 py-3 bg-slate-50 border-b border-gray-200 overflow-x-auto">
+          <div className="px-5 py-4 border-b border-slate-100 overflow-x-auto">
             <div className="flex gap-2 min-w-max">
-              <button className="bg-slate-800 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 shadow-sm">
-                All <span className="bg-slate-600 px-1.5 py-0.5 rounded text-xs">0</span>
+              <button className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm">
+                All <span className="bg-slate-700 px-2 py-0.5 rounded-md text-xs">{sortedLeads.length}</span>
               </button>
-              <button className="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div> FRESH
+              <button className="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></div> Fresh
               </button>
-              <button className="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                New Lead <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-semibold">0</span>
+              <button className="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                New Lead <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs font-black">0</span>
               </button>
-              <button className="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 hover:bg-gray-50 transition-colors">
-                Contacted <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs font-semibold">0</span>
+              <button className="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                Contacted <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs font-black">0</span>
               </button>
             </div>
           </div>
 
           {/* Custom Scroll Controls */}
-          <div className="px-4 py-1.5 flex justify-between items-center text-gray-400 bg-gray-50 border-b border-gray-200">
-            <ChevronLeft size={16} className="cursor-pointer hover:text-gray-700 transition-colors" />
-            <div className="flex-1 border-b-[3px] border-gray-200 mx-3 rounded-full relative">
-              <div className="absolute left-0 top-[-3px] bottom-[-3px] w-full bg-indigo-200 rounded-full"></div>
+          <div className="px-5 py-2.5 flex justify-between items-center text-slate-400 bg-slate-50 border-b border-slate-100">
+            <ChevronLeft size={18} className="cursor-pointer hover:text-blue-600 transition-colors" />
+            <div className="flex-1 border-b-[4px] border-slate-200 mx-4 rounded-full relative">
+              <div className="absolute left-0 top-[-4px] bottom-[-4px] w-1/3 bg-blue-300 rounded-full"></div>
             </div>
-            <ChevronRight size={16} className="cursor-pointer hover:text-gray-700 transition-colors" />
+            <ChevronRight size={18} className="cursor-pointer hover:text-blue-600 transition-colors" />
           </div>
 
-          {/* Data Table */}
+          {/* --- Data Table --- */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1400px] border-collapse text-sm">
-              {/* Table Header */}
+            <table className="w-full min-w-[1400px] border-collapse text-sm whitespace-nowrap">
               <thead>
-                <tr className="bg-slate-100 text-slate-600 text-[11px] text-left uppercase tracking-wider font-bold">
-                  <th className="p-3 w-10 text-center border-r border-gray-200"><input type="checkbox" className="rounded-sm border-gray-300" /></th>
-                  <th className="p-3 border-r border-gray-200">LEAD ID</th>
-                  <th className="p-3 border-r border-gray-200">LEAD INFO</th>
-                  <th className="p-3 border-r border-gray-200 text-center">DESTINATION</th>
-                  <th className="p-3 border-r border-gray-200">TRAVELERS INFO</th>
-                  <th className="p-3 border-r border-gray-200">SERVICES</th>
-                  <th className="p-3 border-r border-gray-200 text-center">QUOTATION</th>
-                  <th className="p-3 border-r border-gray-200">BOOKING</th>
-                  <th className="p-3 border-r border-gray-200 text-center">WEBLINK</th>
-                  <th className="p-3 border-r border-gray-200 text-center">LOGGING</th>
-                  <th className="p-3 border-r border-gray-200">ASSIGNED TO</th>
-                  <th className="p-3 border-r border-gray-200">AMOUNT</th>
-                  <th className="p-3 border-r border-gray-200">MARGIN</th>
-                  <th className="p-3 border-r border-gray-200">TYPE</th>
-                  <th className="p-3">STAGE</th>
-                   <th className="p-3">CREATED</th>
-                    <th className="p-3">ACTIONS</th>
+                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-bold border-b border-slate-200">
+                  <th className="px-4 py-4 w-12 text-center rounded-tl-2xl">
+                    <input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                  </th>
+                  <th className="px-4 py-4 text-left">LEAD ID</th>
+                  <th className="px-4 py-4 text-left">LEAD INFO</th>
+                  <th className="px-4 py-4 text-center">DESTINATION</th>
+                  <th className="px-4 py-4 text-left">TRAVELERS</th>
+                  <th className="px-4 py-4 text-left">SERVICES</th>
+                  <th className="px-4 py-4 text-center">QUOTATION</th>
+                  <th className="px-4 py-4 text-left">BOOKING</th>
+                  <th className="px-4 py-4 text-center">WEBLINK</th>
+                  <th className="px-4 py-4 text-center">LOGGING</th>
+                  <th className="px-4 py-4 text-left">ASSIGNED TO</th>
+                  <th className="px-4 py-4 text-left">AMOUNT</th>
+                  <th className="px-4 py-4 text-left">MARGIN</th>
+                  <th className="px-4 py-4 text-left">TYPE</th>
+                  <th className="px-4 py-4 text-left">STAGE</th>
+                  <th 
+                    onClick={toggleDateSort}
+                    className="px-4 py-4 text-left cursor-pointer hover:bg-slate-100 hover:text-blue-600 select-none transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      CREATED {renderSortIcon()}
+                    </div>
+                  </th>
+                  <th className="px-4 py-4 rounded-tr-2xl text-center">ACTIONS</th>
                 </tr>
               </thead>
               
-              {/* Table Body - EMPTY STATE */}
-              <tbody className="bg-white">
-                <tr>
-                  <td colSpan="15" className="p-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-400">
-                      <div className="bg-gray-50 p-4 rounded-full mb-3">
-                        <Inbox size={40} className="text-gray-300" />
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {sortedLeads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-4 text-center">
+                      <input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600" />
+                    </td>
+                    <td className="px-4 py-4 font-semibold text-slate-700">#{lead.id}</td>
+                    <td className="px-4 py-4">
+                      <div className="font-bold text-slate-900">{lead.name}</div>
+                    </td>
+                    <td className="px-4 py-4 text-center font-medium text-slate-700">{lead.destination}</td>
+                    <td className="px-4 py-4 text-slate-600 font-medium">{lead.travelers} Pax</td>
+                    <td className="px-4 py-4 text-slate-500">—</td>
+                    <td className="px-4 py-4 text-center">—</td>
+                    <td className="px-4 py-4">—</td>
+                    <td className="px-4 py-4 text-center">—</td>
+                    <td className="px-4 py-4 text-center">—</td>
+                    <td className="px-4 py-4 text-slate-600 font-medium">Unassigned</td>
+                    <td className="px-4 py-4 font-bold text-slate-900">{lead.amount}</td>
+                    <td className="px-4 py-4 text-slate-500">—</td>
+                    <td className="px-4 py-4 text-slate-500">—</td>
+                    <td className="px-4 py-4">
+                      <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold border border-blue-100">
+                        {lead.stage}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-slate-500 font-medium">
+                      {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-4 text-center text-slate-400">—</td>
+                  </tr>
+                ))}
+
+                {sortedLeads.length === 0 && (
+                  <tr>
+                    <td colSpan="17" className="px-6 py-24 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
+                          <Inbox size={32} className="text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">No Leads Found</h3>
+                        <p className="text-sm font-medium text-slate-500 max-w-sm mx-auto mb-6 leading-relaxed">
+                          We couldn't find any leads matching your selected date and search criteria.
+                        </p>
+                        <button 
+                          onClick={() => { setDateFilter('all'); setSearchTerm(''); }}
+                          className="text-blue-600 hover:text-blue-700 font-bold text-sm"
+                        >
+                          Clear Filters
+                        </button>
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-1">No Leads Found</h3>
-                      <p className="text-sm text-gray-500 max-w-sm mx-auto mb-4">
-                        There are currently no leads in the system matching your criteria. Try adjusting your filters or create a new lead.
-                      </p>
-                      <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
-                        <Plus size={16} /> Add First Lead
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

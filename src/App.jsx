@@ -5,6 +5,7 @@ import Layout from "./Layout";
 import AllLeads from "./admin/leads/AllLeads";
 import AdminLogin from "./login/AdminLogin";
 import CreateLead from "./admin/leads/CreateLead/CreateLead";
+import City from "./masters/cities/City"
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,6 +41,7 @@ const App = () => {
 
           {/* Create Lead Route */}
           <Route path="createlead" element={<CreateLead />} />
+           <Route path="masters/city" element={<City/>} />
         </Route>
 
       </Routes>
