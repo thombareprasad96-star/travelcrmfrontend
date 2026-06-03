@@ -355,7 +355,7 @@ export default Login;
 //               </span>
 //               <input
 //                 type="text"
-//                 required
+//                 required  
 //                 value={username}
 //                 onChange={(e) => setUsername(e.target.value)}
 //                 placeholder={`Enter ${activeRole.replace('_', ' ')} username`}
