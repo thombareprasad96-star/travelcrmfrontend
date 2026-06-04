@@ -6,9 +6,9 @@ import AllLeads from "./admin/leads/AllLeads";
 import AdminLogin from "./login/AdminLogin";
 import CreateLead from "./admin/leads/CreateLead/CreateLead";
 import City from "./masters/cities/City"
-
+import Destinations from "./masters/Destinations"
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState( !!localStorage.getItem("token"));
 
   return (
     <BrowserRouter>
@@ -42,8 +42,9 @@ const App = () => {
           {/* Create Lead Route */}
           <Route path="createlead" element={<CreateLead />} />
            <Route path="masters/city" element={<City/>} />
+           <Route path="masters/destinations" element={<Destinations/>}/>
         </Route>
-
+ 
       </Routes>
     </BrowserRouter>
   );
