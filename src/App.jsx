@@ -69,10 +69,7 @@ import City from "./masters/cities/City"
 import Destinations from "./masters/Destinations"
 import Allbookings from "./bookings/Allbookings";
 import AllCustomers from "./customers/AllCustomers";
-const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
-import City from "./masters/cities/City";
-import Destinations from "./masters/Destinations";
+
 
 const App = () => {
   // ✅ FIX: Check localStorage right away so the app remembers the user on refresh.
