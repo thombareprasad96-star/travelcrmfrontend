@@ -5,37 +5,46 @@
 
 
 
-// import React, { useState } from 'react';
+// import React, { useState, useEffect } from 'react';
+
+// import { leadService } from '../../services/leadService'; 
 // import { 
 //   Users, Trophy, PieChart, TrendingUp, Search, Flame, Snowflake, 
 //   DownloadCloud, FileText, Plus, ChevronUp, ChevronRight, ChevronLeft,
-//   Inbox, User, ArrowUpRight, ArrowUpDown, ArrowUp, ArrowDown, Calendar,ChevronDown
+//   Inbox, User, ArrowUpRight, ArrowUpDown, ArrowUp, ArrowDown, Calendar, ChevronDown
 // } from 'lucide-react';
 // import { Link } from 'react-router-dom';
 
 // const Leads = () => {
-//   // Helper: Live date generate karne ke liye taaki "Today/Yesterday" filter test ho sake
-//   const getRelativeDate = (daysOffset) => {
-//     const date = new Date();
-//     date.setDate(date.getDate() + daysOffset);
-//     return date.toISOString().split('T')[0];
-//   };
-
-//   const [leads, setLeads] = useState([
-//     { id: '1001', name: 'Rohan Sharma', destination: 'Kathmandu', travelers: 2, amount: '₹45,000', stage: 'New Lead', createdAt: getRelativeDate(0) }, // Today
-//     { id: '1002', name: 'Anjali Patel', destination: 'Pokhara', travelers: 4, amount: '₹82,000', stage: 'Contacted', createdAt: getRelativeDate(-1) }, // Yesterday
-//     { id: '1003', name: 'Vikram Singh', destination: 'Everest Base Camp', travelers: 1, amount: '₹1,20,000', stage: 'Fresh', createdAt: getRelativeDate(-3) }, // Last 7 Days
-//     { id: '1004', name: 'Siddharth Malhotra', destination: 'Chitwan', travelers: 3, amount: '₹65,000', stage: 'New Lead', createdAt: '2026-05-15' }, // Older Custom Date
-//   ]);
+ 
+//   const [leads, setLeads] = useState([]);
+//   const [loading, setLoading] = useState(true);
 
 //   // States for Filters & Sorting
 //   const [searchTerm, setSearchTerm] = useState('');
 //   const [sortOrder, setSortOrder] = useState('desc'); 
-  
-//   // 👉 NAYA: Date Filter States
 //   const [dateFilter, setDateFilter] = useState('all'); 
 //   const [startDate, setStartDate] = useState('');
 //   const [endDate, setEndDate] = useState('');
+
+  
+//   useEffect(() => {
+//     fetchLeads();
+//   }, []);
+
+//   const fetchLeads = async () => {
+//     try {
+//       setLoading(true);
+//       const response = await leadService.getAllLeads(); 
+//       if (response.data && response.data.success) {
+//         setLeads(response.data.data.content);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching leads:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
 //   // Toggle sort order between Ascending and Descending
 //   const toggleDateSort = () => {
@@ -44,14 +53,17 @@
 
 //   // Filter leads based on Search Term AND Date Filter
 //   const filteredLeads = leads.filter(lead => {
-//     // 1. Check Search Term
+//     // 👉 UPDATE: Search mapping ab real JSON fields ke hisaab se hai
 //     const matchesSearch = 
-//       lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       lead.id.includes(searchTerm) ||
-//       lead.destination.toLowerCase().includes(searchTerm.toLowerCase());
+//       (lead.customerName && lead.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+//       (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+//       (lead.phone && lead.phone.includes(searchTerm)) ||
+//       (lead.id && lead.id.toString().includes(searchTerm));
 
 //     // 2. Check Date Match
 //     let matchesDate = true;
+//     if (!lead.createdAt) return matchesSearch;
+
 //     const leadDate = new Date(lead.createdAt);
 //     leadDate.setHours(0, 0, 0, 0); // Reset time for accurate day comparison
 
@@ -84,6 +96,7 @@
 
 //   // Sort the filtered leads
 //   const sortedLeads = [...filteredLeads].sort((a, b) => {
+//     if (!a.createdAt || !b.createdAt) return 0;
 //     const dateA = new Date(a.createdAt);
 //     const dateB = new Date(b.createdAt);
 //     return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
@@ -189,8 +202,9 @@
 //           <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-5 border-b border-slate-100 gap-4">
 //             <h2 className="text-lg font-bold text-slate-900">Leads Directory</h2>
 //             <div className="flex flex-wrap gap-3">
-//               <button className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors border border-slate-200 shadow-sm">
-//                 <DownloadCloud size={16} className="text-slate-500" /> Import
+//               {/* Optional: You can attach fetchLeads to this button to refresh manually */}
+//               <button onClick={fetchLeads} className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors border border-slate-200 shadow-sm">
+//                 <DownloadCloud size={16} className="text-slate-500" /> Refresh Data
 //               </button>
 //               <button className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors border border-slate-200 shadow-sm">
 //                 <FileText size={16} className="text-slate-500" /> Logs
@@ -215,7 +229,7 @@
 //               />
 //             </div>
             
-//             {/* 👉 NAYA: Date Dropdown */}
+//             {/* Date Dropdown */}
 //             <div className="relative min-w-[160px]">
 //               <select 
 //                 value={dateFilter}
@@ -236,7 +250,7 @@
 //               </div>
 //             </div>
 
-//             {/* 👉 NAYA: Custom Date Pickers (Conditional) */}
+//             {/* Custom Date Pickers (Conditional) */}
 //             {dateFilter === 'custom' && (
 //               <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
 //                 <input 
@@ -256,7 +270,7 @@
 //             )}
             
 //             {/* User Dropdown */}
-//             <div className="relative min-w-[150px]">
+//             <div className="relative min-w-[150px]"> 
 //               <select className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 font-medium appearance-none cursor-pointer shadow-sm transition-all">
 //                 <option>All Assignees</option>
 //               </select>
@@ -309,7 +323,7 @@
 //                   <th className="px-4 py-4 text-left">LEAD INFO</th>
 //                   <th className="px-4 py-4 text-center">DESTINATION</th>
 //                   <th className="px-4 py-4 text-left">TRAVELERS</th>
-//                   <th className="px-4 py-4 text-left">SERVICES</th>
+//                   <th className="px-4 py-4 text-left w-64">SERVICES</th>
 //                   <th className="px-4 py-4 text-center">QUOTATION</th>
 //                   <th className="px-4 py-4 text-left">BOOKING</th>
 //                   <th className="px-4 py-4 text-center">WEBLINK</th>
@@ -332,39 +346,21 @@
 //               </thead>
               
 //               <tbody className="divide-y divide-slate-100 bg-white">
-//                 {sortedLeads.map((lead) => (
-//                   <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-//                     <td className="px-4 py-4 text-center">
-//                       <input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600" />
+                
+//                 {/* 👉 NAYA: Loading State UI */}
+//                 {loading ? (
+//                   <tr>
+//                     <td colSpan="17" className="px-6 py-24 text-center">
+//                       <div className="flex flex-col items-center justify-center">
+//                         <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+//                         <h3 className="text-lg font-bold text-slate-900">Loading Leads...</h3>
+//                         <p className="text-sm text-slate-500">Fetching data from server</p>
+//                       </div>
 //                     </td>
-//                     <td className="px-4 py-4 font-semibold text-slate-700">#{lead.id}</td>
-//                     <td className="px-4 py-4">
-//                       <div className="font-bold text-slate-900">{lead.name}</div>
-//                     </td>
-//                     <td className="px-4 py-4 text-center font-medium text-slate-700">{lead.destination}</td>
-//                     <td className="px-4 py-4 text-slate-600 font-medium">{lead.travelers} Pax</td>
-//                     <td className="px-4 py-4 text-slate-500">—</td>
-//                     <td className="px-4 py-4 text-center">—</td>
-//                     <td className="px-4 py-4">—</td>
-//                     <td className="px-4 py-4 text-center">—</td>
-//                     <td className="px-4 py-4 text-center">—</td>
-//                     <td className="px-4 py-4 text-slate-600 font-medium">Unassigned</td>
-//                     <td className="px-4 py-4 font-bold text-slate-900">{lead.amount}</td>
-//                     <td className="px-4 py-4 text-slate-500">—</td>
-//                     <td className="px-4 py-4 text-slate-500">—</td>
-//                     <td className="px-4 py-4">
-//                       <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold border border-blue-100">
-//                         {lead.stage}
-//                       </span>
-//                     </td>
-//                     <td className="px-4 py-4 text-slate-500 font-medium">
-//                       {new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-//                     </td>
-//                     <td className="px-4 py-4 text-center text-slate-400">—</td>
 //                   </tr>
-//                 ))}
-
-//                 {sortedLeads.length === 0 && (
+//                 ) : sortedLeads.length === 0 ? (
+                  
+//                   /* Empty State */
 //                   <tr>
 //                     <td colSpan="17" className="px-6 py-24 text-center">
 //                       <div className="flex flex-col items-center justify-center">
@@ -384,6 +380,85 @@
 //                       </div>
 //                     </td>
 //                   </tr>
+//                 ) : (
+                  
+//                   /* 👉 NAYA: Real JSON Data Mapping */
+//                   sortedLeads.map((lead) => (
+//                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+//                       <td className="px-4 py-4 text-center">
+//                         <input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600" />
+//                       </td>
+//                       <td className="px-4 py-4 font-semibold text-slate-700">#{lead.id}</td>
+//                       <td className="px-4 py-4">
+//                         <div className="font-bold text-slate-900 capitalize">{lead.customerName || 'N/A'}</div>
+//                         <div className="text-xs text-slate-500 mt-0.5">{lead.email || 'No email'}</div>
+//                         <div className="text-xs text-slate-500">{lead.phone || 'No phone'}</div>
+//                       </td>
+//                       <td className="px-4 py-4 text-center font-medium text-slate-700">
+//                         {lead.itinerary && lead.itinerary.length > 0 ? (
+//                           <div className="flex flex-col gap-1 items-center">
+//                             {lead.itinerary.map((item, idx) => (
+//                               <span key={idx} className="bg-slate-100 px-2 py-1 rounded text-xs">
+//                                 {item.destination} ({item.nights}N)
+//                               </span>
+//                             ))}
+//                           </div>
+//                         ) : (
+//                           <span className="text-slate-400">N/A</span>
+//                         )}
+//                       </td>
+//                       <td className="px-4 py-4 text-slate-600 font-medium">
+//                         <div className="flex flex-col">
+//                           <span>{lead.adults || 0} Adults</span>
+//                           {(lead.children > 0 || lead.infants > 0) && (
+//                             <span className="text-xs text-slate-400">
+//                               {lead.children || 0} Child, {lead.infants || 0} Infant
+//                             </span>
+//                           )}
+//                         </div>
+//                       </td>
+//                       <td className="px-4 py-4">
+//                         <div className="flex flex-wrap gap-1.5 w-64">
+//                           {lead.services && lead.services.map((service, idx) => (
+//                             <span key={idx} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider">
+//                               {service}
+//                             </span>
+//                           ))}
+//                         </div>
+//                       </td>
+//                       <td className="px-4 py-4 text-center">—</td>
+//                       <td className="px-4 py-4">—</td>
+//                       <td className="px-4 py-4 text-center">—</td>
+//                       <td className="px-4 py-4 text-center">—</td>
+//                       <td className="px-4 py-4 text-slate-700 font-bold">
+//                         <div className="flex items-center gap-2">
+//                           <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
+//                             {(lead.assignTo || 'U').charAt(0)}
+//                           </div>
+//                           {lead.assignTo || 'Unassigned'}
+//                         </div>
+//                       </td>
+//                       <td className="px-4 py-4 font-bold text-slate-900">N/A</td>
+//                       <td className="px-4 py-4 text-slate-500">—</td>
+//                       <td className="px-4 py-4">
+//                         <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-bold border border-slate-200">
+//                           {lead.leadType || 'N/A'}
+//                         </span>
+//                       </td>
+//                       <td className="px-4 py-4">
+//                         <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-xs font-bold border border-emerald-100">
+//                           {lead.leadStage || 'N/A'}
+//                         </span>
+//                       </td>
+//                       <td className="px-4 py-4 text-slate-500 font-medium">
+//                         {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { 
+//                           month: 'short', day: 'numeric', year: 'numeric',
+//                           hour: '2-digit', minute: '2-digit' 
+//                         }) : 'N/A'}
+//                       </td>
+//                       <td className="px-4 py-4 text-center text-slate-400">—</td>
+//                     </tr>
+//                   ))
 //                 )}
 //               </tbody>
 //             </table>
@@ -402,8 +477,9 @@
 
 
 
-import React, { useState, useEffect } from 'react';
 
+
+import React, { useState, useEffect } from 'react';
 import { leadService } from '../../services/leadService'; 
 import { 
   Users, Trophy, PieChart, TrendingUp, Search, Flame, Snowflake, 
@@ -424,7 +500,6 @@ const Leads = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  
   useEffect(() => {
     fetchLeads();
   }, []);
@@ -433,65 +508,83 @@ const Leads = () => {
     try {
       setLoading(true);
       const response = await leadService.getAllLeads(); 
-      if (response.data && response.data.success) {
-        setLeads(response.data.data.content);
+      
+      // 👉 SMART EXTRACTION: Backend chahe jaise bhi data bheje, hum use pakad lenge
+      let fetchedData = [];
+      if (response.data) {
+        if (Array.isArray(response.data.data)) {
+          fetchedData = response.data.data;
+        } else if (response.data.data && Array.isArray(response.data.data.content)) {
+          fetchedData = response.data.data.content;
+        } else if (Array.isArray(response.data.content)) {
+          fetchedData = response.data.content;
+        } else if (Array.isArray(response.data)) {
+          fetchedData = response.data;
+        }
       }
+      
+      console.log("Total leads loaded from API:", fetchedData.length);
+      setLeads(fetchedData);
+
     } catch (error) {
       console.error("Error fetching leads:", error);
+      setLeads([]); 
     } finally {
       setLoading(false);
     }
   };
 
-  // Toggle sort order between Ascending and Descending
   const toggleDateSort = () => {
     setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   };
 
-  // Filter leads based on Search Term AND Date Filter
-  const filteredLeads = leads.filter(lead => {
-    // 👉 UPDATE: Search mapping ab real JSON fields ke hisaab se hai
-    const matchesSearch = 
-      (lead.customerName && lead.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (lead.phone && lead.phone.includes(searchTerm)) ||
-      (lead.id && lead.id.toString().includes(searchTerm));
+  const safeLeads = Array.isArray(leads) ? leads : [];
 
-    // 2. Check Date Match
+  // 👉 UPDATED FILTER: Ab koi naya lead hide nahi hoga
+  const filteredLeads = safeLeads.filter(lead => {
+    
+    // 1. Search Condition (Agar search bar empty hai, toh sab pass hain)
+    const searchLower = searchTerm.trim().toLowerCase();
+    const matchesSearch = searchLower === '' || 
+      (lead.customerName && lead.customerName.toLowerCase().includes(searchLower)) ||
+      (lead.email && lead.email.toLowerCase().includes(searchLower)) ||
+      (lead.phone && lead.phone.includes(searchLower)) ||
+      (lead.id && lead.id.toString().includes(searchLower));
+
+    // 2. Date Condition (Agar Date filter 'all' hai, toh aage check mat karo)
     let matchesDate = true;
-    if (!lead.createdAt) return matchesSearch;
+    
+    if (dateFilter !== 'all' && lead.createdAt) {
+      const leadDate = new Date(lead.createdAt);
+      leadDate.setHours(0, 0, 0, 0); 
 
-    const leadDate = new Date(lead.createdAt);
-    leadDate.setHours(0, 0, 0, 0); // Reset time for accurate day comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
 
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    if (dateFilter === 'today') {
-      matchesDate = leadDate.getTime() === today.getTime();
-    } else if (dateFilter === 'yesterday') {
-      matchesDate = leadDate.getTime() === yesterday.getTime();
-    } else if (dateFilter === 'last_7_days') {
-      matchesDate = leadDate >= sevenDaysAgo && leadDate <= today;
-    } else if (dateFilter === 'custom') {
-      if (startDate && endDate) {
+      if (dateFilter === 'today') {
+        matchesDate = leadDate.getTime() === today.getTime();
+      } else if (dateFilter === 'yesterday') {
+        matchesDate = leadDate.getTime() === yesterday.getTime();
+      } else if (dateFilter === 'last_7_days') {
+        matchesDate = leadDate >= sevenDaysAgo && leadDate <= today;
+      } else if (dateFilter === 'custom' && startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // Include full end day
+        end.setHours(23, 59, 59, 999); 
         matchesDate = leadDate >= start && leadDate <= end;
       }
     }
 
+    // Lead tabhi dikhega jab dono search aur date conditions match hongi
     return matchesSearch && matchesDate;
   });
 
-  // Sort the filtered leads
   const sortedLeads = [...filteredLeads].sort((a, b) => {
     if (!a.createdAt || !b.createdAt) return 0;
     const dateA = new Date(a.createdAt);
@@ -499,7 +592,6 @@ const Leads = () => {
     return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
   });
 
-  // Helper for rendering sort arrow
   const renderSortIcon = () => {
     if (sortOrder === 'asc') return <ArrowUp size={14} className="text-blue-600" />;
     if (sortOrder === 'desc') return <ArrowDown size={14} className="text-blue-600" />;
@@ -551,7 +643,7 @@ const Leads = () => {
               <div>
                 <div className="text-sm font-semibold text-slate-500 mb-1">Total Leads</div>
                 <div className="text-3xl font-black text-slate-900 flex items-baseline gap-2">
-                  {leads.length} <span className="text-xs font-bold text-emerald-500 flex items-center"><ArrowUpRight size={14}/> 0%</span>
+                  {safeLeads.length} <span className="text-xs font-bold text-emerald-500 flex items-center"><ArrowUpRight size={14}/> 0%</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
@@ -599,7 +691,6 @@ const Leads = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-5 border-b border-slate-100 gap-4">
             <h2 className="text-lg font-bold text-slate-900">Leads Directory</h2>
             <div className="flex flex-wrap gap-3">
-              {/* Optional: You can attach fetchLeads to this button to refresh manually */}
               <button onClick={fetchLeads} className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors border border-slate-200 shadow-sm">
                 <DownloadCloud size={16} className="text-slate-500" /> Refresh Data
               </button>
@@ -744,7 +835,7 @@ const Leads = () => {
               
               <tbody className="divide-y divide-slate-100 bg-white">
                 
-                {/* 👉 NAYA: Loading State UI */}
+                {/* Loading State UI */}
                 {loading ? (
                   <tr>
                     <td colSpan="17" className="px-6 py-24 text-center">
@@ -779,7 +870,7 @@ const Leads = () => {
                   </tr>
                 ) : (
                   
-                  /* 👉 NAYA: Real JSON Data Mapping */
+                  /* Real JSON Data Mapping */
                   sortedLeads.map((lead) => (
                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-4 py-4 text-center">
