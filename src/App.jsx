@@ -65,8 +65,11 @@ import Layout from "./Layout";
 import AllLeads from "./admin/leads/AllLeads";
 import AdminLogin from "./login/AdminLogin";
 import CreateLead from "./admin/leads/CreateLead/CreateLead";
-import City from "./masters/cities/City";
-import Destinations from "./masters/Destinations";
+import City from "./masters/cities/City"
+import Destinations from "./masters/Destinations"
+import Allbookings from "./bookings/Allbookings";
+import AllCustomers from "./customers/AllCustomers";
+
 
 const App = () => {
   // ✅ FIX: Check localStorage right away so the app remembers the user on refresh.
@@ -106,6 +109,10 @@ const App = () => {
 
           {/* Create Lead Route */}
           <Route path="createlead" element={<CreateLead />} />
+           <Route path="masters/city" element={<City/>} />
+           <Route path="masters/destinations" element={<Destinations/>}/>
+           <Route path="Allbookings" element={<Allbookings/>}/>
+           <Route path="AllCustomers" element={<AllCustomers/>}/>
           <Route path="masters/city" element={<City />} />
           <Route path="masters/destinations" element={<Destinations />} />
         </Route>
