@@ -455,22 +455,19 @@
 
 // export default DestinationMaster;
 
-
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, Plus, Eye, Edit, Trash2, Map, Globe, Image as ImageIcon, X, 
   ChevronDown, Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered, Eraser, Baseline, UploadCloud, CheckCircle2, MapPin, Calendar, AlertTriangle
+  List, ListOrdered, Eraser, Baseline, UploadCloud, CheckCircle2, MapPin, AlertTriangle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-// 👉 Backend API service import
+// 👉 Backend API service import (Ensure path is correct)
 import { destinationService } from '../services/DestinationService';
 
 // =========================================================================
-// 🌟 PREMIUM RICH TEXT EDITOR (Generates HTML for Backend)
+// 🌟 PREMIUM RICH TEXT EDITOR 
 // =========================================================================
 const RichTextEditor = ({ name, initialValue, onChange, placeholder }) => {
   const editorRef = useRef(null);
@@ -496,18 +493,24 @@ const RichTextEditor = ({ name, initialValue, onChange, placeholder }) => {
 
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 hover:bg-slate-100/50 focus-within:bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-300">
+      
+      {/* Editor Toolbar */}
       <div className="bg-white border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-2 text-slate-600 text-sm select-none">
         <button type="button" onMouseDown={(e) => executeCommand(e, 'formatBlock', 'P')} className="flex items-center gap-1.5 px-2 py-1 hover:bg-slate-100 rounded-lg font-semibold text-slate-700 transition-colors">
           Normal <ChevronDown size={14} className="text-slate-400"/>
         </button>
+        
         <div className="w-px h-5 bg-slate-200 hidden sm:block mx-1"></div>
+        
         <div className="flex items-center gap-0.5">
           <button type="button" onMouseDown={(e) => executeCommand(e, 'bold')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Bold"><Bold size={15} strokeWidth={2.5} /></button>
           <button type="button" onMouseDown={(e) => executeCommand(e, 'italic')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Italic"><Italic size={15} /></button>
           <button type="button" onMouseDown={(e) => executeCommand(e, 'underline')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Underline"><Underline size={15} /></button>
           <button type="button" onMouseDown={(e) => executeCommand(e, 'strikeThrough')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Strikethrough"><Strikethrough size={15} /></button>
         </div>
+        
         <div className="w-px h-5 bg-slate-200 hidden sm:block mx-1"></div>
+        
         <div className="flex items-center gap-1 relative">
           <label className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 cursor-pointer flex items-center justify-center transition-colors relative" title="Text Color">
             <Baseline size={15} />
@@ -518,16 +521,21 @@ const RichTextEditor = ({ name, initialValue, onChange, placeholder }) => {
             <input type="color" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => { document.execCommand('hiliteColor', false, e.target.value); handleInput(); }} />
           </label>
         </div>
+        
         <div className="w-px h-5 bg-slate-200 hidden sm:block mx-1"></div>
+        
         <div className="flex items-center gap-0.5">
           <button type="button" onMouseDown={(e) => executeCommand(e, 'justifyLeft')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Align Left"><AlignLeft size={15} /></button>
           <button type="button" onMouseDown={(e) => executeCommand(e, 'justifyCenter')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Align Center"><AlignCenter size={15} /></button>
           <button type="button" onMouseDown={(e) => executeCommand(e, 'insertUnorderedList')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Bullet List"><List size={15} /></button>
           <button type="button" onMouseDown={(e) => executeCommand(e, 'insertOrderedList')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Numbered List"><ListOrdered size={15} /></button>
         </div>
+
         <div className="w-px h-5 bg-slate-200 hidden sm:block mx-1"></div>
         <button type="button" onMouseDown={(e) => executeCommand(e, 'removeFormat')} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors" title="Clear Formatting"><Eraser size={15} /></button>
       </div>
+
+      {/* Editor Content Area */}
       <div 
         ref={editorRef}
         contentEditable={true}
@@ -559,20 +567,16 @@ const DestinationMaster = () => {
   const [imagePreview, setImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
-    country: '', name: '', type: '', imagePath: '', bookingPeriod: '',
+    country: '', name: '', type: '', imagePath: '', 
     inclusions: '', exclusions: '', paymentPolicies: '', cancellationPolicies: '', bookingTerms: ''
   });
 
-  // 👉 Fetch Destinations from API on page load (Uncomment when API is ready)
+  // 👉 NAYA: Yeh useEffect har bar chalega jab aap form me kuch type karenge aur console par Live data dikhayega
   useEffect(() => {
-    const fetchDestinations = async () => {
-      try {
-        const res = await destinationService.getAllDestinations();
-        setDestinations(res.data);
-      } catch (err) { console.error(err); }
-    };
-    fetchDestinations();
-  }, []);
+    if (isModalOpen) {
+      console.log("🟢 Live Form Data Update:", formData);
+    }
+  }, [formData, isModalOpen]);
 
   const filteredDestinations = destinations.filter(dest => {
     const matchesSearch = dest.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -590,17 +594,15 @@ const DestinationMaster = () => {
     if (file) {
       setFormData(prev => ({ ...prev, imagePath: file.name }));
       setImagePreview(URL.createObjectURL(file));
-      // Optional: Aap image ko yahan 'destinationService.uploadImage(file)' ke zariye backend par bhej sakte hain
     }
   };
 
   const openModal = () => {
     setFormData({
-      country: '', name: '', type: '', imagePath: '', bookingPeriod: '',
+      country: '', name: '', type: '', imagePath: '',
       inclusions: '', exclusions: '', paymentPolicies: '', cancellationPolicies: '', bookingTerms: ''
     });
     setImagePreview(null);
-    if(fileInputRef.current) fileInputRef.current.value = "";
     setResetKey(Date.now()); 
     setIsModalOpen(true);
   };
@@ -610,12 +612,14 @@ const DestinationMaster = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // 👉 NAYA: Submit button click hote hi final data console me dikhega!
+    console.log("🚀 FINAL SUBMISSION DATA GOING TO BACKEND:", formData);
+
     try {
-      // API call to save data
+      // ✅ API call to save data mapping to DestinationService
       // const response = await destinationService.createDestination(formData);
       // alert("Destination Saved Successfully!");
       
-      // Temporary logic to update local state (Remove this once API is live)
       const newDest = {
         id: Math.floor(1000 + Math.random() * 9000).toString(),
         name: formData.name,
@@ -630,7 +634,7 @@ const DestinationMaster = () => {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error saving destination:", error);
-      alert("Failed to save destination. Check console for details.");
+      alert("Failed to save destination.");
     } finally {
       setIsLoading(false);
     }
@@ -742,7 +746,7 @@ const DestinationMaster = () => {
                   <p className="text-slate-500 text-sm font-medium mt-0.5">Fill in the details to catalog a new destination.</p>
                 </div>
               </div>
-              <button onClick={() => !isLoading && setIsModalOpen(false)} className="text-slate-400 hover:bg-slate-100 hover:text-slate-600 p-2.5 rounded-full transition-colors active:scale-95">
+              <button type="button" onClick={() => !isLoading && setIsModalOpen(false)} className="text-slate-400 hover:bg-slate-100 hover:text-slate-600 p-2.5 rounded-full transition-colors active:scale-95">
                 <X size={20} strokeWidth={2.5} />
               </button>
             </div>
@@ -780,14 +784,21 @@ const DestinationMaster = () => {
                   <div className="group">
                     <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Destination Cover</label>
                     <div className="flex rounded-xl overflow-hidden border border-slate-200 bg-slate-50 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all shadow-sm group-hover:bg-slate-100/50 relative">
-                      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                       <div className="px-4 py-2 flex items-center justify-center border-r border-slate-200 bg-white">
                         {imagePreview ? <img src={imagePreview} alt="Preview" className="w-8 h-8 rounded object-cover shadow-sm" /> : <ImageIcon size={20} className="text-slate-400" />}
                       </div>
+                      
                       <input type="text" readOnly value={formData.imagePath} placeholder="No file chosen" className="px-4 py-3 flex-1 bg-transparent text-sm font-medium text-slate-700 focus:outline-none cursor-default truncate" />
-                      <button type="button" onClick={() => fileInputRef.current.click()} className="bg-white border-l border-slate-200 px-6 py-3 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700 font-bold transition-colors flex items-center gap-2 active:scale-95">
-                        {imagePreview ? <CheckCircle2 size={16} className="text-emerald-500"/> : <UploadCloud size={16} strokeWidth={2.5}/>} {imagePreview ? "Change" : "Browse"}
-                      </button>
+                      
+                      <label className="bg-white border-l border-slate-200 px-6 py-3 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700 font-bold transition-colors flex items-center gap-2 active:scale-95 cursor-pointer m-0">
+                        <input type="file" onChange={handleFileChange} accept="image/*" className="hidden" />
+                        {imagePreview ? <CheckCircle2 size={16} className="text-emerald-500"/> : <UploadCloud size={16} strokeWidth={2.5}/>} 
+                        {imagePreview ? "Change" : "Browse"}
+                      </label>
+                    </div>
+                    <div className="mt-3 space-y-2 pl-1">
+                      <p className="text-xs text-slate-500 font-medium">Resolution: 800x600px • Max: 2MB • Format: JPG, PNG</p>
+                      <p className="text-xs text-rose-500 font-semibold flex items-center gap-1.5"><AlertTriangle size={14} />Upload only royalty-free or owned assets.</p>
                     </div>
                   </div>
 
