@@ -69,7 +69,8 @@ import City from "./masters/cities/City"
 import Destinations from "./masters/Destinations"
 import Allbookings from "./bookings/Allbookings";
 import AllCustomers from "./customers/AllCustomers";
-
+import Hotel from "./masters/Hotel"
+import Airline from "./masters/Airline"
 
 const App = () => {
   // ✅ FIX: Check localStorage right away so the app remembers the user on refresh.
@@ -115,6 +116,8 @@ const App = () => {
            <Route path="AllCustomers" element={<AllCustomers/>}/>
           <Route path="masters/city" element={<City />} />
           <Route path="masters/destinations" element={<Destinations />} />
+          <Route path="masters/hotels" element={<Hotel/>}/>
+          <Route path="masters/airlines" element={<Airline/>}/>
         </Route>
  
       </Routes>
