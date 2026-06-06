@@ -205,7 +205,7 @@ export default function CreateLead() {
                 <p className="text-sm text-slate-500 mt-0.5">Manage customer travel enquiries efficiently</p>
               </div>
             </div>
-            <button
+            <button onClick={() => (window.location.href = "/allleads")}
               type="button"
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300
                 text-sm font-semibold text-slate-600 hover:text-blue-600 bg-white hover:bg-blue-50 transition-all shadow-sm"

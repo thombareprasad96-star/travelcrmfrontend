@@ -541,7 +541,7 @@ export default function Customers() {
                   text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
                 <FaDownload className="w-3.5 h-3.5"/> Export
               </button>
-              <button onClick={()=>setShowAdd(true)}
+              <button onClick={() => (window.location.href = "/Createcustomer")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
                   shadow-md shadow-blue-200 hover:shadow-lg transition-all">
                 <FaUserPlus className="w-3.5 h-3.5"/> Add Customer
