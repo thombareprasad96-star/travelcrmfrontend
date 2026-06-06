@@ -823,7 +823,7 @@ const Sidebar = ({ isExpanded }) => {
             {showSidebar && openDropdown === 'Customers' && (
               <ul className="mt-1 space-y-1 mb-2">
                 <li><Link to="/AllCustomers" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-teal-400/50" /><span>All Customers</span></Link></li>
-                <li><Link to="/add-customer" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-teal-400/50" /><span>Add New Customer</span></Link></li>
+                <li><Link to="/Createcustomer" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-teal-400/50" /><span>Add New Customer</span></Link></li>
               </ul>
             )}
           </li>
