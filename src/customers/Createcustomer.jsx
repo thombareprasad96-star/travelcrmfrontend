@@ -1,10 +1,4 @@
-// src/components/Customers/CreateCustomer.jsx
-// ─────────────────────────────────────────────────────────────
-// Create Customer Page — Travel CRM
-// Matches design system of Customers.jsx, Bookings.jsx, CreateLead.jsx
-// Font: Plus Jakarta Sans | Colors: Blue #2563eb | Tailwind CSS
-// React Hook Form | customerService integration ready
-// ─────────────────────────────────────────────────────────────
+
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
