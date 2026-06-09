@@ -860,14 +860,14 @@ const Sidebar = ({ isExpanded }) => {
             >
               <div className={`flex items-center ${showSidebar ? 'gap-3.5' : ''}`}>
                 <UserCog size={20} strokeWidth={activeTab === 'Users' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Users' ? 'text-white' : 'text-pink-400'}`} />
-                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Users</span>}
+                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Organization</span>}
               </div>
               {showSidebar && <ChevronDown size={16} className={`transition-transform duration-200 opacity-70 ${openDropdown === 'Users' ? 'rotate-180' : ''}`} />}
             </button>
             {showSidebar && openDropdown === 'Users' && (
               <ul className="mt-1 space-y-1 mb-2">
-                <li><Link to="/users" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>All Users</span></Link></li>
-                <li><Link to="/add-user" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>Add New User</span></Link></li>
+                <li><Link to="/allorganization" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>All Organization</span></Link></li>
+                <li><Link to="/add-user" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>Add New Organization</span></Link></li>
                 <li><Link to="/users/permission-templates" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>Permission Templates</span></Link></li>
               </ul>
             )}
