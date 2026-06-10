@@ -664,7 +664,9 @@ export default function Vendors() {
                   bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
                 <FiDownload className="w-3.5 h-3.5"/> Export
               </button>
-              <button onClick={() => setShowAdd(true)}
+              <button 
+              // onClick={() => setShowAdd(true)}
+              onClick={() => (window.location.href = "/CreateVendor")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
                   shadow-md shadow-blue-200 hover:shadow-lg transition-all">
                 <FiPlus className="w-4 h-4"/> Add Vendor
