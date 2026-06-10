@@ -76,7 +76,8 @@ import Cruise from "./masters/Cruise";
 import Vehiclas from "./masters/Vehiclas"
 import Sightseeing from "./masters/Sightseeing";
 import AddonService from "./masters/AddonService";
-import AllOrganization from "./user/AllOrganization"
+import AllOrganization from "./user/AllOrganization";
+import Testimonials from "./masters/Testimonials"
 const App = () => {
   // ✅ FIX: Check localStorage right away so the app remembers the user on refresh.
   // The '!!' converts a found token string to true, and a null result to false.
@@ -129,6 +130,7 @@ const App = () => {
           <Route path="masters/sightseeing" element={<Sightseeing/>}/>
           <Route path="masters/add-on-services" element={<AddonService/>}/>
           <Route path="allorganization" element={<AllOrganization/>}/>
+          <Route path="masters/testimonials"  element={<Testimonials/>}/>
         </Route>
  
       </Routes>

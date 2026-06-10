@@ -21,6 +21,8 @@ export const authService= {
   // Login API call 
   login: (email, password) => 
     API.post("auth/superadmin/login", transformLoginData(email, password)),
+      // API.post("auth/user/login", transformLoginData(email, password)),
+
 
  
 
