@@ -402,7 +402,7 @@ export default function TestimonialsPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* Top bar */}
-      <div className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-10">
+      {/* <div className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-10">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
             <Star className="w-4 h-4 text-white fill-white" />
@@ -410,7 +410,7 @@ export default function TestimonialsPage() {
           <span className="font-bold text-slate-800 text-base tracking-tight">TravelCRM</span>
           <span className="ml-auto text-xs text-slate-400 hidden sm:block">Admin Panel</span>
         </div>
-      </div>
+      </div> */}
 
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         {/* Breadcrumb */}

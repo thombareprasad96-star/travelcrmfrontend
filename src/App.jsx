@@ -80,7 +80,7 @@ import AddonService from "./masters/AddonService";
 import AllOrganization from "./user/AllOrganization";
 import Testimonials from "./masters/Testimonials"
 
-import AllOrganization from "./user/AllOrganization"
+
 import AllVendors from "./vendors/AllVendors";
 
 

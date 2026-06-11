@@ -24,11 +24,9 @@ export const authService= {
       // API.post("auth/user/login", transformLoginData(email, password)),
 
 
- 
+//  auth/superadmin/login
 
 };
-
-
 
 // import axios from "axios";
 
