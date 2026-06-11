@@ -82,6 +82,7 @@ import Testimonials from "./masters/Testimonials"
 
 
 import AllVendors from "./vendors/AllVendors";
+import CreateVendor from "./vendors/CreateVendor";
 
 
 const App = () => {
@@ -140,7 +141,7 @@ const App = () => {
           <Route path="masters/testimonials"  element={<Testimonials/>}/>
 
           <Route path="AllVendors" element={<AllVendors/>}/>
-
+          <Route path="CreateVendor" element={<CreateVendor/>}/>
         </Route>
  
       </Routes>
