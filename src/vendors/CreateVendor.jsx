@@ -18,8 +18,8 @@ import VendorNotes       from "./VendorNotes";
 import VendorSummary     from "./VendorSummary";
 
 // ── Uncomment when backend is ready ──────────────────────────
-// import { vendorService }  from "../../services";
-// import { useNavigate }    from "react-router-dom";
+import  vendorService  from "../services/vendorService";
+import { useNavigate }    from "react-router-dom";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
@@ -41,7 +41,7 @@ function Toast({ msg, type, onClose }) {
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function CreateVendor() {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -99,54 +99,63 @@ export default function CreateVendor() {
     }
     setSubmitting(true);
     try {
-      // ── BACKEND: Uncomment below when API is ready ────────────
-      // const payload = {
-      //   vendorName:        data.vendorName,
-      //   vendorType:        data.vendorType,
-      //   contactPerson:     data.contactPerson,
-      //   phone:             data.phone,
-      //   alternatePhone:    data.alternatePhone,
-      //   email:             data.email,
-      //   whatsapp:          data.whatsapp,
-      //   contractType:      data.contractType,
-      //   paymentTerms:      data.paymentTerms,
-      //   commPref:          data.commPref,
-      //   status:            data.status,
-      //   city:              data.city,
-      //   state:             data.state,
-      //   country:           data.country,
-      //   address:           data.address,
-      //   pincode:           data.pincode,
-      //   coverageAreas:     data.coverageAreas,
-      //   services:          selectedServices.map(s => s.label),
-      //   serviceDescription:data.serviceDescription,
-      //   commissionRate:    parseFloat(data.commissionRate) || 0,
-      //   currency:          data.currency,
-      //   creditPeriod:      data.creditPeriod,
-      //   creditLimit:       parseFloat(data.creditLimit) || 0,
-      //   openingBalance:    parseFloat(data.openingBalance) || 0,
-      //   bankName:          data.bankName,
-      //   accountName:       data.accountName,
-      //   accountNumber:     data.accountNumber,
-      //   ifscCode:          data.ifscCode,
-      //   upiId:             data.upiId,
-      //   gstNumber:         data.gstNumber,
-      //   panNumber:         data.panNumber,
-      //   notes:             data.notes,
-      //   specialConditions: data.specialConditions,
-      // };
-      // const res = await vendorService.create(payload);
-      // showToast(`Vendor "${res.data.vendorName}" created! Code: ${res.data.vendorCode}`);
-      // reset();
-      // setSelectedServices([]);
-      // navigate("/vendors");
-      // ─────────────────────────────────────────────────────────
+  const payload = {
+    vendorName: data.vendorName,
+    vendorType: data.vendorType,
+    contactPerson: data.contactPerson,
+    phone: data.phone,
+    alternatePhone: data.alternatePhone,
+    email: data.email,
+    whatsapp: data.whatsapp,
+    contractType: data.contractType,
+    paymentTerms: data.paymentTerms,
+    commPref: data.commPref,
+    status: data.status,
 
-      await new Promise(r => setTimeout(r, 1600));
-      showToast(`Vendor "${data.vendorName}" created successfully!`);
-      reset();
-      setSelectedServices([]);
-    } catch (err) {
+    city: data.city,
+    state: data.state,
+    country: data.country,
+    address: data.address,
+    pincode: data.pincode,
+
+    coverageAreas: data.coverageAreas,
+
+    services: selectedServices.map(s => s.label),
+
+    serviceDescription: data.serviceDescription,
+
+    commissionRate: parseFloat(data.commissionRate) || 0,
+    currency: data.currency,
+
+    creditPeriod: data.creditPeriod,
+    creditLimit: parseFloat(data.creditLimit) || 0,
+    openingBalance: parseFloat(data.openingBalance) || 0,
+
+    bankName: data.bankName,
+    accountName: data.accountName,
+    accountNumber: data.accountNumber,
+    ifscCode: data.ifscCode,
+    upiId: data.upiId,
+
+    gstNumber: data.gstNumber,
+    panNumber: data.panNumber,
+
+    notes: data.notes,
+    specialConditions: data.specialConditions,
+  };
+
+  const res = await vendorService.create(payload);
+
+  showToast(
+    `Vendor "${res.data.vendorName}" created! Code: ${res.data.vendorCode}`
+  );
+
+  reset();
+  setSelectedServices([]);
+
+  navigate("/vendors");
+}
+   catch (err) {
       showToast(err?.response?.data?.message || "Failed to create vendor.", "error");
     } finally {
       setSubmitting(false);
@@ -169,7 +178,7 @@ export default function CreateVendor() {
       )}
 
       {/* ── TOP NAV ── */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
+      {/* <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow">T</div>
@@ -183,7 +192,7 @@ export default function CreateVendor() {
             <span className="text-blue-600 font-bold">Create</span>
           </div>
         </div>
-      </nav>
+      </nav> */}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -200,8 +209,8 @@ export default function CreateVendor() {
             </div>
             <button
               type="button"
-            //   onClick={() => {/* navigate("/vendors") */}}
-            onClick={() => (window.location.href = "/AllVendors")}
+                   onClick={() => { navigate("/AllVendors") }}
+            // onClick={() => (window.location.href = "/AllVendors")}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200
                 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600
                 text-sm font-bold transition-all shadow-sm"
