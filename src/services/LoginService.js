@@ -1,32 +1,32 @@
 
 
-import axios from "axios";
+// import axios from "axios";
 
 
-const API = axios.create({
-  baseURL: "http://localhost:8080/api",
-  headers: { "Content-Type": "application/json" },
-});
+// const API = axios.create({
+//   baseURL: "http://localhost:8080/api",
+//   headers: { "Content-Type": "application/json" },
+// });
 
 
-function transformLoginData(email, password) {
-  return {
-    email: email,
-    password: password,
-  };
-}
+// function transformLoginData(email, password) {
+//   return {
+//     email: email,
+//     password: password,
+//   };
+// }
 
-// Service Object export 
-export const authService= {
-  // Login API call 
-  login: (email, password) => 
-    API.post("auth/superadmin/login", transformLoginData(email, password)),
-      // API.post("auth/user/login", transformLoginData(email, password)),
+// // Service Object export 
+// export const authService= {
+//   // Login API call 
+//   login: (email, password) => 
+//     API.post("auth/superadmin/login", transformLoginData(email, password)),
+//       // API.post("auth/user/login", transformLoginData(email, password)),
 
 
-//  auth/superadmin/login
+// //  auth/superadmin/login
 
-};
+// };
 
 // import axios from "axios";
 
@@ -57,13 +57,66 @@ export const authService= {
 //       endpoint = "/auth/admin/login"; // Change this if your Java URL is different
 //     } else if (role === 'user') {
 //       endpoint = "/auth/user/login";  // Change this if your Java URL is different
-//     } else {
-//       // Default fallback
-//       endpoint = "/auth/login"; 
-//     }
+//     } 
+//   //  else {
+//     //   // Default fallback
+//     //   endpoint = "/auth/login"; 
+//     // }
 
 //     // Now it makes a request to: http://localhost:8080/api/auth/superadmin/login
 //     return API.post(endpoint, transformLoginData(email, password));
 //   },
 
 // };
+
+
+
+
+import axios from "axios";
+
+const API = axios.create({
+  baseURL: "http://localhost:8080/api",
+  headers: { "Content-Type": "application/json" },
+});
+
+function transformLoginData(email, password) {
+  return {
+    email: email,
+    password: password,
+  };
+}
+
+export const authService = {
+  
+  // 👉 Async/Await ka use karenge taki code clean rahe
+  login: async (email, password) => {
+    const loginData = transformLoginData(email, password);
+
+    try {
+      // Step 1: Pehle SuperAdmin ki API par try karo
+      const response = await API.post("auth/superadmin/login", loginData);
+      
+      // Agar backend ne OK bola, toh frontend ke liye hum ek tag laga denge
+      response.data.role = "super_admin";
+      return response;
+
+    } catch (superAdminError) {
+      // Step 2: Agar SuperAdmin API fail hui, toh error mat do, User API par try karo
+      console.log("Not a SuperAdmin, checking User...");
+
+      try {
+        const response = await API.post("auth/user/login", loginData);
+        
+        // Agar yahan pass ho gaya, toh tag laga do ki ye user hai
+        response.data.role = "user";
+        return response;
+
+      } catch (userError) {
+        // Step 3: Agar dono jagah fail ho gaya, tab jaakar asli error do
+        console.error("Login failed for both.");
+        throw new Error("Invalid Email or Password");
+      }
+    }
+  },
+
+};

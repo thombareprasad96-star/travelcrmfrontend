@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom'; // 1. Ye naya import add karna hai
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import AppFooter from './components/AppFooter';
 
 const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
   // Default state ko ab false rakha hai taaki mobile par pehle se open na mile
@@ -33,7 +34,7 @@ const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
           
           {/* 3. YAHAN CHANGE HUA HAI: {children} ki jagah <Outlet /> laga diya */}
           <Outlet /> 
-
+<AppFooter/>
         </main>
       </div>
     </div>

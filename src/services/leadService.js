@@ -117,7 +117,6 @@
 
 
 
-
 import axios from "axios";
 
 const API = axios.create({
@@ -137,42 +136,60 @@ API.interceptors.request.use((config) => {
 });
 
 // Transform React form data → Java DTO shape
-function transformFormData(formData, services, itinerary) {
+// Added default empty arrays for services and itinerary to prevent .map() crashes
+function transformFormData(formData, services = [], itinerary = []) {
   return {
     customerName: formData.customerName,
     phone: formData.phone,
     email: formData.email,
-    leadSource: formData.leadSource,
-    leadType: formData.leadType,
+    
+    // Fallbacks to prevent "NotNull" validation errors from the backend
+    leadSource: formData.leadSource || "Direct", 
+    leadType: formData.leadType || "Hot",
     leadStage: formData.leadStage || "New Lead",
+    
     assignTo: formData.assignTo,
     birthDate: formData.birthDate || null,
     travelDate: formData.travelDate || null,
-    departCountry: formData.departCountry,
-    departCity: formData.departCity,
+    departCountry: formData.departCountry || "Not Specified",
+    departCity: formData.departCity || "Not Specified",
+    
     rooms: formData.rooms || 1,
     adults: formData.adults || 1,
     children: formData.children || 0,
     infants: formData.infants || 0,
     extraBeds: formData.extraBeds || 0,
-    services: services,
-    notes: formData.notes,
-    itinerary: itinerary.map(({ destination, city, nights }) => ({
-      destination,
-      city,
-      nights,
+    
+    services: services || [],
+    notes: formData.notes || "",
+    
+    itinerary: (itinerary || []).map(({ destination, city, nights }) => ({
+      destination: destination || "",
+      city: city || "",
+      nights: nights || 0,
     })),
   };
 }
 
+// 👉 Clean and complete service export
 export const leadService = {
+  
   createLead: (formData, services, itinerary) =>
     API.post("/leads", transformFormData(formData, services, itinerary)),
 
+  // 👉 FIXED: Backend expects "keyword", not "phone"
   searchByPhone: (phone) =>
-    API.get("/leads/search", { params: { phone } }),
+    API.get("/leads/search", { params: { keyword: phone } }),
 
-  // 👉 FIXED: Added page and size parameters for pagination
   getAllLeads: (page = 0, size = 10) =>
     API.get(`/leads?page=${page}&size=${size}`),
+
+  // 👉 UPDATE Lead
+  updateLead: (publicId, formData, services, itinerary) =>
+    API.put(`/leads/${publicId}`, transformFormData(formData, services, itinerary)),
+
+  // 👉 DELETE Lead (Added this so your UI delete button actually works!)
+  deleteLead: (publicId) =>
+    API.delete(`/leads/${publicId}`),
+    
 };
