@@ -16,8 +16,8 @@ import CustomerNotes       from "./CustomerNotes";
 import CustomerSummary     from "./CustomerSummary";
 
 // ── Uncomment when backend is ready ──────────────────────────
-// import { customerService } from "../../services";
-// import { useNavigate }     from "react-router-dom";
+import  customerService  from "../services/customerService";
+import { useNavigate }     from "react-router-dom";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
@@ -39,7 +39,7 @@ function Toast({ msg, type, onClose }) {
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function CreateCustomer() {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -77,45 +77,50 @@ export default function CreateCustomer() {
 
   /* ── Submit ── */
   const onSubmit = async (data) => {
-    setSubmitting(true);
-    try {
-      // ── BACKEND: Uncomment below when API is ready ────────────
-      // const payload = {
-      //   name:           data.name,
-      //   phone:          data.phone,
-      //   email:          data.email,
-      //   alternatePhone: data.alternatePhone,
-      //   type:           data.type,
-      //   commPref:       data.commPref,
-      //   tier:           data.tier,
-      //   status:         data.status,
-      //   city:           data.city,
-      //   state:          data.state,
-      //   address:        data.address,
-      //   pincode:        data.pincode,
-      //   birthday:       data.birthday   || null,
-      //   anniversary:    data.anniversary|| null,
-      //   passportNo:     data.passportNo,
-      //   panNo:          data.panNo,
-      //   aadharNo:       data.aadharNo,
-      //   documents:      data.documents,
-      //   notes:          data.notes,
-      // };
-      // const res = await customerService.create(payload);
-      // showToast(`Customer "${res.data.name}" created! ID: ${res.data.customerId}`);
-      // reset();
-      // navigate("/customers");
-      // ─────────────────────────────────────────────────────────
+  setSubmitting(true);
 
-      await new Promise(r => setTimeout(r, 1600));
-      showToast(`Customer "${data.name}" created successfully!`);
-      reset();
-    } catch (err) {
-      showToast(err?.response?.data?.message || "Failed to create customer.", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  try {
+    const payload = {
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      alternatePhone: data.alternatePhone,
+      type: data.type,
+      commPref: data.commPref,
+      tier: data.tier,
+      status: data.status,
+      city: data.city,
+      state: data.state,
+      address: data.address,
+      pincode: data.pincode,
+      birthday: data.birthday || null,
+      anniversary: data.anniversary || null,
+      passportNo: data.passportNo,
+      panNo: data.panNo,
+      aadharNo: data.aadharNo,
+      documents: data.documents,
+      notes: data.notes,
+    };
+
+    const res = await customerService.create(payload);
+
+    showToast(
+      `Customer "${res.data.name}" created! ID: ${res.data.customerId}`
+    );
+
+    reset();
+
+    navigate("/AllCustomers");
+
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message || "Failed to create customer.",
+      "error"
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div
@@ -133,7 +138,7 @@ export default function CreateCustomer() {
       )}
 
       {/* ── TOP NAV ── */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
+      {/* <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow">T</div>
@@ -147,7 +152,7 @@ export default function CreateCustomer() {
             <span className="text-blue-600 font-bold">Create</span>
           </div>
         </div>
-      </nav>
+      </nav> */}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">

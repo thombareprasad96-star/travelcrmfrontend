@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import  vendorService  from "../services/vendorService";
 import {
   FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye,
   FiDownload, FiPhone, FiMail, FiMapPin,
@@ -483,7 +484,7 @@ function MobileVendorCard({ v, onView, onEdit, onDelete, idx }) {
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function Vendors() {
-  const [vendors,  setVendors]  = useState(MOCK_VENDORS);
+  const [vendors, setVendors] = useState([]);
   const [search,   setSearch]   = useState("");
   const [fStatus,  setFStatus]  = useState("All Status");
   const [fType,    setFType]    = useState("All Types");
@@ -498,9 +499,15 @@ export default function Vendors() {
   const [showAdd,  setShowAdd]  = useState(false);
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
-  const nextId = useRef(MOCK_VENDORS.length + 1);
 
-  useEffect(() => { const t = setTimeout(() => setLoading(false), 850); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+  setLoading(true);
+
+  vendorService.getAll()
+    .then((res) => setVendors(res.data))
+    .catch(() => showToast("Failed to load vendors.", "error"))
+    .finally(() => setLoading(false));
+}, []);
   const showToast = (msg, type="success") => setToast({msg, type});
 
   /* stats */
@@ -558,44 +565,83 @@ export default function Vendors() {
 
   const resetFilters = () => { setSearch(""); setFStatus("All Status"); setFType("All Types"); setPage(1); };
 
-  const handleSave = form => {
-    if (!form.name?.trim() || !form.phone?.trim()) {
-      showToast("Vendor name and phone are required.", "error"); return;
-    }
-    const services = form.services ? form.services.split(",").map(s=>s.trim()).filter(Boolean) : [];
+  const handleSave = async (form) => {
+  if (!form.name?.trim() || !form.phone?.trim()) {
+    showToast("Vendor name and phone are required.", "error");
+    return;
+  }
+
+  const services = form.services
+    ? form.services.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  try {
     if (editV) {
-      setVendors(p => p.map(v => v.id===editV.id ? {...v,...form, services} : v));
+      const res = await vendorService.update(editV.id, {
+        ...form,
+        services,
+      });
+
+      setVendors((prev) =>
+        prev.map((v) => (v.id === editV.id ? res.data : v))
+      );
+
       showToast("Vendor updated successfully.");
     } else {
-      const id = nextId.current++;
-      const code = `VND${String(id).padStart(3,"0")}`;
-      setVendors(p => [...p, {
-        ...form, id, code, services,
-        rating:4.0, totalBusiness:0, totalPaid:0, outstanding:0,
-        bookings:0, verified:false, joinDate:new Date().toISOString().split("T")[0],
-      }]);
+      const res = await vendorService.create({
+        ...form,
+        services,
+      });
+
+      setVendors((prev) => [...prev, res.data]);
+
       showToast("Vendor added successfully.");
     }
-    setEdit(null); setShowAdd(false);
-  };
 
-  const handleDelete = () => {
-    setVendors(p => p.filter(v => v.id!==deleteV.id));
+    setEdit(null);
+    setShowAdd(false);
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message || "Failed to save vendor.",
+      "error"
+    );
+  }
+};
+
+  const handleDelete = async () => {
+  try {
+    await vendorService.delete(deleteV.id);
+
+    setVendors((prev) =>
+      prev.filter((v) => v.id !== deleteV.id)
+    );
+
     showToast(`${deleteV.name} deleted.`);
-    setDeleteV(null);
-  };
+  } catch {
+    showToast("Failed to delete vendor.", "error");
+  }
 
-  const handleExport = () => {
-    const rows = [
-      ["Code","Name","Type","Contact","Phone","Email","City","Status","Rating","Total Business","Paid","Outstanding","Pay Status","Bookings"],
-      ...vendors.map(v => [v.code,v.name,v.type,v.contact,v.phone,v.email,v.city,v.status,v.rating,v.totalBusiness,v.totalPaid,v.outstanding,v.payStatus,v.bookings])
-    ];
-    const csv = rows.map(r=>r.join(",")).join("\n");
+  setDeleteV(null);
+};
+
+  const handleExport = async () => {
+  try {
+    const res = await vendorService.exportCSV();
+
+    const url = URL.createObjectURL(
+      new Blob([res.data])
+    );
+
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-    a.download = "vendors.csv"; a.click();
-    showToast("Vendors exported to CSV.");
-  };
+    a.href = url;
+    a.download = "vendors.csv";
+    a.click();
+
+    showToast("Vendors exported.");
+  } catch {
+    showToast("Export failed.", "error");
+  }
+};
 
   function Sel({ val, onChange, opts }) {
     return (
@@ -631,7 +677,7 @@ export default function Vendors() {
       {deleteV  && <DeleteConfirm vendor={deleteV} onClose={() => setDeleteV(null)} onConfirm={handleDelete}/>}
 
       {/* ── NAV ── */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
+      {/* <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow">T</div>
@@ -643,7 +689,7 @@ export default function Vendors() {
             <span className="text-blue-600 font-bold">Vendors</span>
           </div>
         </div>
-      </nav>
+      </nav> */}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
