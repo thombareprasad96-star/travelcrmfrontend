@@ -116,7 +116,6 @@
 
 
 
-
 import axios from "axios";
 
 const API = axios.create({
@@ -181,7 +180,7 @@ export const leadService = {
   searchByPhone: (phone) =>
     API.get("/leads/search", { params: { keyword: phone } }),
 
-  getAllLeads: (page = 0, size = 10) =>
+  getAllLeads: (page = 0, size = 100) =>
     API.get(`/leads?page=${page}&size=${size}`),
 
   // 👉 UPDATE Lead
@@ -193,3 +192,5 @@ export const leadService = {
     API.delete(`/leads/${publicId}`),
     
 };
+
+

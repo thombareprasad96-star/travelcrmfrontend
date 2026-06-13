@@ -852,6 +852,10 @@ const Leads = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+
+
+
+  
   // States for Actions
   const [viewLead, setViewLead] = useState(null);
   const [editLead, setEditLead] = useState(null);
@@ -980,17 +984,28 @@ const Leads = () => {
   });
 
   // 👉 PAGINATION LOGIC: Slice the sorted leads for the current page
-  const totalElements = sortedLeads.length;
-  const totalPages = Math.ceil(totalElements / pageSize);
-  const currentLeads = sortedLeads.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
+  // const totalElements = sortedLeads.length;
+  // const totalPages = Math.ceil(totalElements / pageSize);
+  // const currentLeads = sortedLeads.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize);
 
-  // Reset to page 0 if filters change and current page is now empty
-  useEffect(() => {
-    if (pageIndex >= totalPages && totalPages > 0) {
-      setPageIndex(0);
-    }
-  }, [totalPages, pageIndex]);
+  // // Reset to page 0 if filters change and current page is now empty
+  // useEffect(() => {
+  //   if (pageIndex >= totalPages && totalPages > 0) {
+  //     setPageIndex(0);
+  //   }
+  // }, [totalPages, pageIndex]);
 
+
+
+  // ✅ AB — yeh 4 lines lagao
+const totalElements = sortedLeads.length;
+const totalPages = Math.max(1, Math.ceil(totalElements / pageSize));
+const safePageIndex = Math.min(pageIndex, totalPages - 1);
+const currentLeads = sortedLeads.slice(safePageIndex * pageSize, (safePageIndex + 1) * pageSize);
+
+useEffect(() => {
+  setPageIndex(0);
+}, [searchTerm, dateFilter, startDate, endDate, pageSize]);
 
   return (
     <div
@@ -1359,11 +1374,13 @@ const Leads = () => {
 
           {/* 👉 NEW: PAGINATION COMPONENT PLACED HERE */}
           <CommonPagination
+           pageIndex={safePageIndex}
             pageIndex={pageIndex}
             pageSize={pageSize}
             totalElements={totalElements}
             totalPages={totalPages}
-            goToPage={(page) => setPageIndex(page)}
+            // goToPage={(page) => setPageIndex(page)}
+              goToPage={(page) => setPageIndex(Math.max(0, Math.min(page, totalPages - 1)))}
             changePageSize={(size) => {
               setPageSize(size);
               setPageIndex(0); // Reset to first page when changing page size

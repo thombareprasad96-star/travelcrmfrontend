@@ -84,7 +84,7 @@ const Navbar = ({ toggleSidebar }) => {
       </div>
 
       {/* ── Center: Search ── */}
-      <div className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 w-64 lg:w-80
+      {/* <div className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl border transition-all duration-200 w-64 lg:w-80
         ${searchFocused
           ? "border-blue-400 bg-blue-50/50 shadow-[0_0_0_3px_rgba(59,130,246,0.12)]"
           : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}>
@@ -99,7 +99,7 @@ const Navbar = ({ toggleSidebar }) => {
         <kbd className="hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-medium text-slate-400 shadow-sm flex-shrink-0">
           ⌘K
         </kbd>
-      </div>
+      </div> */}
 
       {/* ── Right ── */}
       <div className="flex items-center gap-1 sm:gap-2">
