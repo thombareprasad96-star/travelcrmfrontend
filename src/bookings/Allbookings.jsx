@@ -407,7 +407,7 @@ export default function BookingsPage({
       {modal && <BookingModal booking={modal} onClose={() => setModal(null)} />}
 
       {/* Topbar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+      {/* <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow">T</div>
@@ -419,7 +419,7 @@ export default function BookingsPage({
             <span className="text-blue-600 font-bold">Bookings</span>
           </nav>
         </div>
-      </nav>
+      </nav> */}
 
       {/* Page header */}
       <div className="bg-white border-b border-slate-100">

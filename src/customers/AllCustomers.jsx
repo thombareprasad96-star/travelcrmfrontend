@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import  customerService  from "../services/customerService";
 import {
   FaUsers, FaUserCheck, FaCrown, FaRupeeSign, FaPlane,
   FaRedoAlt, FaWhatsapp, FaEdit, FaTrash, FaEye,
@@ -371,7 +372,7 @@ function SkeletonRow() {
 
 /* ─── MAIN COMPONENT ─────────────────────────────────────────── */
 export default function Customers() {
-  const [customers, setCustomers]   = useState(MOCK_CUSTOMERS);
+  const [customers, setCustomers] = useState([]);
   const [search, setSearch]         = useState("");
   const [filterStatus, setFStatus]  = useState("All Status");
   const [filterType, setFType]      = useState("All Types");
@@ -390,7 +391,21 @@ export default function Customers() {
 
   const nextId = useRef(MOCK_CUSTOMERS.length + 1);
 
-  useEffect(()=>{ const t=setTimeout(()=>setLoading(false),900); return()=>clearTimeout(t); },[]);
+  useEffect(() => {
+  setLoading(true);
+
+  customerService
+    .getAll()
+    .then((res) => {
+      setCustomers(res.data);
+    })
+    .catch(() => {
+      showToast("Failed to load customers.", "error");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, []);
 
   const showToast = (msg, type="success") => setToast({msg, type});
 
@@ -443,37 +458,79 @@ export default function Customers() {
 
   const resetFilters = () => { setSearch(""); setFStatus("All Status"); setFType("All Types"); setFTier("All Tiers"); setPage(1); };
 
-  const handleSave = (form) => {
-    if(!form.name?.trim()||!form.phone?.trim()){ showToast("Name and phone are required.","error"); return; }
-    if(editCustomer) {
-      setCustomers(p=>p.map(c=>c.id===editCustomer.id?{...c,...form}:c));
+  const handleSave = async (form) => {
+  if (!form.name?.trim() || !form.phone?.trim()) {
+    showToast("Name and phone are required.", "error");
+    return;
+  }
+
+  try {
+    if (editCustomer) {
+      const res = await customerService.update(
+        editCustomer.id,
+        form
+      );
+
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.id === editCustomer.id ? res.data : c
+        )
+      );
+
       showToast("Customer updated successfully.");
     } else {
-      const id = `CUS${String(nextId.current++).padStart(3,"0")}`;
-      setCustomers(p=>[...p, {...form, id, bookings:0, spent:0, lastBooking:null, avatar:initials(form.name)}]);
+      const res = await customerService.create(form);
+
+      setCustomers((prev) => [...prev, res.data]);
+
       showToast("Customer added successfully.");
     }
-    setEdit(null); setShowAdd(false);
-  };
 
-  const handleDelete = () => {
-    setCustomers(p=>p.filter(c=>c.id!==deleteTarget.id));
-    showToast(`${deleteTarget.name} has been deleted.`);
-    setDelTarget(null);
-  };
+    setEdit(null);
+    setShowAdd(false);
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message ||
+        "Failed to save customer.",
+      "error"
+    );
+  }
+};
 
-  const handleExport = () => {
-    const rows = [
-      ["ID","Name","Phone","Email","City","Type","Tier","Bookings","Total Spent","Status"],
-      ...customers.map(c=>[c.id,c.name,c.phone,c.email,c.city,c.type,c.tier,c.bookings,c.spent,c.status])
-    ];
-    const csv = rows.map(r=>r.join(",")).join("\n");
+  const handleDelete = async () => {
+  try {
+    await customerService.delete(deleteTarget.id);
+
+    setCustomers((prev) =>
+      prev.filter((c) => c.id !== deleteTarget.id)
+    );
+
+    showToast(`${deleteTarget.name} deleted.`);
+  } catch {
+    showToast("Failed to delete customer.", "error");
+  }
+
+  setDelTarget(null);
+};
+
+  const handleExport = async () => {
+  try {
+    const res = await customerService.exportCSV();
+
+    const url = URL.createObjectURL(
+      new Blob([res.data])
+    );
+
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    a.href = url;
     a.download = "customers.csv";
     a.click();
+
     showToast("Customers exported to CSV.");
-  };
+  } catch {
+    showToast("Export failed.", "error");
+  }
+};
 
   /* Selector helper */
   function Sel({ value, onChange, opts }) {
@@ -505,7 +562,7 @@ export default function Customers() {
       {deleteTarget && <DeleteConfirm customer={deleteTarget} onClose={()=>setDelTarget(null)} onConfirm={handleDelete}/>}
 
       {/* ── TOP NAV ── */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
+      {/* <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow">T</div>
@@ -517,7 +574,7 @@ export default function Customers() {
             <span className="text-blue-600 font-bold">Customers</span>
           </div>
         </div>
-      </nav>
+      </nav> */}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
