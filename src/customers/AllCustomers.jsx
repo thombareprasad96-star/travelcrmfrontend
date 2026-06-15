@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+
+import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
 import  customerService  from "../services/customerService";
 import {
   FaUsers, FaUserCheck, FaCrown, FaRupeeSign, FaPlane,
@@ -385,11 +387,10 @@ export default function Customers() {
   const [viewCustomer, setView]     = useState(null);
   const [editCustomer, setEdit]     = useState(null);
   const [deleteTarget, setDelTarget]= useState(null);
-  const [showAdd, setShowAdd]       = useState(false);
   const [loading, setLoading]       = useState(true);
   const [toast, setToast]           = useState(null);
+  const navigate = useNavigate();
 
-  const nextId = useRef(MOCK_CUSTOMERS.length + 1);
 
   useEffect(() => {
   setLoading(true);
@@ -465,33 +466,27 @@ export default function Customers() {
   }
 
   try {
-    if (editCustomer) {
-      const res = await customerService.update(
-        editCustomer.id,
-        form
-      );
+    const res = await customerService.update(
+      editCustomer.id,
+      form
+    );
 
-      setCustomers((prev) =>
-        prev.map((c) =>
-          c.id === editCustomer.id ? res.data : c
-        )
-      );
+    setCustomers((prev) =>
+      prev.map((c) =>
+        c.id === editCustomer.id
+          ? res.data
+          : c
+      )
+    );
 
-      showToast("Customer updated successfully.");
-    } else {
-      const res = await customerService.create(form);
-
-      setCustomers((prev) => [...prev, res.data]);
-
-      showToast("Customer added successfully.");
-    }
+    showToast("Customer updated successfully.");
 
     setEdit(null);
-    setShowAdd(false);
+
   } catch (err) {
     showToast(
       err?.response?.data?.message ||
-        "Failed to save customer.",
+      "Failed to update customer.",
       "error"
     );
   }
@@ -558,7 +553,13 @@ export default function Customers() {
 
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
       {viewCustomer && <ViewModal customer={viewCustomer} onClose={()=>setView(null)} onEdit={c=>{setView(null);setEdit(c);}}/>}
-      {(showAdd||editCustomer) && <CustomerFormModal customer={editCustomer||null} onClose={()=>{setShowAdd(false);setEdit(null);}} onSave={handleSave}/>}
+      {editCustomer && (
+     <CustomerFormModal
+      customer={editCustomer}
+      onClose={() => setEdit(null)}
+      onSave={handleSave}
+    />
+    )}
       {deleteTarget && <DeleteConfirm customer={deleteTarget} onClose={()=>setDelTarget(null)} onConfirm={handleDelete}/>}
 
       {/* ── TOP NAV ── */}
@@ -598,7 +599,7 @@ export default function Customers() {
                   text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
                 <FaDownload className="w-3.5 h-3.5"/> Export
               </button>
-              <button onClick={() => (window.location.href = "/Createcustomer")}
+              <button onClick={() => navigate("/Createcustomer")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
                   shadow-md shadow-blue-200 hover:shadow-lg transition-all">
                 <FaUserPlus className="w-3.5 h-3.5"/> Add Customer
@@ -697,8 +698,11 @@ export default function Customers() {
                         </p>
                         {anyFilter
                           ? <button onClick={resetFilters} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
-                          : <button onClick={()=>setShowAdd(true)} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto">
-                              <FaUserPlus/> Add First Customer
+                          : <button
+                              onClick={() => navigate("/Createcustomer")}
+                              className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto"
+                            >
+                             <FaUserPlus/> Add First Customer
                             </button>
                         }
                       </td>
@@ -814,7 +818,7 @@ export default function Customers() {
                   <div className="text-5xl mb-3">👥</div>
                   <p className="text-base font-extrabold text-slate-600 mb-1">No Customers Found</p>
                   <p className="text-sm text-slate-400 mb-4">{anyFilter?"Adjust filters to see results.":"Add your first customer."}</p>
-                  {!anyFilter && <button onClick={()=>setShowAdd(true)} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm">+ Add Customer</button>}
+                  {!anyFilter && <button onClick={() => navigate("/Createcustomer")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm"> + Add Customer </button>}
                 </div>
               )
               : pageData.map((c,idx)=>{

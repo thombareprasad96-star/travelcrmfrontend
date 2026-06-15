@@ -81,6 +81,7 @@ import AllOrganization from "./user/AllOrganization";
 import Testimonials from "./masters/Testimonials"
 import AllVendors from "./vendors/AllVendors";
 import CreateVendor from "./vendors/CreateVendor";
+import Reminders from "./reminders/Reminders";
 
 
 const App = () => {
@@ -140,6 +141,7 @@ const App = () => {
 
           <Route path="AllVendors" element={<AllVendors/>}/>
           <Route path="CreateVendor" element={<CreateVendor/>}/>
+          <Route path="Reminders" element={<Reminders/>}/>
         </Route>
  
       </Routes>

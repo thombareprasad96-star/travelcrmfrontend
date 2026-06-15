@@ -153,7 +153,7 @@ export default function CreateVendor() {
   reset();
   setSelectedServices([]);
 
-  navigate("/vendors");
+  navigate("/AllVendors");
 }
    catch (err) {
       showToast(err?.response?.data?.message || "Failed to create vendor.", "error");

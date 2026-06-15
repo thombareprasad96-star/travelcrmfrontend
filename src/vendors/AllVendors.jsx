@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import  vendorService  from "../services/vendorService";
 import {
   FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye,
@@ -22,23 +23,7 @@ import { MdVerified, MdBusiness, MdPayment } from "react-icons/md";
 import { HiSparkles } from "react-icons/hi";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
-const MOCK_VENDORS = [
-  { id:1,  code:"VND001", name:"Royal Palace Hotels",       type:"Hotel",     contact:"Rajan Mehta",     phone:"+91 98765 43210", email:"rajan@royalpalace.in",   city:"Mumbai",    state:"Maharashtra", services:["Hotel","Breakfast","Airport Transfer"], status:"Active",  rating:4.8, totalBusiness:850000, totalPaid:720000, outstanding:130000, payStatus:"Partial",  bookings:34, verified:true,  joinDate:"2024-01-15", notes:"5-star hotel partner. Premium rooms only." },
-  { id:2,  code:"VND002", name:"SkyWings Airlines",         type:"Airlines",  contact:"Priya Shah",      phone:"+91 87654 32109", email:"priya@skywings.in",      city:"Delhi",     state:"Delhi",       services:["Flights","Charter"], status:"Active",  rating:4.5, totalBusiness:1200000,totalPaid:1200000,outstanding:0,      payStatus:"Paid",     bookings:62, verified:true,  joinDate:"2023-11-20", notes:"Preferred airline partner. Group discounts available." },
-  { id:3,  code:"VND003", name:"SwiftMove Transport",       type:"Transport", contact:"Amit Sharma",     phone:"+91 76543 21098", email:"amit@swiftmove.in",      city:"Jaipur",    state:"Rajasthan",   services:["Vehicle","Transfer","Sightseeing"], status:"Active",  rating:4.2, totalBusiness:320000, totalPaid:280000, outstanding:40000,  payStatus:"Partial",  bookings:48, verified:true,  joinDate:"2024-02-10", notes:"Rajasthan coverage. AC buses and luxury cars." },
-  { id:4,  code:"VND004", name:"Nepal DMC Services",        type:"DMC",       contact:"Bikram Thapa",    phone:"+977 98012 34567",email:"bikram@nepaldmc.com",    city:"Kathmandu", state:"Nepal",       services:["Ground Handling","Visa","Guide"], status:"Active",  rating:4.9, totalBusiness:680000, totalPaid:650000, outstanding:30000,  payStatus:"Partial",  bookings:29, verified:true,  joinDate:"2023-09-05", notes:"Best Nepal DMC. Handles all ground operations." },
-  { id:5,  code:"VND005", name:"Maldives Island Resorts",   type:"Hotel",     contact:"Ahamed Ali",      phone:"+960 300 1234",   email:"ahamed@maldivesresorts.com",city:"Malé",   state:"Maldives",    services:["Resort","Water Villa","Snorkelling"], status:"Active",  rating:4.9, totalBusiness:2100000,totalPaid:2100000,outstanding:0,      payStatus:"Paid",     bookings:18, verified:true,  joinDate:"2024-03-01", notes:"Luxury water villa partner. High-value bookings." },
-  { id:6,  code:"VND006", name:"Rajasthan Roadways",        type:"Transport", contact:"Suresh Chand",    phone:"+91 65432 10987", email:"suresh@rajroadways.in",  city:"Jodhpur",   state:"Rajasthan",   services:["Bus","Coach","Tempo"], status:"Inactive",rating:3.8, totalBusiness:145000, totalPaid:145000, outstanding:0,      payStatus:"Paid",     bookings:15, verified:false, joinDate:"2024-05-20", notes:"Budget transport. Seasonal operations only." },
-  { id:7,  code:"VND007", name:"Dubai Luxury Stays",        type:"Hotel",     contact:"Khalid Hassan",   phone:"+971 50 123 4567",email:"khalid@dubailuxury.ae",  city:"Dubai",     state:"UAE",         services:["Hotel","Desert Safari","City Tour"], status:"Active",  rating:4.6, totalBusiness:950000, totalPaid:820000, outstanding:130000, payStatus:"Partial",  bookings:25, verified:true,  joinDate:"2024-01-08", notes:"Dubai 4-5 star hotels. Desert safari packages included." },
-  { id:8,  code:"VND008", name:"Thailand Tour Experts",     type:"DMC",       contact:"Nattaporn Siri",  phone:"+66 89 123 4567", email:"nattaporn@thaitour.com", city:"Bangkok",   state:"Thailand",    services:["Ground","Hotels","Excursions","Visa"], status:"Active",  rating:4.4, totalBusiness:560000, totalPaid:560000, outstanding:0,      payStatus:"Paid",     bookings:31, verified:true,  joinDate:"2023-12-15", notes:"Bangkok + Phuket + Chiang Mai coverage." },
-  { id:9,  code:"VND009", name:"Air India Express",         type:"Airlines",  contact:"Meenakshi Rao",   phone:"+91 44332 21100", email:"meenakshi@airindia.in",  city:"Chennai",   state:"Tamil Nadu",  services:["Domestic Flights","Connecting Flights"], status:"Active",  rating:3.9, totalBusiness:430000, totalPaid:410000, outstanding:20000,  payStatus:"Partial",  bookings:40, verified:true,  joinDate:"2024-04-12", notes:"Best for South India routes. Group fares negotiated." },
-  { id:10, code:"VND010", name:"Kashmir Wonders DMC",       type:"DMC",       contact:"Faisal Khan",     phone:"+91 99889 77665", email:"faisal@kashmirdmc.in",   city:"Srinagar",  state:"J&K",         services:["Ground","Houseboat","Guide","Shikara"], status:"Active",  rating:4.7, totalBusiness:390000, totalPaid:350000, outstanding:40000,  payStatus:"Partial",  bookings:22, verified:true,  joinDate:"2024-02-28", notes:"Kashmir specialist. Houseboat bookings available." },
-  { id:11, code:"VND011", name:"GoRapid Cabs India",        type:"Transport", contact:"Deepak Yadav",    phone:"+91 88776 65544", email:"deepak@gorapid.in",      city:"Pune",      state:"Maharashtra", services:["Cab","Airport Transfer","Outstation"], status:"Active",  rating:4.1, totalBusiness:185000, totalPaid:185000, outstanding:0,      payStatus:"Paid",     bookings:67, verified:false, joinDate:"2024-06-01", notes:"Pan-India cab network. Competitive pricing." },
-  { id:12, code:"VND012", name:"Singapore Attractions Co.", type:"DMC",       contact:"Wei Lim",         phone:"+65 8123 4567",   email:"weilim@sgexperience.sg", city:"Singapore", state:"Singapore",   services:["Tours","Cruise","Cable Car","Sentosa"], status:"Active",  rating:4.5, totalBusiness:620000, totalPaid:600000, outstanding:20000,  payStatus:"Partial",  bookings:19, verified:true,  joinDate:"2024-03-18", notes:"Universal Studios, Sentosa, Gardens by the Bay." },
-  { id:13, code:"VND013", name:"Bali Paradise Resorts",     type:"Hotel",     contact:"Made Wirawan",    phone:"+62 812 3456 789",email:"made@baliparadise.id",   city:"Ubud",      state:"Bali",        services:["Villa","Spa","Cooking Class"], status:"Active",  rating:4.8, totalBusiness:780000, totalPaid:750000, outstanding:30000,  payStatus:"Partial",  bookings:21, verified:true,  joinDate:"2023-10-10", notes:"Private villas. Honeymoon & luxury packages." },
-  { id:14, code:"VND014", name:"EuroTours & Transfers",     type:"DMC",       contact:"Hans Mueller",    phone:"+49 30 1234 5678",email:"hans@eurotours.de",      city:"Frankfurt", state:"Germany",     services:["Multi-city","Rail Pass","Hotels","Guide"], status:"Inactive",rating:4.2, totalBusiness:1050000,totalPaid:1050000,outstanding:0,      payStatus:"Paid",     bookings:12, verified:true,  joinDate:"2024-01-30", notes:"Europe multi-city specialists. Schengen visa support." },
-  { id:15, code:"VND015", name:"Kerala Ayur Resorts",       type:"Hotel",     contact:"Rajan Nair",      phone:"+91 99877 65432", email:"rajan@keralaayur.in",    city:"Thekkady",  state:"Kerala",      services:["Ayurveda","Backwaters","Homestay"], status:"Active",  rating:4.6, totalBusiness:295000, totalPaid:275000, outstanding:20000,  payStatus:"Partial",  bookings:27, verified:true,  joinDate:"2024-04-05", notes:"Ayurveda retreat. Alleppey backwaters packages." },
-];
+
 
 const VENDOR_TYPES  = ["Hotel","Airlines","Transport","DMC"];
 const STATUSES      = ["Active","Inactive"];
@@ -496,17 +481,47 @@ export default function Vendors() {
   const [viewV,    setView]     = useState(null);
   const [editV,    setEdit]     = useState(null);
   const [deleteV,  setDeleteV]  = useState(null);
-  const [showAdd,  setShowAdd]  = useState(false);
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
   setLoading(true);
 
   vendorService.getAll()
-    .then((res) => setVendors(res.data))
+    .then((res) => {
+
+      const formatted = res.data.map((v) => ({
+        ...v,
+
+        name: v.name || v.companyName || "",
+
+        contact: v.contact || v.contactPerson || "",
+
+        phone: v.phone || v.mobile || "",
+
+        state: v.state || v.country || "",
+
+        services: Array.isArray(v.services)
+          ? v.services
+          : [],
+
+        rating: v.rating || 0,
+
+        totalBusiness: v.totalBusiness || 0,
+
+        totalPaid: v.totalPaid || 0,
+
+        outstanding: v.outstanding || 0,
+
+        bookings: v.bookings || 0,
+      }));
+
+      setVendors(formatted);
+    })
     .catch(() => showToast("Failed to load vendors.", "error"))
     .finally(() => setLoading(false));
+
 }, []);
   const showToast = (msg, type="success") => setToast({msg, type});
 
@@ -599,7 +614,6 @@ export default function Vendors() {
     }
 
     setEdit(null);
-    setShowAdd(false);
   } catch (err) {
     showToast(
       err?.response?.data?.message || "Failed to save vendor.",
@@ -673,7 +687,7 @@ export default function Vendors() {
 
       {toast    && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
       {viewV    && <ViewModal vendor={viewV} onClose={() => setView(null)} onEdit={v=>{setView(null);setEdit(v);}}/>}
-      {(showAdd||editV) && <VendorFormModal vendor={editV||null} onClose={()=>{setShowAdd(false);setEdit(null);}} onSave={handleSave}/>}
+      {editV && ( <VendorFormModal vendor={editV} onClose={() => setEdit(null)}  onSave={handleSave} />)}
       {deleteV  && <DeleteConfirm vendor={deleteV} onClose={() => setDeleteV(null)} onConfirm={handleDelete}/>}
 
       {/* ── NAV ── */}
@@ -712,7 +726,7 @@ export default function Vendors() {
               </button>
               <button 
               // onClick={() => setShowAdd(true)}
-              onClick={() => (window.location.href = "/CreateVendor")}
+              onClick={() => navigate("/CreateVendor")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
                   shadow-md shadow-blue-200 hover:shadow-lg transition-all">
                 <FiPlus className="w-4 h-4"/> Add Vendor
@@ -838,7 +852,7 @@ export default function Vendors() {
                       <p className="text-sm text-slate-400 mb-5">{anyFilter?"Adjust your filters to see results.":"Start by adding your first vendor."}</p>
                       {anyFilter
                         ? <button onClick={resetFilters} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
-                        : <button onClick={()=>setShowAdd(true)} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition-all">+ Add First Vendor</button>
+                        : <button onClick={() => navigate("/CreateVendor")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition-all"> + Add First Vendor </button>
                       }
                     </td></tr>
                   )
@@ -927,7 +941,7 @@ export default function Vendors() {
                               className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center text-sm transition-all">
                               <FiEye/>
                             </button>
-                            <button onClick={()=>setEdit(v)} title="Edit"
+                            <button onClick={() => navigate(`/CreateVendor/${v.id}`)} title="Edit"
                               className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm transition-all">
                               <FiEdit2/>
                             </button>
