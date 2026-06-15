@@ -1,23 +1,26 @@
 // src/components/Reminders/Reminders.jsx
 // ─────────────────────────────────────────────────────────────
 // My Reminders Page — Travel CRM
-// Matches: Customers.jsx / Bookings.jsx / Vendors.jsx
-// Font: Plus Jakarta Sans | Tailwind CSS | React Icons
+// Changes:
+//   1. "Add Reminder" button navigates to /CreateReminder page (no popup)
+//   2. "View Lead" button added to every active reminder card
 // ─────────────────────────────────────────────────────────────
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiBell, FiPlus, FiCheck, FiX, FiClock, FiAlertCircle,
   FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown,
   FiCalendar, FiUser, FiPhone, FiEye, FiRefreshCw,
-  FiFilter, FiAlertTriangle, FiLoader,
+  FiFilter, FiAlertTriangle, FiLoader, FiMail, FiMapPin,
+  FiTag, FiLayers, FiUserCheck, FiDollarSign, FiExternalLink,
 } from "react-icons/fi";
 import {
   FaWhatsapp, FaBell, FaClock, FaExclamationTriangle,
   FaCheckCircle, FaRegBell, FaBellSlash, FaStickyNote,
-  FaPhoneAlt, FaUserTie,
+  FaPhoneAlt, FaUserTie, FaCrown, FaPlane, FaHotel,
 } from "react-icons/fa";
-import { MdSnooze, MdOutlineAddTask, MdOutlineAccessTime } from "react-icons/md";
+import { MdSnooze, MdOutlineAddTask, MdOutlineAccessTime, MdVerified } from "react-icons/md";
 import { HiSparkles } from "react-icons/hi";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
@@ -43,6 +46,115 @@ const MOCK_REMINDERS = [
   { id:16, title:"Payment Confirm: Rohit Khanna",    description:"Confirm Japan trip balance received",          type:"Payment",       priority:"High",   status:"Completed", leadName:"Rohit Khanna",     phone:"+91 10987 65432", dueDate:daysAgo(4),    snoozedUntil:null,  notes:"Full payment received ₹2.9L", createdAt:daysAgo(6) },
   { id:17, title:"Itinerary Send: Karan Malhotra",   description:"Send final Singapore itinerary",               type:"Quotation",     priority:"Medium", status:"Completed", leadName:"Karan Malhotra",   phone:"+91 90909 80808", dueDate:daysAgo(3),    snoozedUntil:null,  notes:"PDF sent via WhatsApp", createdAt:daysAgo(5) },
 ];
+
+/* ─── MOCK LEAD DETAILS ─────────────────────────────────────── */
+const MOCK_LEAD_DETAILS = {
+  "Pratik": {
+    leadId:"LD1042", name:"Pratik", phone:"+91 88888 88888", email:"pratik.w@gmail.com",
+    source:"Website", type:"Fresh Lead", stage:"New Lead", assignTo:"Rajesh Kumar",
+    destination:"Goa · India", travelDate:daysAhead(20), travellers:"2 Adults",
+    services:["Hotel","Flight"], budget:65000, createdAt:daysAgo(12),
+    notes:"Interested in 4-star beach resort. Prefers North Goa.",
+  },
+  "Priyanshu Agrawal": {
+    leadId:"LD1039", name:"Priyanshu Agrawal", phone:"+91 83029 32798", email:"priyanshu.a@outlook.com",
+    source:"Google Ads", type:"Fresh Lead", stage:"New Lead", assignTo:"Priya Sharma",
+    destination:"Manali · India", travelDate:daysAhead(15), travellers:"4 Adults, 1 Child",
+    services:["Hotel","Vehicle Rental","Sightseeing"], budget:85000, createdAt:daysAgo(9),
+    notes:"Family trip. Needs snow activities included.",
+  },
+  "Anushka Narkhede": {
+    leadId:"LD1051", name:"Anushka Narkhede", phone:"+91 97309 32432", email:"anushka.n@gmail.com",
+    source:"Instagram", type:"Fresh Lead", stage:"New Lead", assignTo:"Amit Patel",
+    destination:"Kerala · India", travelDate:daysAhead(30), travellers:"2 Adults",
+    services:["Hotel","Sightseeing"], budget:55000, createdAt:daysAgo(6),
+    notes:"Honeymoon trip. Wants houseboat stay in Alleppey.",
+  },
+  "Anushka": {
+    leadId:"LD1052", name:"Anushka", phone:"+91 87654 32100", email:"anushka.r@yahoo.com",
+    source:"Referral", type:"Fresh Lead", stage:"New Lead", assignTo:"Sunita Verma",
+    destination:"Rajasthan · India", travelDate:daysAhead(25), travellers:"3 Adults",
+    services:["Hotel","Vehicle Rental"], budget:48000, createdAt:daysAgo(6),
+    notes:"Heritage hotel preference. Jaipur-Udaipur circuit.",
+  },
+  "Sachin": {
+    leadId:"LD1058", name:"Sachin", phone:"+91 76543 21000", email:"sachin.k@gmail.com",
+    source:"WhatsApp", type:"Fresh Lead", stage:"New Lead", assignTo:"Rajesh Kumar",
+    destination:"Thailand", travelDate:daysAhead(40), travellers:"2 Adults",
+    services:["Flight","Hotel","Visa"], budget:120000, createdAt:daysAgo(4),
+    notes:"First international trip. Needs visa guidance.",
+  },
+  "Arjun Sharma": {
+    leadId:"LD0987", name:"Arjun Sharma", phone:"+91 98765 43210", email:"arjun.sharma@gmail.com",
+    source:"Referral", type:"Repeat Customer", stage:"Follow Up", assignTo:"Priya Sharma",
+    destination:"Maldives", travelDate:daysAhead(45), travellers:"2 Adults",
+    services:["Hotel","Flight","Insurance"], budget:120000, createdAt:daysAgo(15),
+    notes:"VIP customer. Previously booked Europe trip ₹2.1L. Anniversary trip every Dec.",
+  },
+  "Vikram Singh": {
+    leadId:"LD0954", name:"Vikram Singh", phone:"+91 54321 09876", email:"vikramsingh@hotmail.com",
+    source:"Direct Call", type:"VIP", stage:"Proposal Sent", assignTo:"Rajesh Kumar",
+    destination:"Dubai (UAE)", travelDate:daysAhead(60), travellers:"5 Adults",
+    services:["Hotel","Flight","Vehicle Rental","Sightseeing"], budget:200000, createdAt:daysAgo(20),
+    notes:"VIP. Always books suites. Personal concierge needed.",
+  },
+  "Rohit Khanna": {
+    leadId:"LD0911", name:"Rohit Khanna", phone:"+91 10987 65432", email:"rohit.khanna@protonmail.com",
+    source:"Website", type:"VIP", stage:"Converted", assignTo:"Sunita Verma",
+    destination:"Japan", travelDate:daysAhead(70), travellers:"2 Adults",
+    services:["Flight","Hotel","Sightseeing","Visa"], budget:290000, createdAt:daysAgo(25),
+    notes:"High net worth. Expects 24/7 support. Passport expires soon — visa pending.",
+  },
+  "Priya Mehta": {
+    leadId:"LD0902", name:"Priya Mehta", phone:"+91 87654 32109", email:"priya.mehta@yahoo.com",
+    source:"WhatsApp", type:"Regular", stage:"Converted", assignTo:"Amit Patel",
+    destination:"Singapore Hop", travelDate:daysAhead(10), travellers:"2 Adults",
+    services:["Flight","Hotel","Visa"], budget:104500, createdAt:daysAgo(40),
+    notes:"Booking BK10003 confirmed. ₹52,250 balance payment due.",
+  },
+  "Neha Kapoor": {
+    leadId:"LD0888", name:"Neha Kapoor", phone:"+91 99887 76655", email:"nehakapoor@gmail.com",
+    source:"Social Media", type:"Regular", stage:"Converted", assignTo:"Priya Sharma",
+    destination:"Kashmir · India", travelDate:daysAhead(90), travellers:"2 Adults, 2 Children",
+    services:["Hotel","Vehicle Rental","Sightseeing"], budget:96000, createdAt:daysAgo(60),
+    notes:"Family trips with 2 kids. Child-friendly properties. Birthday today!",
+  },
+  "Sandeep Kumar": {
+    leadId:"LD0875", name:"Sandeep Kumar", phone:"+91 44332 21100", email:"sandeep.k@business.in",
+    source:"Direct Call", type:"Corporate", stage:"Proposal Sent", assignTo:"Rajesh Kumar",
+    destination:"Singapore Hop", travelDate:daysAhead(35), travellers:"12 Adults (Group)",
+    services:["Flight","Hotel","Sightseeing"], budget:455000, createdAt:daysAgo(18),
+    notes:"Export company. Group of 12 for incentive trip. International travel heavy.",
+  },
+  "Meera Reddy": {
+    leadId:"LD0860", name:"Meera Reddy", phone:"+91 80808 70707", email:"meera.r@hyd.in",
+    source:"Website", type:"Regular", stage:"Follow Up", assignTo:"Sunita Verma",
+    destination:"Kerala · India", travelDate:daysAhead(50), travellers:"2 Adults",
+    services:["Hotel","Sightseeing"], budget:65000, createdAt:daysAgo(22),
+    notes:"Slow traveler. Long-stay packages preferred. Snoozed pending availability check.",
+  },
+  "Deepak Mishra": {
+    leadId:"LD0845", name:"Deepak Mishra", phone:"+91 66554 43322", email:"deepak.m@gmail.com",
+    source:"Instagram", type:"Regular", stage:"Qualified", assignTo:"Amit Patel",
+    destination:"Bhutan Delight", travelDate:daysAhead(35), travellers:"2 Adults",
+    services:["Hotel","Flight","Visa","Sightseeing"], budget:90000, createdAt:daysAgo(10),
+    notes:"Loves adventure travel. Visa application deadline approaching.",
+  },
+  "Anjali Verma": {
+    leadId:"LD0820", name:"Anjali Verma", phone:"+91 43210 98765", email:"anjali.v@gmail.com",
+    source:"Referral", type:"Regular", stage:"Converted", assignTo:"Priya Sharma",
+    destination:"Maldives Escape", travelDate:daysAhead(180), travellers:"2 Adults",
+    services:["Hotel","Flight"], budget:145000, createdAt:daysAgo(90),
+    notes:"Solo female traveler previously. Anniversary offer sent successfully.",
+  },
+  "Karan Malhotra": {
+    leadId:"LD0801", name:"Karan Malhotra", phone:"+91 90909 80808", email:"karan.m@startup.io",
+    source:"Direct Call", type:"Corporate", stage:"Converted", assignTo:"Rajesh Kumar",
+    destination:"Singapore Hop", travelDate:daysAhead(28), travellers:"1 Adult",
+    services:["Flight","Hotel"], budget:96800, createdAt:daysAgo(45),
+    notes:"Startup founder. Itinerary PDF sent via WhatsApp successfully.",
+  },
+};
 
 const PRIORITIES  = ["High", "Medium", "Low"];
 const STATUSES    = ["Active", "Snoozed", "Completed", "Dismissed"];
@@ -71,12 +183,33 @@ const TYPE_CFG = {
 };
 
 const SNOOZE_OPTS = [
-  { label:"1 Hour",     hours:1   },
-  { label:"3 Hours",    hours:3   },
-  { label:"Tomorrow",   hours:24  },
-  { label:"2 Days",     hours:48  },
-  { label:"1 Week",     hours:168 },
+  { label:"1 Hour",   hours:1   },
+  { label:"3 Hours",  hours:3   },
+  { label:"Tomorrow", hours:24  },
+  { label:"2 Days",   hours:48  },
+  { label:"1 Week",   hours:168 },
 ];
+
+const STAGE_CFG = {
+  "New Lead":      { bg:"bg-blue-100",   text:"text-blue-700"   },
+  "Contacted":     { bg:"bg-yellow-100", text:"text-yellow-700" },
+  "Follow Up":     { bg:"bg-orange-100", text:"text-orange-700" },
+  "Qualified":     { bg:"bg-purple-100", text:"text-purple-700" },
+  "Proposal Sent": { bg:"bg-indigo-100", text:"text-indigo-700" },
+  "Converted":     { bg:"bg-green-100",  text:"text-green-700"  },
+  "Lost":          { bg:"bg-red-100",    text:"text-red-700"    },
+};
+const LEAD_TYPE_CFG = {
+  "Fresh Lead":     { bg:"bg-blue-50",   text:"text-blue-700",   border:"border-blue-200"   },
+  "Repeat Customer":{ bg:"bg-teal-50",   text:"text-teal-700",   border:"border-teal-200"   },
+  "Corporate":      { bg:"bg-indigo-50", text:"text-indigo-700", border:"border-indigo-200" },
+  "VIP":            { bg:"bg-amber-50",  text:"text-amber-700",  border:"border-amber-200"  },
+  "Regular":        { bg:"bg-green-50",  text:"text-green-700",  border:"border-green-200"  },
+};
+const SERVICE_ICON = {
+  Hotel:"🏨", Flight:"✈️", Visa:"📋", Sightseeing:"🗺️",
+  "Vehicle Rental":"🚗", Insurance:"🛡️", Cruise:"🚢", "Transfer":"🚕",
+};
 
 const AVATAR_GRADS = [
   "from-blue-500 to-blue-600","from-purple-500 to-purple-600",
@@ -122,6 +255,13 @@ function fmtDateTime(d) {
   if (!d) return "—";
   return new Date(d).toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
 }
+function fmtDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+}
+function fmtINR(n) {
+  return "₹" + Number(n || 0).toLocaleString("en-IN");
+}
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
@@ -149,16 +289,30 @@ function AnimNum({ target }) {
   return <span>{v}</span>;
 }
 
-/* ─── ADD / EDIT REMINDER MODAL ──────────────────────────────── */
+/* ─── SNOOZE DROPDOWN ────────────────────────────────────────── */
+function SnoozeMenu({ onSnooze, onClose }) {
+  return (
+    <div className="absolute top-full left-0 mt-1 z-30 bg-white rounded-xl shadow-xl border border-slate-200 py-1 min-w-[160px]"
+      style={{ animation: "fadeUp .2s ease both" }}>
+      {SNOOZE_OPTS.map(opt => (
+        <button key={opt.label} onClick={() => { onSnooze(opt.hours); onClose(); }}
+          className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-medium transition-colors flex items-center gap-2">
+          <MdSnooze className="w-4 h-4 text-blue-400" /> {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ─── EDIT REMINDER MODAL ────────────────────────────────────── */
+/* NOTE: Add Reminder no longer uses a modal — it navigates to /CreateReminder */
 function ReminderFormModal({ reminder, onClose, onSave }) {
-  const isEdit = !!reminder;
   const [form, setForm] = useState(reminder || {
     title: "", description: "", type: "First_contact", priority: "High",
     status: "Active", leadName: "", phone: "", dueDate: "", notes: "",
   });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
-  // Pre-fill dueDate as local datetime string for input
   const dueDateForInput = form.dueDate
     ? new Date(form.dueDate).toISOString().slice(0, 16)
     : "";
@@ -169,16 +323,15 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto z-10"
         style={{ animation: "popIn .25s ease both" }}>
-        <div className={`bg-gradient-to-r ${isEdit ? "from-indigo-600 to-indigo-500" : "from-blue-600 to-blue-500"} px-6 py-5 rounded-t-2xl flex items-center justify-between`}>
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5 rounded-t-2xl flex items-center justify-between">
           <div>
-            <h2 className="text-white font-extrabold text-lg">{isEdit ? "Edit Reminder" : "Add New Reminder"}</h2>
-            <p className="text-white/70 text-xs mt-0.5">{isEdit ? "Update reminder details" : "Set a new reminder or follow-up task"}</p>
+            <h2 className="text-white font-extrabold text-lg">Edit Reminder</h2>
+            <p className="text-white/70 text-xs mt-0.5">Update reminder details</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-lg transition-all">×</button>
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Title */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Reminder Title *</label>
             <input value={form.title} onChange={e => set("title", e.target.value)}
@@ -187,7 +340,6 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
                 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
           </div>
 
-          {/* Type + Priority */}
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: "type",     label: "Type",     opts: REMINDER_TYPES.map(t => ({ v: t, l: TYPE_CFG[t]?.label || t })) },
@@ -207,7 +359,6 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
             ))}
           </div>
 
-          {/* Due Date + Status */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1.5">Due Date & Time *</label>
@@ -229,7 +380,6 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
             </div>
           </div>
 
-          {/* Lead Name + Phone */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1.5">Lead / Customer Name</label>
@@ -247,7 +397,6 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Description</label>
             <input value={form.description} onChange={e => set("description", e.target.value)}
@@ -256,7 +405,6 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
                 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
           </div>
 
-          {/* Notes */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Notes</label>
             <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3}
@@ -271,9 +419,8 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
               Cancel
             </button>
             <button onClick={() => onSave(form)}
-              className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md
-                ${isEdit ? "bg-indigo-600 hover:bg-indigo-700" : "bg-blue-600 hover:bg-blue-700"}`}>
-              {isEdit ? "Save Changes" : "Add Reminder"}
+              className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md bg-indigo-600 hover:bg-indigo-700">
+              Save Changes
             </button>
           </div>
         </div>
@@ -282,22 +429,168 @@ function ReminderFormModal({ reminder, onClose, onSave }) {
   );
 }
 
-/* ─── SNOOZE DROPDOWN ────────────────────────────────────────── */
-function SnoozeMenu({ onSnooze, onClose }) {
+/* ─── VIEW LEAD MODAL ────────────────────────────────────────── */
+function ViewLeadModal({ reminder, onClose }) {
+  if (!reminder) return null;
+
+  const lead = MOCK_LEAD_DETAILS[reminder.leadName] || {
+    leadId: "—", name: reminder.leadName, phone: reminder.phone, email: "—",
+    source: "—", type: "Fresh Lead", stage: "New Lead", assignTo: "—",
+    destination: "—", travelDate: null, travellers: "—",
+    services: [], budget: 0, createdAt: reminder.createdAt,
+    notes: reminder.notes || "No additional notes available.",
+  };
+
+  const stageCfg = STAGE_CFG[lead.stage]  || STAGE_CFG["New Lead"];
+  const typeCfg  = LEAD_TYPE_CFG[lead.type] || LEAD_TYPE_CFG["Fresh Lead"];
+
   return (
-    <div className="absolute top-full left-0 mt-1 z-30 bg-white rounded-xl shadow-xl border border-slate-200 py-1 min-w-[160px]"
-      style={{ animation: "fadeUp .2s ease both" }}>
-      {SNOOZE_OPTS.map(opt => (
-        <button key={opt.label} onClick={() => { onSnooze(opt.hours); onClose(); }}
-          className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-medium transition-colors flex items-center gap-2">
-          <MdSnooze className="w-4 h-4 text-blue-400" /> {opt.label}
-        </button>
-      ))}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto z-10"
+        style={{ animation: "popIn .25s ease both" }}>
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 rounded-t-2xl">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${avatarGrad(lead.leadId?.length || 1)} flex items-center justify-center text-white font-extrabold text-lg shadow-lg flex-shrink-0`}>
+                {initials(lead.name)}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-white text-xl font-extrabold">{lead.name}</h2>
+                  {lead.type === "VIP" && <FaCrown className="w-4 h-4 text-yellow-300" />}
+                </div>
+                <p className="text-white/70 text-sm">{lead.leadId}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${stageCfg.bg} ${stageCfg.text}`}>
+                    {lead.stage}
+                  </span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${typeCfg.border} ${typeCfg.bg} ${typeCfg.text}`}>
+                    {lead.type}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-lg transition-all flex-shrink-0">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Reminder context banner */}
+          <div className="bg-blue-50 rounded-xl px-4 py-3 border border-blue-100 flex items-start gap-3">
+            <FiBell className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-extrabold text-blue-700">Related Reminder</p>
+              <p className="text-sm font-semibold text-blue-800 mt-0.5">{reminder.title}</p>
+              <p className="text-xs text-blue-500 mt-0.5">{reminder.description}</p>
+            </div>
+          </div>
+
+          {/* Contact info grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              [FiPhone,     "Phone",       lead.phone,    "bg-green-50 text-green-600"  ],
+              [FiMail,      "Email",       lead.email,    "bg-blue-50 text-blue-600"     ],
+              [FiTag,       "Source",      lead.source,   "bg-purple-50 text-purple-600" ],
+              [FiUserCheck, "Assigned To", lead.assignTo, "bg-indigo-50 text-indigo-600" ],
+            ].map(([Icon, label, val, ic]) => (
+              <div key={label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm ${ic}`}>
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-slate-400 font-medium">{label}</p>
+                  <p className="text-sm font-bold text-slate-700 truncate">{val || "—"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Travel details */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <FaPlane className="w-3 h-3 text-blue-400" /> Travel Details
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                [FiMapPin,     "Destination", lead.destination],
+                [FiCalendar,   "Travel Date", fmtDate(lead.travelDate)],
+                [FiUser,       "Travellers",  lead.travellers],
+                [FiDollarSign, "Budget",      fmtINR(lead.budget)],
+              ].map(([Icon, label, val]) => (
+                <div key={label} className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
+                  <Icon className="w-4 h-4 text-slate-400 mx-auto mb-1" />
+                  <p className="text-xs text-slate-400 font-medium">{label}</p>
+                  <p className="text-xs font-bold text-slate-700 mt-0.5 truncate">{val || "—"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Services */}
+          {lead.services?.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Services Required</p>
+              <div className="flex flex-wrap gap-2">
+                {lead.services.map(s => (
+                  <span key={s} className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                    <span>{SERVICE_ICON[s] || "📌"}</span> {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          {lead.notes && (
+            <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
+              <p className="text-xs font-extrabold text-amber-700 mb-1.5 flex items-center gap-1.5">
+                <FaStickyNote className="w-3 h-3" /> Lead Notes
+              </p>
+              <p className="text-sm text-amber-800 leading-relaxed whitespace-pre-line">{lead.notes}</p>
+            </div>
+          )}
+
+          {/* Meta */}
+          <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-100 pt-3">
+            <span>Lead created: {fmtDateTime(lead.createdAt)}</span>
+            <span>Reminder created: {fmtDateTime(reminder.createdAt)}</span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <a href={`tel:${lead.phone}`}
+              className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
+              <FaPhoneAlt className="w-3.5 h-3.5" /> Call
+            </a>
+            <a href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+              className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
+              <FaWhatsapp className="w-4 h-4" /> WhatsApp
+            </a>
+            {lead.email && lead.email !== "—" && (
+              <a href={`mailto:${lead.email}`}
+                className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
+                <FiMail className="w-3.5 h-3.5" /> Email
+              </a>
+            )}
+            <button onClick={onClose}
+              className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
+              <FiExternalLink className="w-3.5 h-3.5" /> Open Full Lead
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ─── LOG MODAL ──────────────────────────────────────────────── */
+/* ─── ADD LOG MODAL ──────────────────────────────────────────── */
 function LogModal({ reminder, onClose, onSave }) {
   const [log, setLog] = useState("");
   return (
@@ -325,19 +618,18 @@ function LogModal({ reminder, onClose, onSave }) {
 }
 
 /* ─── REMINDER CARD ──────────────────────────────────────────── */
-function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, onAddLog, idx }) {
+/* CHANGE 2: Added "View Lead" button alongside Complete/Snooze/Dismiss/AddLog */
+function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, onAddLog, onViewLead, idx }) {
   const [showSnooze, setShowSnooze] = useState(false);
   const snoozeRef = useRef(null);
   const pc = PRIORITY_CFG[r.priority] || PRIORITY_CFG.High;
   const sc = STATUS_CFG[r.status]     || STATUS_CFG.Active;
   const tc = TYPE_CFG[r.type]         || TYPE_CFG.Custom;
   const due = getDueText(r.dueDate);
-  const isCompleted  = r.status === "Completed";
-  const isDismissed  = r.status === "Dismissed";
-  const isSnoozed    = r.status === "Snoozed";
-  const isDone       = isCompleted || isDismissed;
+  const isCompleted = r.status === "Completed";
+  const isDismissed = r.status === "Dismissed";
+  const isDone      = isCompleted || isDismissed;
 
-  // close snooze on outside click
   useEffect(() => {
     const h = e => { if (snoozeRef.current && !snoozeRef.current.contains(e.target)) setShowSnooze(false); };
     document.addEventListener("mousedown", h);
@@ -349,41 +641,43 @@ function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, on
       ${isDone ? "opacity-60 border-slate-200" : due.overdue ? "border-red-200 shadow-red-50" : "border-slate-200 hover:border-blue-200 hover:shadow-md"}`}
       style={{ animation: "fadeUp .4s ease both", animationDelay: `${idx * 50}ms` }}>
 
-      {/* Top stripe for priority */}
-      <div className={`h-1 w-full ${due.overdue && !isDone ? "bg-red-500" : isSnoozed ? "bg-blue-400" : isCompleted ? "bg-green-500" : r.priority === "High" ? "bg-amber-500" : r.priority === "Medium" ? "bg-yellow-400" : "bg-slate-300"}`} />
+      {/* Priority top stripe */}
+      <div className={`h-1 w-full ${due.overdue && !isDone ? "bg-red-500" : r.status === "Snoozed" ? "bg-blue-400" : isCompleted ? "bg-green-500" : r.priority === "High" ? "bg-amber-500" : r.priority === "Medium" ? "bg-yellow-400" : "bg-slate-300"}`} />
 
-      <div className="p-4">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${sc.bg} ${sc.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-              {sc.icon} {r.status}
-            </span>
-            <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
-              {tc.icon} {tc.label}
-            </span>
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <button onClick={() => onEdit(r)}
-              className="w-7 h-7 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs transition-all">
-              <FiEdit2 className="w-3 h-3" />
-            </button>
-            <button onClick={() => onDelete(r.id)}
-              className="w-7 h-7 rounded-lg bg-slate-50 hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center text-xs transition-all">
-              <FiTrash2 className="w-3 h-3" />
-            </button>
-          </div>
+      {/* Card top row: status + type badge | edit + delete */}
+      <div className="px-4 pt-3 pb-0 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${sc.bg} ${sc.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+            {sc.icon} {r.status}
+          </span>
+          <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+            {tc.icon} {tc.label}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button onClick={() => onEdit(r)}
+            className="w-7 h-7 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-all">
+            <FiEdit2 className="w-3 h-3" />
+          </button>
+          <button onClick={() => onDelete(r.id)}
+            className="w-7 h-7 rounded-lg bg-slate-50 hover:bg-red-100 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all">
+            <FiTrash2 className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-4 pt-2 space-y-2.5">
+        {/* Title + description */}
+        <div>
+          <h3 className={`text-sm font-extrabold leading-tight mb-0.5 ${isDone ? "line-through text-slate-400" : "text-slate-800"}`}>
+            {r.title}
+          </h3>
+          <p className="text-xs text-slate-400">{r.description}</p>
         </div>
 
-        {/* Title + description */}
-        <h3 className={`text-sm font-extrabold leading-tight mb-1 ${isDone ? "line-through text-slate-400" : "text-slate-800"}`}>
-          {r.title}
-        </h3>
-        <p className="text-xs text-slate-400 mb-3">{r.description}</p>
-
-        {/* Lead info */}
-        <div className="flex items-center gap-3 mb-3">
+        {/* Lead row */}
+        <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${avatarGrad(r.id)} flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0`}>
             {initials(r.leadName)}
           </div>
@@ -393,75 +687,92 @@ function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, on
           </div>
         </div>
 
-        {/* Due date */}
-        <div className={`flex items-center gap-1.5 text-xs font-semibold mb-3 rounded-lg px-3 py-2
+        {/* Overdue / due badge */}
+        <div className={`flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-2
           ${due.overdue && !isDone ? "bg-red-50 text-red-600 border border-red-100" :
             due.soon && !isDone    ? "bg-amber-50 text-amber-600 border border-amber-100" :
             isDone                 ? "bg-slate-50 text-slate-400" :
-                                    "bg-slate-50 text-slate-500"}`}>
+                                     "bg-slate-50 text-slate-500"}`}>
           <FiClock className="w-3 h-3 flex-shrink-0" />
           {isDone ? `Was due: ${fmtDateTime(r.dueDate)}` : due.text}
         </div>
 
         {/* Notes */}
         {r.notes && (
-          <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-100 mb-3">
+          <div className="bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
             <p className="text-xs text-amber-700 font-medium leading-relaxed">{r.notes}</p>
           </div>
         )}
 
-        {/* Priority badge */}
-        <div className="flex items-center justify-between mb-3">
+        {/* Priority + datetime */}
+        <div className="flex items-center justify-between">
           <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${pc.border} ${pc.bg} ${pc.text}`}>
             {pc.icon} {r.priority} Priority
           </span>
           <span className="text-xs text-slate-400">{fmtDateTime(r.dueDate)}</span>
         </div>
 
-        {/* Action buttons */}
+        {/* ── ACTION BUTTONS (active / snoozed) ── */}
         {!isDone && (
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-            <button onClick={() => onComplete(r.id)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all shadow-sm">
-              <FiCheckCircle className="w-3 h-3" /> Complete
-            </button>
-
-            <div className="relative" ref={snoozeRef}>
-              <button onClick={() => setShowSnooze(s => !s)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-sm">
-                <MdSnooze className="w-3.5 h-3.5" /> Snooze
-                <FiChevronDown className={`w-3 h-3 transition-transform ${showSnooze ? "rotate-180" : ""}`} />
+          <div className="pt-2 border-t border-slate-100">
+            {/* Row 1: Complete | Snooze | Dismiss */}
+            <div className="flex flex-wrap gap-1.5 mb-1.5">
+              <button onClick={() => onComplete(r.id)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all shadow-sm">
+                <FiCheckCircle className="w-3 h-3" /> Complete
               </button>
-              {showSnooze && <SnoozeMenu onSnooze={h => onSnooze(r.id, h)} onClose={() => setShowSnooze(false)} />}
+
+              <div className="relative" ref={snoozeRef}>
+                <button onClick={() => setShowSnooze(s => !s)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-sm">
+                  <MdSnooze className="w-3.5 h-3.5" /> Snooze
+                  <FiChevronDown className={`w-3 h-3 transition-transform ${showSnooze ? "rotate-180" : ""}`} />
+                </button>
+                {showSnooze && <SnoozeMenu onSnooze={h => onSnooze(r.id, h)} onClose={() => setShowSnooze(false)} />}
+              </div>
+
+              <button onClick={() => onDismiss(r.id)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-500 hover:bg-slate-600 text-white text-xs font-bold transition-all shadow-sm">
+                <FiX className="w-3 h-3" /> Dismiss
+              </button>
             </div>
 
-            <button onClick={() => onDismiss(r.id)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-500 hover:bg-slate-600 text-white text-xs font-bold transition-all shadow-sm">
-              <FiX className="w-3 h-3" /> Dismiss
-            </button>
+            {/* Row 2: + Add Log | 👁 View Lead | WhatsApp call */}
+            <div className="flex flex-wrap gap-1.5">
+              <button onClick={() => onAddLog(r)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm">
+                <MdOutlineAddTask className="w-3.5 h-3.5" /> Add Log
+              </button>
 
-            <button onClick={() => onAddLog(r)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm">
-              <MdOutlineAddTask className="w-3.5 h-3.5" /> Add Log
-            </button>
+              {/* ── VIEW LEAD BUTTON (new) ── */}
+              <button onClick={() => onViewLead(r)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition-all shadow-sm">
+                <FiEye className="w-3 h-3" /> View Lead
+              </button>
 
-            <a href={`tel:${r.phone}`}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm">
-              <FaPhoneAlt className="w-3 h-3" /> Call
-            </a>
+              <a href={`tel:${r.phone}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm">
+                <FaPhoneAlt className="w-3 h-3" />
+              </a>
 
-            <a href={`https://wa.me/${r.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-xs font-bold transition-all shadow-sm">
-              <FaWhatsapp className="w-3.5 h-3.5" />
-            </a>
+              <a href={`https://wa.me/${r.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-xs font-bold transition-all shadow-sm">
+                <FaWhatsapp className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         )}
 
+        {/* Done state buttons */}
         {isDone && (
           <div className="pt-2 border-t border-slate-100 flex gap-2">
             <button onClick={() => onEdit(r)}
               className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all">
               ✏️ Edit
+            </button>
+            <button onClick={() => onViewLead(r)}
+              className="flex-1 py-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+              <FiEye className="w-3 h-3" /> View Lead
             </button>
             <button onClick={() => onDelete(r.id)}
               className="flex-1 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 text-xs font-bold transition-all">
@@ -476,17 +787,19 @@ function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, on
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function Reminders() {
+  const navigate = useNavigate();   // ← CHANGE 1: used for Add Reminder navigation
+
   const [reminders, setReminders] = useState(MOCK_REMINDERS);
   const [search,    setSearch]    = useState("");
   const [fStatus,   setFStatus]   = useState("All Status");
   const [fPriority, setFPriority] = useState("All Priorities");
   const [fType,     setFType]     = useState("All Types");
-  const [showAdd,   setShowAdd]   = useState(false);
   const [editR,     setEditR]     = useState(null);
   const [logR,      setLogR]      = useState(null);
+  const [viewLeadR, setViewLeadR] = useState(null);   // ← CHANGE 2: state for View Lead modal
   const [loading,   setLoading]   = useState(true);
   const [toast,     setToast]     = useState(null);
-  const [view,      setView]      = useState("grid"); // "grid" | "list"
+  const [view,      setView]      = useState("grid");
   const nextId = useRef(MOCK_REMINDERS.length + 1);
 
   useEffect(() => { const t = setTimeout(() => setLoading(false), 700); return () => clearTimeout(t); }, []);
@@ -513,7 +826,6 @@ export default function Reminders() {
     if (fStatus   !== "All Status")     out = out.filter(r => r.status === fStatus);
     if (fPriority !== "All Priorities") out = out.filter(r => r.priority === fPriority);
     if (fType     !== "All Types")      out = out.filter(r => r.type === fType);
-    // sort: overdue Active first, then by dueDate
     out.sort((a, b) => {
       const aOver = a.status === "Active" && new Date(a.dueDate) < new Date();
       const bOver = b.status === "Active" && new Date(b.dueDate) < new Date();
@@ -530,12 +842,10 @@ export default function Reminders() {
     setReminders(p => p.map(r => r.id === id ? { ...r, status: "Completed" } : r));
     showToast("Reminder marked as completed! ✅");
   };
-
   const handleDismiss = id => {
     setReminders(p => p.map(r => r.id === id ? { ...r, status: "Dismissed" } : r));
     showToast("Reminder dismissed.");
   };
-
   const handleSnooze = (id, hours) => {
     const until = new Date();
     until.setHours(until.getHours() + hours);
@@ -545,40 +855,30 @@ export default function Reminders() {
     const opt = SNOOZE_OPTS.find(o => o.hours === hours);
     showToast(`Snoozed for ${opt?.label || `${hours} hours`} 😴`);
   };
-
   const handleDelete = id => {
     setReminders(p => p.filter(r => r.id !== id));
     showToast("Reminder deleted.");
   };
-
   const handleSave = form => {
     if (!form.title?.trim()) { showToast("Reminder title is required.", "error"); return; }
     if (!form.dueDate)        { showToast("Due date is required.", "error"); return; }
-    if (editR) {
-      setReminders(p => p.map(r => r.id === editR.id ? { ...r, ...form } : r));
-      showToast("Reminder updated successfully.");
-    } else {
-      const id = nextId.current++;
-      setReminders(p => [...p, { ...form, id, snoozedUntil: null, createdAt: new Date().toISOString() }]);
-      showToast("Reminder added successfully! 🔔");
-    }
-    setEditR(null); setShowAdd(false);
+    setReminders(p => p.map(r => r.id === editR.id ? { ...r, ...form } : r));
+    showToast("Reminder updated successfully.");
+    setEditR(null);
   };
-
   const handleAddLog = (r, log) => {
     setReminders(p => p.map(x =>
       x.id === r.id ? { ...x, notes: x.notes ? `${x.notes}\n[LOG] ${log}` : `[LOG] ${log}` } : x
     ));
     showToast("Activity log added.");
   };
-
-  const resetFilters = () => { setSearch(""); setFStatus("All Status"); setFPriority("All Priorities"); setFType("All Types"); };
-
+  const resetFilters = () => {
+    setSearch(""); setFStatus("All Status"); setFPriority("All Priorities"); setFType("All Types");
+  };
   const markAllComplete = () => {
     setReminders(p => p.map(r =>
       r.status === "Active" && new Date(r.dueDate) < new Date()
-        ? { ...r, status: "Completed" }
-        : r
+        ? { ...r, status: "Completed" } : r
     ));
     showToast("All overdue reminders marked complete.");
   };
@@ -597,10 +897,10 @@ export default function Reminders() {
   }
 
   const STAT_CARDS = [
-    { gradient:"from-cyan-500 to-cyan-600",    icon:"🔔", label:"Total Reminders",   value:stats.total,     key:"total"     },
-    { gradient:"from-amber-500 to-orange-500", icon:"⏰", label:"Active Reminders",  value:stats.active,    key:"active"    },
-    { gradient:"from-red-500 to-red-600",      icon:"⚠️",  label:"Overdue",           value:stats.overdue,   key:"overdue"   },
-    { gradient:"from-green-500 to-emerald-600",icon:"✅", label:"Completed",          value:stats.completed, key:"completed" },
+    { gradient:"from-cyan-500 to-cyan-600",     icon:"🔔", label:"Total Reminders",  value:stats.total     },
+    { gradient:"from-amber-500 to-orange-500",  icon:"⏰", label:"Active Reminders", value:stats.active    },
+    { gradient:"from-red-500 to-red-600",       icon:"⚠️",  label:"Overdue",          value:stats.overdue   },
+    { gradient:"from-green-500 to-emerald-600", icon:"✅", label:"Completed",         value:stats.completed },
   ];
 
   return (
@@ -618,34 +918,10 @@ export default function Reminders() {
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
       `}</style>
 
-      {toast    && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-      {(showAdd || editR) && (
-        <ReminderFormModal reminder={editR || null}
-          onClose={() => { setShowAdd(false); setEditR(null); }}
-          onSave={handleSave} />
-      )}
-      {logR && (
-        <LogModal reminder={logR}
-          onClose={() => setLogR(null)}
-          onSave={log => handleAddLog(logR, log)} />
-      )}
-
-      {/* ── NAV ── */}
-      {/* <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 flex items-center justify-center text-white font-black text-sm shadow">T</div>
-            <span className="font-extrabold text-slate-800 text-sm hidden sm:block">TravelCRM</span>
-          </div>
-          <div className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-            <span className="hover:text-blue-600 cursor-pointer transition-colors">Home</span>
-            <span className="mx-1">/</span>
-            <span className="hover:text-blue-600 cursor-pointer transition-colors">Reminders</span>
-            <span className="mx-1">/</span>
-            <span className="text-blue-600 font-bold">My Reminders</span>
-          </div>
-        </div>
-      </nav> */}
+      {toast      && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {editR      && <ReminderFormModal reminder={editR} onClose={() => setEditR(null)} onSave={handleSave} />}
+      {logR       && <LogModal reminder={logR} onClose={() => setLogR(null)} onSave={log => handleAddLog(logR, log)} />}
+      {viewLeadR  && <ViewLeadModal reminder={viewLeadR} onClose={() => setViewLeadR(null)} />}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -656,7 +932,10 @@ export default function Reminders() {
                 <FiBell className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">My Reminders</h1>
+                <h1 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                  My Reminders
+                  <span className="hidden sm:inline text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">{reminders.length} total</span>
+                </h1>
                 <p className="text-sm text-slate-400 mt-0.5">Follow-ups, tasks & scheduled activities</p>
               </div>
             </div>
@@ -668,7 +947,8 @@ export default function Reminders() {
                   <FiCheckCircle className="w-3.5 h-3.5" /> Clear Overdue ({stats.overdue})
                 </button>
               )}
-              <button onClick={() => setShowAdd(true)}
+              {/* ── CHANGE 1: Navigate to /CreateReminder instead of opening modal ── */}
+              <button onClick={() => navigate("/CreateReminder")}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
                   shadow-md shadow-blue-200 hover:shadow-lg transition-all">
                 <FiPlus className="w-4 h-4" /> Add Reminder
@@ -683,7 +963,7 @@ export default function Reminders() {
         {/* ── STAT CARDS ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {STAT_CARDS.map((card, i) => (
-            <div key={card.key}
+            <div key={card.label}
               className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
                 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
               style={{ animationDelay: `${i * 60}ms` }}>
@@ -722,20 +1002,16 @@ export default function Reminders() {
         {/* ── FILTER BAR ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 shadow-sm px-5 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
-            {/* Status label */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <FiFilter className="w-4 h-4 text-slate-400" />
               <span className="text-sm font-bold text-slate-600">Status:</span>
             </div>
-            <Sel val={fStatus}   onChange={setFStatus}   opts={["All Status",   ...STATUSES]}   />
-
+            <Sel val={fStatus}   onChange={setFStatus}   opts={["All Status",    ...STATUSES]}   />
             <span className="text-sm font-bold text-slate-600 hidden sm:block">Priority:</span>
             <Sel val={fPriority} onChange={setFPriority} opts={["All Priorities",...PRIORITIES]}  />
-
             <span className="text-sm font-bold text-slate-600 hidden sm:block">Type:</span>
-            <Sel val={fType}     onChange={setFType}     opts={["All Types",    ...REMINDER_TYPES.map(t => t)]} />
+            <Sel val={fType}     onChange={setFType}     opts={["All Types",     ...REMINDER_TYPES]} />
 
-            {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}
@@ -745,7 +1021,6 @@ export default function Reminders() {
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
-              {/* Grid / List toggle */}
               <div className="flex rounded-xl border border-slate-200 overflow-hidden">
                 <button onClick={() => setView("grid")}
                   className={`px-3 py-2 text-xs font-bold transition-all ${view === "grid" ? "bg-blue-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}>
@@ -756,7 +1031,6 @@ export default function Reminders() {
                   ☰ List
                 </button>
               </div>
-
               {anyFilter && (
                 <button onClick={resetFilters} className="text-xs text-red-400 hover:text-red-600 font-bold transition-colors whitespace-nowrap">
                   ✕ Clear
@@ -769,12 +1043,12 @@ export default function Reminders() {
           <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
             <span className="text-xs text-slate-500 font-semibold self-center">Quick:</span>
             {[
-              { label: `🔴 Overdue (${stats.overdue})`,   action: () => { setFStatus("Active"); setSearch(""); } },
-              { label: `⏰ Active (${stats.active})`,     action: () => { setFStatus("Active"); } },
-              { label: `😴 Snoozed (${stats.snoozed})`,  action: () => { setFStatus("Snoozed"); } },
-              { label: `✅ Done (${stats.completed})`,    action: () => { setFStatus("Completed"); } },
-              { label: "🔥 High Priority",                action: () => { setFPriority("High"); } },
-              { label: "💰 Payments",                     action: () => { setFType("Payment"); } },
+              { label:`🔴 Overdue (${stats.overdue})`,  action:() => { setFStatus("Active"); setSearch(""); } },
+              { label:`⏰ Active (${stats.active})`,    action:() => setFStatus("Active")    },
+              { label:`😴 Snoozed (${stats.snoozed})`, action:() => setFStatus("Snoozed")   },
+              { label:`✅ Done (${stats.completed})`,   action:() => setFStatus("Completed") },
+              { label:"🔥 High Priority",               action:() => setFPriority("High")    },
+              { label:"💰 Payments",                    action:() => setFType("Payment")     },
             ].map(({ label, action }) => (
               <button key={label} onClick={action}
                 className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 hover:bg-blue-100
@@ -785,7 +1059,7 @@ export default function Reminders() {
           </div>
         </div>
 
-        {/* ── COUNT ROW ── */}
+        {/* Count + Refresh */}
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-slate-600">
             Showing <span className="text-blue-600">{filtered.length}</span> reminder{filtered.length !== 1 ? "s" : ""}
@@ -797,7 +1071,7 @@ export default function Reminders() {
           </button>
         </div>
 
-        {/* ── EMPTY STATE ── */}
+        {/* Empty state */}
         {!loading && filtered.length === 0 && (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm py-20 text-center fade-up">
             <div className="text-6xl mb-4">🔔</div>
@@ -807,14 +1081,15 @@ export default function Reminders() {
             </p>
             {anyFilter
               ? <button onClick={resetFilters} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
-              : <button onClick={() => setShowAdd(true)} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto">
+              : <button onClick={() => navigate("/CreateReminder")}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto">
                   <FiPlus /> Add First Reminder
                 </button>
             }
           </div>
         )}
 
-        {/* ── SKELETON ── */}
+        {/* Skeleton */}
         {loading && (
           <div className={`grid gap-4 ${view === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
             {[...Array(6)].map((_, i) => (
@@ -840,6 +1115,7 @@ export default function Reminders() {
                 onEdit={setEditR}
                 onDelete={handleDelete}
                 onAddLog={setLogR}
+                onViewLead={setViewLeadR}   // ← passed down
               />
             ))}
           </div>
@@ -866,15 +1142,15 @@ export default function Reminders() {
                 const isDone = r.status === "Completed" || r.status === "Dismissed";
                 return (
                   <div key={r.id}
-                    className={`px-5 py-4 transition-all duration-150 hover:bg-blue-50/40 hover:shadow-[inset_3px_0_0_#2563eb]
-                      ${isDone ? "opacity-60" : ""}`}
+                    className={`px-5 py-4 transition-all duration-150 hover:bg-blue-50/40 hover:shadow-[inset_3px_0_0_#2563eb] ${isDone ? "opacity-60" : ""}`}
                     style={{ animation: "fadeUp .35s ease both", animationDelay: `${idx * 25}ms` }}>
-                    {/* Mobile layout */}
+                    {/* Mobile: full card */}
                     <div className="md:hidden">
                       <ReminderCard r={r} idx={idx}
                         onComplete={handleComplete} onDismiss={handleDismiss}
                         onSnooze={handleSnooze} onEdit={setEditR}
-                        onDelete={handleDelete} onAddLog={setLogR} />
+                        onDelete={handleDelete} onAddLog={setLogR}
+                        onViewLead={setViewLeadR} />
                     </div>
                     {/* Desktop list row */}
                     <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center">
@@ -917,6 +1193,11 @@ export default function Reminders() {
                             </button>
                           </>
                         )}
+                        {/* View Lead in list row */}
+                        <button onClick={() => setViewLeadR(r)} title="View Lead"
+                          className="w-8 h-8 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-600 flex items-center justify-center text-sm transition-all">
+                          <FiEye />
+                        </button>
                         <button onClick={() => setEditR(r)} title="Edit"
                           className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm transition-all">
                           <FiEdit2 />
@@ -934,12 +1215,6 @@ export default function Reminders() {
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <footer className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 mt-2">
-        <p className="text-xs text-slate-400">Copyright © 2026 <span className="text-blue-600 font-bold">TravelCRM</span>. All rights reserved.</p>
-        <p className="text-xs text-slate-400 font-semibold">Version 1.0.0</p>
-      </footer>
     </div>
   );
 }

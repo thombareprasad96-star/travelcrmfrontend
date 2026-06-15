@@ -682,12 +682,6 @@ export default function BookingsPage({
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p className="text-xs text-slate-400">Copyright © 2026 <span className="text-blue-600 font-bold">TravelCRM</span>. All rights reserved.</p>
-        <p className="text-xs text-slate-400 font-semibold">Version 1.0.0</p>
-      </footer>
     </div>
   );
 }
