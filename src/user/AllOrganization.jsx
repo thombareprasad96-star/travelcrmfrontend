@@ -443,7 +443,6 @@
 
 
 
-
 import React, { useState, useEffect } from "react";
 import {
   Search, Plus, Eye, EyeOff, Edit, Trash2, Shield, X,
@@ -451,7 +450,7 @@ import {
   Globe, Phone, MapPin, Calendar, Hash, Mail, User
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { organizationService } from "../services/OrganizationService";
+import { organizationService } from "../services/OrganizationService"; // Adjust path if needed
 
 // =========================================================================
 // 🌟 TOAST SYSTEM
@@ -485,7 +484,7 @@ function ToastContainer() {
 // SEED DATA
 // =========================================================================
 const SEED_ORGS = [
-  { id: 1,  organizationName: "ABC Travels",   organizationCode: "ABC001", email: "contact@abctravels.com",  phone: "9876543210", address: "Mumbai, Maharashtra",   subscriptionStartDate: "2026-06-10", subscriptionEndDate: "2027-06-10", adminUsername: "abcadmin",  adminEmail: "admin@abctravels.com",  status: "Active"   },
+  { id: 1,  organizationName: "ABC Travels",   organizationCode: "ABC001", email: "contact@abctravels.com",  phone: "9876543210", address: "Mumbai, Maharashtra",  subscriptionStartDate: "2026-06-10", subscriptionEndDate: "2027-06-10", adminUsername: "abcadmin",  adminEmail: "admin@abctravels.com",  status: "Active"   },
   { id: 2,  organizationName: "XYZ Tours",     organizationCode: "XYZ002", email: "info@xyztours.com",       phone: "9123456780", address: "Delhi, India",          subscriptionStartDate: "2026-01-01", subscriptionEndDate: "2027-01-01", adminUsername: "xyzadmin",  adminEmail: "admin@xyztours.com",    status: "Active"   },
   { id: 3,  organizationName: "Horizon Trips", organizationCode: "HOR003", email: "hello@horizontrips.com",  phone: "9988776655", address: "Bangalore, Karnataka",  subscriptionStartDate: "2025-09-01", subscriptionEndDate: "2026-09-01", adminUsername: "horadmin",  adminEmail: "admin@horizontrips.com",status: "Inactive" },
 ];
@@ -601,7 +600,7 @@ export default function OrganizationManagement() {
     if (!formData.adminUsername.trim())     e.adminUsername     = "Admin Username is required.";
     if (!formData.adminEmail.trim() || !/^\S+@\S+\.\S+$/.test(formData.adminEmail)) e.adminEmail = "Valid admin email is required.";
 
-    // Password — new org ke liye required, edit mein optional
+    // Password validation
     if (!editingOrg || formData.adminPassword) {
       if (!editingOrg && !formData.adminPassword)         e.adminPassword = "Admin Password is required.";
       else if (formData.adminPassword && formData.adminPassword.length < 8) e.adminPassword = "Minimum 8 characters required.";
@@ -619,13 +618,17 @@ export default function OrganizationManagement() {
     setSaving(true);
     try {
       if (editingOrg) {
-        const res     = await organizationService.updateOrganization(editingOrg.id, formData);
-        const updated = res.data ?? { ...editingOrg, ...formData };
+        // 👉 MERGE FIX: This prevents null validation errors from backend
+        const completePayload = { ...editingOrg, ...formData };
+        const res     = await organizationService.updateOrganization(editingOrg.id, completePayload);
+        const updated = res.data ?? completePayload;
+        
         setOrganizations(prev => prev.map(o => o.id === editingOrg.id ? { ...o, ...updated } : o));
         toast.success("Organization updated successfully!");
       } else {
         const res     = await organizationService.registerOrganization(formData);
         const created = res.data ?? { ...formData, id: Date.now(), status: "Active" };
+        
         setOrganizations(prev => [created, ...prev]);
         toast.success("Organization registered successfully!");
       }
@@ -724,13 +727,20 @@ export default function OrganizationManagement() {
             <tbody className="divide-y divide-slate-100">
               {loadingData ? (
                 [1,2,3].map(i => (
-                  <tr key={i}>{[1,2,3,4,5,6,7,8].map(j => (
-                    <td key={j} className="px-6 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse"/></td>
-                  ))}</tr>
+                  // 👉 SKELETON KEY FIX: Unique row key
+                  <tr key={`row-${i}`}>
+                    {[1,2,3,4,5,6,7,8].map(j => (
+                      // 👉 SKELETON KEY FIX: Unique cell key
+                      <td key={`cell-${i}-${j}`} className="px-6 py-4">
+                        <div className="h-4 bg-slate-100 rounded animate-pulse"/>
+                      </td>
+                    ))}
+                  </tr>
                 ))
               ) : filtered.length > 0 ? (
-                filtered.map((org) => (
-                  <tr key={org.id} className="hover:bg-slate-50/70 transition-colors group">
+                filtered.map((org, index) => (
+                  // 👉 TABLE KEY FIX: Uses id, tenantId, or fallback index to prevent warnings
+                  <tr key={org.id || org.tenantId || `org-${index}`} className="hover:bg-slate-50/70 transition-colors group">
                     <td className="px-6 py-4 font-semibold text-slate-500">#{org.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -787,7 +797,7 @@ export default function OrganizationManagement() {
       </div>
 
       {/* ================================================================= */}
-      {/* 🏢 ADD / EDIT ORGANIZATION MODAL                                   */}
+      {/* 🏢 ADD / EDIT ORGANIZATION MODAL                                  */}
       {/* ================================================================= */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 overflow-y-auto">

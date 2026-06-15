@@ -341,3 +341,160 @@ export default function CreateLead() {
     </div>
   );
 }
+
+
+
+
+// import { useState } from "react";
+// import { useForm } from "react-hook-form";
+// import { useNavigate } from "react-router-dom";
+// import { leadService } from "../../../services/leadService";
+// import LeadInformation from "./LeadInformation";       // adjust path
+
+// // ── Yeh component sirf example hai ───────────────────────
+// // Aapke paas aur sections bhi honge (TravelInfo, Services, Itinerary etc.)
+// // Unhe bhi yahan import karo
+
+// export default function CreateLead() {
+//   const navigate = useNavigate();
+
+//   // ── React Hook Form ──────────────────────────────────────
+//   const {
+//     register,
+//     handleSubmit,
+//     watch,
+//     setValue,
+//     reset,
+//     formState: { errors, isSubmitting },
+//   } = useForm({
+//     defaultValues: {
+//       // Lead Information
+//       customerName:   "",
+//       email:          "",
+//       phone:          "",
+//       leadSource:     "",
+//       leadType:       "",
+//       leadStage:      "New Lead",
+//       assignedUserId: "",
+//       birthDate:      "",
+
+//       // Travel Info (aapke doosre sections se)
+//       travelDate:     "",
+//       departCountry:  "",
+//       departCity:     "",
+//       rooms:          1,
+//       adults:         1,
+//       children:       0,
+//       infants:        0,
+//       extraBeds:      0,
+//       notes:          "",
+//     },
+//   });
+
+//   // ── Services aur Itinerary — alag state mein (array) ────
+//   // Yeh RHF ke bahar hain kyunki yeh dynamic lists hain
+//   const [services,  setServices]  = useState([]);   // ["Hotel", "Flight"]
+//   const [itinerary, setItinerary] = useState([]);   // [{ destination, city, nights }]
+
+//   // ── Phone search ─────────────────────────────────────────
+//   const [searching, setSearching] = useState(false);
+
+//   const handlePhoneSearch = async (phone) => {
+//     setSearching(true);
+//     try {
+//       const res  = await leadService.searchByPhone(phone);
+//       const data = res.data?.data || res.data;
+//       if (data) {
+//         // Form mein found data fill karo
+//         setValue("customerName",   data.customerName   || "");
+//         setValue("email",          data.email          || "");
+//         setValue("phone",          data.phone          || phone);
+//         setValue("leadSource",     data.leadSource     || "");
+//         setValue("leadType",       data.leadType       || "");
+//         setValue("leadStage",      data.leadStage      || "New Lead");
+//         setValue("assignedUserId", data.assignedUserId || "");
+//         // services aur itinerary bhi fill karo agar mile
+//         if (Array.isArray(data.services))  setServices(data.services);
+//         if (Array.isArray(data.itinerary)) setItinerary(data.itinerary);
+//       }
+//     } catch {
+//       alert("Lead not found with this phone number.");
+//     } finally {
+//       setSearching(false);
+//     }
+//   };
+
+//   // ── FORM SUBMIT — saara data backend ko jaata hai ────────
+//   const onSubmit = async (formData) => {
+//     try {
+//       // leadService.createLead internally transformFormData call karta hai
+//       // jo form fields ko backend DTO mein convert karta hai
+//       await leadService.createLead(formData, services, itinerary);
+
+//       alert("Lead created successfully!");
+//       reset();
+//       setServices([]);
+//       setItinerary([]);
+//       navigate("/leads"); // lead list page pe redirect
+//     } catch (err) {
+//       const msg = err?.response?.data?.message || "Failed to create lead.";
+//       alert(msg);
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
+//       <div className="max-w-5xl mx-auto">
+
+//         {/* Page Header */}
+//         <div className="mb-6">
+//           <h1 className="text-2xl font-bold text-slate-900">Create New Lead</h1>
+//           <p className="text-sm text-slate-500 mt-1">Fill in all required details to create a lead.</p>
+//         </div>
+
+//         {/* Form */}
+//         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+//           {/* Lead Information Section */}
+//           <LeadInformation
+//             register={register}
+//             errors={errors}
+//             watch={watch}
+//             setValue={setValue}
+//             onPhoneSearch={handlePhoneSearch}
+//             searching={searching}
+//           />
+
+//           {/*
+//             Yahan aur sections add karo:
+//             <TravelInformation register={register} errors={errors} />
+//             <ServicesSection services={services} setServices={setServices} />
+//             <ItinerarySection itinerary={itinerary} setItinerary={setItinerary} />
+//           */}
+
+//           {/* Submit Button */}
+//           <div className="flex items-center justify-end gap-3 pt-2">
+//             <button
+//               type="button"
+//               onClick={() => navigate("/leads")}
+//               className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-100 transition"
+//             >
+//               Cancel
+//             </button>
+//             <button
+//               type="submit"
+//               disabled={isSubmitting}
+//               className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-bold
+//                 transition-all shadow-md shadow-blue-200 active:scale-95 flex items-center gap-2 min-w-[140px] justify-center"
+//             >
+//               {isSubmitting
+//                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving...</>
+//                 : "Create Lead"}
+//             </button>
+//           </div>
+
+//         </form>
+//       </div>
+//     </div>
+//   );
+// }
