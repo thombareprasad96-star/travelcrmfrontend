@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import reminderService from "../services/reminderService";
 import { useNavigate } from "react-router-dom";
 import {
   FiBell, FiPlus, FiCheck, FiX, FiClock, FiAlertCircle,
@@ -265,7 +266,15 @@ function fmtINR(n) {
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
+  useEffect(() => {
+  setLoading(true);
+
+  reminderService
+    .getAll()
+    .then((res) => setReminders(res.data))
+    .catch(() => showToast("Failed to load reminders.", "error"))
+    .finally(() => setLoading(false));
+}, []);
   return (
     <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
       ${type === "success" ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}
@@ -789,7 +798,7 @@ function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, on
 export default function Reminders() {
   const navigate = useNavigate();   // ← CHANGE 1: used for Add Reminder navigation
 
-  const [reminders, setReminders] = useState(MOCK_REMINDERS);
+  const [reminders, setReminders] = useState([]);
   const [search,    setSearch]    = useState("");
   const [fStatus,   setFStatus]   = useState("All Status");
   const [fPriority, setFPriority] = useState("All Priorities");
@@ -838,50 +847,148 @@ export default function Reminders() {
   const anyFilter = search || fStatus !== "All Status" || fPriority !== "All Priorities" || fType !== "All Types";
 
   /* handlers */
-  const handleComplete = id => {
-    setReminders(p => p.map(r => r.id === id ? { ...r, status: "Completed" } : r));
+  const handleComplete = async (id) => {
+  try {
+    const res = await reminderService.markComplete(id);
+
+    setReminders((p) =>
+      p.map((r) => (r.id === id ? res.data : r))
+    );
+
     showToast("Reminder marked as completed! ✅");
-  };
-  const handleDismiss = id => {
-    setReminders(p => p.map(r => r.id === id ? { ...r, status: "Dismissed" } : r));
+  } catch {
+    showToast("Failed to complete reminder.", "error");
+  }
+};
+
+
+  const handleDismiss = async (id) => {
+  try {
+    const res = await reminderService.dismiss(id);
+
+    setReminders((p) =>
+      p.map((r) => (r.id === id ? res.data : r))
+    );
+
     showToast("Reminder dismissed.");
-  };
-  const handleSnooze = (id, hours) => {
-    const until = new Date();
-    until.setHours(until.getHours() + hours);
-    setReminders(p => p.map(r =>
-      r.id === id ? { ...r, status: "Snoozed", snoozedUntil: until.toISOString(), dueDate: until.toISOString() } : r
-    ));
-    const opt = SNOOZE_OPTS.find(o => o.hours === hours);
-    showToast(`Snoozed for ${opt?.label || `${hours} hours`} 😴`);
-  };
-  const handleDelete = id => {
-    setReminders(p => p.filter(r => r.id !== id));
+  } catch {
+    showToast("Failed to dismiss reminder.", "error");
+  }
+};
+
+
+  const handleSnooze = async (id, hours) => {
+  const until = new Date();
+  until.setHours(until.getHours() + hours);
+
+  try {
+    const res = await reminderService.snooze(
+      id,
+      until.toISOString()
+    );
+
+    setReminders((p) =>
+      p.map((r) => (r.id === id ? res.data : r))
+    );
+
+    const opt = SNOOZE_OPTS.find((o) => o.hours === hours);
+
+    showToast(
+      `Snoozed for ${opt?.label || `${hours} hours`} 😴`
+    );
+  } catch {
+    showToast("Failed to snooze reminder.", "error");
+  }
+};
+
+
+  const handleDelete = async (id) => {
+  try {
+    await reminderService.delete(id);
+
+    setReminders((p) =>
+      p.filter((r) => r.id !== id)
+    );
+
     showToast("Reminder deleted.");
-  };
-  const handleSave = form => {
-    if (!form.title?.trim()) { showToast("Reminder title is required.", "error"); return; }
-    if (!form.dueDate)        { showToast("Due date is required.", "error"); return; }
-    setReminders(p => p.map(r => r.id === editR.id ? { ...r, ...form } : r));
+  } catch {
+    showToast("Failed to delete reminder.", "error");
+  }
+};
+
+
+  const handleSave = async (form) => {
+  if (!form.title?.trim()) {
+    showToast("Title is required.", "error");
+    return;
+  }
+
+  if (!form.dueDate) {
+    showToast("Due date is required.", "error");
+    return;
+  }
+
+  try {
+    const res = await reminderService.update(
+      editR.id,
+      form
+    );
+
+    setReminders((p) =>
+      p.map((r) =>
+        r.id === editR.id ? res.data : r
+      )
+    );
+
     showToast("Reminder updated successfully.");
     setEditR(null);
-  };
-  const handleAddLog = (r, log) => {
-    setReminders(p => p.map(x =>
-      x.id === r.id ? { ...x, notes: x.notes ? `${x.notes}\n[LOG] ${log}` : `[LOG] ${log}` } : x
-    ));
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message ||
+      "Failed to update.",
+      "error"
+    );
+  }
+};
+
+
+  const handleAddLog = async (r, log) => {
+  try {
+    const res = await reminderService.addLog(
+      r.id,
+      log
+    );
+
+    setReminders((p) =>
+      p.map((x) =>
+        x.id === r.id ? res.data : x
+      )
+    );
+
     showToast("Activity log added.");
-  };
-  const resetFilters = () => {
-    setSearch(""); setFStatus("All Status"); setFPriority("All Priorities"); setFType("All Types");
-  };
-  const markAllComplete = () => {
-    setReminders(p => p.map(r =>
-      r.status === "Active" && new Date(r.dueDate) < new Date()
-        ? { ...r, status: "Completed" } : r
-    ));
+  } catch {
+    showToast("Failed to add log.", "error");
+  }
+};
+
+
+const markAllComplete = async () => {
+  try {
+    await reminderService.completeAllOverdue();
+
+    const res = await reminderService.getAll();
+
+    setReminders(res.data);
+
     showToast("All overdue reminders marked complete.");
-  };
+  } catch {
+    showToast(
+      "Failed to complete overdue reminders.",
+      "error"
+    );
+  }
+};
+
 
   function Sel({ val, onChange, opts }) {
     return (

@@ -84,6 +84,8 @@ import CreateVendor from "./vendors/CreateVendor";
 import Reminders from "./reminders/Reminders";
 import Quotation from "./quotation/quotation";
 import CreateQuotation from "./quotation/Createquotation"
+import CreateReminder from "./reminders/CreateReminder";
+
 
 const App = () => {
   // ✅ FIX: Check localStorage right away so the app remembers the user on refresh.
@@ -145,6 +147,7 @@ const App = () => {
           <Route path="Reminders" element={<Reminders/>}/>
           <Route path="quotation" element={<Quotation/>}/>
           <Route path="createquotation"  element={<CreateQuotation/>}/>
+          <Route path="CreateReminder" element={<CreateReminder/>}/>
         </Route>
  
       </Routes>
