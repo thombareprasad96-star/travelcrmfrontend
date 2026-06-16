@@ -442,7 +442,6 @@
 
 
 
-
 import React, { useState, useEffect } from "react";
 import {
   Search, Plus, Eye, EyeOff, Edit, Trash2, Shield, X,
@@ -618,12 +617,14 @@ export default function OrganizationManagement() {
     setSaving(true);
     try {
       if (editingOrg) {
-        // 👉 MERGE FIX: This prevents null validation errors from backend
+        // 👉 FIX: Uses tenantId safely for updates so it doesn't send "undefined"
         const completePayload = { ...editingOrg, ...formData };
-        const res     = await organizationService.updateOrganization(editingOrg.id, completePayload);
+        const targetId = editingOrg.tenantId || editingOrg.id; 
+        
+        const res     = await organizationService.updateOrganization(targetId, completePayload);
         const updated = res.data ?? completePayload;
         
-        setOrganizations(prev => prev.map(o => o.id === editingOrg.id ? { ...o, ...updated } : o));
+        setOrganizations(prev => prev.map(o => (o.tenantId || o.id) === targetId ? { ...o, ...updated } : o));
         toast.success("Organization updated successfully!");
       } else {
         const res     = await organizationService.registerOrganization(formData);
@@ -645,7 +646,9 @@ export default function OrganizationManagement() {
     if (!window.confirm("Delete this organization?")) return;
     try {
       await organizationService.deleteOrganization(id);
-      setOrganizations(prev => prev.filter(o => o.id !== id));
+      
+      // 👉 FIX: Filter using tenantId as well
+      setOrganizations(prev => prev.filter(o => (o.tenantId || o.id) !== id));
       toast.success("Organization deleted!");
     } catch {
       toast.error("Failed to delete organization.");
@@ -727,10 +730,8 @@ export default function OrganizationManagement() {
             <tbody className="divide-y divide-slate-100">
               {loadingData ? (
                 [1,2,3].map(i => (
-                  // 👉 SKELETON KEY FIX: Unique row key
                   <tr key={`row-${i}`}>
                     {[1,2,3,4,5,6,7,8].map(j => (
-                      // 👉 SKELETON KEY FIX: Unique cell key
                       <td key={`cell-${i}-${j}`} className="px-6 py-4">
                         <div className="h-4 bg-slate-100 rounded animate-pulse"/>
                       </td>
@@ -739,9 +740,9 @@ export default function OrganizationManagement() {
                 ))
               ) : filtered.length > 0 ? (
                 filtered.map((org, index) => (
-                  // 👉 TABLE KEY FIX: Uses id, tenantId, or fallback index to prevent warnings
-                  <tr key={org.id || org.tenantId || `org-${index}`} className="hover:bg-slate-50/70 transition-colors group">
-                    <td className="px-6 py-4 font-semibold text-slate-500">#{org.id}</td>
+                  <tr key={org.tenantId || org.id || `org-${index}`} className="hover:bg-slate-50/70 transition-colors group">
+                    {/* Fix display ID to prefer tenantId if available */}
+                    <td className="px-6 py-4 font-semibold text-slate-500">#{org.tenantId || org.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-900">{org.organizationName}</span>
@@ -777,7 +778,9 @@ export default function OrganizationManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openModal(org)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors" title="Edit"><Edit size={15}/></button>
-                        <button onClick={() => handleDelete(org.id)} className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg transition-colors" title="Delete"><Trash2 size={15}/></button>
+                        
+                        {/* 👉 FIX: Delete ab sahi ID fetch karke pass karega */}
+                        <button onClick={() => handleDelete(org.tenantId || org.id)} className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg transition-colors" title="Delete"><Trash2 size={15}/></button>
                       </div>
                     </td>
                   </tr>

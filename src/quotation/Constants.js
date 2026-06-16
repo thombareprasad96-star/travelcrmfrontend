@@ -1,0 +1,13 @@
+export const AIRLINES      = ["IndiGo","Air India","SpiceJet","Vistara","GoAir","AirAsia India","Emirates","Qatar Airways","Singapore Airlines"];
+export const CLASSES       = ["Economy","Premium Economy","Business","First Class"];
+export const AIRPORTS      = ["Delhi (DEL)","Mumbai (BOM)","Bangalore (BLR)","Chennai (MAA)","Kathmandu (KTM)","Dubai (DXB)","Singapore (SIN)","Bangkok (BKK)"];
+export const JOURNEY_TYPES = ["One Way","Round Trip","Multi City"];
+export const ROOM_TYPES    = ["Standard","Deluxe","Suite","Family Room","Studio","Connecting Room"];
+export const MEAL_PLANS    = ["Room Only","Bed & Breakfast","Half Board","Full Board","All Inclusive"];
+export const VEHICLE_TYPES = ["Sedan","SUV","Tempo Traveller","Bus","Luxury Car","Mini Van"];
+export const CRUISE_TYPES  = ["River Cruise","Ocean Cruise","Luxury Cruise","Budget Cruise"];
+export const CABIN_CATS    = ["Interior","Oceanview","Balcony","Suite"];
+export const ATTRACTIONS   = ["City Tour","Museum Visit","Sunset Cruise","Jungle Safari","Temple Walk","Cable Car Ride","Boat Tour","Cultural Show"];
+export const MEALS_OPT     = ["Breakfast","Lunch","Dinner"];
+export const TRANSFER      = ["Private","Shared","No Transfer"];
+export const SERVICE_TYPES = ["Travel Insurance","Visa Assistance","Tour Guide","Photography","Porter Service","Special Meal","Honeymoon Setup","Airport Assistance","SIM Card","Travel Kit","Custom"];

@@ -163,8 +163,8 @@
 
 
 
-
 import { memo, useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom"; // 👉 Added for Logout navigation
 import {
   Menu, Plane, Bell, User, ChevronDown, ChevronRight,
   Search, Settings, LogOut, HelpCircle, CheckCheck,
@@ -238,16 +238,16 @@ function Breadcrumb({ items }) {
  * @param {function}            toggleSidebar   - Opens/closes the sidebar
  * @param {string}              [appName]       - Brand name (default "TravelCRM")
  * @param {Array|ReactNode}     [breadcrumb]    - Array of {label,href?} or any ReactNode
- * @param {{ name, email, role, initials }} [user] - Logged-in user; falls back to defaults
  * @param {function}            [onNewBooking]  - Callback for "New Booking" button
  */
 const Navbar = memo(function Navbar({
   toggleSidebar,
   appName     = "TravelCRM",
   breadcrumb,
-  user        = { name: "Raghvendra Shahi", email: "raghv@travelcrm.in", role: "Admin", initials: "RS" },
   onNewBooking,
 }) {
+  const navigate = useNavigate(); // For redirecting on logout
+
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [notifOpen,     setNotifOpen]     = useState(false);
@@ -255,6 +255,37 @@ const Navbar = memo(function Navbar({
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [loading,       setLoading]       = useState(false);
   const sseRef = useRef(null);
+
+  // 👉 1. State for User Data fetched from Local Storage
+  const [localUser, setLocalUser] = useState({
+    name: "User",
+    email: "loading...",
+    role: "User",
+    initials: "U"
+  });
+
+  // 👉 2. Fetch from Local Storage on Mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('userEmail');
+    const savedRole = localStorage.getItem('userRole');
+
+    if (savedEmail || savedRole) {
+      // Format the role for display
+      const formattedRole = 
+        savedRole === 'super_admin' ? 'Super Admin' :
+        savedRole === 'admin' ? 'Tenant Admin' : 'Standard User';
+      
+      // Use the part before the '@' as the name since we don't save full name yet
+      const emailName = savedEmail ? savedEmail.split('@')[0] : 'User';
+
+      setLocalUser({
+        email: savedEmail || 'No Email',
+        role: formattedRole,
+        name: emailName,
+        initials: emailName.substring(0, 2).toUpperCase()
+      });
+    }
+  }, []);
 
   // Badge count + live SSE on mount
   useEffect(() => {
@@ -295,10 +326,17 @@ const Navbar = memo(function Navbar({
       );
       setUnreadCount((c) => Math.max(0, c - 1));
     }
-    // TODO: navigate using notif.referenceType + notif.referencePublicId
   };
 
   const closeAll = () => { setDropdownOpen(false); setNotifOpen(false); };
+
+  // 👉 3. Actual Logout Logic
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userRole");
+    navigate("/login"); // Redirect to login page
+  };
 
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -340,9 +378,6 @@ const Navbar = memo(function Navbar({
           </>
         )}
       </div>
-
-      {/* ── Center: search (hidden when breadcrumb is wide) ───── */}
-      
 
       {/* ── Right: actions ────────────────────────────────────── */}
       <div className="flex items-center gap-1 sm:gap-1.5">
@@ -448,12 +483,13 @@ const Navbar = memo(function Navbar({
             onClick={() => { setDropdownOpen(!dropdownOpen); setNotifOpen(false); }}
             className="flex items-center gap-1.5 pl-1 pr-1.5 py-1 rounded-xl hover:bg-slate-100 active:scale-95 transition-all"
           >
+            {/* 👉 4. Now using localUser state instead of default prop */}
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm flex-shrink-0">
-              {user.initials}
+              {localUser.initials}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-[12px] font-semibold text-slate-800 leading-tight">{user.name}</p>
-              <p className="text-[10px] text-slate-400 leading-tight">{user.role}</p>
+              <p className="text-[12px] font-semibold text-slate-800 leading-tight">{localUser.name}</p>
+              <p className="text-[10px] text-slate-400 leading-tight">{localUser.role}</p>
             </div>
             <ChevronDown
               size={13}
@@ -466,11 +502,11 @@ const Navbar = memo(function Navbar({
               {/* Profile */}
               <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                  {user.initials}
+                  {localUser.initials}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
-                  <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                  <p className="text-sm font-semibold text-slate-800 truncate">{localUser.name}</p>
+                  <p className="text-xs text-slate-400 truncate">{localUser.email}</p>
                 </div>
               </div>
 
@@ -492,7 +528,11 @@ const Navbar = memo(function Navbar({
               </div>
 
               <div className="border-t border-slate-100 py-1.5">
-                <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-rose-500 hover:bg-rose-50 transition text-left">
+                {/* 👉 5. Wired up handleLogout to this button */}
+                <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-[13px] text-rose-500 hover:bg-rose-50 transition text-left"
+                >
                   <LogOut size={14} />
                   Sign out
                 </button>
