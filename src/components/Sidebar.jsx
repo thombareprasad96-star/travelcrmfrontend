@@ -643,7 +643,7 @@ import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText,
   CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, 
-  User, CreditCard, LogOut
+  User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock
 } from 'lucide-react';
 
 const Sidebar = ({ isExpanded }) => {
@@ -732,6 +732,102 @@ const Sidebar = ({ isExpanded }) => {
               </ul>
             )}
           </li>
+
+          {/* --- Reminders Dropdown --- */}
+<li>
+  <button
+    onClick={() => handleMenuClick("Reminders")}
+    className={`w-full flex items-center py-3 rounded-xl transition-all duration-200 ${
+      showSidebar ? "justify-between px-4" : "justify-center px-0"
+    } ${
+      activeTab === "Reminders"
+        ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold"
+        : "hover:bg-white/5 hover:text-white font-medium"
+    }`}
+  >
+    <div className={`flex items-center ${showSidebar ? "gap-3.5" : ""}`}>
+      <BellRing
+        size={20}
+        strokeWidth={activeTab === "Reminders" ? 2.5 : 2}
+        className={`shrink-0 ${
+          activeTab === "Reminders"
+            ? "text-white"
+            : "text-rose-400"
+        }`}
+      />
+      {showSidebar && (
+        <span className="text-[14px] whitespace-nowrap tracking-wide">
+          Reminders
+        </span>
+      )}
+    </div>
+
+    {showSidebar && (
+      <ChevronDown
+        size={16}
+        className={`transition-transform duration-200 opacity-70 ${
+          openDropdown === "Reminders" ? "rotate-180" : ""
+        }`}
+      />
+    )}
+  </button>
+
+  {showSidebar && openDropdown === "Reminders" && (
+    <ul className="mt-1 space-y-1 mb-2">
+
+      <li>
+        <Link
+          to="/reminders"
+          className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
+        >
+          <Bell size={14} className="text-rose-400/60" />
+          <span>My Reminders</span>
+        </Link>
+      </li>
+
+      <li>
+        <Link
+          to="/booking-reminders"
+          className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
+        >
+          <CalendarClock size={14} className="text-rose-400/60" />
+          <span>Booking Reminders</span>
+        </Link>
+      </li>
+
+      <li>
+        <Link
+          to="/notifications"
+          className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
+        >
+          <BellRing size={14} className="text-rose-400/60" />
+          <span>Notifications</span>
+        </Link>
+      </li>
+
+      <li>
+        <Link
+          to="/notification-settings"
+          className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
+        >
+          <Settings size={14} className="text-rose-400/60" />
+          <span>Notification Settings</span>
+        </Link>
+      </li>
+
+      <li>
+        <Link
+          to="/reminder-history"
+          className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
+        >
+          <Clock size={14} className="text-rose-400/60" />
+          <span>Reminder History</span>
+        </Link>
+      </li>
+
+    </ul>
+  )}
+</li>
 
           {/* --- Masters Dropdown --- */}
           <li>
