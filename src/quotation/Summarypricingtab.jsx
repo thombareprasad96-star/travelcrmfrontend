@@ -2,12 +2,6 @@ import React, { useState } from "react";
 import { BarChart2, Plane, Hotel, Map, Anchor, Car, Package, Tag, IndianRupee } from "lucide-react";
 import { Label, Input, Select, SectionCard, FieldGrid } from "./ui";
 
-/**
- * SummaryPricingTab
- * Props:
- *   costs — { flight, hotel, sightseeing, cruise, vehicle, addons }
- *   These come from parent (CreateQuotation) which collects data from all tabs
- */
 export default function SummaryPricingTab({ costs = {} }) {
   const [discount, setDiscount] = useState(0);
   const [discType, setDiscType] = useState("Fixed");
@@ -42,13 +36,16 @@ export default function SummaryPricingTab({ costs = {} }) {
 
   return (
     <div className="space-y-5">
+
       {/* Price Breakdown */}
       <SectionCard title="Price Breakdown" icon={BarChart2}>
         <div className="space-y-1">
           {breakdown.map(({ label, value, icon: Icon }) => (
             <div key={label} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500"><Icon size={15} /></div>
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                  <Icon size={15} />
+                </div>
                 <span className="text-sm font-semibold text-slate-700">{label}</span>
               </div>
               <span className="text-sm font-bold text-slate-800">{fmt(value)}</span>
@@ -84,10 +81,10 @@ export default function SummaryPricingTab({ costs = {} }) {
 
           <div className="space-y-2 pt-2 border-t border-slate-100">
             {[
-              ["Subtotal",   fmt(subtotal),      "text-slate-700"],
-              ["Markup",     fmt(markup),        "text-blue-700" ],
-              ["Discount",  `-${fmt(discAmt)}`,  "text-emerald-700"],
-              ["Tax (GST)", fmt(taxAmt),         "text-amber-700"],
+              ["Subtotal",   fmt(subtotal),     "text-slate-700"  ],
+              ["Markup",     fmt(markup),       "text-blue-700"   ],
+              ["Discount",  `-${fmt(discAmt)}`, "text-emerald-700"],
+              ["Tax (GST)", fmt(taxAmt),        "text-amber-700"  ],
             ].map(([lbl, val, cls]) => (
               <div key={lbl} className="flex justify-between text-sm py-1">
                 <span className="text-slate-600 font-medium">{lbl}</span>
@@ -98,19 +95,53 @@ export default function SummaryPricingTab({ costs = {} }) {
         </div>
       </SectionCard>
 
-      {/* Grand Total */}
-      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">Final Quotation Total</p>
-            <p className="text-4xl font-extrabold">{fmt(grandTotal)}</p>
-            <p className="text-emerald-200 text-xs mt-1">Including all taxes and charges</p>
-          </div>
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
-            <IndianRupee size={32} />
-          </div>
+      {/* ── Grand Total Card — Vendor style ── */}
+      <div
+        className="relative overflow-hidden rounded-[18px] p-6 flex flex-col justify-between min-h-[155px] cursor-default"
+        style={{ background: "linear-gradient(135deg, #00c6a7 0%, #00a389 40%, #007d6b 100%)" }}
+      >
+        {/* White blobs */}
+        <div
+          className="absolute -top-9 -right-8 w-32 h-32 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.13)" }}
+        />
+        <div
+          className="absolute bottom-[-20px] right-10 w-24 h-24 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.09)" }}
+        />
+        <div
+          className="absolute top-5 right-[80px] w-12 h-12 rounded-full pointer-events-none"
+          style={{ background: "rgba(255,255,255,0.07)" }}
+        />
+
+        {/* Icon top-left */}
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0"
+          style={{ background: "rgba(255,255,255,0.22)" }}
+        >
+          <IndianRupee size={24} className="text-white" />
+        </div>
+
+        {/* Amount + labels bottom */}
+        <div className="relative z-10 mt-4">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[.13em]"
+            style={{ color: "rgba(255,255,255,0.72)" }}
+          >
+            Final Quotation Total
+          </p>
+          <p className="text-[38px] font-extrabold text-white leading-none tracking-tight mt-1">
+            {fmt(grandTotal)}
+          </p>
+          <p
+            className="text-[11px] mt-1.5"
+            style={{ color: "rgba(255,255,255,0.60)" }}
+          >
+            Including all taxes and charges
+          </p>
         </div>
       </div>
+
     </div>
   );
 }

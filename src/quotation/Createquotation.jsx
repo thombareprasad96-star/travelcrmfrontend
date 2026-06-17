@@ -202,14 +202,12 @@
 //   );
 // }
 
-
-
-
 import React, { useState } from "react";
 import {
   Plane, Hotel, Map, Anchor, Car, Package, List, BarChart2,
-  Bell, Clock, Home, ChevronRight, Save, Users, Calendar,
-  Phone, FileText, MapPin, User, Sparkles, TrendingUp
+  Home, ChevronRight, Save, Users, Calendar,
+  Phone, FileText, MapPin, User, TrendingUp, Sparkles,
+  Wallet, ShieldCheck, Download, Share2
 } from "lucide-react";
 
 import FlightTab               from "./FlightTab";
@@ -232,19 +230,18 @@ const TABS = [
   { id: "vehicle",     label: "Vehicle",                 icon: Car,       color: "orange"  },
   { id: "addons",      label: "Add-on Services",         icon: Package,   color: "rose"    },
   { id: "inclusions",  label: "Inclusions & Exclusions", icon: List,      color: "amber"   },
-  { id: "summary",     label: "Summary & Pricing",       icon: BarChart2, color: "teal"    },
+  { id: "summary",     label: "Summary & Pricing",       icon: BarChart2, color: "indigo"  },
 ];
 
 const SUMMARY_INFO = [
-  { icon: User,     label: "Client Name",  value: "Pratik Sharma"               },
-  { icon: Phone,    label: "Contact",      value: "+91 98765 43210"             },
-  { icon: Users,    label: "Travelers",    value: "4 Adults, 0 Child"           },
-  { icon: Calendar, label: "Travel Dates", value: "Jun 15 – Jun 22, 2026"      },
-  { icon: MapPin,   label: "Destination",  value: "Nepal (Kathmandu, Pokhara)" },
-  { icon: FileText, label: "Package",      value: "7N / 8D — Nepal Tour"       },
+  { icon: User,     label: "Client Name",  value: "Pratik Sharma",               color: "blue"    },
+  { icon: Phone,    label: "Contact",      value: "+91 98765 43210",             color: "emerald" },
+  { icon: Users,    label: "Travelers",    value: "4 Adults, 0 Child",           color: "violet"  },
+  { icon: Calendar, label: "Travel Dates", value: "Jun 15 – Jun 22, 2026",      color: "amber"   },
+  { icon: MapPin,   label: "Destination",  value: "Nepal (Kathmandu, Pokhara)", color: "rose"    },
+  { icon: FileText, label: "Package",      value: "7N / 8D — Nepal Tour",       color: "cyan"    },
 ];
 
-/* ─── COLOR MAPS ─────────────────────────────────────── */
 const TAB_ACTIVE = {
   blue:    "text-blue-600    border-blue-600    bg-blue-50",
   violet:  "text-violet-600  border-violet-600  bg-violet-50",
@@ -253,7 +250,7 @@ const TAB_ACTIVE = {
   orange:  "text-orange-600  border-orange-600  bg-orange-50",
   rose:    "text-rose-600    border-rose-600    bg-rose-50",
   amber:   "text-amber-600   border-amber-600   bg-amber-50",
-  teal:    "text-teal-600    border-teal-600    bg-teal-50",
+  indigo:  "text-indigo-600  border-indigo-600  bg-indigo-50",
 };
 
 const ICON_BG = {
@@ -264,7 +261,16 @@ const ICON_BG = {
   orange:  "bg-orange-100  text-orange-600",
   rose:    "bg-rose-100    text-rose-600",
   amber:   "bg-amber-100   text-amber-600",
-  teal:    "bg-teal-100    text-teal-600",
+  indigo:  "bg-indigo-100  text-indigo-600",
+};
+
+const CHIP_STYLE = {
+  blue:    { grad: "from-blue-500 to-blue-600",       ring: "hover:border-blue-300",    glow: "shadow-blue-100"    },
+  emerald: { grad: "from-emerald-500 to-emerald-600", ring: "hover:border-emerald-300", glow: "shadow-emerald-100" },
+  violet:  { grad: "from-violet-500 to-violet-600",   ring: "hover:border-violet-300",  glow: "shadow-violet-100"  },
+  amber:   { grad: "from-amber-400 to-amber-500",     ring: "hover:border-amber-300",   glow: "shadow-amber-100"   },
+  rose:    { grad: "from-rose-500 to-rose-600",       ring: "hover:border-rose-300",    glow: "shadow-rose-100"    },
+  cyan:    { grad: "from-cyan-500 to-cyan-600",       ring: "hover:border-cyan-300",    glow: "shadow-cyan-100"    },
 };
 
 export default function CreateQuotation() {
@@ -293,7 +299,7 @@ export default function CreateQuotation() {
       className="min-h-screen bg-slate-100 font-sans"
       style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
     >
-      {/* <style>{`
+      <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         .tab-scroll::-webkit-scrollbar { height: 0px; }
         .qt-tab-btn { transition: color 0.18s, background 0.18s, border-color 0.18s; }
@@ -302,14 +308,17 @@ export default function CreateQuotation() {
           box-shadow: 0 8px 32px 0 rgba(15,23,42,0.09);
           transform: translateY(-1px);
         }
-      `}</style> */}
+        @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-up { animation: fadeUp .4s ease both; }
+        .stat-card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+        .stat-card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
+      `}</style>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 py-7 space-y-5">
 
-        {/* ── TOP BAR: Breadcrumb + Page title ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        {/* ── TOP BAR ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 fade-up">
           <div>
-            {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-2">
               <Home size={12} className="text-slate-400" />
               <ChevronRight size={10} className="text-slate-300" />
@@ -317,7 +326,6 @@ export default function CreateQuotation() {
               <ChevronRight size={10} className="text-slate-300" />
               <span className="text-blue-600 font-bold">Create Quotation</span>
             </div>
-            {/* Page heading */}
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
                 <FileText size={16} className="text-white" strokeWidth={2.5} />
@@ -333,7 +341,6 @@ export default function CreateQuotation() {
             </div>
           </div>
 
-          {/* Right side meta badges */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
               <Users size={12} className="text-blue-500" /> 4 Pax
@@ -351,8 +358,7 @@ export default function CreateQuotation() {
         </div>
 
         {/* ── BASIC INFO CARD ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden lift-card">
-          {/* Card header */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden lift-card fade-up" style={{ animationDelay: "60ms" }}>
           <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
             <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
               <FileText size={13} className="text-blue-600" />
@@ -366,7 +372,6 @@ export default function CreateQuotation() {
 
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Quotation Title */}
               <div>
                 <Label required>Quotation Title</Label>
                 <Input
@@ -375,8 +380,6 @@ export default function CreateQuotation() {
                   placeholder="e.g. Nepal Adventure Premium"
                 />
               </div>
-
-              {/* Version */}
               <div>
                 <Label>Version</Label>
                 <div className="relative">
@@ -386,8 +389,6 @@ export default function CreateQuotation() {
                   </span>
                 </div>
               </div>
-
-              {/* Lead Stage */}
               <div>
                 <Label>Lead Stage</Label>
                 <div className="relative">
@@ -402,9 +403,7 @@ export default function CreateQuotation() {
         </div>
 
         {/* ── TABS CARD ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-
-          {/* Tab strip */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden fade-up" style={{ animationDelay: "120ms" }}>
           <div className="tab-scroll overflow-x-auto border-b border-slate-100">
             <div className="flex min-w-max">
               {TABS.map((tab) => {
@@ -434,21 +433,16 @@ export default function CreateQuotation() {
             </div>
           </div>
 
-          {/* Tab body */}
           <div className="p-5 sm:p-6 min-h-[260px]">
             {tabContent[activeTab]}
           </div>
 
-          {/* Tab footer — step progress + prev/next */}
           <div className="flex items-center justify-between px-5 py-3 bg-slate-50/80 border-t border-slate-100">
-            {/* Step counter */}
             <p className="text-[11px] text-slate-400 font-semibold">
               Step{" "}
               <span className="text-slate-700 font-extrabold">{activeIdx + 1}</span>
               {" "}of {TABS.length}
             </p>
-
-            {/* Progress pills */}
             <div className="flex items-center gap-1.5">
               {TABS.map((t, i) => {
                 const done    = i < activeIdx;
@@ -469,8 +463,6 @@ export default function CreateQuotation() {
                 );
               })}
             </div>
-
-            {/* Prev / Next */}
             <div className="flex items-center gap-1">
               <button
                 disabled={activeIdx === 0}
@@ -492,86 +484,154 @@ export default function CreateQuotation() {
           </div>
         </div>
 
-        {/* ── SUMMARY PANEL ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden lift-card">
+        {/* ── QUOTATION SUMMARY CARD ── */}
+        <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-slate-200/60 fade-up" style={{ animationDelay: "180ms" }}>
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                <TrendingUp size={13} className="text-indigo-600" />
+          {/* Header strip */}
+          <div className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 px-5 sm:px-7 py-5">
+            <div className="absolute -top-10 -right-10 w-44 h-44 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={18} className="text-emerald-300" />
+                </div>
+                <div>
+                  <p className="text-white text-sm font-extrabold tracking-tight">Quotation Summary</p>
+                  <p className="text-slate-400 text-[11px] font-medium">Verified pricing · Auto-calculated in real time</p>
+                </div>
               </div>
-              <p className="text-[13px] font-extrabold text-slate-800">Quotation Summary</p>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/30 rounded-full text-emerald-300 text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Pricing
+              </span>
             </div>
-            <span className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
-              Auto-calculated
-            </span>
           </div>
 
-          <div className="p-5 grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Body */}
+          <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 p-5 sm:p-7">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            {/* Info chips grid */}
-            <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {SUMMARY_INFO.map(({ icon: Icon, label, value }) => (
-                <div
-                  key={label}
-                  className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-100
-                    hover:border-blue-200 hover:bg-blue-50/30 transition-all cursor-default group"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center
-                    flex-shrink-0 group-hover:bg-blue-200 transition-colors">
-                    <Icon size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide leading-none">
-                      {label}
-                    </p>
-                    <p className="text-[13px] font-bold text-slate-800 truncate mt-1">{value}</p>
-                  </div>
+              {/* Left — Client info */}
+              <div className="lg:col-span-3">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles size={13} className="text-blue-500" />
+                  <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Client & Package Details</p>
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {SUMMARY_INFO.map(({ icon: Icon, label, value, color }) => {
+                    const style = CHIP_STYLE[color];
+                    return (
+                      <div
+                        key={label}
+                        className={`relative flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-slate-100
+                          ${style.ring} hover:shadow-lg ${style.glow} transition-all duration-200 cursor-default group overflow-hidden`}
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${style.grad} opacity-0 group-hover:opacity-[0.06] transition-opacity`} />
+                        <div className={`relative z-10 w-10 h-10 rounded-xl bg-gradient-to-br ${style.grad} text-white flex items-center justify-center
+                          flex-shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-200`}>
+                          <Icon size={16} strokeWidth={2.3} />
+                        </div>
+                        <div className="relative z-10 min-w-0">
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide leading-none">
+                            {label}
+                          </p>
+                          <p className="text-sm font-extrabold text-slate-800 truncate mt-1.5">{value}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {/* Totals */}
-            <div className="flex flex-col gap-3">
-              {/* Final total */}
-              <div className="flex-1 relative overflow-hidden rounded-2xl
-                bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700
-                p-5 text-white text-center flex flex-col items-center justify-center
-                shadow-md shadow-emerald-100">
-                <div className="pointer-events-none absolute -top-5 -right-5 w-24 h-24 rounded-full bg-white/10" />
-                <div className="pointer-events-none absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/5" />
-                <p className="relative z-10 text-emerald-100 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">
-                  Final Quotation Total
-                </p>
-                <p className="relative z-10 text-4xl font-extrabold tracking-tight">₹0.00</p>
-                <p className="relative z-10 text-emerald-200/80 text-[10px] font-medium mt-1.5">
-                  All services included
-                </p>
+                <div className="flex items-center gap-2 mt-5 pt-5 border-t border-slate-200">
+                  <button className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-blue-50 border-2 border-blue-100 hover:border-blue-300 text-blue-600 text-xs font-bold rounded-xl transition-all shadow-sm">
+                    <Download size={13} /> Export PDF
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-violet-50 border-2 border-violet-100 hover:border-violet-300 text-violet-600 text-xs font-bold rounded-xl transition-all shadow-sm">
+                    <Share2 size={13} /> Share with Client
+                  </button>
+                </div>
               </div>
 
-              {/* Add-on total */}
-              <div className="flex-1 relative overflow-hidden rounded-2xl
-                bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500
-                p-5 text-white text-center flex flex-col items-center justify-center
-                shadow-md shadow-amber-100">
-                <div className="pointer-events-none absolute -top-5 -right-5 w-24 h-24 rounded-full bg-white/10" />
-                <div className="pointer-events-none absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-white/5" />
-                <p className="relative z-10 text-amber-100 text-[10px] font-bold uppercase tracking-[0.15em] mb-2">
-                  Add-on Services Total
-                </p>
-                <p className="relative z-10 text-4xl font-extrabold tracking-tight">₹0.00</p>
-                <p className="relative z-10 text-amber-200/80 text-[10px] font-medium mt-1.5">
-                  Extra services
-                </p>
+              {/* ── RIGHT — Pricing Overview (Vendor-style stat cards) ── */}
+              <div className="lg:col-span-2 flex flex-col gap-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet size={13} className="text-slate-400" />
+                  <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Pricing Overview</p>
+                </div>
+
+                {/* Two stat cards side by side */}
+                <div className="grid grid-cols-2 gap-4">
+
+                  {/* Final Total — Teal */}
+                  <div
+                    className="relative overflow-hidden rounded-[18px] p-5 flex flex-col justify-between min-h-[155px] stat-card-hover cursor-default"
+                    style={{ background: "linear-gradient(135deg, #00c6a7 0%, #00a389 40%, #007d6b 100%)" }}
+                  >
+                    {/* blobs */}
+                    <div className="absolute -top-9 -right-8 w-28 h-28 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.13)" }} />
+                    <div className="absolute bottom-[-18px] right-8 w-20 h-20 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.09)" }} />
+                    <div className="absolute top-4 right-[72px] w-11 h-11 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.07)" }} />
+
+                    {/* Icon */}
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0"
+                      style={{ background: "rgba(255,255,255,0.22)" }}>
+                      <TrendingUp size={22} className="text-white" />
+                    </div>
+
+                    {/* Amount + label */}
+                    <div className="relative z-10 mt-3">
+                      <p className="text-[34px] font-extrabold text-white leading-none tracking-tight">₹0</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[.13em] mt-2"
+                        style={{ color: "rgba(255,255,255,0.72)" }}>
+                        Final Quotation Total
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Add-on — Amber/Orange */}
+                  <div
+                    className="relative overflow-hidden rounded-[18px] p-5 flex flex-col justify-between min-h-[155px] stat-card-hover cursor-default"
+                    style={{ background: "linear-gradient(135deg, #f7971e 0%, #f4821a 40%, #e06c0f 100%)" }}
+                  >
+                    {/* blobs */}
+                    <div className="absolute -top-9 -right-8 w-28 h-28 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.13)" }} />
+                    <div className="absolute bottom-[-18px] right-8 w-20 h-20 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.09)" }} />
+                    <div className="absolute top-4 right-[72px] w-11 h-11 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.07)" }} />
+
+                    {/* Icon */}
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center relative z-10 flex-shrink-0"
+                      style={{ background: "rgba(255,255,255,0.22)" }}>
+                      <Package size={22} className="text-white" />
+                    </div>
+
+                    {/* Amount + label */}
+                    <div className="relative z-10 mt-3">
+                      <p className="text-[34px] font-extrabold text-white leading-none tracking-tight">₹0</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[.13em] mt-2"
+                        style={{ color: "rgba(255,255,255,0.72)" }}>
+                        Add-on Services
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Trust badge */}
+                <div className="flex items-center gap-2.5 p-3 bg-white border border-slate-200 rounded-xl">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <ShieldCheck size={14} className="text-white" />
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-semibold leading-snug">
+                    This quotation is auto-saved and securely stored for your client.
+                  </p>
+                </div>
+
               </div>
             </div>
           </div>
         </div>
 
         {/* ── FOOTER ACTIONS ── */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pb-6">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pb-6 fade-up" style={{ animationDelay: "240ms" }}>
           <p className="text-xs text-slate-400 font-medium">
             All fields marked <span className="text-rose-400 font-bold">*</span> are required
           </p>

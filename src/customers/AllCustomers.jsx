@@ -398,7 +398,7 @@ export default function Customers() {
   customerService
     .getAll()
     .then((res) => {
-      setCustomers(res.data);
+      setCustomers(res.data.data);
     })
     .catch(() => {
       showToast("Failed to load customers.", "error");

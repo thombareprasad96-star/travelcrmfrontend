@@ -491,7 +491,7 @@ export default function Vendors() {
   vendorService.getAll()
     .then((res) => {
 
-      const formatted = res.data.map((v) => ({
+      const formatted = res.data.data.map((v) => ({
         ...v,
 
         name: v.name || v.companyName || "",
@@ -518,6 +518,7 @@ export default function Vendors() {
       }));
 
       setVendors(formatted);
+      console.log(formatted)
     })
     .catch(() => showToast("Failed to load vendors.", "error"))
     .finally(() => setLoading(false));
