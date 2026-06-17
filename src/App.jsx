@@ -85,6 +85,8 @@ import Reminders from "./reminders/Reminders";
 import Quotation from "./quotation/quotation";
 import CreateQuotation from "./quotation/Createquotation"
 import CreateReminder from "./reminders/CreateReminder";
+import BookingReminders from "./reminders/BookingReminders";
+import Notifications from "./reminders/Notifications";
 
 
 const App = () => {
@@ -148,6 +150,8 @@ const App = () => {
           <Route path="quotation" element={<Quotation/>}/>
           <Route path="createquotation"  element={<CreateQuotation/>}/>
           <Route path="CreateReminder" element={<CreateReminder/>}/>
+          <Route path="BookingReminders" element={<BookingReminders/>}/>
+          <Route path="Notifications" element={<Notifications/>}/>
         </Route>
  
       </Routes>

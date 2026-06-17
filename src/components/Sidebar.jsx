@@ -787,7 +787,7 @@ const Sidebar = ({ isExpanded }) => {
 
       <li>
         <Link
-          to="/booking-reminders"
+          to="/BookingReminders"
           className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
         >
           <CalendarClock size={14} className="text-rose-400/60" />
@@ -797,7 +797,7 @@ const Sidebar = ({ isExpanded }) => {
 
       <li>
         <Link
-          to="/notifications"
+          to="/Notifications"
           className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
         >
           <BellRing size={14} className="text-rose-400/60" />
