@@ -320,7 +320,7 @@ const Navbar = memo(function Navbar({
 
   const handleClickNotif = async (notif) => {
     if (notif.status === "UNREAD") {
-      await notificationService.markRead(notif.id);
+      await notificationService.markRead(notif.publicId);
       setNotifications((prev) =>
         prev.map((n) => n.id === notif.id ? { ...n, status: "READ" } : n)
       );
