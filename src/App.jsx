@@ -87,6 +87,9 @@ import CreateQuotation from "./quotation/Createquotation"
 import CreateReminder from "./reminders/CreateReminder";
 import BookingReminders from "./reminders/BookingReminders";
 import Notifications from "./reminders/Notifications";
+import NotificationSettings from "./reminders/NotificationSettings";
+import CompanyProfile from "./profile/CompanyProfile";
+import ChangePassword from "./profile/ChangePassword";
 
 
 const App = () => {
@@ -152,6 +155,9 @@ const App = () => {
           <Route path="CreateReminder" element={<CreateReminder/>}/>
           <Route path="BookingReminders" element={<BookingReminders/>}/>
           <Route path="Notifications" element={<Notifications/>}/>
+          <Route path="NotificationSettings" element={<NotificationSettings/>}/>
+          <Route path="CompanyProfile" element={<CompanyProfile/>}/>
+          <Route path="ChangePassword" element={<ChangePassword/>}/>
         </Route>
  
       </Routes>

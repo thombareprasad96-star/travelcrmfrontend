@@ -807,7 +807,7 @@ const Sidebar = ({ isExpanded }) => {
 
       <li>
         <Link
-          to="/notification-settings"
+          to="/NotificationSettings"
           className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
         >
           <Settings size={14} className="text-rose-400/60" />
@@ -815,7 +815,7 @@ const Sidebar = ({ isExpanded }) => {
         </Link>
       </li>
 
-      <li>
+      {/* <li>
         <Link
           to="/reminder-history"
           className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"
@@ -823,7 +823,7 @@ const Sidebar = ({ isExpanded }) => {
           <Clock size={14} className="text-rose-400/60" />
           <span>Reminder History</span>
         </Link>
-      </li>
+      </li> */}
 
     </ul>
   )}
@@ -1017,7 +1017,7 @@ const Sidebar = ({ isExpanded }) => {
 
           <li>
             <Link 
-              to="/profile" 
+              to="/CompanyProfile" 
               onClick={() => handleLinkClick('Profile')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
