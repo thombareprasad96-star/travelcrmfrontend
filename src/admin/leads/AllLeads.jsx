@@ -1,7 +1,3 @@
-
-
-
-
 // import React, { useState, useEffect, memo, useMemo } from 'react';
 // import { leadService } from '../../services/leadService';
 // import {
@@ -21,7 +17,7 @@
 //   'from-pink-400 to-rose-600',
 //   'from-amber-400 to-amber-600',
 // ];
-// const ACCENT_SOLIDS = ['#1a6fff', '#dc2626', '#7c3aed', '#0f9e72', '#db2777', '#d97706'];
+// const ACCENT_SOLIDS = [ '#d97706'];
 
 // function colorForIndex(idx) {
 //   const i = idx % AVATAR_GRADIENTS.length;
@@ -43,6 +39,18 @@
 //   'Cold Lead':  'bg-teal-100 text-teal-700 border-teal-200',
 // };
 // const typePill = (type) => TYPE_PILL[type] || 'bg-slate-100 text-slate-700 border-slate-200';
+
+// // Exact pastel colors per service, matched to the design mockup
+// const SERVICE_COLORS = {
+//   Hotel:        { bg: '#E6F1FB', text: '#042C53' },
+//   Flight:       { bg: '#EEEDFE', text: '#26215C' },
+//   Cruise:       { bg: '#E1F5EE', text: '#04342C' },
+//   Vehicle:      { bg: '#FAECE7', text: '#4A1B0C' },
+//   Visa:         { bg: '#FBEAF0', text: '#4B1528' },
+//   Passport:     { bg: '#F1EFE8', text: '#2C2C2A' },
+//   Sightseeing:  { bg: '#FAEEDA', text: '#412402' },
+// };
+// const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
 
 // /* ─── PAGINATION ─────────────────────────────────────── */
 // function buildPageNumbers(totalPages, pageIndex) {
@@ -386,13 +394,24 @@
 
 //   return (
 //     <div
-//       className={`border-t border-slate-100 first:border-t-0 transition-colors ${isOpen ? 'bg-blue-50/30' : ''}`}
-//       style={{ borderLeft: `3px solid ${accent}`, animation: 'fadeUp .35s ease both', animationDelay: `${index * 30}ms` }}
+//       className="border-t border-slate-100 first:border-t-0 transition-colors"
+//       style={{
+//         borderLeft: `3px solid ${accent}`,
+//         background: isOpen ? `${accent}12` : 'transparent',
+//         animation: 'fadeUp .35s ease both',
+//         animationDelay: `${index * 30}ms`,
+//       }}
 //     >
+//       {/* ── Desktop row (md and up) ── */}
 //       <div
 //         onClick={() => onToggle(lead.id)}
-//         className="grid items-center gap-2 px-5 py-4 cursor-pointer hover:bg-blue-50/40 transition-colors"
-//         style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}
+//         className="hidden md:grid items-center gap-2 px-5 py-4 cursor-pointer transition-colors"
+//         style={{
+//           gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px',
+//           background: isOpen ? `${accent}18` : 'transparent',
+//         }}
+//         onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
+//         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
 //       >
 //         <ChevronRight
 //           size={16}
@@ -452,76 +471,181 @@
 //         </div>
 //       </div>
 
-//       {isOpen && (
-//         <div className="px-5 pb-5 pl-[52px] bg-slate-50/60" style={{ animation: 'fadeIn .2s ease both' }}>
-//           <div className="bg-white border border-slate-200 rounded-2xl p-4 mt-1">
-
-//             <div className="flex gap-5 flex-wrap pb-4 mb-4 border-b border-slate-100">
-//               <div className="flex-1 min-w-[180px]">
-//                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Services booked</p>
-//                 <div className="flex flex-wrap gap-1.5">
-//                   {lead.services && lead.services.length > 0
-//                     ? lead.services.map((s, i) => (
-//                         <span key={i} className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider">{s}</span>
-//                       ))
-//                     : <span className="text-xs text-slate-400">No services added</span>
-//                   }
-//                 </div>
+//       {/* ── Mobile row (below md) ── */}
+//       <div
+//         onClick={() => onToggle(lead.id)}
+//         className="md:hidden px-4 py-3.5 cursor-pointer transition-colors"
+//         style={{ background: isOpen ? `${accent}18` : 'transparent' }}
+//         onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
+//         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
+//       >
+//         <div className="flex items-start gap-3">
+//           <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0 mt-0.5`}>
+//             {initial}
+//           </div>
+//           <div className="flex-1 min-w-0">
+//             <div className="flex items-start justify-between gap-2">
+//               <div className="min-w-0">
+//                 <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
+//                 <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
 //               </div>
+//               <ChevronRight
+//                 size={16}
+//                 className="text-slate-400 transition-transform flex-shrink-0 mt-1"
+//                 style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+//               />
+//             </div>
+
+//             <div className="flex items-center gap-2 flex-wrap mt-2">
+//               {destination ? (
+//                 <span
+//                   className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
+//                   style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
+//                 >
+//                   <MapPin size={11} /> {destination.destination} {'\u00b7'} {destination.nights}N
+//                 </span>
+//               ) : (
+//                 <span className="text-xs text-slate-400">No destination</span>
+//               )}
+//               <div onClick={(e) => e.stopPropagation()}>
+//                 <select
+//                   value={lead.leadStage || 'New Lead'}
+//                   onChange={(e) => onStageChange(lead, e.target.value)}
+//                   className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
+//                 >
+//                   <option value="New Lead">New Lead</option>
+//                   <option value="Contacted">Contacted</option>
+//                 </select>
+//               </div>
+//             </div>
+
+//             <div className="flex items-center justify-between mt-2.5">
+//               <div className="flex items-center gap-1.5">
+//                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[9px] font-extrabold flex-shrink-0">
+//                   {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
+//                 </div>
+//                 <span className="text-xs font-semibold text-slate-600 truncate">{assigneeName || 'Unassigned'}</span>
+//               </div>
+//               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+//                 <button onClick={() => onView(lead)} title="View" className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
+//                 <button onClick={() => onEdit(lead)} title="Edit" className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {isOpen && (
+//         <div
+//           style={{
+//             animation: 'fadeIn .2s ease both',
+//             background: '#f0d3a3',
+//             padding: '0 18px 18px 48px',
+//             borderTop: '1px solid #d4a96a',
+//           }}
+//         >
+
+//           {/* Travelers + Services */}
+//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
+//             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
 //               <div>
-//                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Travelers</p>
-//                 <p className="text-sm font-semibold text-slate-700">
+//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Travelers</p>
+//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#3B2008' }}>
 //                   {lead.adults || 0} Adults
 //                   {(lead.children > 0 || lead.infants > 0) && `, ${lead.children || 0} Child, ${lead.infants || 0} Infant`}
 //                 </p>
 //               </div>
+//               <div style={{ flex: 1, minWidth: '200px' }}>
+//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Services</p>
+//                 <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: '4px', gap: '4px' }}>
+//                   {lead.services && lead.services.length > 0
+//                     ? lead.services.map((s, i) => {
+//                         const c = serviceColor(s);
+//                         return (
+//                           <span key={i} style={{ background: c.bg, color: c.text, display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 500 }}>{s}</span>
+//                         );
+//                       })
+//                     : <span style={{ fontSize: '13px', color: '#7B4F1E' }}>No services added</span>
+//                   }
+//                 </div>
+//               </div>
 //             </div>
+//           </div>
 
-//             <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+//           {/* Phone / Type / Margin / Created */}
+//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
+//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px' }}>
 //               <div>
-//                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Phone</p>
-//                 <p className="text-sm font-semibold text-slate-700">{lead.phone || '\u2014'}</p>
+//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Phone</p>
+//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#3B2008' }}>{lead.phone || '\u2014'}</p>
 //               </div>
 //               <div>
-//                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lead type</p>
-//                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${typePill(lead.leadType)}`}>{lead.leadType || 'N/A'}</span>
+//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Type</p>
+//                 {(() => {
+//                   const typeColors = {
+//                     'Fresh Lead': { bg: '#E6F1FB', text: '#042C53' },
+//                     'Hot Lead':   { bg: '#FBEAF0', text: '#4B1528' },
+//                     'Warm Lead':  { bg: '#FAEEDA', text: '#633806' },
+//                     'Cold Lead':  { bg: '#E1F5EE', text: '#04342C' },
+//                   };
+//                   const tc = typeColors[lead.leadType] || { bg: '#EEEDFE', text: '#26215C' };
+//                   return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 500, background: tc.bg, color: tc.text }}>{lead.leadType || 'N/A'}</span>;
+//                 })()}
 //               </div>
 //               <div>
-//                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Margin</p>
-//                 <p className="text-sm font-semibold text-slate-400">{'\u2014'}</p>
+//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Margin</p>
+//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#7B4F1E' }}>{'\u2014'}</p>
 //               </div>
 //               <div>
-//                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Created</p>
-//                 <p className="text-sm font-semibold text-slate-700">
+//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Created</p>
+//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#3B2008' }}>
 //                   {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
 //                 </p>
 //               </div>
 //             </div>
+//           </div>
 
-//             <div className="grid gap-4 pt-4 mb-4 border-t border-slate-100" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
-//               <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Quotation</p><p className="text-sm text-slate-400">Not generated</p></div>
-//               <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Booking</p><p className="text-sm text-slate-400">Not booked</p></div>
-//               <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Weblink</p><p className="text-sm text-slate-400">{'\u2014'}</p></div>
-//               <div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Logging</p><p className="text-sm text-slate-400">No activity yet</p></div>
-//             </div>
-
-//             <div className="mb-4">
-//               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Lead ID</p>
-//               <span className="text-xs font-mono text-blue-700 bg-blue-50 px-2 py-1 rounded-md inline-block">{lead.publicId || lead.id}</span>
-//             </div>
-
-//             <div className="flex gap-2 pt-3 border-t border-slate-100 flex-wrap">
-//               <Link
-//                 to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
-//                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:opacity-90 transition-all"
-//               >
-//                 <FileText size={13} /> View quotation
-//               </Link>
-//               <button onClick={() => onDelete(lead)} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 text-red-500 hover:bg-red-50 hover:border-red-200 transition-all">
-//                 <Trash2 size={13} /> Delete
-//               </button>
+//           {/* Quotation / Booking / Weblink / Logging */}
+//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
+//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px' }}>
+//               {[
+//                 { label: 'Quotation', value: 'Not generated' },
+//                 { label: 'Booking',   value: 'Not booked' },
+//                 { label: 'Weblink',   value: '\u2014' },
+//                 { label: 'Logging',   value: 'No activity yet' },
+//               ].map(({ label, value }) => (
+//                 <div key={label}>
+//                   <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>{label}</p>
+//                   <p style={{ fontSize: '13px', color: '#3B2008' }}>{value}</p>
+//                 </div>
+//               ))}
 //             </div>
 //           </div>
+
+//           {/* Lead ID */}
+//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
+//             <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Lead ID</p>
+//             <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#3B2008', fontWeight: 600 }}>{lead.publicId || lead.id}</span>
+//           </div>
+
+//           {/* View Quotation button */}
+//           <div style={{ paddingTop: '14px' }}>
+//             <Link
+//               to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
+//               style={{
+//                 display: 'inline-flex', alignItems: 'center', gap: '6px',
+//                 padding: '6px 14px', borderRadius: '8px',
+//                 border: '0.5px solid #c4904a',
+//                 background: '#fff8ee',
+//                 fontSize: '13px', fontWeight: 500,
+//                 color: '#3B2008',
+//                 textDecoration: 'none', transition: 'background .12s',
+//               }}
+//             >
+//               <FileText size={14} /> View quotation {'\u2197'}
+//             </Link>
+//           </div>
+
 //         </div>
 //       )}
 //     </div>
@@ -923,6 +1047,19 @@
 // };
 
 // export default Leads;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

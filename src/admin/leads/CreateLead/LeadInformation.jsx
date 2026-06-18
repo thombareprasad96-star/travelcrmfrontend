@@ -258,14 +258,11 @@
 
 
 
-
-
 import { useState, useEffect } from "react";
 import {
   FiUser, FiPhone, FiMail, FiSearch, FiChevronDown,
   FiCalendar, FiTag, FiLayers, FiUserCheck
 } from "react-icons/fi";
-// import { leadService } from "../services/leadService";
 import { leadService } from "../../../services/leadService";
 
 const LEAD_SOURCES = [
@@ -335,14 +332,16 @@ export default function LeadInformation({
   onPhoneSearch,
   searching,
 }) {
-  const [searchPhone, setSearchPhone] = useState("");
-  const [users,       setUsers]       = useState([]);
+  const [searchPhone,  setSearchPhone]  = useState("");
+  const [users,        setUsers]        = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError,   setUsersError]   = useState(false);
 
   // ── Fetch users from backend for Assign To dropdown ──────
   useEffect(() => {
     const fetchUsers = async () => {
       setUsersLoading(true);
+      setUsersError(false);
       try {
         const res  = await leadService.getUsers();
         const list = Array.isArray(res.data)
@@ -350,14 +349,8 @@ export default function LeadInformation({
           : Array.isArray(res.data?.data) ? res.data.data : [];
         setUsers(list);
       } catch {
-        // Fallback — static users with publicId
-        setUsers([
-          { publicId: "usr-001", fullName: "Rajesh Kumar"  },
-          { publicId: "usr-002", fullName: "Priya Sharma"  },
-          { publicId: "usr-003", fullName: "Amit Patel"    },
-          { publicId: "usr-004", fullName: "Sunita Verma"  },
-          { publicId: "usr-005", fullName: "Vikram Singh"  },
-        ]);
+        setUsersError(true);
+        setUsers([]);
       } finally {
         setUsersLoading(false);
       }
@@ -504,7 +497,6 @@ export default function LeadInformation({
         {/* Assign To + Birth Date */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          {/* ✅ KEY FIX: value = user.publicId (string UUID) */}
           <FieldWrapper
             label="Assign To"
             required
@@ -524,10 +516,13 @@ export default function LeadInformation({
                 })}
               >
                 <option value="">
-                  {usersLoading ? "Loading users..." : "Select team member"}
+                  {usersLoading
+                    ? "Loading users..."
+                    : usersError
+                    ? "Failed to load — retry"
+                    : "Select team member"}
                 </option>
                 {users.map(user => (
-                  // ✅ value = publicId (UUID string) — backend ka assignedUserId
                   <option
                     key={user.publicId || user.id}
                     value={user.publicId || user.id}
@@ -538,6 +533,13 @@ export default function LeadInformation({
               </select>
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
+            {/* Error state retry hint */}
+            {usersError && (
+              <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                <span className="w-1 h-1 rounded-full bg-amber-500 inline-block" />
+                Could not load team members. Check your connection.
+              </p>
+            )}
           </FieldWrapper>
 
           <FieldWrapper label="Birth Date" icon={FiCalendar}>

@@ -77,7 +77,7 @@ import Vehiclas from "./masters/Vehiclas"
 import Sightseeing from "./masters/Sightseeing";
 import AddonService from "./masters/AddonService";
 
-import AllOrganization from "./user/AllOrganization";
+import AllOrganization from "./tenant/AllOrganization";
 import Testimonials from "./masters/Testimonials"
 import AllVendors from "./vendors/AllVendors";
 import CreateVendor from "./vendors/CreateVendor";

@@ -350,7 +350,7 @@ export const leadService = {
   createLead: (formData, services, itinerary) =>
     API.post("/leads", transformFormData(formData, services, itinerary)),
 
-  getAllLeads: (page = 0, size = 10) =>
+  getAllLeads: (page = 0, size = 100) =>
     API.get(`/leads?page=${page}&size=${size}`),
 
   updateLead: (publicId, formData, services, itinerary) =>
