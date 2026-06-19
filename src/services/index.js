@@ -1,9 +1,4 @@
-// src/services/index.js
-// ─────────────────────────────────────────────────────────────
-// Central export point for all API services.
-// Import from here instead of individual files:
-//
-//   import { customerService, bookingService } from "../services";
+
 //
 // ─────────────────────────────────────────────────────────────
 
