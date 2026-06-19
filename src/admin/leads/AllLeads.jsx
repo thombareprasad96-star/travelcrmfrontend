@@ -1061,17 +1061,16 @@
 
 
 
-
-
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import { leadService } from '../../services/leadService';
 import {
   Users, Trophy, PieChart, TrendingUp, Search,
   DownloadCloud, FileText, Plus,
   Inbox, User, ArrowUp, ArrowDown, Calendar, ChevronDown,
-  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle
+  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase,
+  CheckCircle, XCircle, ExternalLink
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 /* ─── PAGINATION ─────────────────────────────────────── */
 function buildPageNumbers(totalPages, pageIndex) {
@@ -1087,12 +1086,9 @@ function buildPageNumbers(totalPages, pageIndex) {
 
 const NavButton = memo(function NavButton({ label, onClick, disabled }) {
   return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
+    <button disabled={disabled} onClick={onClick}
       className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-        hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-    >
+        hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
       {label}
     </button>
   );
@@ -1100,14 +1096,11 @@ const NavButton = memo(function NavButton({ label, onClick, disabled }) {
 
 const PageButton = memo(function PageButton({ page, isActive, onClick }) {
   return (
-    <button
-      onClick={onClick}
+    <button onClick={onClick}
       className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
-        isActive
-          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-          : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-      }`}
-    >
+        isActive ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                 : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+      }`}>
       {page + 1}
     </button>
   );
@@ -1116,17 +1109,10 @@ const PageButton = memo(function PageButton({ page, isActive, onClick }) {
 function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goToPage, changePageSize }) {
   const from = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
   const to   = Math.min((pageIndex + 1) * pageSize, totalElements);
-
-  const pageNumbers = useMemo(
-    () => buildPageNumbers(totalPages, pageIndex),
-    [totalPages, pageIndex]
-  );
-
+  const pageNumbers = useMemo(() => buildPageNumbers(totalPages, pageIndex), [totalPages, pageIndex]);
   if (totalElements === 0) return null;
-
   const isFirst = pageIndex === 0;
   const isLast  = pageIndex >= totalPages - 1;
-
   return (
     <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p className="text-xs text-slate-400 font-medium">
@@ -1142,11 +1128,8 @@ function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goTo
         )}
         <NavButton label="›" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
         <NavButton label="»" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
-        <select
-          value={pageSize}
-          onChange={e => changePageSize(Number(e.target.value))}
-          className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer"
-        >
+        <select value={pageSize} onChange={e => changePageSize(Number(e.target.value))}
+          className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer">
           {[10, 25, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
         </select>
       </div>
@@ -1169,13 +1152,9 @@ function StatCard({ icon: Icon, label, value, suffix = '', gradient, sub, delay 
     }, 16);
     return () => clearInterval(interval);
   }, [value]);
-
   return (
-    <div
-      className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
-        hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
-      style={{ animationDelay: `${delay}ms` }}
-    >
+    <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
+      style={{ animationDelay: `${delay}ms` }}>
       <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
       <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
       <div className="relative z-10">
@@ -1185,9 +1164,7 @@ function StatCard({ icon: Icon, label, value, suffix = '', gradient, sub, delay 
           </div>
           {sub && <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{sub}</span>}
         </div>
-        <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
-          {displayed.toLocaleString('en-IN')}{suffix}
-        </p>
+        <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">{displayed.toLocaleString('en-IN')}{suffix}</p>
         <p className="text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
       </div>
     </div>
@@ -1211,11 +1188,9 @@ function SkeletonRow() {
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
   return (
-    <div
-      className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
+    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
         ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}
-      style={{ animation: 'slideIn .3s ease both' }}
-    >
+      style={{ animation: 'slideIn .3s ease both' }}>
       {type === 'success' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
       <p className="text-sm font-semibold flex-1">{msg}</p>
       <button onClick={onClose} className="opacity-50 hover:opacity-100 ml-1"><X size={16} /></button>
@@ -1225,6 +1200,7 @@ function Toast({ msg, type, onClose }) {
 
 /* ─── VIEW LEAD MODAL ────────────────────────────────── */
 function ViewLeadModal({ lead, onClose, onEdit }) {
+  const navigate = useNavigate();
   if (!lead) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -1294,7 +1270,18 @@ function ViewLeadModal({ lead, onClose, onEdit }) {
             </div>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
+            {/* ── View Quotation Button ── */}
+            <button
+              onClick={() => {
+                onClose();
+                navigate(`/CreateQuotation?leadId=${lead.publicId || lead.id}`);
+              }}
+              className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700
+                hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold
+                flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-200">
+              <FileText size={14} /> View Quotation
+            </button>
+            <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-indigo-200">
               <Pencil size={14} /> Edit
             </button>
             <button onClick={onClose} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
@@ -1309,11 +1296,11 @@ function ViewLeadModal({ lead, onClose, onEdit }) {
 
 /* ─── EDIT LEAD MODAL ────────────────────────────────── */
 function EditLeadModal({ lead, onClose, onSave }) {
-  const initialAssignName = 
-    lead?.assignedUser?.fullName || 
-    lead?.assignedUser?.name || 
-    lead?.assignedUserName || 
-    lead?.assignTo || 
+  const initialAssignName =
+    lead?.assignedUser?.fullName ||
+    lead?.assignedUser?.name ||
+    lead?.assignedUserName ||
+    lead?.assignTo ||
     'Unassigned';
 
   const [form, setForm] = useState({
@@ -1323,7 +1310,7 @@ function EditLeadModal({ lead, onClose, onSave }) {
     adults:       lead?.adults       || 0,
     children:     lead?.children     || 0,
     infants:      lead?.infants      || 0,
-    assignTo:     initialAssignName, 
+    assignTo:     initialAssignName,
     leadType:     lead?.leadType     || '',
     leadStage:    lead?.leadStage    || '',
   });
@@ -1334,7 +1321,7 @@ function EditLeadModal({ lead, onClose, onSave }) {
     { key: 'customerName', label: 'Customer Name', type: 'text',   placeholder: 'Enter customer name',  span: true },
     { key: 'email',        label: 'Email Address', type: 'email',  placeholder: 'customer@email.com',   span: true },
     { key: 'phone',        label: 'Phone Number',  type: 'tel',    placeholder: '+91 98765 43210' },
-    { key: 'assignTo',     label: 'Assigned To',   type: 'text',   placeholder: 'Agent name' }, 
+    { key: 'assignTo',     label: 'Assigned To',   type: 'text',   placeholder: 'Agent name' },
     { key: 'adults',       label: 'Adults',        type: 'number' },
     { key: 'children',     label: 'Children',      type: 'number' },
     { key: 'infants',      label: 'Infants',       type: 'number' },
@@ -1362,7 +1349,7 @@ function EditLeadModal({ lead, onClose, onSave }) {
                   type={f.type}
                   value={form[f.key]}
                   min={f.type === 'number' ? 0 : undefined}
-                  disabled={f.key === 'assignTo'} 
+                  disabled={f.key === 'assignTo'}
                   onChange={e => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
                   placeholder={f.placeholder}
                   className={`w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all ${
@@ -1404,22 +1391,20 @@ function DeleteConfirm({ lead, onClose, onConfirm }) {
 
 /* ─── MAIN COMPONENT ─────────────────────────────────── */
 const Leads = () => {
+  const navigate = useNavigate();
+
   const [leads,   setLeads]   = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ── Pagination state ──────────────────────────────────
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize,  setPageSize]  = useState(10);
   const [activeTab, setActiveTab] = useState('All');
-
-  // ── Filter & sort state ───────────────────────────────
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder,  setSortOrder]  = useState('desc');
   const [dateFilter, setDateFilter] = useState('all');
   const [startDate,  setStartDate]  = useState('');
   const [endDate,    setEndDate]    = useState('');
 
-  // ── Modal & toast state ───────────────────────────────
   const [viewLead,     setViewLead]     = useState(null);
   const [editLead,     setEditLead]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -1427,7 +1412,6 @@ const Leads = () => {
 
   const showToast = (msg, type = 'success') => setToast({ msg, type });
 
-  // ── Fetch ─────────────────────────────────────────────
   useEffect(() => { fetchLeads(); }, []);
 
   const fetchLeads = async () => {
@@ -1436,10 +1420,10 @@ const Leads = () => {
       const response = await leadService.getAllLeads();
       let data = [];
       if (response.data) {
-        if      (Array.isArray(response.data.data))                            data = response.data.data;
+        if      (Array.isArray(response.data.data))                                data = response.data.data;
         else if (response.data.data && Array.isArray(response.data.data.content)) data = response.data.data.content;
-        else if (Array.isArray(response.data.content))                         data = response.data.content;
-        else if (Array.isArray(response.data))                                 data = response.data;
+        else if (Array.isArray(response.data.content))                             data = response.data.content;
+        else if (Array.isArray(response.data))                                     data = response.data;
       }
       setLeads(data);
     } catch (err) {
@@ -1450,28 +1434,14 @@ const Leads = () => {
     }
   };
 
-  // ── Update ────────────────────────────────────────────
   const handleUpdateSubmit = async (updatedFormData) => {
     try {
-      const safeAssignedUserId = 
-        editLead.assignedUserId || 
-        editLead.assignedUser?.publicId || 
-        editLead.assignedUser?.id || 
-        null;
-
-      const completePayload = { 
-        ...editLead, 
-        assignedUserId: safeAssignedUserId, 
-        ...updatedFormData 
-      };
-
-      await leadService.updateLead(
-        editLead.publicId || editLead.id,
-        completePayload,
-        editLead.services  || [],
-        editLead.itinerary || []
-      );
-      
+      const safeAssignedUserId =
+        editLead.assignedUserId ||
+        editLead.assignedUser?.publicId ||
+        editLead.assignedUser?.id || null;
+      const completePayload = { ...editLead, assignedUserId: safeAssignedUserId, ...updatedFormData };
+      await leadService.updateLead(editLead.publicId || editLead.id, completePayload, editLead.services || [], editLead.itinerary || []);
       setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, ...updatedFormData } : l));
       showToast('Lead updated successfully!');
       setEditLead(null);
@@ -1481,37 +1451,22 @@ const Leads = () => {
     }
   };
 
-  // ── Quick Update Stage via Dropdown ───────────────────
   const handleStageChange = async (leadToUpdate, newStage) => {
     try {
-      const safeAssignedUserId = 
-        leadToUpdate.assignedUserId || 
-        leadToUpdate.assignedUser?.publicId || 
-        leadToUpdate.assignedUser?.id || 
-        null;
-
-      const completePayload = { 
-        ...leadToUpdate, 
-        leadStage: newStage, 
-        assignedUserId: safeAssignedUserId 
-      };
-
-      await leadService.updateLead(
-        leadToUpdate.publicId || leadToUpdate.id,
-        completePayload,
-        leadToUpdate.services  || [],
-        leadToUpdate.itinerary || []
-      );
-      
+      const safeAssignedUserId =
+        leadToUpdate.assignedUserId ||
+        leadToUpdate.assignedUser?.publicId ||
+        leadToUpdate.assignedUser?.id || null;
+      const completePayload = { ...leadToUpdate, leadStage: newStage, assignedUserId: safeAssignedUserId };
+      await leadService.updateLead(leadToUpdate.publicId || leadToUpdate.id, completePayload, leadToUpdate.services || [], leadToUpdate.itinerary || []);
       setLeads(prev => prev.map(l => l.id === leadToUpdate.id ? { ...l, leadStage: newStage } : l));
       showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
     } catch (err) {
       console.error('Failed to update stage:', err);
-      showToast('Error updating lead stage. Please try again.', 'error');
+      showToast('Error updating lead stage.', 'error');
     }
   };
 
-  // ── Delete ────────────────────────────────────────────
   const handleDelete = async () => {
     try {
       if (typeof leadService.deleteLead === 'function') {
@@ -1522,15 +1477,19 @@ const Leads = () => {
       setDeleteTarget(null);
     } catch (err) {
       console.error('Error deleting lead:', err);
-      showToast('Failed to delete lead. Please try again.', 'error');
+      showToast('Failed to delete lead.', 'error');
     }
   };
 
-  const toggleDateSort = () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  /* ── View Quotation — navigate with leadId ─────────── */
+  const handleViewQuotation = (lead) => {
+    const id = lead.publicId || lead.id;
+    navigate(`/CreateQuotation?leadId=${id}`);
+  };
 
+  const toggleDateSort = () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   const safeLeads = Array.isArray(leads) ? leads : [];
 
-  // ── Filter ────────────────────────────────────────────
   const filteredLeads = useMemo(() => {
     return safeLeads.filter(lead => {
       const q = searchTerm.trim().toLowerCase();
@@ -1546,9 +1505,8 @@ const Leads = () => {
         const today = new Date();               today.setHours(0,0,0,0);
         const yest  = new Date(today);          yest.setDate(today.getDate() - 1);
         const week  = new Date(today);          week.setDate(today.getDate() - 7);
-
-        if      (dateFilter === 'today')     matchesDate = ld.getTime() === today.getTime();
-        else if (dateFilter === 'yesterday') matchesDate = ld.getTime() === yest.getTime();
+        if      (dateFilter === 'today')       matchesDate = ld.getTime() === today.getTime();
+        else if (dateFilter === 'yesterday')   matchesDate = ld.getTime() === yest.getTime();
         else if (dateFilter === 'last_7_days') matchesDate = ld >= week && ld <= today;
         else if (dateFilter === 'custom' && startDate && endDate) {
           const s = new Date(startDate);
@@ -1558,17 +1516,13 @@ const Leads = () => {
       }
 
       let matchesTab = true;
-      if (activeTab === 'Fresh') {
-        matchesTab = lead.leadType === 'Fresh Lead';
-      } else if (activeTab !== 'All') {
-        matchesTab = lead.leadStage === activeTab;
-      }
+      if (activeTab === 'Fresh')       matchesTab = lead.leadType === 'Fresh Lead';
+      else if (activeTab !== 'All')    matchesTab = lead.leadStage === activeTab;
 
       return matchesSearch && matchesDate && matchesTab;
     });
   }, [safeLeads, searchTerm, dateFilter, startDate, endDate, activeTab]);
 
-  // ── Sort ──────────────────────────────────────────────
   const sortedLeads = useMemo(() => {
     return [...filteredLeads].sort((a, b) => {
       if (!a.createdAt || !b.createdAt) return 0;
@@ -1578,40 +1532,23 @@ const Leads = () => {
     });
   }, [filteredLeads, sortOrder]);
 
-  // ── Pagination derived values ─────────────────────────
   const totalElements = sortedLeads.length;
   const totalPages    = Math.max(1, Math.ceil(totalElements / pageSize));
 
-  // Reset page to 0 when filters or pageSize change
-  useEffect(() => {
-    setPageIndex(0);
-  }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
+  useEffect(() => { setPageIndex(0); }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
 
-  // Clamp so pageIndex never goes out of range
   const safePageIndex = Math.min(pageIndex, totalPages - 1);
-
-  // Current page slice
-  const currentLeads = useMemo(() => {
+  const currentLeads  = useMemo(() => {
     const start = safePageIndex * pageSize;
     return sortedLeads.slice(start, start + pageSize);
   }, [sortedLeads, safePageIndex, pageSize]);
 
-  // Navigation handlers
-  const goToPage = (page) => {
-    setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
-  };
+  const goToPage      = (page) => setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
+  const changePageSize = (size) => { setPageSize(size); setPageIndex(0); };
 
-  const changePageSize = (size) => {
-    setPageSize(size);
-    setPageIndex(0);
-  };
-
-  // ── Render ────────────────────────────────────────────
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
-      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
@@ -1619,7 +1556,6 @@ const Leads = () => {
         .fade-up { animation: fadeUp .4s ease both; }
       `}</style>
 
-      {/* Modals & Toast */}
       {toast        && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
       {viewLead     && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); setEditLead(l); }} />}
       {editLead     && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
@@ -1670,10 +1606,9 @@ const Leads = () => {
           <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-indigo-500 to-indigo-600" delay={180} />
         </div>
 
-        {/* LEADS DIRECTORY CARD */}
+        {/* LEADS TABLE CARD */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 
-          {/* List header */}
           <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-base font-extrabold text-slate-700">Leads Directory</h2>
@@ -1686,16 +1621,14 @@ const Leads = () => {
             )}
           </div>
 
-          {/* Filters Bar */}
+          {/* Filters */}
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
             <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
               <div className="relative flex-1 min-w-[220px] max-w-sm group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Search size={15} /></div>
-                <input
-                  type="text" placeholder="Search by name, email, phone, or ID..."
+                <input type="text" placeholder="Search by name, email, phone, or ID..."
                   value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all"
-                />
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
               </div>
               <div className="relative min-w-[160px]">
                 <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}
@@ -1706,7 +1639,7 @@ const Leads = () => {
                   <option value="last_7_days">Last 7 Days</option>
                   <option value="custom">Custom Date</option>
                 </select>
-                <div className="absolute inset-y-0 left-0  pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={13} /></div>
               </div>
               {dateFilter === 'custom' && (
@@ -1719,46 +1652,30 @@ const Leads = () => {
             </div>
           </div>
 
-          {/* Status Tabs with Dynamic Counters */}
+          {/* Status Tabs */}
           <div className="px-5 py-4 border-b border-slate-100 overflow-x-auto">
             {(() => {
-              const freshCount = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
-              const newLeadCount = safeLeads.filter(l => l.leadStage === 'New Lead').length;
-              const contactedCount = safeLeads.filter(l => l.leadStage === 'Contacted').length;
-
-              const btnClass = (tabName) => `px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all ${
-                activeTab === tabName 
-                  ? 'bg-blue-600 text-white shadow-blue-200' 
-                  : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
+              const freshCount    = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
+              const newLeadCount  = safeLeads.filter(l => l.leadStage === 'New Lead').length;
+              const contactedCount= safeLeads.filter(l => l.leadStage === 'Contacted').length;
+              const btnClass = (t) => `px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all ${
+                activeTab === t ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
               }`;
-
-              const badgeClass = (tabName) => `px-2 py-0.5 rounded-md text-xs font-black ${
-                activeTab === tabName ? 'bg-white/20' : 'bg-slate-100 text-slate-700'
-              }`;
-
+              const bdgClass = (t) => `px-2 py-0.5 rounded-md text-xs font-black ${activeTab === t ? 'bg-white/20' : 'bg-slate-100 text-slate-700'}`;
               return (
                 <div className="flex gap-2 min-w-max">
-                  <button onClick={() => setActiveTab('All')} className={btnClass('All')}>
-                    All <span className={badgeClass('All')}>{safeLeads.length}</span>
-                  </button>
-                  <button onClick={() => setActiveTab('Fresh')} className={btnClass('Fresh')}>
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" /> Fresh
-                    <span className={badgeClass('Fresh')}>{freshCount}</span>
-                  </button>
-                  <button onClick={() => setActiveTab('New Lead')} className={btnClass('New Lead')}>
-                    New Lead <span className={badgeClass('New Lead')}>{newLeadCount}</span>
-                  </button>
-                  <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>
-                    Contacted <span className={badgeClass('Contacted')}>{contactedCount}</span>
-                  </button>
+                  <button onClick={() => setActiveTab('All')}       className={btnClass('All')}>All <span className={bdgClass('All')}>{safeLeads.length}</span></button>
+                  <button onClick={() => setActiveTab('Fresh')}     className={btnClass('Fresh')}><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Fresh <span className={bdgClass('Fresh')}>{freshCount}</span></button>
+                  <button onClick={() => setActiveTab('New Lead')}  className={btnClass('New Lead')}>New Lead <span className={bdgClass('New Lead')}>{newLeadCount}</span></button>
+                  <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>Contacted <span className={bdgClass('Contacted')}>{contactedCount}</span></button>
                 </div>
               );
             })()}
           </div>
 
-          {/* Data Table */}
+          {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1400px] border-collapse text-sm whitespace-nowrap">
+            <table className="w-full min-w-[1500px] border-collapse text-sm whitespace-nowrap">
               <thead className="bg-slate-50/80 border-b border-slate-100">
                 <tr className="text-slate-500 text-xs uppercase tracking-wider font-extrabold">
                   <th className="px-4 py-3.5 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer" /></th>
@@ -1777,9 +1694,7 @@ const Leads = () => {
                   <th className="px-4 py-3.5 text-left">TYPE</th>
                   <th className="px-4 py-3.5 text-left">STAGE</th>
                   <th onClick={toggleDateSort} className="px-4 py-3.5 text-left cursor-pointer hover:text-blue-600 select-none transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      CREATED {sortOrder === 'asc' ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />}
-                    </div>
+                    <div className="flex items-center gap-1.5">CREATED {sortOrder === 'asc' ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />}</div>
                   </th>
                   <th className="px-4 py-3.5 text-center">ACTIONS</th>
                 </tr>
@@ -1842,19 +1757,25 @@ const Leads = () => {
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-center text-slate-400">—</td>
+
+                      {/* ── QUOTATION COLUMN — View Quotation button ── */}
+                      <td className="px-4 py-3.5 text-center">
+                        <button
+                          onClick={() => handleViewQuotation(lead)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold
+                            bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200
+                            hover:border-blue-400 transition-all whitespace-nowrap"
+                        >
+                          <FileText size={12} /> View Quotation
+                        </button>
+                      </td>
+
                       <td className="px-4 py-3.5 text-slate-400">—</td>
                       <td className="px-4 py-3.5 text-center text-slate-400">—</td>
                       <td className="px-4 py-3.5 text-center text-slate-400">—</td>
                       <td className="px-4 py-3.5">
                         {(() => {
-                          const name =
-                            lead.assignedUser?.fullName ||   
-                            lead.assignedUser?.name      ||   
-                            lead.assignedUser?.username  ||   
-                            lead.assignedUserName        ||   
-                            lead.assignTo                ||   
-                            null;
+                          const name = lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || null;
                           return (
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-xs font-extrabold shadow-sm">
@@ -1870,22 +1791,19 @@ const Leads = () => {
                       <td className="px-4 py-3.5">
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-slate-200 bg-slate-100 text-slate-700">{lead.leadType || 'N/A'}</span>
                       </td>
-                      {/* 👉 NAYA CODE: Dropdown for STAGE */}
                       <td className="px-4 py-3.5">
                         <select
                           value={lead.leadStage || 'New Lead'}
                           onChange={(e) => handleStageChange(lead, e.target.value)}
                           className={`text-xs font-bold px-2.5 py-1 rounded-full border border-transparent hover:border-slate-200 outline-none cursor-pointer appearance-none text-center transition-all ${
                             lead.leadStage === 'Contacted' ? 'bg-blue-100 text-blue-700' :
-                            lead.leadStage === 'New Lead' ? 'bg-emerald-100 text-emerald-700' :
+                            lead.leadStage === 'New Lead'  ? 'bg-emerald-100 text-emerald-700' :
                             lead.leadStage === 'Converted' ? 'bg-green-100 text-green-700' :
-                            lead.leadStage === 'Lost' ? 'bg-red-100 text-red-700' :
+                            lead.leadStage === 'Lost'      ? 'bg-red-100 text-red-700' :
                             'bg-orange-100 text-orange-700'
-                          }`}
-                        >
+                          }`}>
                           <option value="New Lead">New Lead</option>
                           <option value="Contacted">Contacted</option>
-                          
                         </select>
                       </td>
                       <td className="px-4 py-3.5">
@@ -1898,9 +1816,14 @@ const Leads = () => {
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center justify-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setViewLead(lead)}     title="View"   className="w-8 h-8 rounded-lg bg-blue-50   hover:bg-blue-100   text-blue-600   flex items-center justify-center transition-all"><Eye    size={15} /></button>
-                          <button onClick={() => setEditLead(lead)}     title="Edit"   className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={15} /></button>
-                          <button onClick={() => setDeleteTarget(lead)} title="Delete" className="w-8 h-8 rounded-lg bg-red-50    hover:bg-red-100    text-red-400 hover:text-red-600 flex items-center justify-center transition-all"><Trash2 size={15} /></button>
+                          <button onClick={() => setViewLead(lead)} title="View Detail"
+                            className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={15} /></button>
+                          <button onClick={() => setEditLead(lead)} title="Edit"
+                            className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={15} /></button>
+                          <button onClick={() => handleViewQuotation(lead)} title="View Quotation"
+                            className="w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-all"><ExternalLink size={15} /></button>
+                          <button onClick={() => setDeleteTarget(lead)} title="Delete"
+                            className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all"><Trash2 size={15} /></button>
                         </div>
                       </td>
                     </tr>
@@ -1910,7 +1833,6 @@ const Leads = () => {
             </table>
           </div>
 
-          {/* ── PAGINATION ── */}
           <CommonPagination
             pageIndex={safePageIndex}
             pageSize={pageSize}
@@ -1919,7 +1841,6 @@ const Leads = () => {
             goToPage={goToPage}
             changePageSize={changePageSize}
           />
-
         </div>
       </div>
     </div>

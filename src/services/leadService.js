@@ -279,6 +279,124 @@
 
 
 
+
+
+// new data
+
+
+// import axios from "axios";
+
+// const API = axios.create({
+//   baseURL: "http://localhost:8080/api",
+//   headers: { "Content-Type": "application/json" },
+// });
+
+// // ── JWT Interceptor ───────────────────────────────────────
+// API.interceptors.request.use((config) => {
+//   const token = localStorage.getItem("token");
+//   if (token) config.headers.Authorization = `Bearer ${token}`;
+//   return config;
+// });
+
+// // ── Transformer: React form → Backend DTO ────────────────
+// function transformFormData(formData, services = [], itinerary = []) {
+//   return {
+//     // ── Basic Info ─────────────────────────────────────────
+//     customerName:   formData.customerName?.trim()  || "",
+//     phone:          formData.phone?.trim()          || "",
+//     email:          formData.email?.trim()          || "",
+
+//     // ── Lead Meta ──────────────────────────────────────────
+//     leadSource:     formData.leadSource             || "Direct",
+//     leadType:       formData.leadType               || "Hot",
+//     leadStage:      formData.leadStage              || "New Lead",
+
+//     // ── FIX: assignedUserId ────────────────────────────────
+//     // Backend expects publicId (string UUID) — not parseInt
+//     // LeadInformation dropdown value={user.publicId} set karo
+//     assignedUserId: formData.assignedUserId         || null,
+
+//     // ── Dates ──────────────────────────────────────────────
+//     birthDate:      formData.birthDate              || null,
+//     travelDate:     formData.travelDate             || null,
+
+//     // ── Departure ──────────────────────────────────────────
+//     departCountry:  formData.departCountry          || "Not Specified",
+//     departCity:     formData.departCity             || "Not Specified",
+
+//     // ── Travelers ──────────────────────────────────────────
+//     rooms:          Number(formData.rooms)          || 1,
+//     adults:         Number(formData.adults)         || 1,
+//     children:       Number(formData.children)       || 0,
+//     infants:        Number(formData.infants)        || 0,
+//     extraBeds:      Number(formData.extraBeds)      || 0,
+
+//     // ── Notes ──────────────────────────────────────────────
+//     notes:          formData.notes?.trim()          || "",
+
+//     // ── Services array ─────────────────────────────────────
+//     services:       Array.isArray(services) ? services : [],
+
+//     // ── Itinerary array ────────────────────────────────────
+//     itinerary: (Array.isArray(itinerary) ? itinerary : []).map(
+//       ({ destination, city, nights }, index) => ({
+//         destination: destination?.trim() || "",
+//         city:        city?.trim()        || "",
+//         nights:      Number(nights)      || 0,
+//         dayNumber:   index + 1,           // backend expects dayNumber
+//       })
+//     ),
+//   };
+// }
+
+// export const leadService = {
+
+//   // ── CRUD ─────────────────────────────────────────────────
+//   createLead: (formData, services, itinerary) =>
+//     API.post("/leads", transformFormData(formData, services, itinerary)),
+
+//   getAllLeads: (page = 0, size = 100) =>
+//     API.get(`/leads?page=${page}&size=${size}`),
+
+//   updateLead: (publicId, formData, services, itinerary) =>
+//     API.put(`/leads/${publicId}`, transformFormData(formData, services, itinerary)),
+
+//   deleteLead: (publicId) =>
+//     API.delete(`/leads/${publicId}`),
+
+//   // ── Search ────────────────────────────────────────────────
+//   searchByPhone: (phone) =>
+//     API.get("/leads/search", { params: { keyword: phone } }),
+
+//   // ── Users (Assign To dropdown ke liye) ───────────────────
+//   // LeadInformation.jsx mein yeh call karo
+//   getUsers: () =>
+//     API.get("/users"),
+
+//   // ── Statistics ────────────────────────────────────────────
+//   getUserWorkload: () =>
+//     API.get("/leads/stats/workload"),
+
+//   getLeadsByStagePerUser: () =>
+//     API.get("/leads/stats/by-stage"),
+
+//   getLeadCountForUser: (userPublicId) =>
+//     API.get(`/leads/stats/users/${userPublicId}/count`),
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import axios from "axios";
 
 const API = axios.create({
@@ -296,49 +414,30 @@ API.interceptors.request.use((config) => {
 // ── Transformer: React form → Backend DTO ────────────────
 function transformFormData(formData, services = [], itinerary = []) {
   return {
-    // ── Basic Info ─────────────────────────────────────────
     customerName:   formData.customerName?.trim()  || "",
     phone:          formData.phone?.trim()          || "",
     email:          formData.email?.trim()          || "",
-
-    // ── Lead Meta ──────────────────────────────────────────
     leadSource:     formData.leadSource             || "Direct",
     leadType:       formData.leadType               || "Hot",
     leadStage:      formData.leadStage              || "New Lead",
-
-    // ── FIX: assignedUserId ────────────────────────────────
-    // Backend expects publicId (string UUID) — not parseInt
-    // LeadInformation dropdown value={user.publicId} set karo
     assignedUserId: formData.assignedUserId         || null,
-
-    // ── Dates ──────────────────────────────────────────────
     birthDate:      formData.birthDate              || null,
     travelDate:     formData.travelDate             || null,
-
-    // ── Departure ──────────────────────────────────────────
     departCountry:  formData.departCountry          || "Not Specified",
     departCity:     formData.departCity             || "Not Specified",
-
-    // ── Travelers ──────────────────────────────────────────
     rooms:          Number(formData.rooms)          || 1,
     adults:         Number(formData.adults)         || 1,
     children:       Number(formData.children)       || 0,
     infants:        Number(formData.infants)        || 0,
     extraBeds:      Number(formData.extraBeds)      || 0,
-
-    // ── Notes ──────────────────────────────────────────────
     notes:          formData.notes?.trim()          || "",
-
-    // ── Services array ─────────────────────────────────────
     services:       Array.isArray(services) ? services : [],
-
-    // ── Itinerary array ────────────────────────────────────
     itinerary: (Array.isArray(itinerary) ? itinerary : []).map(
       ({ destination, city, nights }, index) => ({
         destination: destination?.trim() || "",
         city:        city?.trim()        || "",
         nights:      Number(nights)      || 0,
-        dayNumber:   index + 1,           // backend expects dayNumber
+        dayNumber:   index + 1,
       })
     ),
   };
@@ -346,29 +445,37 @@ function transformFormData(formData, services = [], itinerary = []) {
 
 export const leadService = {
 
-  // ── CRUD ─────────────────────────────────────────────────
+  // ── CREATE ────────────────────────────────────────────────
   createLead: (formData, services, itinerary) =>
     API.post("/leads", transformFormData(formData, services, itinerary)),
 
+  // ── GET ALL ───────────────────────────────────────────────
   getAllLeads: (page = 0, size = 100) =>
     API.get(`/leads?page=${page}&size=${size}`),
 
+  // ── GET BY PUBLIC ID ──────────────────────────────────────
+  // CreateQuotation.jsx mein leadId se lead data fetch karne ke liye
+  // URL: GET /api/leads/{publicId}
+  getLeadById: (publicId) =>
+    API.get(`/leads/${publicId}`),
+
+  // ── UPDATE ────────────────────────────────────────────────
   updateLead: (publicId, formData, services, itinerary) =>
     API.put(`/leads/${publicId}`, transformFormData(formData, services, itinerary)),
 
+  // ── DELETE ────────────────────────────────────────────────
   deleteLead: (publicId) =>
     API.delete(`/leads/${publicId}`),
 
-  // ── Search ────────────────────────────────────────────────
+  // ── SEARCH ───────────────────────────────────────────────
   searchByPhone: (phone) =>
     API.get("/leads/search", { params: { keyword: phone } }),
 
-  // ── Users (Assign To dropdown ke liye) ───────────────────
-  // LeadInformation.jsx mein yeh call karo
+  // ── USERS (Assign To dropdown) ────────────────────────────
   getUsers: () =>
     API.get("/users"),
 
-  // ── Statistics ────────────────────────────────────────────
+  // ── STATISTICS ───────────────────────────────────────────
   getUserWorkload: () =>
     API.get("/leads/stats/workload"),
 
@@ -378,3 +485,4 @@ export const leadService = {
   getLeadCountForUser: (userPublicId) =>
     API.get(`/leads/stats/users/${userPublicId}/count`),
 };
+
