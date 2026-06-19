@@ -20,24 +20,24 @@ import {
 import { MdOutlineFlightTakeoff } from "react-icons/md";
 
 // ── Uncomment when backend is ready ──────────────────────────
-// import bookingReminderService from "../services/bookingReminderService";
+import bookingReminderService from '../services/bookingReminderService';
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
-function daysAgo(d)  { const dt = new Date(); dt.setDate(dt.getDate() - d); return dt.toISOString(); }
-function daysAhead(d){ const dt = new Date(); dt.setDate(dt.getDate() + d); return dt.toISOString(); }
+// function daysAgo(d)  { const dt = new Date(); dt.setDate(dt.getDate() - d); return dt.toISOString(); }
+// function daysAhead(d){ const dt = new Date(); dt.setDate(dt.getDate() + d); return dt.toISOString(); }
 
-const MOCK_BOOKING_REMINDERS = [
-  { id:1, bookingCode:"BK10001", customerName:"Arjun Sharma",   phone:"+91 98765 43210", destination:"Maldives Escape",     reminderType:"Payment_due",   message:"Balance payment of ₹85,000 due before travel date.", travelDate:daysAhead(45), reminderDate:daysAhead(2),  status:"Pending",   amount:85000,  createdAt:daysAgo(3) },
-  { id:2, bookingCode:"BK10002", customerName:"Priya Mehta",    phone:"+91 87654 32109", destination:"Singapore Hop",       reminderType:"Payment_due",   message:"Balance payment ₹52,250 pending for booking confirmation.", travelDate:daysAhead(10), reminderDate:daysAhead(1),  status:"Pending",   amount:52250,  createdAt:daysAgo(5) },
-  { id:3, bookingCode:"BK10003", customerName:"Vikram Singh",   phone:"+91 54321 09876", destination:"Dubai Explorer",      reminderType:"Document",      message:"Passport copy and visa documents required within 5 days.", travelDate:daysAhead(60), reminderDate:daysAhead(0),  status:"Sent",      amount:0,      createdAt:daysAgo(2) },
-  { id:4, bookingCode:"BK10004", customerName:"Rohit Khanna",   phone:"+91 10987 65432", destination:"Japan Cultural",      reminderType:"Visa",          message:"Visa appointment scheduled — bring all required documents.", travelDate:daysAhead(70), reminderDate:daysAhead(3),  status:"Sent",      amount:0,      createdAt:daysAgo(8) },
-  { id:5, bookingCode:"BK10005", customerName:"Sandeep Kumar",  phone:"+91 44332 21100", destination:"Singapore Hop",       reminderType:"Travel_date",   message:"Travel date approaching in 4 days — confirm final headcount.", travelDate:daysAhead(4),  reminderDate:daysAhead(0),  status:"Pending",   amount:0,      createdAt:daysAgo(1) },
-  { id:6, bookingCode:"BK10006", customerName:"Anjali Verma",   phone:"+91 43210 98765", destination:"Maldives Escape",     reminderType:"Final_payment", message:"Final payment of ₹1,45,000 due 7 days before departure.", travelDate:daysAhead(180),reminderDate:daysAhead(7),  status:"Completed",amount:145000, createdAt:daysAgo(15)},
-  { id:7, bookingCode:"BK10007", customerName:"Karan Malhotra", phone:"+91 90909 80808", destination:"Singapore Hop",       reminderType:"Itinerary",     message:"Final itinerary sent via WhatsApp and email.", travelDate:daysAhead(28), reminderDate:daysAgo(1),    status:"Completed",amount:0,      createdAt:daysAgo(10)},
-  { id:8, bookingCode:"BK10008", customerName:"Deepak Mishra",  phone:"+91 66554 43322", destination:"Bhutan Delight",      reminderType:"Visa",          message:"Bhutan permit application deadline in 3 days.", travelDate:daysAhead(35), reminderDate:daysAhead(3),  status:"Pending",   amount:0,      createdAt:daysAgo(4) },
-  { id:9, bookingCode:"BK10009", customerName:"Meera Reddy",    phone:"+91 80808 70707", destination:"Kerala Backwaters",   reminderType:"Travel_date",   message:"Houseboat check-in instructions — send 2 days before.", travelDate:daysAhead(50), reminderDate:daysAhead(48), status:"Pending",   amount:0,      createdAt:daysAgo(6) },
-  { id:10,bookingCode:"BK10010", customerName:"Neha Kapoor",    phone:"+91 99887 76655", destination:"Kashmir Family Trip", reminderType:"Payment_due",   message:"Advance payment ₹25,000 confirmation pending.", travelDate:daysAhead(90), reminderDate:daysAgo(2),    status:"Sent",      amount:25000,  createdAt:daysAgo(12)},
-];
+// const MOCK_BOOKING_REMINDERS = [
+//   { id:1, bookingCode:"BK10001", customerName:"Arjun Sharma",   phone:"+91 98765 43210", destination:"Maldives Escape",     reminderType:"Payment_due",   message:"Balance payment of ₹85,000 due before travel date.", travelDate:daysAhead(45), reminderDate:daysAhead(2),  status:"Pending",   amount:85000,  createdAt:daysAgo(3) },
+//   { id:2, bookingCode:"BK10002", customerName:"Priya Mehta",    phone:"+91 87654 32109", destination:"Singapore Hop",       reminderType:"Payment_due",   message:"Balance payment ₹52,250 pending for booking confirmation.", travelDate:daysAhead(10), reminderDate:daysAhead(1),  status:"Pending",   amount:52250,  createdAt:daysAgo(5) },
+//   { id:3, bookingCode:"BK10003", customerName:"Vikram Singh",   phone:"+91 54321 09876", destination:"Dubai Explorer",      reminderType:"Document",      message:"Passport copy and visa documents required within 5 days.", travelDate:daysAhead(60), reminderDate:daysAhead(0),  status:"Sent",      amount:0,      createdAt:daysAgo(2) },
+//   { id:4, bookingCode:"BK10004", customerName:"Rohit Khanna",   phone:"+91 10987 65432", destination:"Japan Cultural",      reminderType:"Visa",          message:"Visa appointment scheduled — bring all required documents.", travelDate:daysAhead(70), reminderDate:daysAhead(3),  status:"Sent",      amount:0,      createdAt:daysAgo(8) },
+//   { id:5, bookingCode:"BK10005", customerName:"Sandeep Kumar",  phone:"+91 44332 21100", destination:"Singapore Hop",       reminderType:"Travel_date",   message:"Travel date approaching in 4 days — confirm final headcount.", travelDate:daysAhead(4),  reminderDate:daysAhead(0),  status:"Pending",   amount:0,      createdAt:daysAgo(1) },
+//   { id:6, bookingCode:"BK10006", customerName:"Anjali Verma",   phone:"+91 43210 98765", destination:"Maldives Escape",     reminderType:"Final_payment", message:"Final payment of ₹1,45,000 due 7 days before departure.", travelDate:daysAhead(180),reminderDate:daysAhead(7),  status:"Completed",amount:145000, createdAt:daysAgo(15)},
+//   { id:7, bookingCode:"BK10007", customerName:"Karan Malhotra", phone:"+91 90909 80808", destination:"Singapore Hop",       reminderType:"Itinerary",     message:"Final itinerary sent via WhatsApp and email.", travelDate:daysAhead(28), reminderDate:daysAgo(1),    status:"Completed",amount:0,      createdAt:daysAgo(10)},
+//   { id:8, bookingCode:"BK10008", customerName:"Deepak Mishra",  phone:"+91 66554 43322", destination:"Bhutan Delight",      reminderType:"Visa",          message:"Bhutan permit application deadline in 3 days.", travelDate:daysAhead(35), reminderDate:daysAhead(3),  status:"Pending",   amount:0,      createdAt:daysAgo(4) },
+//   { id:9, bookingCode:"BK10009", customerName:"Meera Reddy",    phone:"+91 80808 70707", destination:"Kerala Backwaters",   reminderType:"Travel_date",   message:"Houseboat check-in instructions — send 2 days before.", travelDate:daysAhead(50), reminderDate:daysAhead(48), status:"Pending",   amount:0,      createdAt:daysAgo(6) },
+//   { id:10,bookingCode:"BK10010", customerName:"Neha Kapoor",    phone:"+91 99887 76655", destination:"Kashmir Family Trip", reminderType:"Payment_due",   message:"Advance payment ₹25,000 confirmation pending.", travelDate:daysAhead(90), reminderDate:daysAgo(2),    status:"Sent",      amount:25000,  createdAt:daysAgo(12)},
+// ];
 
 const REMINDER_TYPES = [
   { value:"Payment_due",   label:"Payment Due",    icon:<FaMoneyBillWave className="w-3.5 h-3.5"/>, color:"bg-amber-100 text-amber-700"  },
@@ -329,20 +329,20 @@ export default function BookingReminders() {
   const [delItem,   setDelItem]   = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    // BACKEND: replace with real API call
-    // bookingReminderService.getAll()
-    //   .then(res => setReminders(res.data))
-    //   .catch(() => showToast("Failed to load booking reminders.", "error"))
-    //   .finally(() => setLoading(false));
+  setLoading(true);
 
-    // MOCK loader (remove when backend connected)
-    const t = setTimeout(() => {
-      setReminders(MOCK_BOOKING_REMINDERS);
+  bookingReminderService
+    .getAll()
+    .then((res) => {
+      setReminders(res.data);
+    })
+    .catch(() => {
+      showToast("Failed to load booking reminders.", "error");
+    })
+    .finally(() => {
       setLoading(false);
-    }, 700);
-    return () => clearTimeout(t);
-  }, []);
+    });
+}, []);
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
 
@@ -365,24 +365,56 @@ export default function BookingReminders() {
   const anyFilter = fStatus !== "All Status";
 
   /* handlers */
-  const handleMarkSent = (id) => {
-    setReminders(p => p.map(r => r.id === id ? { ...r, status: "Sent" } : r));
+  const handleMarkSent = async (id) => {
+  try {
+    const res = await bookingReminderService.markSent(id);
+
+    setReminders((prev) =>
+      prev.map((r) =>
+        r.id === id ? res.data : r
+      )
+    );
+
     showToast("Reminder marked as sent. 📤");
-    // BACKEND: bookingReminderService.markSent(id).catch(() => showToast("Failed to update.", "error"));
-  };
+  } catch {
+    showToast("Failed to update reminder.", "error");
+  }
+};
 
-  const handleMarkComplete = (id) => {
-    setReminders(p => p.map(r => r.id === id ? { ...r, status: "Completed" } : r));
+  const handleMarkComplete = async (id) => {
+  try {
+    const res = await bookingReminderService.markComplete(id);
+
+    setReminders((prev) =>
+      prev.map((r) =>
+        r.id === id ? res.data : r
+      )
+    );
+
     showToast("Reminder marked as completed. ✅");
-    // BACKEND: bookingReminderService.markComplete(id).catch(() => showToast("Failed to update.", "error"));
-  };
+  } catch {
+    showToast("Failed to update reminder.", "error");
+  }
+};
 
-  const handleDelete = () => {
-    setReminders(p => p.filter(r => r.id !== delItem.id));
-    showToast(`Reminder for ${delItem.bookingCode} deleted.`);
+  const handleDelete = async () => {
+  try {
+    await bookingReminderService.delete(delItem.id);
+
+    setReminders((prev) =>
+      prev.filter((r) => r.id !== delItem.id)
+    );
+
+    showToast(
+      `Reminder for ${delItem.bookingCode} deleted.`
+    );
+  } catch {
+    showToast("Failed to delete reminder.", "error");
+  } finally {
     setDelItem(null);
-    // BACKEND: bookingReminderService.delete(delItem.id).catch(() => showToast("Failed to delete.", "error"));
-  };
+  }
+};
+
 
   const resetFilters = () => setFStatus("All Status");
 
@@ -405,6 +437,23 @@ export default function BookingReminders() {
     { gradient:"from-blue-500 to-blue-600",     icon:<FiSend className="w-5 h-5"/>,                 label:"Sent",            value:stats.sent      },
     { gradient:"from-green-500 to-emerald-600", icon:<FiCheckCircle className="w-5 h-5"/>,          label:"Completed",       value:stats.completed },
   ];
+
+
+  const handleRefresh = () => {
+  setLoading(true);
+
+  bookingReminderService
+    .getAll()
+    .then((res) => {
+      setReminders(res.data);
+    })
+    .catch(() => {
+      showToast("Failed to refresh reminders.", "error");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100"
@@ -494,9 +543,12 @@ export default function BookingReminders() {
                   ✕ Clear
                 </button>
               )}
-              <button onClick={() => { setLoading(true); setTimeout(() => setLoading(false), 600); }}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-600 font-semibold transition-colors">
-                <FiRefreshCw className="w-3.5 h-3.5" /> Refresh
+              <button
+                 onClick={handleRefresh}
+                 className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-600 font-semibold transition-colors"
+                >
+                <FiRefreshCw className="w-3.5 h-3.5" />
+                 Refresh
               </button>
             </div>
           </div>

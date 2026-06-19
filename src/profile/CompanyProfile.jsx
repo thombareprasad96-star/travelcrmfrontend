@@ -337,9 +337,10 @@ function AdminSettings() {
           users, and access all features available in your subscription plan.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button className="flex items-center justify-center gap-2.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700
+          <button onClick={() => navigate("/Users")}
+            className="flex items-center justify-center gap-2.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700
             text-white font-bold text-sm transition-all shadow-md shadow-blue-200 hover:shadow-lg">
-            <FiUsers className="w-4 h-4"/> Manage Users
+            <FiKey className="w-4 h-4"/> Manage Users
           </button>
           <button
               onClick={() => navigate("/ChangePassword")}

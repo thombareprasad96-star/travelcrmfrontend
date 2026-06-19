@@ -90,6 +90,10 @@ import Notifications from "./reminders/Notifications";
 import NotificationSettings from "./reminders/NotificationSettings";
 import CompanyProfile from "./profile/CompanyProfile";
 import ChangePassword from "./profile/ChangePassword";
+import Users from "./profile/Users";
+import CreateUser from "./profile/CreateUser";
+import EditUser from "./profile/EditUser";
+import UserPermissions from "./profile/UserPermissions";
 
 
 const App = () => {
@@ -158,6 +162,10 @@ const App = () => {
           <Route path="NotificationSettings" element={<NotificationSettings/>}/>
           <Route path="CompanyProfile" element={<CompanyProfile/>}/>
           <Route path="ChangePassword" element={<ChangePassword/>}/>
+          <Route path="Users" element={<Users/>}/>
+          <Route path="CreateUser" element={<CreateUser/>}/>
+          <Route path="EditUser" element={<EditUser/>}/>
+          <Route path="UserPermissions" element={<UserPermissions/>}/>
         </Route>
  
       </Routes>
