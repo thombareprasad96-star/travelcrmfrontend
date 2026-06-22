@@ -76,7 +76,6 @@ import Cruise from "./masters/Cruise";
 import Vehiclas from "./masters/Vehiclas"
 import Sightseeing from "./masters/Sightseeing";
 import AddonService from "./masters/AddonService";
-
 import AllOrganization from "./tenant/AllOrganization";
 import Testimonials from "./masters/Testimonials"
 import AllVendors from "./vendors/AllVendors";
@@ -94,6 +93,15 @@ import Users from "./profile/Users";
 import CreateUser from "./profile/CreateUser";
 import EditUser from "./profile/EditUser";
 import UserPermissions from "./profile/UserPermissions";
+import PermissionTemplates from "./profile/PermissionTemplates";
+import CreatePermissionTemplate from "./profile/CreatePermissionTemplate";
+import ReportsDashboard from "./reports/ReportsDashboard";
+import ActivityReports from "./reports/ActivityReports";
+import GeographicDistribution from "./reports/GeographicDistribution";
+import FollowupReports from "./reports/FollowupReports";
+import BookingRevenueAnalysis from "./reports/BookingRevenueAnalysis";
+import TravelDateAnalysis from "./reports/TravelDateAnalysis";
+import InternationalDomestic from "./reports/InternationalDomestic";
 
 
 const App = () => {
@@ -137,8 +145,6 @@ const App = () => {
            <Route path="masters/city" element={<City/>} />
            <Route path="masters/destinations" element={<Destinations/>}/>
            <Route path="Allbookings" element={<Allbookings/>}/>
-           <Route path="AllCustomers" element={<AllCustomers/>}/>
-          <Route path="masters/city" element={<City />} />
           <Route path="masters/destinations" element={<Destinations />} />
           <Route path="masters/hotels" element={<Hotel/>}/>
           <Route path="masters/airlines" element={<Airline/>}/>
@@ -148,9 +154,7 @@ const App = () => {
           <Route path="masters/sightseeing" element={<Sightseeing/>}/>
           <Route path="masters/add-on-services" element={<AddonService/>}/>
           <Route path="allorganization" element={<AllOrganization/>}/>
-
           <Route path="masters/testimonials"  element={<Testimonials/>}/>
-
           <Route path="AllVendors" element={<AllVendors/>}/>
           <Route path="CreateVendor" element={<CreateVendor/>}/>
           <Route path="Reminders" element={<Reminders/>}/>
@@ -166,6 +170,16 @@ const App = () => {
           <Route path="CreateUser" element={<CreateUser/>}/>
           <Route path="EditUser" element={<EditUser/>}/>
           <Route path="UserPermissions" element={<UserPermissions/>}/>
+          <Route path="AllCustomers" element={<AllCustomers/>}/>
+          <Route path="PermissionTemplates" element={<PermissionTemplates/>}/>
+          <Route path="CreatePermissionTemplate" element={<CreatePermissionTemplate/>}/>
+          <Route path="ReportsDashboard" element={<ReportsDashboard/>}/>
+          <Route path="ActivityReports" element={<ActivityReports/>}/>
+          <Route path="GeographicDistribution" element={<GeographicDistribution/>}/>
+          <Route path="FollowupReports" element={<FollowupReports/>}/>
+          <Route path="BookingRevenueAnalysis" element={<BookingRevenueAnalysis/>}/>
+          <Route path="TravelDateAnalysis" element={<TravelDateAnalysis/>}/>
+          <Route path="InternationalDomestic" element={<InternationalDomestic/>}/>
         </Route>
  
       </Routes>
