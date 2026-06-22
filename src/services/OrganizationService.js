@@ -3,31 +3,7 @@
 
 
 
-import axios from "axios";
-
-// ==========================================================
-// 🌐 BACKEND API BASE URL SETUP
-// ==========================================================
-const API = axios.create({
-  // Verify and adjust your actual Java backend URL here
-  baseURL: "http://localhost:8080/api/super-admin", 
-  headers: { "Content-Type": "application/json" },
-});
-
-// ==========================================================
-// 👉 JWT TOKEN INTERCEPTOR
-// ==========================================================
-// Extracts the token from localStorage and adds it to the Authorization header
-API.interceptors.request.use(
-  (req) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
-    return req;
-  },
-  (error) => Promise.reject(error)
-);
+import API from "./axiosInstance";
 
 // ==========================================================
 // 🌟 DATA TRANSFORMER: Frontend to Backend Format
@@ -65,28 +41,28 @@ export const organizationService = {
   // 1. REGISTER NEW ORGANIZATION
   registerOrganization: (formData) => {
     const mappedData = transformOrganizationData(formData);
-    return API.post("/tenants", mappedData);
+    return API.post("/super-admin/tenants", mappedData);
   },
 
   // 2. GET ALL ORGANIZATIONS (For Super Admin Dashboard)
   getAllOrganizations: () => {
-    return API.get("/tenants");
+    return API.get("/super-admin/tenants");
   },
 
   // 3. GET ORGANIZATION BY ID
   getOrganizationById: (id) => {
-    return API.get(`/tenants/${id}`);
+    return API.get(`/super-admin/tenants/${id}`);
   },
 
   // 4. UPDATE ORGANIZATION DETAILS
   updateOrganization: (id, formData) => {
     const mappedData = transformOrganizationData(formData); 
-    return API.put(`/tenants/${id}`, mappedData);
+    return API.put(`/super-admin/tenants/${id}`, mappedData);
   },
 
   // 5. UPDATE SUBSCRIPTION STATUS/DATES
   updateSubscription: (id, subscriptionData) => {
-    return API.patch(`/tenants/${id}/subscription`, {
+    return API.patch(`/super-admin/tenants/${id}/subscription`, {
       subscriptionStartDate: subscriptionData.startDate,
       subscriptionEndDate: subscriptionData.endDate
     });
@@ -94,6 +70,6 @@ export const organizationService = {
 
   // 6. DELETE / DEACTIVATE ORGANIZATION
   deleteOrganization: (id) => {
-    return API.delete(`/tenants/${id}`);
+    return API.delete(`/super-admin/tenants/${id}`);
   }
 };

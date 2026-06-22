@@ -1355,7 +1355,7 @@
 
 
 // calculate price ========================================================================
-import React, { useState, useCallback, useEffect,useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Plane, Hotel, Map, Anchor, Car, Package, List, BarChart2,
@@ -1373,9 +1373,9 @@ import AddOnServicesTab        from "./AddOnServicesTab";
 import InclusionsExclusionsTab from "./InclusionsExclusionsTab";
 import SummaryPricingTab       from "./SummaryPricingTab";
 
-import { Input, Label }        from "./Ui";
-import { quotationService }    from "../services/quotationService";
-import { leadService }         from "../services/leadService";
+import { Input, Label }     from "./Ui";
+import { quotationService } from "../services/quotationService";
+import { leadService }      from "../services/leadService";
 
 /* ─── TAB CONFIG ─────────────────────────────────────── */
 const TABS = [
@@ -1420,6 +1420,18 @@ const CHIP_STYLE = {
   cyan:    { grad: "from-cyan-500 to-cyan-600",       ring: "hover:border-cyan-300",    glow: "shadow-cyan-100"    },
 };
 
+/* ─── SERVICE COLORS ─────────────────────────────────── */
+const SERVICE_COLORS = {
+  Hotel:       { bg: '#E6F1FB', text: '#042C53' },
+  Flight:      { bg: '#EEEDFE', text: '#26215C' },
+  Cruise:      { bg: '#E1F5EE', text: '#04342C' },
+  Vehicle:     { bg: '#FAECE7', text: '#4A1B0C' },
+  Visa:        { bg: '#FBEAF0', text: '#4B1528' },
+  Passport:    { bg: '#F1EFE8', text: '#2C2C2A' },
+  Sightseeing: { bg: '#FAEEDA', text: '#412402' },
+};
+const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
+
 /* ─── TOAST ──────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
   useEffect(() => {
@@ -1427,7 +1439,7 @@ function Toast({ msg, type, onClose }) {
     return () => clearTimeout(t);
   }, [onClose]);
   return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-sm
+    <div className={`fixed top-4 right-4 left-4 sm:left-auto sm:right-5 sm:top-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl sm:max-w-sm
         ${type === "success" ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}
       style={{ animation: "slideIn .3s ease both" }}>
       {type === "success"
@@ -1440,58 +1452,39 @@ function Toast({ msg, type, onClose }) {
 }
 
 /* ─── MAIN COMPONENT ─────────────────────────────────── */
-// ── Service tag colors ───────────────────────────────────────
-const SERVICE_COLORS = {
-  Hotel:       { bg: '#E6F1FB', text: '#042C53' },
-  Flight:      { bg: '#EEEDFE', text: '#26215C' },
-  Cruise:      { bg: '#E1F5EE', text: '#04342C' },
-  Vehicle:     { bg: '#FAECE7', text: '#4A1B0C' },
-  Visa:        { bg: '#FBEAF0', text: '#4B1528' },
-  Passport:    { bg: '#F1EFE8', text: '#2C2C2A' },
-  Sightseeing: { bg: '#FAEEDA', text: '#412402' },
-};
-const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
-
 export default function CreateQuotation() {
   const [searchParams] = useSearchParams();
   const navigate       = useNavigate();
 
-  // ── URL params ───────────────────────────────────────────
-  const leadId        = searchParams.get("leadId")        || null;
-  const editId        = searchParams.get("quotationId")   || null; // edit mode
+  const leadId = searchParams.get("leadId")      || null;
+  const editId = searchParams.get("quotationId") || null;
 
-  // ── UI state ─────────────────────────────────────────────
-  const [activeTab,    setActiveTab]    = useState("flight");
-  const [qtTitle,      setQtTitle]      = useState("");
-  const [version]                       = useState("v1.0");
-  const [stage]                         = useState("New Lead");
-  const [quotationId,  setQuotationId]  = useState(editId || null);
-  const [saving,       setSaving]       = useState(false);
-  const [pdfLoading,   setPdfLoading]   = useState(false);
-  const [toast,        setToast]        = useState(null);
+  const [activeTab,   setActiveTab]   = useState("flight");
+  const [qtTitle,     setQtTitle]     = useState("");
+  const [version]                     = useState("v1.0");
+  const [stage]                       = useState("New Lead");
+  const [quotationId, setQuotationId] = useState(editId || null);
+  const [saving,      setSaving]      = useState(false);
+  const [pdfLoading,  setPdfLoading]  = useState(false);
+  const [toast,       setToast]       = useState(null);
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
 
-  // ── Lead data (fetched from backend) ─────────────────────
-  const [leadData,     setLeadData]     = useState(null);
-  const [leadLoading,  setLeadLoading]  = useState(false);
+  const [leadData,    setLeadData]    = useState(null);
+  const [leadLoading, setLeadLoading] = useState(false);
 
-  // ── Tab validate functions (set by each tab via onValidate) ──
   const validateFns = React.useRef({});
   const registerValidate = (tabId) => (fn) => { validateFns.current[tabId] = fn; };
 
-  // ── Tab data state ────────────────────────────────────────
-  // Each tab calls onDataChange(data) → stored here
-  const [flightData,     setFlightData]     = useState({});
-  const [hotelData,      setHotelData]      = useState({});
-  const [sightseeingData,setSightseeingData]= useState({});
-  const [cruiseData,     setCruiseData]     = useState({});
-  const [vehicleData,    setVehicleData]    = useState({});
-  const [addonData,      setAddonData]      = useState({});
-  const [inclusionsData, setInclusionsData] = useState({});
-  const [summaryData,    setSummaryData]    = useState({});
+  const [flightData,      setFlightData]      = useState({});
+  const [hotelData,       setHotelData]       = useState({});
+  const [sightseeingData, setSightseeingData] = useState({});
+  const [cruiseData,      setCruiseData]      = useState({});
+  const [vehicleData,     setVehicleData]     = useState({});
+  const [addonData,       setAddonData]       = useState({});
+  const [inclusionsData,  setInclusionsData]  = useState({});
+  const [summaryData,     setSummaryData]     = useState({});
 
-  // Cost values for summary card — useMemo so SummaryPricingTab gets live updates
   const costs = useMemo(() => ({
     flight:      Number(flightData.amount)      || 0,
     hotel:       Number(hotelData.amount)       || 0,
@@ -1502,7 +1495,6 @@ export default function CreateQuotation() {
   }), [flightData.amount, hotelData.amount, sightseeingData.amount,
        cruiseData.amount, vehicleData.amount, addonData.amount]);
 
-  // Live grand total — includes markup, discount, tax from SummaryPricingTab
   const grandTotal = (() => {
     const subtotal  = Object.values(costs).reduce((a, b) => a + b, 0);
     const disc      = summaryData.discType === "%"
@@ -1513,7 +1505,7 @@ export default function CreateQuotation() {
     return afterDisc + taxAmt;
   })();
 
-  // ── Fetch Lead data by leadId ────────────────────────────
+  /* ── Fetch Lead ── */
   useEffect(() => {
     if (!leadId) return;
     (async () => {
@@ -1522,31 +1514,24 @@ export default function CreateQuotation() {
         const res  = await leadService.getLeadById(leadId);
         const data = res.data?.data || res.data || {};
         setLeadData(data);
-        // Auto-fill quotation title from lead
         if (!qtTitle) {
-          const dest = data.itinerary?.[0]?.destination || "";
-          const nights = data.itinerary?.[0]?.nights || "";
-          const autoTitle = [data.customerName, dest, nights ? `${nights}N` : ""]
-            .filter(Boolean).join(" – ");
+          const dest     = data.itinerary?.[0]?.destination || "";
+          const nights   = data.itinerary?.[0]?.nights || "";
+          const autoTitle = [data.customerName, dest, nights ? `${nights}N` : ""].filter(Boolean).join(" – ");
           if (autoTitle) setQtTitle(autoTitle);
         }
       } catch (err) {
         console.error("Failed to fetch lead:", err);
-        // Token "token" key use ho raha hai — leadService.js check karo
-        if (err.response?.status === 401) {
-          showToast("Session expired. Please login again.", "error");
-        } else if (err.response?.status === 404) {
-          showToast("Lead not found. Check leadId in URL.", "error");
-        } else {
-          showToast("Failed to load lead data.", "error");
-        }
+        if (err.response?.status === 401)      showToast("Session expired. Please login again.", "error");
+        else if (err.response?.status === 404) showToast("Lead not found.", "error");
+        else                                   showToast("Failed to load lead data.", "error");
       } finally {
         setLeadLoading(false);
       }
     })();
   }, [leadId]);
 
-  // ── Load existing quotation (edit mode) ──────────────────
+  /* ── Load existing quotation (edit mode) ── */
   useEffect(() => {
     if (!editId) return;
     (async () => {
@@ -1554,7 +1539,6 @@ export default function CreateQuotation() {
         const res  = await quotationService.getQuotationById(editId);
         const data = res.data?.data || res.data || {};
         setQtTitle(data.title || "");
-        // Pre-fill tab states from loaded data
         if (data.flight)      setFlightData(data.flight);
         if (data.hotel)       setHotelData(data.hotel);
         if (data.sightseeing) setSightseeingData(data.sightseeing);
@@ -1578,163 +1562,108 @@ export default function CreateQuotation() {
     })();
   }, [editId]);
 
-  // ── Collect all tab data ──────────────────────────────────
+  /* ── Collect all data ─ */
   const collectAllData = useCallback(() => ({
     leadId,
-    title   : qtTitle || "Quotation",
+    title:   qtTitle || "Quotation",
     version,
     stage,
+    flightIncluded:      flightData.included ?? true,
+    flightTitle:         flightData.title    || "Flight Details",
+    flightAmount:        flightData.amount   || 0,
+    journey:             flightData.journey  || "Round Trip",
+    segments:            flightData.segments || [],
+    hotelIncluded:       hotelData.included  ?? true,
+    hotelTitle:          hotelData.title     || "Hotel Details",
+    hotelAmount:         hotelData.amount    || 0,
+    hotelNotes:          hotelData.notes     || "",
+    hotels:              hotelData.hotels    || [],
+    sightseeingIncluded: sightseeingData.included ?? true,
+    sightseeingTitle:    sightseeingData.title    || "Sightseeing",
+    sightseeingAmount:   sightseeingData.amount   || 0,
+    sightseeingNotes:    sightseeingData.notes    || "",
+    days:                sightseeingData.days     || [],
+    cruiseIncluded:      cruiseData.included ?? false,
+    cruiseTitle:         cruiseData.title    || "Cruise Details",
+    cruiseAmount:        cruiseData.amount   || 0,
+    cruises:             cruiseData.cruises  || [],
+    vehicleIncluded:     vehicleData.included ?? true,
+    vehicleTitle:        vehicleData.title    || "Vehicle Details",
+    vehicleAmount:       vehicleData.amount   || 0,
+    vehicles:            vehicleData.vehicles || [],
+    addonIncluded:       addonData.included ?? false,
+    addonTitle:          addonData.title    || "Add-on Services",
+    addonAmount:         Number(addonData.amount) || 0,
+    addons:              addonData.items    || [],
+    inclusions:          inclusionsData.inclusions           || [],
+    exclusions:          inclusionsData.exclusions           || [],
+    paymentPolicies:     inclusionsData.paymentPolicies      || [],
+    cancellationPolicies: inclusionsData.cancellationPolicies || [],
+    bookingTerms:        inclusionsData.bookingTerms         || [],
+    discount: summaryData.discount || 0,
+    discType: summaryData.discType || "Fixed",
+    tax:      summaryData.tax      || 18,
+    markup:   summaryData.markup   || 0,
+  }), [leadId, qtTitle, version, stage,
+       flightData, hotelData, sightseeingData, cruiseData,
+       vehicleData, addonData, inclusionsData, summaryData]);
 
-    // Flight
-    flightIncluded : flightData.included ?? true,
-    flightTitle    : flightData.title    || "Flight Details",
-    flightAmount   : flightData.amount   || 0,
-    journey        : flightData.journey  || "Round Trip",
-    segments       : flightData.segments || [],
-
-    // Hotel
-    hotelIncluded : hotelData.included ?? true,
-    hotelTitle    : hotelData.title    || "Hotel Details",
-    hotelAmount   : hotelData.amount   || 0,
-    hotelNotes    : hotelData.notes    || "",
-    hotels        : hotelData.hotels   || [],
-
-    // Sightseeing
-    sightseeingIncluded : sightseeingData.included ?? true,
-    sightseeingTitle    : sightseeingData.title    || "Sightseeing",
-    sightseeingAmount   : sightseeingData.amount   || 0,
-    sightseeingNotes    : sightseeingData.notes    || "",
-    days                : sightseeingData.days     || [],
-
-    // Cruise
-    cruiseIncluded : cruiseData.included ?? false,
-    cruiseTitle    : cruiseData.title    || "Cruise Details",
-    cruiseAmount   : cruiseData.amount   || 0,
-    cruises        : cruiseData.cruises  || [],
-
-    // Vehicle
-    vehicleIncluded : vehicleData.included ?? true,
-    vehicleTitle    : vehicleData.title    || "Vehicle Details",
-    vehicleAmount   : vehicleData.amount   || 0,
-    vehicles        : vehicleData.vehicles || [],
-
-    // Addons
-    addonIncluded : addonData.included ?? false,
-    addonTitle    : addonData.title    || "Add-on Services",
-    addonAmount   : Number(addonData.amount) || 0,
-    addons        : addonData.items    || [],
-
-    // Inclusions
-    inclusions           : inclusionsData.inclusions           || [],
-    exclusions           : inclusionsData.exclusions           || [],
-    paymentPolicies      : inclusionsData.paymentPolicies      || [],
-    cancellationPolicies : inclusionsData.cancellationPolicies || [],
-    bookingTerms         : inclusionsData.bookingTerms         || [],
-
-    // Pricing
-    discount : summaryData.discount || 0,
-    discType : summaryData.discType || "Fixed",
-    tax      : summaryData.tax      || 18,
-    markup   : summaryData.markup   || 0,
-  }), [
-    leadId, qtTitle, version, stage,
-    flightData, hotelData, sightseeingData, cruiseData,
-    vehicleData, addonData, inclusionsData, summaryData,
-  ]);
-
-  // ── Save handler ──────────────────────────────────────────
+  /* ── Save ── */
   const handleSave = async () => {
-    if (!qtTitle.trim()) {
-      showToast("Please enter a quotation title.", "error");
-      return;
-    }
-    // Run all tab validators — collect any failures
-    const tabResults = await Promise.all(
-      Object.entries(validateFns.current).map(async ([tabId, fn]) => ({ tabId, valid: fn?.() ?? true }))
-    );
-    const failed = tabResults.filter(r => !r.valid);
-    if (failed.length > 0) {
-      const failedLabels = failed.map(r => r.tabId).join(", ");
-      showToast(`Please fix errors in: ${failedLabels}`, "error");
-      return;
-    }
+    if (!qtTitle.trim()) { showToast("Please enter a quotation title.", "error"); return; }
     try {
       setSaving(true);
       const allData = collectAllData();
-
       if (quotationId) {
-        // Already created — update
         await quotationService.updateQuotation(quotationId, allData);
         showToast("Quotation updated successfully!");
       } else {
-        // First save — create
         const res   = await quotationService.createQuotation(allData);
-        const newId = res.data?.data?.id
-                   || res.data?.data?.publicId
-                   || res.data?.id
-                   || res.data?.publicId;
+        const newId = res.data?.data?.id || res.data?.data?.publicId || res.data?.id || res.data?.publicId;
         setQuotationId(newId);
         showToast("Quotation created successfully!");
       }
     } catch (err) {
-      console.error("Save failed:", err);
-      showToast(
-        err.response?.data?.message || "Failed to save quotation. Please try again.",
-        "error"
-      );
+      showToast(err.response?.data?.message || "Failed to save quotation.", "error");
     } finally {
       setSaving(false);
     }
   };
 
-  // ── PDF Download ──────────────────────────────────────────
+  /* ── PDF ── */
   const handlePdf = async () => {
-    if (!quotationId) {
-      showToast("Please save the quotation first before downloading PDF.", "error");
-      return;
-    }
+    if (!quotationId) { showToast("Please save the quotation first.", "error"); return; }
     try {
       setPdfLoading(true);
-      const res  = await quotationService.generatePdf(quotationId);
-      const url  = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
-      const a    = document.createElement("a");
-      a.href     = url;
+      const res = await quotationService.generatePdf(quotationId);
+      const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const a   = document.createElement("a");
+      a.href    = url;
       a.download = `quotation-${quotationId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       showToast("PDF downloaded successfully!");
     } catch (err) {
-      console.error("PDF failed:", err);
       showToast("Failed to generate PDF.", "error");
     } finally {
       setPdfLoading(false);
     }
   };
 
-  // ── Share Link ────────────────────────────────────────────
+  /* ── Share ── */
   const handleShare = async () => {
-    if (!quotationId) {
-      showToast("Please save the quotation first.", "error");
-      return;
-    }
+    if (!quotationId) { showToast("Please save the quotation first.", "error"); return; }
     try {
       const res  = await quotationService.getShareLink(quotationId);
       const link = res.data?.data?.shareUrl || res.data?.shareUrl || "";
-      if (link) {
-        await navigator.clipboard.writeText(link);
-        showToast("Share link copied to clipboard!");
-      }
+      if (link) { await navigator.clipboard.writeText(link); showToast("Share link copied!"); }
     } catch (err) {
-      console.error("Share failed:", err);
       showToast("Failed to generate share link.", "error");
     }
   };
 
-  // ── Tab navigation ────────────────────────────────────────
   const activeIdx = TABS.findIndex(t => t.id === activeTab);
 
-
-  // ── Summary card info chips — from lead data ────────────
   const travelers = leadData
     ? [
         leadData.adults   ? `${leadData.adults} Adults`   : "",
@@ -1754,12 +1683,12 @@ export default function CreateQuotation() {
     leadData?.assignTo               || "—";
 
   const SUMMARY_INFO = [
-    { icon: User,     label: "Client Name",  value: leadData?.customerName || "—",   color: "blue"    },
-    { icon: Phone,    label: "Contact",      value: leadData?.phone        || "—",   color: "emerald" },
-    { icon: Users,    label: "Travelers",    value: travelers,                        color: "violet"  },
-    { icon: Calendar, label: "Assigned To",  value: assignedTo,                      color: "amber"   },
-    { icon: MapPin,   label: "Destination",  value: destination,                     color: "rose"    },
-    { icon: FileText, label: "Package",      value: qtTitle || "—",                  color: "cyan"    },
+    { icon: User,     label: "Client Name",  value: leadData?.customerName || "—", color: "blue"    },
+    { icon: Phone,    label: "Contact",      value: leadData?.phone        || "—", color: "emerald" },
+    { icon: Users,    label: "Travelers",    value: travelers,                      color: "violet"  },
+    { icon: Calendar, label: "Assigned To",  value: assignedTo,                    color: "amber"   },
+    { icon: MapPin,   label: "Destination",  value: destination,                   color: "rose"    },
+    { icon: FileText, label: "Package",      value: qtTitle || "—",                color: "cyan"    },
   ];
 
   const fmt = (n) => `₹${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
@@ -1782,32 +1711,31 @@ export default function CreateQuotation() {
         .stat-card-hover:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
       `}</style>
 
-      {/* Toast */}
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-8 py-7 space-y-5">
+      {/* ── RESPONSIVE CONTAINER ── */}
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-7 space-y-4 sm:space-y-5">
 
         {/* ── TOP BAR ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 fade-up">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between fade-up">
           <div>
+            {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-2">
               <Home size={12} />
               <ChevronRight size={10} className="text-slate-300" />
-              <span className="hover:text-slate-600 cursor-pointer transition-colors"
-                onClick={() => navigate("/allleads")}>
+              <span className="hover:text-slate-600 cursor-pointer transition-colors" onClick={() => navigate("/allleads")}>
                 Leads
               </span>
               <ChevronRight size={10} className="text-slate-300" />
-              <span className="text-blue-600 font-bold">
-                {quotationId ? "Edit Quotation" : "Create Quotation"}
-              </span>
+              <span className="text-blue-600 font-bold">{quotationId ? "Edit Quotation" : "Create Quotation"}</span>
             </div>
+            {/* Title */}
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
-                <FileText size={16} className="text-white" strokeWidth={2.5} />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+                <FileText size={15} className="text-white" strokeWidth={2.5} />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
                   {quotationId ? "Edit Quotation" : "Create Quotation"}
                 </h1>
                 <p className="text-xs text-slate-400 font-medium mt-0.5">
@@ -1818,30 +1746,28 @@ export default function CreateQuotation() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Lead chips — scroll on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 sm:flex-wrap">
             {leadLoading && (
-              <span className="text-xs text-slate-400 font-medium animate-pulse">Loading lead data...</span>
+              <span className="text-xs text-slate-400 font-medium animate-pulse whitespace-nowrap">Loading lead...</span>
             )}
             {!leadLoading && leadData && (
               <>
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm">
-                  <User size={12} className="text-blue-500" /> {leadData.customerName || "—"}
+                <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap flex-shrink-0">
+                  <User size={11} className="text-blue-500" /> {leadData.customerName || "—"}
                 </span>
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
-                  <Users size={12} className="text-violet-500" /> {travelers}
+                <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap flex-shrink-0">
+                  <Users size={11} className="text-violet-500" /> {travelers}
                 </span>
                 {leadData.itinerary?.[0]?.destination && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
-                    <MapPin size={12} className="text-rose-500" /> {leadData.itinerary[0].destination}
+                  <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap flex-shrink-0">
+                    <MapPin size={11} className="text-rose-500" /> {leadData.itinerary[0].destination}
                     {leadData.itinerary[0].nights && ` · ${leadData.itinerary[0].nights}N`}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm">
-                  <Phone size={12} className="text-emerald-500" /> {leadData.phone || "—"}
-                </span>
               </>
             )}
-            <span className="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-700">
+            <span className="px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-700 whitespace-nowrap flex-shrink-0">
               {stage} · {version}
             </span>
           </div>
@@ -1852,100 +1778,100 @@ export default function CreateQuotation() {
           style={{ animationDelay: "60ms" }}>
 
           {/* Card Header */}
-          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
+          <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
             <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
               <User size={13} className="text-blue-600" />
             </div>
             <p className="text-[13px] font-bold text-slate-700">Lead & Quotation Details</p>
-            <div className="ml-auto flex items-center gap-2">
-              {leadLoading && <span className="text-[11px] text-slate-400 animate-pulse">Fetching lead...</span>}
+            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+              {leadLoading && <span className="text-[11px] text-slate-400 animate-pulse hidden sm:inline">Fetching lead...</span>}
               <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
               <span className="text-[11px] font-semibold text-slate-400">Draft</span>
               {quotationId && (
-                <span className="text-[11px] font-semibold text-emerald-500 ml-2">
-                  · Saved #{String(quotationId).slice(0, 8)}
+                <span className="text-[11px] font-semibold text-emerald-500 ml-1 hidden sm:inline">
+                  · #{String(quotationId).slice(0, 8)}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="p-5 space-y-5">
+          <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
 
-            {/* ── Lead Info Row ── */}
+            {/* ── Lead Info Grid — responsive ── */}
             {leadData && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
 
-                {/* Client Name */}
-                <div className="col-span-2 sm:col-span-1 flex items-center gap-3 bg-blue-50 rounded-xl p-3 border border-blue-100">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0 shadow-sm">
+                {/* Client */}
+                <div className="col-span-2 sm:col-span-1 flex items-center gap-2 sm:gap-3 bg-blue-50 rounded-xl p-2.5 sm:p-3 border border-blue-100">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0 shadow-sm">
                     {(leadData.customerName || "U").charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wide">Client</p>
-                    <p className="text-[13px] font-extrabold text-slate-800 truncate">{leadData.customerName || "—"}</p>
-                    <p className="text-[10px] text-slate-500 truncate">{leadData.email || ""}</p>
+                    <p className="text-[9px] sm:text-[10px] text-blue-500 font-bold uppercase tracking-wide">Client</p>
+                    <p className="text-[12px] sm:text-[13px] font-extrabold text-slate-800 truncate">{leadData.customerName || "—"}</p>
+                    <p className="text-[9px] sm:text-[10px] text-slate-500 truncate hidden sm:block">{leadData.email || ""}</p>
                   </div>
                 </div>
 
                 {/* Phone */}
-                <div className="flex items-center gap-3 bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <Phone size={14} className="text-emerald-600" />
+                <div className="flex items-center gap-2 sm:gap-3 bg-emerald-50 rounded-xl p-2.5 sm:p-3 border border-emerald-100">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <Phone size={13} className="text-emerald-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wide">Phone</p>
-                    <p className="text-[13px] font-bold text-slate-800 truncate">{leadData.phone || "—"}</p>
+                    <p className="text-[9px] sm:text-[10px] text-emerald-600 font-bold uppercase tracking-wide">Phone</p>
+                    <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 truncate">{leadData.phone || "—"}</p>
                   </div>
                 </div>
 
-                {/* Travelers */}
-                <div className="flex items-center gap-3 bg-violet-50 rounded-xl p-3 border border-violet-100">
-                  <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
-                    <Users size={14} className="text-violet-600" />
+                {/* Travelers */}  
+                <div className="flex items-center gap-2 sm:gap-3 bg-violet-50 rounded-xl p-2.5 sm:p-3 border border-violet-100">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    <Users size={13} className="text-violet-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-violet-600 font-bold uppercase tracking-wide">Travelers</p>
-                    <p className="text-[13px] font-bold text-slate-800 truncate">{travelers}</p>
+                    <p className="text-[9px] sm:text-[10px] text-violet-600 font-bold uppercase tracking-wide">Travelers</p>
+                    <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 truncate">{travelers}</p>
                   </div>
                 </div>
 
                 {/* Destination */}
-                <div className="flex items-center gap-3 bg-rose-50 rounded-xl p-3 border border-rose-100">
-                  <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center flex-shrink-0">
-                    <MapPin size={14} className="text-rose-600" />
+                <div className="flex items-center gap-2 sm:gap-3 bg-rose-50 rounded-xl p-2.5 sm:p-3 border border-rose-100">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-100 flex items-center justify-center flex-shrink-0">
+                    <MapPin size={13} className="text-rose-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-rose-600 font-bold uppercase tracking-wide">Destination</p>
-                    <p className="text-[13px] font-bold text-slate-800 truncate">{destination}</p>
+                    <p className="text-[9px] sm:text-[10px] text-rose-600 font-bold uppercase tracking-wide">Destination</p>
+                    <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 truncate">{destination}</p>
                   </div>
                 </div>
 
                 {/* Lead Type */}
-                <div className="flex items-center gap-3 bg-amber-50 rounded-xl p-3 border border-amber-100">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <FileText size={14} className="text-amber-600" />
+                <div className="flex items-center gap-2 sm:gap-3 bg-amber-50 rounded-xl p-2.5 sm:p-3 border border-amber-100">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <FileText size={13} className="text-amber-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-amber-600 font-bold uppercase tracking-wide">Lead Type</p>
-                    <p className="text-[13px] font-bold text-slate-800 truncate">{leadData.leadType || "—"}</p>
+                    <p className="text-[9px] sm:text-[10px] text-amber-600 font-bold uppercase tracking-wide">Lead Type</p>
+                    <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 truncate">{leadData.leadType || "—"}</p>
                   </div>
                 </div>
 
                 {/* Assigned To */}
-                <div className="flex items-center gap-3 bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <User size={14} className="text-indigo-600" />
+                <div className="flex items-center gap-2 sm:gap-3 bg-indigo-50 rounded-xl p-2.5 sm:p-3 border border-indigo-100">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <User size={13} className="text-indigo-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wide">Assigned To</p>
-                    <p className="text-[13px] font-bold text-slate-800 truncate">{assignedTo}</p>
+                    <p className="text-[9px] sm:text-[10px] text-indigo-600 font-bold uppercase tracking-wide">Assigned To</p>
+                    <p className="text-[12px] sm:text-[13px] font-bold text-slate-800 truncate">{assignedTo}</p>
                   </div>
                 </div>
 
               </div>
             )}
 
-            {/* Services tags if available */}
+            {/* Services tags */}
             {leadData?.services?.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Services:</span>
@@ -1959,26 +1885,19 @@ export default function CreateQuotation() {
               </div>
             )}
 
-            {/* Divider */}
             {leadData && <div className="border-t border-slate-100" />}
 
             {/* ── Quotation Title / Version / Stage ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="sm:col-span-2 lg:col-span-1">
                 <Label required>Quotation Title</Label>
-                <Input
-                  value={qtTitle}
-                  onChange={e => setQtTitle(e.target.value)}
-                  placeholder="e.g. Nepal Adventure Premium"
-                />
+                <Input value={qtTitle} onChange={e => setQtTitle(e.target.value)} placeholder="e.g. Nepal Adventure Premium" />
               </div>
               <div>
                 <Label>Version</Label>
                 <div className="relative">
                   <Input value={version} disabled />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-100">
-                    {version}
-                  </span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-100">{version}</span>
                 </div>
               </div>
               <div>
@@ -1998,6 +1917,8 @@ export default function CreateQuotation() {
         {/* ── TABS CARD ── */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden fade-up"
           style={{ animationDelay: "120ms" }}>
+
+          {/* Tab bar — scrollable on mobile */}
           <div className="tab-scroll overflow-x-auto border-b border-slate-100">
             <div className="flex min-w-max">
               {TABS.map((tab) => {
@@ -2007,83 +1928,52 @@ export default function CreateQuotation() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`qt-tab-btn relative flex items-center gap-2 px-5 py-4 text-[13px] font-bold
-                      whitespace-nowrap border-b-2 focus:outline-none group
+                    className={`qt-tab-btn relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-3 sm:py-4
+                      text-[12px] sm:text-[13px] font-bold whitespace-nowrap border-b-2 focus:outline-none group
                       ${active
                         ? TAB_ACTIVE[tab.color]
                         : "text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50"
                       }`}
                   >
-                    <span className={`flex items-center justify-center w-6 h-6 rounded-lg transition-all flex-shrink-0
+                    <span className={`flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-lg transition-all flex-shrink-0
                         ${active ? ICON_BG[tab.color] : "bg-slate-100 group-hover:bg-slate-200"}`}>
-                      <Icon size={13} strokeWidth={active ? 2.5 : 2} />
+                      <Icon size={11} strokeWidth={active ? 2.5 : 2} />
                     </span>
-                    {tab.label}
+                    {/* Hide label on very small screens for some tabs */}
+                    <span className="hidden xs:inline sm:inline">{tab.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Tab content — wrapper with overflow hidden */}
+          {/* Tab content */}
           <div className="relative overflow-hidden">
             <div style={{ minHeight: 260 }}>
-
-              {/* Flight */}
-              <div style={{ display: activeTab === "flight" ? "block" : "none" }} className="p-5 sm:p-6">
-                <FlightTab onDataChange={setFlightData} />
-              </div>
-
-              {/* Hotel */}
-              <div style={{ display: activeTab === "hotel" ? "block" : "none" }} className="p-5 sm:p-6">
-                <HotelTab onDataChange={setHotelData} />
-              </div>
-
-              {/* Sightseeing */}
-              <div style={{ display: activeTab === "sightseeing" ? "block" : "none" }} className="p-5 sm:p-6">
-                <SightseeingTab onDataChange={setSightseeingData} />
-              </div>
-
-              {/* Cruise */}
-              <div style={{ display: activeTab === "cruise" ? "block" : "none" }} className="p-5 sm:p-6">
-                <CruiseTab onDataChange={setCruiseData} />
-              </div>
-
-              {/* Vehicle */}
-              <div style={{ display: activeTab === "vehicle" ? "block" : "none" }} className="p-5 sm:p-6">
-                <VehicleTab onDataChange={setVehicleData} />
-              </div>
-
-              {/* Add-on Services */}
-              <div style={{ display: activeTab === "addons" ? "block" : "none" }} className="p-5 sm:p-6">
-                <AddOnServicesTab onDataChange={setAddonData} />
-              </div>
-
-              {/* Inclusions & Exclusions */}
-              <div style={{ display: activeTab === "inclusions" ? "block" : "none" }} className="p-5 sm:p-6">
-                <InclusionsExclusionsTab onDataChange={setInclusionsData} />
-              </div>
-
-              {/* Summary & Pricing — costs passed live, key forces re-render on cost change */}
-              <div style={{ display: activeTab === "summary" ? "block" : "none" }} className="p-5 sm:p-6">
+              <div style={{ display: activeTab === "flight"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><FlightTab               onDataChange={setFlightData}      /></div>
+              <div style={{ display: activeTab === "hotel"       ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><HotelTab                onDataChange={setHotelData}       /></div>
+              <div style={{ display: activeTab === "sightseeing" ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><SightseeingTab          onDataChange={setSightseeingData} /></div>
+              <div style={{ display: activeTab === "cruise"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><CruiseTab               onDataChange={setCruiseData}      /></div>
+              <div style={{ display: activeTab === "vehicle"     ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><VehicleTab              onDataChange={setVehicleData}     /></div>
+              <div style={{ display: activeTab === "addons"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><AddOnServicesTab        onDataChange={setAddonData}       /></div>
+              <div style={{ display: activeTab === "inclusions"  ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><InclusionsExclusionsTab onDataChange={setInclusionsData}  /></div>
+              <div style={{ display: activeTab === "summary"     ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6">
                 <SummaryPricingTab
                   onDataChange={setSummaryData}
                   costs={costs}
                   key={`summary-${costs.flight}-${costs.hotel}-${costs.sightseeing}-${costs.cruise}-${costs.vehicle}-${costs.addons}`}
                 />
               </div>
-
             </div>
           </div>
 
-          {/* Tab footer — prev/next + progress dots */}
-          <div className="flex items-center justify-between px-5 py-3 bg-slate-50/80 border-t border-slate-100">
+          {/* Tab footer */}
+          <div className="flex items-center justify-between px-3 sm:px-5 py-3 bg-slate-50/80 border-t border-slate-100">
             <p className="text-[11px] text-slate-400 font-semibold">
-              Step{" "}
-              <span className="text-slate-700 font-extrabold">{activeIdx + 1}</span>
-              {" "}of {TABS.length}
+              Step <span className="text-slate-700 font-extrabold">{activeIdx + 1}</span> of {TABS.length}
             </p>
-            <div className="flex items-center gap-1.5">
+            {/* Progress dots — hidden on mobile, shown sm+ */}
+            <div className="hidden sm:flex items-center gap-1.5">
               {TABS.map((t, i) => {
                 const done    = i < activeIdx;
                 const current = i === activeIdx;
@@ -2097,17 +1987,13 @@ export default function CreateQuotation() {
               })}
             </div>
             <div className="flex items-center gap-1">
-              <button
-                disabled={activeIdx === 0}
-                onClick={() => setActiveTab(TABS[activeIdx - 1].id)}
-                className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-bold text-slate-500
+              <button disabled={activeIdx === 0} onClick={() => setActiveTab(TABS[activeIdx - 1].id)}
+                className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-[12px] font-bold text-slate-500
                   hover:text-slate-800 hover:bg-slate-100 rounded-lg disabled:opacity-25 transition-all">
                 <ChevronRight size={12} className="rotate-180" /> Prev
               </button>
-              <button
-                disabled={activeIdx === TABS.length - 1}
-                onClick={() => setActiveTab(TABS[activeIdx + 1].id)}
-                className="flex items-center gap-1 px-3 py-1.5 text-[12px] font-bold text-blue-600
+              <button disabled={activeIdx === TABS.length - 1} onClick={() => setActiveTab(TABS[activeIdx + 1].id)}
+                className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-[12px] font-bold text-blue-600
                   hover:text-blue-800 hover:bg-blue-50 rounded-lg disabled:opacity-25 transition-all">
                 Next <ChevronRight size={12} />
               </button>
@@ -2116,19 +2002,19 @@ export default function CreateQuotation() {
         </div>
 
         {/* ── QUOTATION SUMMARY CARD ── */}
-        <div className="relative rounded-3xl overflow-hidden shadow-xl shadow-slate-200/60 fade-up"
+        <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl shadow-slate-200/60 fade-up"
           style={{ animationDelay: "180ms" }}>
+
           {/* Header strip */}
-          <div className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 px-5 sm:px-7 py-5">
-            <div className="absolute -top-10 -right-10 w-44 h-44 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 px-4 sm:px-7 py-4 sm:py-5">
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
-                  <ShieldCheck size={18} className="text-emerald-300" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={16} className="text-emerald-300" />
                 </div>
                 <div>
                   <p className="text-white text-sm font-extrabold tracking-tight">Quotation Summary</p>
-                  <p className="text-slate-400 text-[11px] font-medium">Verified pricing · Auto-calculated in real time</p>
+                  <p className="text-slate-400 text-[11px] font-medium hidden sm:block">Verified pricing · Auto-calculated in real time</p>
                 </div>
               </div>
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/30 rounded-full text-emerald-300 text-[11px] font-bold">
@@ -2138,87 +2024,83 @@ export default function CreateQuotation() {
           </div>
 
           {/* Body */}
-          <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 p-5 sm:p-7">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 p-4 sm:p-7">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
 
               {/* Left — Client info chips */}
               <div className="lg:col-span-3">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <Sparkles size={13} className="text-blue-500" />
                   <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Client & Package Details</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   {SUMMARY_INFO.map(({ icon: Icon, label, value, color }) => {
                     const style = CHIP_STYLE[color];
                     return (
                       <div key={label}
-                        className={`relative flex items-start gap-3 p-4 bg-white rounded-2xl border-2 border-slate-100
+                        className={`relative flex items-start gap-3 p-3 sm:p-4 bg-white rounded-xl sm:rounded-2xl border-2 border-slate-100
                           ${style.ring} hover:shadow-lg ${style.glow} transition-all duration-200 cursor-default group overflow-hidden`}>
                         <div className={`absolute inset-0 bg-gradient-to-br ${style.grad} opacity-0 group-hover:opacity-[0.06] transition-opacity`} />
-                        <div className={`relative z-10 w-10 h-10 rounded-xl bg-gradient-to-br ${style.grad} text-white flex items-center justify-center
+                        <div className={`relative z-10 w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${style.grad} text-white flex items-center justify-center
                             flex-shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-200`}>
-                          <Icon size={16} strokeWidth={2.3} />
+                          <Icon size={14} strokeWidth={2.3} />
                         </div>
                         <div className="relative z-10 min-w-0">
                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide leading-none">{label}</p>
-                          <p className="text-sm font-extrabold text-slate-800 truncate mt-1.5">{value}</p>
+                          <p className="text-xs sm:text-sm font-extrabold text-slate-800 truncate mt-1">{value}</p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="flex items-center gap-2 mt-5 pt-5 border-t border-slate-200">
-                  <button
-                    onClick={handlePdf}
-                    disabled={pdfLoading}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-blue-50 border-2 border-blue-100 hover:border-blue-300 text-blue-600 text-xs font-bold rounded-xl transition-all shadow-sm disabled:opacity-60">
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-200 flex-wrap">
+                  <button onClick={handlePdf} disabled={pdfLoading}
+                    className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-white hover:bg-blue-50 border-2 border-blue-100 hover:border-blue-300 text-blue-600 text-xs font-bold rounded-xl transition-all shadow-sm disabled:opacity-60">
                     {pdfLoading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
                     {pdfLoading ? "Generating..." : "Export PDF"}
                   </button>
-                  <button
-                    onClick={handleShare}
-                    className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-violet-50 border-2 border-violet-100 hover:border-violet-300 text-violet-600 text-xs font-bold rounded-xl transition-all shadow-sm">
+                  <button onClick={handleShare}
+                    className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-white hover:bg-violet-50 border-2 border-violet-100 hover:border-violet-300 text-violet-600 text-xs font-bold rounded-xl transition-all shadow-sm">
                     <Share2 size={13} /> Share with Client
                   </button>
                 </div>
               </div>
 
               {/* Right — Pricing stat cards */}
-              <div className="lg:col-span-2 flex flex-col gap-4">
-                <div className="flex items-center gap-2 mb-1">
+              <div className="lg:col-span-2 flex flex-col gap-3 sm:gap-4">
+                <div className="flex items-center gap-2">
                   <Wallet size={13} className="text-slate-400" />
                   <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">Pricing Overview</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {/* Grand Total */}
-                  <div className="relative overflow-hidden rounded-[18px] p-5 flex flex-col justify-between min-h-[155px] stat-card-hover cursor-default"
+                  <div className="relative overflow-hidden rounded-2xl sm:rounded-[18px] p-4 sm:p-5 flex flex-col justify-between min-h-[130px] sm:min-h-[155px] stat-card-hover cursor-default"
                     style={{ background: "linear-gradient(135deg,#00c6a7 0%,#00a389 40%,#007d6b 100%)" }}>
                     <div className="absolute -top-9 -right-8 w-28 h-28 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.13)" }} />
-                    <div className="absolute bottom-[-18px] right-8 w-20 h-20 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.09)" }} />
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center relative z-10" style={{ background: "rgba(255,255,255,0.22)" }}>
-                      <TrendingUp size={22} className="text-white" />
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center relative z-10" style={{ background: "rgba(255,255,255,0.22)" }}>
+                      <TrendingUp size={18} className="text-white" />
                     </div>
-                    <div className="relative z-10 mt-3">
-                      <p className="text-[34px] font-extrabold text-white leading-none tracking-tight">{fmt(grandTotal)}</p>
-                      <p className="text-[10px] font-semibold uppercase tracking-[.13em] mt-2" style={{ color: "rgba(255,255,255,0.72)" }}>
-                        Final Quotation Total
+                    <div className="relative z-10 mt-2 sm:mt-3">
+                      <p className="text-[22px] sm:text-[28px] lg:text-[34px] font-extrabold text-white leading-none tracking-tight">{fmt(grandTotal)}</p>
+                      <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[.13em] mt-1 sm:mt-2" style={{ color: "rgba(255,255,255,0.72)" }}>
+                        Final Total
                       </p>
                     </div>
                   </div>
 
                   {/* Add-on total */}
-                  <div className="relative overflow-hidden rounded-[18px] p-5 flex flex-col justify-between min-h-[155px] stat-card-hover cursor-default"
+                  <div className="relative overflow-hidden rounded-2xl sm:rounded-[18px] p-4 sm:p-5 flex flex-col justify-between min-h-[130px] sm:min-h-[155px] stat-card-hover cursor-default"
                     style={{ background: "linear-gradient(135deg,#f7971e 0%,#f4821a 40%,#e06c0f 100%)" }}>
                     <div className="absolute -top-9 -right-8 w-28 h-28 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.13)" }} />
-                    <div className="absolute bottom-[-18px] right-8 w-20 h-20 rounded-full pointer-events-none" style={{ background: "rgba(255,255,255,0.09)" }} />
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center relative z-10" style={{ background: "rgba(255,255,255,0.22)" }}>
-                      <Package size={22} className="text-white" />
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center relative z-10" style={{ background: "rgba(255,255,255,0.22)" }}>
+                      <Package size={18} className="text-white" />
                     </div>
-                    <div className="relative z-10 mt-3">
-                      <p className="text-[34px] font-extrabold text-white leading-none tracking-tight">{fmt(costs.addons)}</p>
-                      <p className="text-[10px] font-semibold uppercase tracking-[.13em] mt-2" style={{ color: "rgba(255,255,255,0.72)" }}>
+                    <div className="relative z-10 mt-2 sm:mt-3">
+                      <p className="text-[22px] sm:text-[28px] lg:text-[34px] font-extrabold text-white leading-none tracking-tight">{fmt(costs.addons)}</p>
+                      <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[.13em] mt-1 sm:mt-2" style={{ color: "rgba(255,255,255,0.72)" }}>
                         Add-on Services
                       </p>
                     </div>
@@ -2231,7 +2113,7 @@ export default function CreateQuotation() {
                     <ShieldCheck size={14} className="text-white" />
                   </div>
                   <p className="text-[11px] text-slate-500 font-semibold leading-snug">
-                    This quotation is auto-saved and securely stored for your client.
+                    Auto-saved and securely stored.
                   </p>
                 </div>
               </div>
@@ -2240,26 +2122,21 @@ export default function CreateQuotation() {
         </div>
 
         {/* ── FOOTER ACTIONS ── */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pb-6 fade-up"
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pb-4 sm:pb-6 fade-up"
           style={{ animationDelay: "240ms" }}>
           <p className="text-xs text-slate-400 font-medium">
-            All fields marked <span className="text-rose-400 font-bold">*</span> are required
+            Fields marked <span className="text-rose-400 font-bold">*</span> are required
           </p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-6 py-2.5 border-2 border-slate-200 hover:border-slate-300
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <button type="button" onClick={() => navigate(-1)}
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 border-2 border-slate-200 hover:border-slate-300
                 text-slate-600 font-bold text-sm rounded-xl transition-all bg-white hover:bg-slate-50 active:scale-95 shadow-sm">
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center gap-2 px-8 py-2.5 font-bold text-sm rounded-xl
+            <button type="button" onClick={handleSave} disabled={saving}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 sm:px-8 py-2.5 font-bold text-sm rounded-xl
                 text-white shadow-md shadow-blue-200 transition-all active:scale-95
-                hover:shadow-lg hover:shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed
+                hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed
                 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
               {saving
                 ? <><Loader2 size={15} className="animate-spin" /> Saving...</>

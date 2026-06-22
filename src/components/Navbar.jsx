@@ -790,6 +790,16 @@ const Navbar = memo(function Navbar({
     setUnreadCount(0);
   };
 
+  // Maps a notification's referenceType to the module list route it should open.
+  // (No detail routes exist yet, so we land on the relevant list page.)
+  const NOTIF_ROUTE_MAP = {
+    LEAD: "/allleads",
+    BOOKING: "/Allbookings",
+    REMINDER: "/Reminders",
+    CUSTOMER: "/AllCustomers",
+    VENDOR: "/AllVendors",
+  };
+
   const handleClickNotif = async (notif) => {
     if (notif.kind === "reminder") {
       setNotifOpen(false);
@@ -802,6 +812,12 @@ const Navbar = memo(function Navbar({
         prev.map((n) => (n.id === notif.id ? { ...n, status: "READ" } : n))
       );
       setUnreadCount((c) => Math.max(0, c - 1));
+    }
+    // Route to the relevant module based on the backend referenceType discriminator.
+    const dest = NOTIF_ROUTE_MAP[notif.referenceType];
+    if (dest) {
+      setNotifOpen(false);
+      navigate(dest);
     }
   };
 

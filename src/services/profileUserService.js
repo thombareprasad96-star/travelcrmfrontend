@@ -5,42 +5,7 @@
 // Database: PostgreSQL
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -74,7 +39,7 @@ const userService = {
   //   ...
   // ]
   getAll: (params = {}) => {
-    return api.get("/api/users", { params });
+    return API.get("/users", { params });
     // Example: userService.getAll({ status: "Active" })
   },
 
@@ -83,7 +48,7 @@ const userService = {
   // @GetMapping("/api/users/{id}")
   // public ResponseEntity<UserDTO> getById(@PathVariable Long id)
   getById: (id) => {
-    return api.get(`/api/users/${id}`);
+    return API.get(`/users/${id}`);
   },
 
   // ── CREATE USER ────────────────────────────────────────────
@@ -109,7 +74,7 @@ const userService = {
   //   - BCrypt hashes the password
   //   - Returns created UserDTO (no password field)
   create: (data) => {
-    return api.post("/api/users", data);
+    return API.post("/users", data);
   },
 
   // ── UPDATE USER ────────────────────────────────────────────
@@ -128,7 +93,7 @@ const userService = {
   //   status:   "Active"
   // }
   update: (id, data) => {
-    return api.put(`/api/users/${id}`, data);
+    return API.put(`/users/${id}`, data);
   },
 
   // ── DELETE USER ────────────────────────────────────────────
@@ -139,7 +104,7 @@ const userService = {
   // Backend: soft-delete or hard-delete depending on your setup.
   // Recommended: soft-delete by setting status = "Deleted"
   delete: (id) => {
-    return api.delete(`/api/users/${id}`);
+    return API.delete(`/users/${id}`);
   },
 
   // ── RESET USER PASSWORD (by admin) ────────────────────────
@@ -160,7 +125,7 @@ const userService = {
   //   - Invalidates all existing sessions for that user
   //   - Returns: { message: "Password reset successfully." }
   resetPassword: (id, newPassword, confirmPassword) => {
-    return api.post(`/api/users/${id}/reset-password`, {
+    return API.post(`/users/${id}/reset-password`, {
       newPassword,
       confirmPassword,
     });
@@ -171,7 +136,7 @@ const userService = {
   // @PatchMapping("/api/users/{id}/toggle-status")
   // public ResponseEntity<UserDTO> toggleStatus(@PathVariable Long id)
   toggleStatus: (id) => {
-    return api.patch(`/api/users/${id}/toggle-status`);
+    return API.patch(`/users/${id}/toggle-status`);
   },
 
   // ── GET STATS (for stat cards) ─────────────────────────────
@@ -181,7 +146,7 @@ const userService = {
   //
   // Returns: { total, active, inactive, admins }
   getStats: () => {
-    return api.get("/api/users/stats");
+    return API.get("/users/stats");
   },
 
   // ── GET FOR DROPDOWN (lightweight — id + name only) ────────
@@ -192,7 +157,7 @@ const userService = {
   // Returns: [{ id, fullName }]
   // Used in: CreateReminder, AssignTo fields, etc.
   getForDropdown: () => {
-    return api.get("/api/users/dropdown");
+    return API.get("/users/dropdown");
   },
 
   // ── GET ACTIVE USERS (for dropdown) ───────────────────────
@@ -200,7 +165,7 @@ const userService = {
   // @GetMapping("/api/users/active")
   // public ResponseEntity<List<UserDTO>> getActive()
   getActive: () => {
-    return api.get("/api/users/active");
+    return API.get("/users/active");
   },
 
   // ── SEARCH USERS ───────────────────────────────────────────
@@ -208,7 +173,7 @@ const userService = {
   // @GetMapping("/api/users/search")
   // public ResponseEntity<List<UserDTO>> search(@RequestParam String query)
   search: (query) => {
-    return api.get("/api/users/search", { params: { query } });
+    return API.get("/users/search", { params: { query } });
   },
 };
 

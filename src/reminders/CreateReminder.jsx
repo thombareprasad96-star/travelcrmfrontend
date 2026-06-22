@@ -185,7 +185,8 @@ export default function CreateReminder() {
   leadService
     .getForDropdown()
     .then((res) => {
-      setLeads(res.data);
+      // PagedApiResponse → { data: [...] }; fall back to a raw array just in case
+      setLeads(res.data?.data ?? res.data ?? []);
     })
     .catch(() => {
       showToast("Failed to load leads.", "error");
@@ -194,7 +195,8 @@ export default function CreateReminder() {
   userService
     .getActive()
     .then((res) => {
-      setUsers(res.data);
+      // ApiResponse → { data: [...] }
+      setUsers(res.data?.data ?? res.data ?? []);
     })
     .catch(() => {
       showToast("Failed to load users.", "error");
@@ -203,15 +205,9 @@ export default function CreateReminder() {
 
   // Auto-fill phone when lead is selected
   const handleLeadChange = useCallback((e) => {
-    const selectedId = e.target.value;
+    const selectedId = e.target.value;            // lead.id is the UUID (publicId)
     const lead = leads.find((l) => l.id === selectedId);
-    if (lead) {
-      setValue("phone", lead.phone);
-    } else {
-      setValue("phone", "");
-    }
-    // OR — fetch fresh from backend:
-     leadService.getById(selectedId).then(res => setValue("phone", res.data.phone));
+    setValue("phone", lead?.phone || "");
   }, [leads, setValue]);
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
@@ -227,27 +223,24 @@ export default function CreateReminder() {
         type:        data.type,
         priority:    data.priority,
         status:      "Active",
-        leadId:      data.leadId || null,
-        leadName:    selectedLead?.name || "",
+        // Proper UUID references the backend resolves to internal FKs
+        leadPublicId:     data.leadId || null,
+        assignToPublicId: data.assignTo || null,
+        leadName:    selectedLead?.customerName || "",
         phone:       data.phone.trim(),
-        assignTo:    data.assignTo || null,
         dueDate:     new Date(data.dueDate).toISOString(),
         notes:       data.notes.trim(),
         snoozedUntil: null,
       };
 
-      // BACKEND: uncomment when API is ready
-      // const res = await reminderService.create(payload);
-      // showToast(`Reminder "${res.data.title}" created successfully! 🔔`);
-
-      // MOCK success (remove when backend connected)
       const res = await reminderService.create(payload);
+      const created = res.data?.data ?? res.data;
 
      showToast(
-       `Reminder "${res.data.title}" created successfully! 🔔`
+       `Reminder "${created?.title || data.title}" created successfully! 🔔`
       );
 
-      reset({ ...payload, dueDate: defaultDueDate(), leadId: "", assignTo: "", phone: "" });
+      reset({ ...data, dueDate: defaultDueDate(), leadId: "", assignTo: "", phone: "" });
       setTimeout(() => navigate("/Reminders"), 1500);
 
     } catch (err) {
@@ -259,7 +252,7 @@ export default function CreateReminder() {
 
   /* ── Live summary values ── */
   const selectedLead     = leads.find(l => l.id === watchAll.leadId);
-  const selectedUser     = users.find(u => u.id === watchAll.assignTo);
+  const selectedUser     = users.find(u => u.publicId === watchAll.assignTo);
   const selectedType     = REMINDER_TYPES.find(t => t.value === watchAll.type);
   const selectedPriority = PRIORITIES.find(p => p.value === watchAll.priority);
   const dueDateDisplay   = watchAll.dueDate
@@ -353,7 +346,7 @@ export default function CreateReminder() {
                       <option value="">Select Lead</option>
                       {leads.map(l => (
                         <option key={l.id} value={l.id}>
-                          {l.name} — {l.phone}
+                          {l.customerName} — {l.phone}
                         </option>
                       ))}
                     </select>
@@ -376,7 +369,7 @@ export default function CreateReminder() {
                     >
                       <option value="">Select User</option>
                       {users.map(u => (
-                        <option key={u.id} value={u.id}>{u.name}</option>
+                        <option key={u.publicId} value={u.publicId}>{u.fullName}</option>
                       ))}
                     </select>
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none">▼</span>
@@ -616,13 +609,13 @@ export default function CreateReminder() {
                       {
                         icon: <FiUser className="w-3.5 h-3.5" />,
                         label: "Lead",
-                        value: selectedLead ? selectedLead.name : "—",
+                        value: selectedLead ? selectedLead.customerName : "—",
                         sub: selectedLead?.phone,
                       },
                       {
                         icon: <FaUserTie className="w-3.5 h-3.5" />,
                         label: "Assigned",
-                        value: selectedUser ? selectedUser.name : "—",
+                        value: selectedUser ? selectedUser.fullName : "—",
                       },
                       {
                         icon: <FiTag className="w-3.5 h-3.5" />,

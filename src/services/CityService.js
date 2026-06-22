@@ -1,37 +1,86 @@
-import axios from "axios";
 
-// Base API instance setup
-const API = axios.create({
-  baseURL: "http://localhost:8080/api",
-  headers: { "Content-Type": "application/json" },
-});
 
-// Transform React form data → Java DTO shape for City
-function transformCityData(country, name, code) {
+
+
+
+// src/services/cityService.js
+
+// import API from "./axiosInstance";
+
+// // Transform React form data → Java DTO shape for City
+// function transformCityData(country, name, code) {
+//   return {
+//     country : country,
+//     name    : name,
+//     code    : code ? code.toUpperCase() : "",
+//     status  : "Active",
+//   };
+// }
+
+// export const cityService = {
+
+//   // 1. Nayi city create karo (POST)
+//   createCity: (country, name, code) =>
+//     API.post("/cities", transformCityData(country, name, code)),
+
+//   // 2. Saari cities fetch karo (GET)
+//   getAllCities: () =>
+//     API.get("/cities"),
+
+//   // 3. City delete karo (DELETE)
+//   deleteCity: (id) =>
+//     API.delete(`/cities/${id}`),
+
+//   // 4. City update karo (PUT)
+//   updateCity: (id, country, name, code) =>
+//     API.put(`/cities/${id}`, transformCityData(country, name, code)),
+// };
+
+
+
+
+// src/services/cityService.js
+
+import API from "./axiosInstance";
+
+// ── Transform → Java DTO ──────────────────────────────────
+function transformCityData(countryId, destinationId, name, code) {
   return {
-    country: country,
-    name: name,
-    code: code ? code.toUpperCase() : "", // Airport code ko hamesha uppercase me bhejna better practice hai
-    status: "Active" // Optional: Agar backend status expect karta hai
+    countryId     : countryId,
+    destinationId : destinationId,
+    name          : name,
+    code          : code ? code.toUpperCase() : "",
+    status        : "Active",
   };
 }
 
-// Service Object export for City CRUD operations
 export const cityService = {
-      
-  // 1. Nayi city create karne ke liye (POST Request)
-  createCity: (country, name, code) => 
-    API.post("/cities", transformCityData(country, name, code)),
 
-  // 2. Saari cities fetch karne ke liye (GET Request)
-  getAllCities: () => 
+  // 1. Saari cities fetch karo (GET)
+  getAllCities: () =>
     API.get("/cities"),
 
-  // 3. Kisi specific city ko delete karne ke liye (DELETE Request)
-  deleteCity: (id) => 
-    API.delete(`/cities/${id}`),
+  // 2. Single city fetch karo (GET)
+  getCityById: (id) =>
+    API.get(`/cities/${id}`),
 
-  // 4. Kisi city ko update karne ke liye (PUT Request)
-  updateCity: (id, country, name, code) => 
-    API.put(`/cities/${id}`, transformCityData(country, name, code)),
-};  
+  // 3. Destination ke hisaab se cities fetch karo (GET)
+  getCitiesByDestination: (destinationId) =>
+    API.get(`/cities/destination/${destinationId}`),
+
+  // 4. Country ke hisaab se cities fetch karo (GET)
+  getCitiesByCountry: (countryId) =>
+    API.get(`/cities/country/${countryId}`),
+
+  // 5. Nayi city create karo (POST)
+  createCity: (countryId, destinationId, name, code) =>
+    API.post("/cities", transformCityData(countryId, destinationId, name, code)),
+
+  // 6. City update karo (PUT)
+  updateCity: (id, countryId, destinationId, name, code) =>
+    API.put(`/cities/${id}`, transformCityData(countryId, destinationId, name, code)),
+
+  // 7. City delete karo (DELETE)
+  deleteCity: (id) =>
+    API.delete(`/cities/${id}`),
+};

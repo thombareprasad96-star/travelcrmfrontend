@@ -4,42 +4,7 @@
 // Backend: Java Spring Boot REST API
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 10000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -73,7 +38,7 @@ const notificationSettingsService = {
   //   ...
   // ]
   getAll: () => {
-    return api.get("/api/notification-settings");
+    return API.get("/notification-settings");
   },
 
   // ── GET SINGLE STAGE SETTING ───────────────────────────────
@@ -84,7 +49,7 @@ const notificationSettingsService = {
   // key examples: new_lead, contacted, prospect, quotation_sent,
   //               in_negotiation, payment_awaited, ready_to_book, lost
   getByKey: (key) => {
-    return api.get(`/api/notification-settings/${key}`);
+    return API.get(`/notification-settings/${key}`);
   },
 
   // ── UPDATE SINGLE STAGE SETTING ────────────────────────────
@@ -93,7 +58,7 @@ const notificationSettingsService = {
   // public ResponseEntity<NotificationSettingDTO> update(
   //     @PathVariable String key, @RequestBody NotificationSettingDTO dto)
   update: (key, data) => {
-    return api.put(`/api/notification-settings/${key}`, data);
+    return API.put(`/notification-settings/${key}`, data);
   },
 
   // ── UPDATE ALL STAGE SETTINGS (bulk save) ──────────────────
@@ -105,7 +70,7 @@ const notificationSettingsService = {
   // Used by the "Save Settings" button — saves all 8 cards in one call.
   // Request body: array of all stage objects (same shape as getAll() response)
   updateAll: (settingsArray) => {
-    return api.put("/api/notification-settings", settingsArray);
+    return API.put("/notification-settings", settingsArray);
   },
 
   // ── TOGGLE ENABLE/DISABLE FOR ONE STAGE ────────────────────
@@ -118,7 +83,7 @@ const notificationSettingsService = {
   // Useful if you want instant save on toggle flip instead of
   // waiting for the global "Save Settings" button.
   toggle: (key, enabled) => {
-    return api.patch(`/api/notification-settings/${key}/toggle`, { enabled });
+    return API.patch(`/notification-settings/${key}/toggle`, { enabled });
   },
 
   // ── RESET ALL TO DEFAULTS ──────────────────────────────────
@@ -129,7 +94,7 @@ const notificationSettingsService = {
   // Used by the "Reset" button — restores factory default values
   // for all 8 stages on the server side.
   resetToDefaults: () => {
-    return api.post("/api/notification-settings/reset");
+    return API.post("/notification-settings/reset");
   },
 };
 

@@ -34,7 +34,13 @@ API.interceptors.response.use(
     const status  = error.response?.status;
     const message = error.response?.data?.message || "Something went wrong.";
 
-    if (status === 401) {
+    // Auth endpoints (login etc.) return 401 as a normal "wrong credentials /
+    // not this role" signal — let the caller handle those instead of redirecting.
+    // e.g. LoginService tries superadmin login, catches the 401, then falls back
+    // to user login; redirecting here would break that fallback.
+    const isAuthRequest = (error.config?.url || "").includes("auth/");
+
+    if (status === 401 && !isAuthRequest) {
       // Token expired or invalid — redirect to login
       localStorage.removeItem("token");
       window.location.href = "/login";

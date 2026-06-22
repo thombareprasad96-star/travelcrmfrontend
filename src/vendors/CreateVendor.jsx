@@ -55,7 +55,7 @@ export default function CreateVendor() {
       vendorName: "", vendorType: "", contactPerson: "",
       phone: "", alternatePhone: "", email: "", whatsapp: "",
       contractType: "Rate Contract", paymentTerms: "Net 30",
-      commPref: "WhatsApp", status: "Active",
+      commPref: "WhatsApp", status: "ACTIVE",
       city: "", state: "", country: "India",
       address: "", pincode: "", coverageAreas: "",
       serviceDescription: "",

@@ -14,8 +14,13 @@ import { HiSparkles } from "react-icons/hi";
 const VENDOR_TYPES     = ["Hotel", "Airlines", "Transport", "DMC", "Travel Agency", "Car Rental", "Cruise", "Insurance"];
 const CONTRACT_TYPES   = ["Rate Contract", "Commission Based", "Fixed Price", "Retainer", "Per-Trip"];
 const PAYMENT_TERMS    = ["Net 7", "Net 15", "Net 30", "Net 45", "Net 60", "Advance", "50% Advance", "On Completion"];
-const VENDOR_STATUSES  = ["Active", "Inactive", "Blacklisted"];
+// Backend VendorStatus enum is serialized as UPPERCASE names.
+const VENDOR_STATUSES  = ["ACTIVE", "INACTIVE", "SUSPENDED", "BLACKLISTED"];
 const COMM_PREFS       = ["WhatsApp", "Email", "Phone Call", "SMS"];
+
+// "PARTIALLY_PAID" -> "Partially Paid"
+const enumLabel = (v) =>
+  (v || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
 const TYPE_CONFIG = {
   Hotel:         { icon: FaHotel,       bg:"bg-blue-50",   text:"text-blue-700",   border:"border-blue-200"   },
@@ -69,7 +74,7 @@ function TextInput({ icon: Icon, error, ...props }) {
   );
 }
 
-function SelectInput({ icon: Icon, options, placeholder, ...props }) {
+function SelectInput({ icon: Icon, options, placeholder, labelFn, ...props }) {
   return (
     <div className="relative">
       {Icon && (
@@ -84,7 +89,7 @@ function SelectInput({ icon: Icon, options, placeholder, ...props }) {
         {...props}
       >
         {placeholder && <option value="">{placeholder}</option>}
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
+        {options.map(o => <option key={o} value={o}>{labelFn ? labelFn(o) : o}</option>)}
       </select>
       <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
     </div>
@@ -259,6 +264,7 @@ export default function VendorInformation({ register, errors, watch, setValue })
             <SelectInput
               icon={FiCheckCircle}
               options={VENDOR_STATUSES}
+              labelFn={enumLabel}
               {...register("status")}
             />
           </Field>

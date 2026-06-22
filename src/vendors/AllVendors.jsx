@@ -26,8 +26,13 @@ import { HiSparkles } from "react-icons/hi";
 
 
 const VENDOR_TYPES  = ["Hotel","Airlines","Transport","DMC"];
-const STATUSES      = ["Active","Inactive"];
-const PAY_STATUSES  = ["Paid","Partial","Unpaid"];
+// Backend VendorStatus / VendorPayStatus enums are serialized as UPPERCASE names.
+const STATUSES      = ["ACTIVE","INACTIVE","SUSPENDED","BLACKLISTED"];
+const PAY_STATUSES  = ["PAID","UNPAID","PARTIALLY_PAID","OVERDUE"];
+
+// Render an enum value as a human label: "PARTIALLY_PAID" -> "Partially Paid".
+const enumLabel = (v) =>
+  (v || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
 const TYPE_CONFIG = {
   Hotel:    { icon: FaHotel,       bg:"bg-blue-100",   text:"text-blue-700",   border:"border-blue-200",   grad:"from-blue-500 to-blue-600"    },
@@ -36,13 +41,16 @@ const TYPE_CONFIG = {
   DMC:      { icon: FaMapMarkedAlt,bg:"bg-teal-100",   text:"text-teal-700",   border:"border-teal-200",   grad:"from-teal-500 to-teal-600"    },
 };
 const STATUS_CONFIG = {
-  Active:  { bg:"bg-emerald-100", text:"text-emerald-700", dot:"bg-emerald-500" },
-  Inactive:{ bg:"bg-slate-100",   text:"text-slate-500",   dot:"bg-slate-400"   },
+  ACTIVE:      { bg:"bg-emerald-100", text:"text-emerald-700", dot:"bg-emerald-500" },
+  INACTIVE:    { bg:"bg-slate-100",   text:"text-slate-500",   dot:"bg-slate-400"   },
+  SUSPENDED:   { bg:"bg-amber-100",   text:"text-amber-700",   dot:"bg-amber-500"   },
+  BLACKLISTED: { bg:"bg-red-100",     text:"text-red-600",     dot:"bg-red-500"     },
 };
 const PAY_CONFIG = {
-  Paid:   { bg:"bg-green-100",  text:"text-green-700"  },
-  Partial:{ bg:"bg-amber-100",  text:"text-amber-700"  },
-  Unpaid: { bg:"bg-red-100",    text:"text-red-600"    },
+  PAID:           { bg:"bg-green-100",  text:"text-green-700"  },
+  UNPAID:         { bg:"bg-red-100",    text:"text-red-600"    },
+  PARTIALLY_PAID: { bg:"bg-amber-100",  text:"text-amber-700"  },
+  OVERDUE:        { bg:"bg-orange-100", text:"text-orange-700" },
 };
 const DIST_CARDS = [
   { key:"Hotel",    label:"Hotels",    icon:FaHotel,       color:"bg-blue-500"   },
@@ -131,8 +139,8 @@ function StatCard({ gradient, icon, label, value, money, delay=0 }) {
 function ViewModal({ vendor, onClose, onEdit }) {
   if (!vendor) return null;
   const tc = TYPE_CONFIG[vendor.type] || TYPE_CONFIG.Hotel;
-  const sc = STATUS_CONFIG[vendor.status] || STATUS_CONFIG.Inactive;
-  const pc = PAY_CONFIG[vendor.payStatus] || PAY_CONFIG.Unpaid;
+  const sc = STATUS_CONFIG[vendor.status] || STATUS_CONFIG.INACTIVE;
+  const pc = PAY_CONFIG[vendor.payStatus] || PAY_CONFIG.UNPAID;
   const payPct = vendor.totalBusiness > 0
     ? Math.round(vendor.totalPaid / vendor.totalBusiness * 100) : 0;
 
@@ -161,7 +169,7 @@ function ViewModal({ vendor, onClose, onEdit }) {
                     {vendor.type}
                   </span>
                   <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{vendor.status}
+                    <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{enumLabel(vendor.status)}
                   </span>
                 </div>
               </div>
@@ -230,7 +238,7 @@ function ViewModal({ vendor, onClose, onEdit }) {
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-slate-600">Payment Progress</p>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pc.bg} ${pc.text}`}>{vendor.payStatus}</span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pc.bg} ${pc.text}`}>{enumLabel(vendor.payStatus)}</span>
             </div>
             <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all duration-700
@@ -277,7 +285,7 @@ function VendorFormModal({ vendor, onClose, onSave }) {
   const isEdit = !!vendor;
   const [form, setForm] = useState(vendor || {
     name:"", contact:"", phone:"", email:"", city:"", state:"",
-    type:"Hotel", status:"Active", payStatus:"Unpaid", notes:"",
+    type:"Hotel", status:"ACTIVE", payStatus:"UNPAID", notes:"",
     services:"", rating:4.0,
   });
   const set = (k,v) => setForm(p => ({...p,[k]:v}));
@@ -328,7 +336,7 @@ function VendorFormModal({ vendor, onClose, onSave }) {
                   <select value={form[key]||""} onChange={e=>set(key,e.target.value)}
                     className="w-full px-3 pr-7 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700
                       bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
-                    {opts.map(o => <option key={o}>{o}</option>)}
+                    {opts.map(o => <option key={o} value={o}>{key === "type" ? o : enumLabel(o)}</option>)}
                   </select>
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none">▼</span>
                 </div>
@@ -393,8 +401,8 @@ function DeleteConfirm({ vendor, onClose, onConfirm }) {
 /* ─── MOBILE VENDOR CARD ─────────────────────────────────────── */
 function MobileVendorCard({ v, onView, onEdit, onDelete, idx }) {
   const tc = TYPE_CONFIG[v.type] || TYPE_CONFIG.Hotel;
-  const sc = STATUS_CONFIG[v.status] || STATUS_CONFIG.Inactive;
-  const pc = PAY_CONFIG[v.payStatus] || PAY_CONFIG.Unpaid;
+  const sc = STATUS_CONFIG[v.status] || STATUS_CONFIG.INACTIVE;
+  const pc = PAY_CONFIG[v.payStatus] || PAY_CONFIG.UNPAID;
   const payPct = v.totalBusiness > 0 ? Math.round(v.totalPaid/v.totalBusiness*100) : 0;
 
   return (
@@ -415,7 +423,7 @@ function MobileVendorCard({ v, onView, onEdit, onDelete, idx }) {
           </div>
         </div>
         <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${sc.bg} ${sc.text}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{v.status}
+          <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{enumLabel(v.status)}
         </span>
       </div>
 
@@ -423,7 +431,7 @@ function MobileVendorCard({ v, onView, onEdit, onDelete, idx }) {
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${tc.border} ${tc.bg} ${tc.text} flex items-center gap-1`}>
           <tc.icon className="w-2.5 h-2.5"/> {v.type}
         </span>
-        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pc.bg} ${pc.text}`}>{v.payStatus}</span>
+        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${pc.bg} ${pc.text}`}>{enumLabel(v.payStatus)}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -529,7 +537,7 @@ export default function Vendors() {
   /* stats */
   const stats = useMemo(() => ({
     total:    vendors.length,
-    active:   vendors.filter(v => v.status==="Active").length,
+    active:   vendors.filter(v => v.status==="ACTIVE").length,
     cost:     vendors.reduce((s,v) => s+v.totalBusiness, 0),
     avgRating:vendors.length ? (vendors.reduce((s,v) => s+v.rating, 0) / vendors.length) : 0,
   }), [vendors]);
@@ -658,13 +666,13 @@ export default function Vendors() {
   }
 };
 
-  function Sel({ val, onChange, opts }) {
+  function Sel({ val, onChange, opts, fmt }) {
     return (
       <div className="relative">
         <select value={val} onChange={e=>{onChange(e.target.value);setPage(1);}}
           className="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600
             font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
-          {opts.map(o => <option key={o}>{o}</option>)}
+          {opts.map(o => <option key={o} value={o}>{fmt ? fmt(o) : o}</option>)}
         </select>
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none">▼</span>
       </div>
@@ -803,7 +811,7 @@ export default function Vendors() {
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700
                     placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all"/>
               </div>
-              <Sel val={fStatus} onChange={setFStatus} opts={["All Status",...STATUSES]}/>
+              <Sel val={fStatus} onChange={setFStatus} opts={["All Status",...STATUSES]} fmt={enumLabel}/>
               <Sel val={fType}   onChange={setFType}   opts={["All Types",...VENDOR_TYPES]}/>
             </div>
           </div>
@@ -859,8 +867,8 @@ export default function Vendors() {
                   )
                   : pageData.map((v, idx) => {
                     const tc = TYPE_CONFIG[v.type] || TYPE_CONFIG.Hotel;
-                    const sc = STATUS_CONFIG[v.status] || STATUS_CONFIG.Inactive;
-                    const pc = PAY_CONFIG[v.payStatus] || PAY_CONFIG.Unpaid;
+                    const sc = STATUS_CONFIG[v.status] || STATUS_CONFIG.INACTIVE;
+                    const pc = PAY_CONFIG[v.payStatus] || PAY_CONFIG.UNPAID;
                     const payPct = v.totalBusiness>0 ? Math.round(v.totalPaid/v.totalBusiness*100) : 0;
                     return (
                       <tr key={v.id} className="group transition-all duration-150 hover:bg-blue-50/40 hover:shadow-[inset_3px_0_0_#2563eb]"
@@ -927,12 +935,12 @@ export default function Vendors() {
                         </td>
                         {/* Pay Status */}
                         <td className="px-4 py-3.5">
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${pc.bg} ${pc.text}`}>{v.payStatus}</span>
+                          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${pc.bg} ${pc.text}`}>{enumLabel(v.payStatus)}</span>
                         </td>
                         {/* Status */}
                         <td className="px-4 py-3.5">
                           <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-full ${sc.bg} ${sc.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{v.status}
+                            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{enumLabel(v.status)}
                           </span>
                         </td>
                         {/* Actions */}

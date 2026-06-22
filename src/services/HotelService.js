@@ -1,26 +1,4 @@
-import axios from "axios";
-
-// Backend API Base URL setup
-const API = axios.create({
-  // Verify and adjust your actual Java backend URL here
-  baseURL: "http://localhost:8080/api/hotels",
-  headers: { "Content-Type": "application/json" },
-});
-
-// 👉 JWT Token Interceptor
-// Extracts the token from localStorage and adds it to the Authorization header before every request
-API.interceptors.request.use(
-  (req) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
-    return req;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 // ==========================================================
 // 🌟 DATA TRANSFORMER: Mapping Frontend data to Backend format
@@ -127,44 +105,44 @@ export const hotelService = {
   // 1. GET ALL HOTELS
   // Returns a flat list of all hotels across all destinations
   getAllHotels: () => {
-    return API.get("/");
+    return API.get("/hotels/");
   },
 
   // 2. GET ALL HOTELS BY DESTINATION ID
   // Matches the accordion structure — one call per destination
   getHotelsByDestination: (destinationId) => {
-    return API.get(`/destination/${destinationId}`);
+    return API.get(`/hotels/destination/${destinationId}`);
   },
 
   // 3. GET HOTEL BY ID
   getHotelById: (id) => {
-    return API.get(`/${id}`);
+    return API.get(`/hotels/${id}`);
   },
 
   // 4. CREATE HOTEL
   // Transforms React form state to backend DTO before posting
   createHotel: (formData) => {
     const mappedData = transformHotelData(formData);
-    return API.post("/", mappedData);
+    return API.post("/hotels/", mappedData);
   },
 
   // 5. UPDATE HOTEL
   // Used when editingHotel is set in the modal (edit flow)
   updateHotel: (id, formData) => {
     const mappedData = transformHotelData(formData);
-    return API.put(`/${id}`, mappedData);
+    return API.put(`/hotels/${id}`, mappedData);
   },
 
   // 6. DELETE HOTEL
   deleteHotel: (id) => {
-    return API.delete(`/${id}`);
+    return API.delete(`/hotels/${id}`);
   },
 
   // 7. SET DEFAULT HOTEL FOR DESTINATION
   // Corresponds to the isDefault checkbox — sets one hotel as default
   // and clears isDefault on all others in that destination
   setDefaultHotel: (destinationId, hotelId) => {
-    return API.patch(`/${hotelId}/set-default`, { destinationId });
+    return API.patch(`/hotels/${hotelId}/set-default`, { destinationId });
   },
 
   // 8. UPLOAD HOTEL IMAGE
@@ -173,7 +151,7 @@ export const hotelService = {
     const formData = new FormData();
     formData.append("file", imageFile);
 
-    return API.post("/upload-image", formData, {
+    return API.post("/hotels/upload-image", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -193,7 +171,7 @@ export const hotelService = {
       bedType:     roomData.bedType,
       description: roomData.description,
     };
-    return API.post(`/${hotelId}/room-types`, mappedRoom);
+    return API.post(`/hotels/${hotelId}/room-types`, mappedRoom);
   },
 
   // 10. UPDATE ROOM TYPE
@@ -205,12 +183,12 @@ export const hotelService = {
       bedType:     roomData.bedType,
       description: roomData.description,
     };
-    return API.put(`/${hotelId}/room-types/${roomTypeId}`, mappedRoom);
+    return API.put(`/hotels/${hotelId}/room-types/${roomTypeId}`, mappedRoom);
   },
 
   // 11. DELETE ROOM TYPE
   deleteRoomType: (hotelId, roomTypeId) => {
-    return API.delete(`/${hotelId}/room-types/${roomTypeId}`);
+    return API.delete(`/hotels/${hotelId}/room-types/${roomTypeId}`);
   },
 
   // 12. UPLOAD ROOM TYPE IMAGES
@@ -222,7 +200,7 @@ export const hotelService = {
       formData.append("files", file);
     });
 
-    return API.post(`/${hotelId}/room-types/${roomTypeId}/images`, formData, {
+    return API.post(`/hotels/${hotelId}/room-types/${roomTypeId}/images`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -240,7 +218,7 @@ export const hotelService = {
       price:       mealData.price !== "" ? parseFloat(mealData.price) : 0,
       description: mealData.description,
     };
-    return API.post(`/${hotelId}/meal-plans`, mappedMeal);
+    return API.post(`/hotels/${hotelId}/meal-plans`, mappedMeal);
   },
 
   // 14. UPDATE MEAL PLAN
@@ -250,11 +228,11 @@ export const hotelService = {
       price:       mealData.price !== "" ? parseFloat(mealData.price) : 0,
       description: mealData.description,
     };
-    return API.put(`/${hotelId}/meal-plans/${mealPlanId}`, mappedMeal);
+    return API.put(`/hotels/${hotelId}/meal-plans/${mealPlanId}`, mappedMeal);
   },
 
   // 15. DELETE MEAL PLAN
   deleteMealPlan: (hotelId, mealPlanId) => {
-    return API.delete(`/${hotelId}/meal-plans/${mealPlanId}`);
+    return API.delete(`/hotels/${hotelId}/meal-plans/${mealPlanId}`);
   },
 };

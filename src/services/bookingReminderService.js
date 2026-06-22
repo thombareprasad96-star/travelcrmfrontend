@@ -4,42 +4,7 @@
 // Backend: Java Spring Boot REST API
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 10000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -56,7 +21,7 @@ const bookingReminderService = {
   //
   // Optional query param: ?status=Pending | Sent | Completed
   getAll: (params = {}) => {
-    return api.get("/api/booking-reminders", { params });
+    return API.get("/booking-reminders", { params });
     // params example: { status: "Pending" }
   },
 
@@ -65,7 +30,7 @@ const bookingReminderService = {
   // @GetMapping("/api/booking-reminders/{id}")
   // public ResponseEntity<BookingReminderDTO> getById(@PathVariable Long id)
   getById: (id) => {
-    return api.get(`/api/booking-reminders/${id}`);
+    return API.get(`/booking-reminders/${id}`);
   },
 
   // ── CREATE BOOKING REMINDER ────────────────────────────────
@@ -87,7 +52,7 @@ const bookingReminderService = {
   //   amount:        85000
   // }
   create: (data) => {
-    return api.post("/api/booking-reminders", data);
+    return API.post("/booking-reminders", data);
   },
 
   // ── UPDATE BOOKING REMINDER ────────────────────────────────
@@ -95,7 +60,7 @@ const bookingReminderService = {
   // @PutMapping("/api/booking-reminders/{id}")
   // public ResponseEntity<BookingReminderDTO> update(@PathVariable Long id, @RequestBody BookingReminderDTO dto)
   update: (id, data) => {
-    return api.put(`/api/booking-reminders/${id}`, data);
+    return API.put(`/booking-reminders/${id}`, data);
   },
 
   // ── DELETE BOOKING REMINDER ────────────────────────────────
@@ -103,7 +68,7 @@ const bookingReminderService = {
   // @DeleteMapping("/api/booking-reminders/{id}")
   // public ResponseEntity<Void> delete(@PathVariable Long id)
   delete: (id) => {
-    return api.delete(`/api/booking-reminders/${id}`);
+    return API.delete(`/booking-reminders/${id}`);
   },
 
   // ── MARK AS SENT ────────────────────────────────────────────
@@ -111,7 +76,7 @@ const bookingReminderService = {
   // @PatchMapping("/api/booking-reminders/{id}/sent")
   // public ResponseEntity<BookingReminderDTO> markSent(@PathVariable Long id)
   markSent: (id) => {
-    return api.patch(`/api/booking-reminders/${id}/sent`);
+    return API.patch(`/booking-reminders/${id}/sent`);
   },
 
   // ── MARK AS COMPLETED ──────────────────────────────────────
@@ -119,7 +84,7 @@ const bookingReminderService = {
   // @PatchMapping("/api/booking-reminders/{id}/complete")
   // public ResponseEntity<BookingReminderDTO> markComplete(@PathVariable Long id)
   markComplete: (id) => {
-    return api.patch(`/api/booking-reminders/${id}/complete`);
+    return API.patch(`/booking-reminders/${id}/complete`);
   },
 
   // ── MARK AS PENDING (revert) ───────────────────────────────
@@ -127,7 +92,7 @@ const bookingReminderService = {
   // @PatchMapping("/api/booking-reminders/{id}/pending")
   // public ResponseEntity<BookingReminderDTO> markPending(@PathVariable Long id)
   markPending: (id) => {
-    return api.patch(`/api/booking-reminders/${id}/pending`);
+    return API.patch(`/booking-reminders/${id}/pending`);
   },
 
   // ── GET BY BOOKING CODE ─────────────────────────────────────
@@ -135,7 +100,7 @@ const bookingReminderService = {
   // @GetMapping("/api/booking-reminders/booking/{bookingCode}")
   // public ResponseEntity<List<BookingReminderDTO>> getByBookingCode(@PathVariable String bookingCode)
   getByBookingCode: (bookingCode) => {
-    return api.get(`/api/booking-reminders/booking/${bookingCode}`);
+    return API.get(`/booking-reminders/booking/${bookingCode}`);
   },
 
   // ── GET STATS / COUNTS ──────────────────────────────────────
@@ -145,7 +110,7 @@ const bookingReminderService = {
   //
   // Returns: { total, pending, sent, completed }
   getStats: () => {
-    return api.get("/api/booking-reminders/stats");
+    return API.get("/booking-reminders/stats");
   },
 
   // ── GET UPCOMING (travel date within N days) ────────────────
@@ -153,7 +118,7 @@ const bookingReminderService = {
   // @GetMapping("/api/booking-reminders/upcoming")
   // public ResponseEntity<List<BookingReminderDTO>> getUpcoming(@RequestParam(defaultValue="7") int days)
   getUpcoming: (days = 7) => {
-    return api.get("/api/booking-reminders/upcoming", { params: { days } });
+    return API.get("/booking-reminders/upcoming", { params: { days } });
   },
 
   // ── SEND REMINDER NOW (trigger WhatsApp/SMS/Email via backend) ─
@@ -163,7 +128,7 @@ const bookingReminderService = {
   //
   // Backend handles actual WhatsApp/SMS/Email dispatch and marks status="Sent"
   sendNow: (id) => {
-    return api.post(`/api/booking-reminders/${id}/send-now`);
+    return API.post(`/booking-reminders/${id}/send-now`);
   },
 };
 

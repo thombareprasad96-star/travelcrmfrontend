@@ -84,14 +84,14 @@ function Textarea({ className = "", ...props }) {
 function SectionCard({ title, icon: Icon, iconColor = "text-blue-600", children, headerRight }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
-        <div className="flex items-center gap-2.5">
-          {Icon && <div className={`w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center ${iconColor}`}><Icon size={15} /></div>}
-          <h3 className="text-sm font-bold text-slate-800">{title}</h3>
+      <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {Icon && <div className={`w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 ${iconColor}`}><Icon size={15} /></div>}
+          <h3 className="text-sm font-bold text-slate-800 truncate">{title}</h3>
         </div>
         {headerRight}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </div>
   );
 }
@@ -152,7 +152,7 @@ function EmptyState({ icon: Icon, title, desc, onAdd, addLabel }) {
 }
 
 function FieldGrid({ cols = 3, children }) {
-  const gridCls = { 2: "grid-cols-1 sm:grid-cols-2", 3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", 4: "grid-cols-2 lg:grid-cols-4" };
+  const gridCls = { 2: "grid-cols-1 sm:grid-cols-2", 3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", 4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" };
   return <div className={`grid ${gridCls[cols] || gridCls[3]} gap-4`}>{children}</div>;
 }
 
@@ -466,7 +466,7 @@ function SightseeingTab() {
           iconColor="text-amber-600"
           headerRight={
             <div className="flex items-center gap-2">
-              <Input type="date" value={day.date} onChange={e => updateDay(day.id, "date", e.target.value)} className="w-36 text-xs py-1.5" />
+              <Input type="date" value={day.date} onChange={e => updateDay(day.id, "date", e.target.value)} className="w-32 sm:w-36 text-xs py-1.5" />
               {days.length > 1 && <RemoveBtn onClick={() => removeDay(day.id)} />}
             </div>
           }>
@@ -890,14 +890,14 @@ function SummaryPricingTab() {
       </SectionCard>
 
       {/* Grand Total */}
-      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 sm:p-6 text-white">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
             <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">Final Quotation Total</p>
-            <p className="text-4xl font-extrabold">{fmt(grandTotal)}</p>
+            <p className="text-3xl sm:text-4xl font-extrabold break-words">{fmt(grandTotal)}</p>
             <p className="text-emerald-200 text-xs mt-1">Including all taxes and charges</p>
           </div>
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
             <IndianRupee size={32} />
           </div>
         </div>
@@ -947,10 +947,10 @@ export default function CreateQuotation() {
               <Bell size={18} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
             </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">
+            <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">
               <Clock size={13} /> 02:45
             </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-200">
+            <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-200">
               Pro Plan
             </button>
             <button className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">

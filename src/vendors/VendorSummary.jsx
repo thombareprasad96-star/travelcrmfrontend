@@ -42,7 +42,7 @@ export default function VendorSummary({ watch, selectedServices }) {
   const country = watch("country")       || "";
   const contract= watch("contractType")  || "";
   const payment = watch("paymentTerms")  || "";
-  const status  = watch("status")        || "Active";
+  const status  = watch("status")        || "ACTIVE";
   const commission= watch("commissionRate") || "";
 
   const tc = TYPE_CONFIG[type] || null;
@@ -126,9 +126,9 @@ export default function VendorSummary({ watch, selectedServices }) {
                 </span>
               )}
               <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full
-                ${status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${status === "Active" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                {status}
+                ${status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-400"}`} />
+                {status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
               </span>
             </div>
 

@@ -693,6 +693,9 @@ function ReminderCard({ r, onComplete, onDismiss, onSnooze, onEdit, onDelete, on
           <div>
             <p className="text-xs font-bold text-blue-600">Lead: {r.leadName}</p>
             <p className="text-xs text-slate-400">{r.phone}</p>
+            {r.assignToName && (
+              <p className="text-xs text-slate-400">Assigned: {r.assignToName}</p>
+            )}
           </div>
         </div>
 
@@ -1271,6 +1274,9 @@ const markAllComplete = async () => {
                       <div>
                         <p className="text-xs font-bold text-blue-600">{r.leadName}</p>
                         <p className="text-xs text-slate-400">{r.phone}</p>
+                        {r.assignToName && (
+                          <p className="text-xs text-slate-400">Assigned: {r.assignToName}</p>
+                        )}
                       </div>
                       <div>
                         <p className={`text-xs font-bold ${due.overdue && !isDone ? "text-red-600" : due.soon ? "text-amber-600" : "text-slate-600"}`}>

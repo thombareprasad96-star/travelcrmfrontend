@@ -5,57 +5,7 @@
 // Database: PostgreSQL
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
-
-// ── MULTIPART AXIOS INSTANCE (for file uploads) ───────────────
-const apiMultipart = axios.create({
-  baseURL: BASE_URL,
-  timeout: 30000,
-});
-apiMultipart.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    // Do NOT set Content-Type — axios sets it automatically with boundary for multipart
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -92,7 +42,7 @@ export const companyService = {
   //   faviconUrl: "https://..."
   // }
   get: () => {
-    return api.get("/api/company");
+    return API.get("/company");
   },
 
   // ── UPDATE COMPANY PROFILE (JSON fields only) ──────────────
@@ -107,7 +57,7 @@ export const companyService = {
   //   gstin, tan, address, state
   // }
   update: (data) => {
-    return api.put("/api/company", data);
+    return API.put("/company", data);
   },
 
   // ── UPLOAD COMPANY LOGO ────────────────────────────────────
@@ -120,7 +70,9 @@ export const companyService = {
   uploadLogo: (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    return apiMultipart.post("/api/company/logo", formData);
+    return API.post("/company/logo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   },
 
   // ── UPLOAD COMPANY FAVICON ─────────────────────────────────
@@ -133,7 +85,9 @@ export const companyService = {
   uploadFavicon: (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    return apiMultipart.post("/api/company/favicon", formData);
+    return API.post("/company/favicon", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   },
 
   // ── GET SUBSCRIPTION INFO ──────────────────────────────────
@@ -144,7 +98,7 @@ export const companyService = {
   // Returns:
   // { plan, startDate, endDate, status, daysLeft, features }
   getSubscription: () => {
-    return api.get("/api/company/subscription");
+    return API.get("/company/subscription");
   },
 
   // ── GET AI CREDITS ─────────────────────────────────────────
@@ -154,7 +108,7 @@ export const companyService = {
   //
   // Returns: { used, total, usedCost }
   getAiCredits: () => {
-    return api.get("/api/company/ai-credits");
+    return API.get("/company/ai-credits");
   },
 };
 
@@ -187,7 +141,7 @@ export const taxRateService = {
   //   ...
   // ]
   getAll: () => {
-    return api.get("/api/tax-rates");
+    return API.get("/tax-rates");
   },
 
   // ── GET ACTIVE TAX RATES ONLY ──────────────────────────────
@@ -195,7 +149,7 @@ export const taxRateService = {
   // @GetMapping("/api/tax-rates/active")
   // public ResponseEntity<List<TaxRateDTO>> getActive()
   getActive: () => {
-    return api.get("/api/tax-rates/active");
+    return API.get("/tax-rates/active");
   },
 
   // ── CREATE TAX RATE ────────────────────────────────────────
@@ -215,7 +169,7 @@ export const taxRateService = {
   // Backend logic: automatically sets previous active rate of
   // same type to inactive (effective_to = effectiveFrom - 1 day)
   create: (data) => {
-    return api.post("/api/tax-rates", data);
+    return API.post("/tax-rates", data);
   },
 
   // ── DELETE TAX RATE ────────────────────────────────────────
@@ -223,7 +177,7 @@ export const taxRateService = {
   // @DeleteMapping("/api/tax-rates/{id}")
   // public ResponseEntity<Void> delete(@PathVariable Long id)
   delete: (id) => {
-    return api.delete(`/api/tax-rates/${id}`);
+    return API.delete(`/tax-rates/${id}`);
   },
 
   // ── GET TAX RATE BY ID ─────────────────────────────────────
@@ -231,7 +185,7 @@ export const taxRateService = {
   // @GetMapping("/api/tax-rates/{id}")
   // public ResponseEntity<TaxRateDTO> getById(@PathVariable Long id)
   getById: (id) => {
-    return api.get(`/api/tax-rates/${id}`);
+    return API.get(`/tax-rates/${id}`);
   },
 };
 

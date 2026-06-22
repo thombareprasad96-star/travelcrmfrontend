@@ -5,42 +5,7 @@
 // Covers: Reminders + Leads dropdown + Users dropdown
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 10000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -71,56 +36,56 @@ export const reminderService = {
   //
   // Response: ReminderDTO with id, title, status, createdAt, etc.
   create: (reminderData) => {
-    return api.post("/api/reminders", reminderData);
+    return API.post("/reminders", reminderData);
   },
 
   // GET /api/reminders
   // @GetMapping("/api/reminders")
   // public ResponseEntity<List<ReminderDTO>> getAllReminders()
   getAll: (params = {}) => {
-    return api.get("/api/reminders", { params });
+    return API.get("/reminders", { params });
   },
 
   // GET /api/reminders/{id}
   // @GetMapping("/api/reminders/{id}")
   // public ResponseEntity<ReminderDTO> getReminderById(@PathVariable Long id)
   getById: (id) => {
-    return api.get(`/api/reminders/${id}`);
+    return API.get(`/reminders/${id}`);
   },
 
   // PUT /api/reminders/{id}
   // @PutMapping("/api/reminders/{id}")
   // public ResponseEntity<ReminderDTO> updateReminder(@PathVariable Long id, @RequestBody ReminderDTO dto)
   update: (id, reminderData) => {
-    return api.put(`/api/reminders/${id}`, reminderData);
+    return API.put(`/reminders/${id}`, reminderData);
   },
 
   // DELETE /api/reminders/{id}
   // @DeleteMapping("/api/reminders/{id}")
   // public ResponseEntity<Void> deleteReminder(@PathVariable Long id)
   delete: (id) => {
-    return api.delete(`/api/reminders/${id}`);
+    return API.delete(`/reminders/${id}`);
   },
 
   // PATCH /api/reminders/{id}/complete
   // @PatchMapping("/api/reminders/{id}/complete")
   // public ResponseEntity<ReminderDTO> markComplete(@PathVariable Long id)
   markComplete: (id) => {
-    return api.patch(`/api/reminders/${id}/complete`);
+    return API.patch(`/reminders/${id}/complete`);
   },
 
   // PATCH /api/reminders/{id}/dismiss
   // @PatchMapping("/api/reminders/{id}/dismiss")
   // public ResponseEntity<ReminderDTO> dismiss(@PathVariable Long id)
   dismiss: (id) => {
-    return api.patch(`/api/reminders/${id}/dismiss`);
+    return API.patch(`/reminders/${id}/dismiss`);
   },
 
   // PATCH /api/reminders/{id}/snooze
   // @PatchMapping("/api/reminders/{id}/snooze")
   // Body: { snoozedUntil: "2026-06-21T10:00:00.000Z" }
   snooze: (id, snoozedUntilISO) => {
-    return api.patch(`/api/reminders/${id}/snooze`, {
+    return API.patch(`/reminders/${id}/snooze`, {
       snoozedUntil: snoozedUntilISO,
     });
   },
@@ -129,27 +94,27 @@ export const reminderService = {
   // @PostMapping("/api/reminders/{id}/logs")
   // Body: { log: "Called customer, no answer." }
   addLog: (id, logText) => {
-    return api.post(`/api/reminders/${id}/logs`, { log: logText });
+    return API.post(`/reminders/${id}/logs`, { log: logText });
   },
 
   // PATCH /api/reminders/complete-all-overdue
   // @PatchMapping("/api/reminders/complete-all-overdue")
   // public ResponseEntity<Integer> completeAllOverdue()
   completeAllOverdue: () => {
-    return api.patch("/api/reminders/complete-all-overdue");
+    return API.patch("/reminders/complete-all-overdue");
   },
 
   // GET /api/reminders/stats
   // @GetMapping("/api/reminders/stats")
   // Returns: { total, active, overdue, completed, snoozed }
   getStats: () => {
-    return api.get("/api/reminders/stats");
+    return API.get("/reminders/stats");
   },
 
   // GET /api/reminders/export/csv
   // @GetMapping(value="/api/reminders/export/csv", produces="text/csv")
   exportCSV: () => {
-    return api.get("/api/reminders/export/csv", { responseType: "blob" });
+    return API.get("/reminders/export/csv", { responseType: "blob" });
   },
 };
 
@@ -173,16 +138,14 @@ export const leadService = {
   //   ...
   // ]
   getAll: () => {
-    return api.get("/api/leads");
+    return API.get("/leads");
   },
 
-  // GET /api/leads/dropdown
-  // Lightweight endpoint — only id, name, phone
-  // @GetMapping("/api/leads/dropdown")
-  // public ResponseEntity<List<LeadDropdownDTO>> getLeadsForDropdown()
-  // Use this if your /api/leads returns heavy objects (travel details, notes etc.)
+  // GET /api/leads  → PagedApiResponse<LeadResponseDto>
+  // Each lead exposes { id (UUID = publicId), customerName, phone, ... }.
+  // (There is no separate /dropdown endpoint on the backend; the paged list is used.)
   getForDropdown: () => {
-    return api.get("/api/leads/dropdown");
+    return API.get("/leads", { params: { size: 1000 } });
   },
 
   // GET /api/leads/{id}
@@ -190,7 +153,7 @@ export const leadService = {
   // public ResponseEntity<LeadDTO> getLeadById(@PathVariable String id)
   // Used to auto-fill phone after lead selection
   getById: (id) => {
-    return api.get(`/api/leads/${id}`);
+    return API.get(`/leads/${id}`);
   },
 
   // GET /api/leads/search?query=Pratik
@@ -198,7 +161,7 @@ export const leadService = {
   // public ResponseEntity<List<LeadDropdownDTO>> searchLeads(@RequestParam String query)
   // Optional: for searchable dropdown
   search: (query) => {
-    return api.get("/api/leads/search", { params: { query } });
+    return API.get("/leads/search", { params: { query } });
   },
 };
 
@@ -222,7 +185,7 @@ export const userService = {
   //   ...
   // ]
   getAll: () => {
-    return api.get("/api/users");
+    return API.get("/users");
   },
 
   // GET /api/users/dropdown
@@ -230,15 +193,13 @@ export const userService = {
   // @GetMapping("/api/users/dropdown")
   // public ResponseEntity<List<UserDropdownDTO>> getUsersForDropdown()
   getForDropdown: () => {
-    return api.get("/api/users/dropdown");
+    return API.get("/users/dropdown");
   },
 
-  // GET /api/users/active
-  // Only fetch active/enabled users
-  // @GetMapping("/api/users/active")
-  // public ResponseEntity<List<UserDTO>> getActiveUsers()
+  // GET /api/users/available → ApiResponse<List<UserDto>>
+  // Active tenant users eligible for assignment: { publicId (UUID), fullName, role, email }.
   getActive: () => {
-    return api.get("/api/users/active");
+    return API.get("/users/available");
   },
 };
 

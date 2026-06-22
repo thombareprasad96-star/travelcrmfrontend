@@ -1,28 +1,4 @@
-import axios from "axios";
-
-// ============================================================
-// Backend API Base URL Setup
-// ============================================================
-const API = axios.create({
-  // Verify and adjust your actual Java Spring Boot backend URL here
-  baseURL: "http://localhost:8080/api/vehicles",
-  headers: { "Content-Type": "application/json" },
-});
-
-// ============================================================
-// JWT Token Interceptor
-// Reads token from localStorage and attaches to every request
-// ============================================================
-API.interceptors.request.use(
-  (req) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
-    return req;
-  },
-  (error) => Promise.reject(error)
-);
+import API from "./axiosInstance";
 
 // ============================================================
 // RESPONSE NORMALIZER
@@ -102,15 +78,15 @@ export const vehicleService = {
 
   // ──────────────────────────────────────────────────────────
   getAllVehicles: () => {
-    return API.get("/");
+    return API.get("/vehicles/");
   },
 
   // ──────────────────────────────────────────────────────────
   // 2. GET VEHICLE BY ID
  
   // ──────────────────────────────────────────────────────────
-  getVehicleById: (id) => {
-    return API.get(`/${id}`);
+  getVehicleById: (publicId) => {
+    return API.get(`/vehicles/${publicId}`);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -119,24 +95,24 @@ export const vehicleService = {
   // ──────────────────────────────────────────────────────────
   createVehicle: (formData) => {
     const mappedData = transformVehicleData(formData);
-    return API.post("/", mappedData);
+    return API.post("/vehicles/", mappedData);
   },
 
   // ──────────────────────────────────────────────────────────
   // 4. UPDATE VEHICLE
   
   // ──────────────────────────────────────────────────────────
-  updateVehicle: (id, formData) => {
+  updateVehicle: (publicId, formData) => {
     const mappedData = transformVehicleData(formData);
-    return API.put(`/${id}`, mappedData);
+    return API.put(`/vehicles/${publicId}`, mappedData);
   },
 
   // ──────────────────────────────────────────────────────────
   // 5. DELETE VEHICLE
 
   // ──────────────────────────────────────────────────────────
-  deleteVehicle: (id) => {
-    return API.delete(`/${id}`);
+  deleteVehicle: (publicId) => {
+    return API.delete(`/vehicles/${publicId}`);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -150,7 +126,7 @@ export const vehicleService = {
 
     formData.append("file", imageFile);
 
-    return API.post("/upload-image", formData, {
+    return API.post("/vehicles/upload-image", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
@@ -159,7 +135,7 @@ export const vehicleService = {
 
   // ──────────────────────────────────────────────────────────
   getVehiclesByType: (type) => {
-    return API.get(`/filter`, { params: { type } });
+    return API.get(`/vehicles/filter`, { params: { type } });
   },
 
   // ──────────────────────────────────────────────────────────
@@ -167,6 +143,6 @@ export const vehicleService = {
  
   // ──────────────────────────────────────────────────────────
   searchVehicles: (searchTerm) => {
-    return API.get(`/search`, { params: { q: searchTerm } });
+    return API.get(`/vehicles/search`, { params: { q: searchTerm } });
   },
 };

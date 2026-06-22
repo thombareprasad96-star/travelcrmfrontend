@@ -8,42 +8,7 @@
 //   2. permissionTemplateService — get/create/apply templates
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -77,7 +42,7 @@ export const userPermissionsService = {
   //   }
   // }
   getPermissions: (userId) => {
-    return api.get(`/api/users/${userId}/permissions`);
+    return API.get(`/users/${userId}/permissions`);
   },
 
   // ── UPDATE ALL PERMISSIONS FOR A USER (bulk save) ──────────
@@ -102,7 +67,7 @@ export const userPermissionsService = {
   //   - Upserts each row in user_permissions table
   //   - Returns updated summary (pages count, total count)
   updatePermissions: (userId, permissions) => {
-    return api.put(`/api/users/${userId}/permissions`, { permissions });
+    return API.put(`/users/${userId}/permissions`, { permissions });
   },
 
   // ── TOGGLE SINGLE PERMISSION ───────────────────────────────
@@ -116,7 +81,7 @@ export const userPermissionsService = {
   // Request body: { access: true, scope: "own" }
   // Use for immediate single-row update without saving the whole form
   togglePermission: (userId, pageId, access, scope) => {
-    return api.patch(`/api/users/${userId}/permissions/${pageId}`, {
+    return API.patch(`/users/${userId}/permissions/${pageId}`, {
       access,
       scope,
     });
@@ -130,7 +95,7 @@ export const userPermissionsService = {
   //
   // Sets access=true for ALL permission rows of this user
   selectAll: (userId) => {
-    return api.patch(`/api/users/${userId}/permissions/select-all`);
+    return API.patch(`/users/${userId}/permissions/select-all`);
   },
 
   // ── CLEAR ALL ACCESS ───────────────────────────────────────
@@ -141,7 +106,7 @@ export const userPermissionsService = {
   //
   // Sets access=false for ALL permission rows of this user
   clearAll: (userId) => {
-    return api.patch(`/api/users/${userId}/permissions/clear-all`);
+    return API.patch(`/users/${userId}/permissions/clear-all`);
   },
 
   // ── SET DATA SCOPE DEFAULT FOR ALL PAGES ───────────────────
@@ -154,7 +119,7 @@ export const userPermissionsService = {
   // Body: { scope: "team" }
   // Sets the data scope to the given value for ALL rows
   setScopeDefault: (userId, scope) => {
-    return api.patch(`/api/users/${userId}/permissions/scope-default`, {
+    return API.patch(`/users/${userId}/permissions/scope-default`, {
       scope,
     });
   },
@@ -170,8 +135,8 @@ export const userPermissionsService = {
   // Body: { access: true }
   // Enables or disables all pages in a section (e.g. "lead_management")
   toggleSection: (userId, sectionId, access) => {
-    return api.patch(
-      `/api/users/${userId}/permissions/section/${sectionId}`,
+    return API.patch(
+      `/users/${userId}/permissions/section/${sectionId}`,
       { access }
     );
   },
@@ -198,7 +163,7 @@ export const permissionTemplateService = {
   //   { value: "full",    label: "Full Access",        permissions: {...} },
   // ]
   getAll: () => {
-    return api.get("/api/permission-templates");
+    return API.get("/permission-templates");
   },
 
   // ── GET TEMPLATE BY VALUE ──────────────────────────────────
@@ -209,7 +174,7 @@ export const permissionTemplateService = {
   //
   // Returns the full permissions map for a specific template
   getByValue: (value) => {
-    return api.get(`/api/permission-templates/${value}`);
+    return API.get(`/permission-templates/${value}`);
   },
 
   // ── APPLY TEMPLATE TO USER ─────────────────────────────────
@@ -222,7 +187,7 @@ export const permissionTemplateService = {
   // Body: { template: "sales" }
   // Backend clones the template's permissions to the user
   applyTemplate: (userId, templateValue) => {
-    return api.post(`/api/users/${userId}/permissions/apply-template`, {
+    return API.post(`/users/${userId}/permissions/apply-template`, {
       template: templateValue,
     });
   },
@@ -240,7 +205,7 @@ export const permissionTemplateService = {
   //   permissions: { "dashboard_access": { access: true, scope: "own" }, ... }
   // }
   saveAsTemplate: (label, value, permissions) => {
-    return api.post("/api/permission-templates", {
+    return API.post("/permission-templates", {
       label,
       value,
       permissions,
@@ -252,7 +217,7 @@ export const permissionTemplateService = {
   // @DeleteMapping("/api/permission-templates/{value}")
   // public ResponseEntity<Void> delete(@PathVariable String value)
   delete: (value) => {
-    return api.delete(`/api/permission-templates/${value}`);
+    return API.delete(`/permission-templates/${value}`);
   },
 };
 

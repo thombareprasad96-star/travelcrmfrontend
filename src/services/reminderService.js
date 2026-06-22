@@ -5,46 +5,7 @@
 // Base URL: configured via environment variable
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Set REACT_APP_API_URL=http://localhost:8080 in your .env file
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  timeout: 10000, // 10 seconds
-});
-
-// ── REQUEST INTERCEPTOR (attach JWT token) ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken"); // or sessionStorage
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR (handle 401 globally) ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired — redirect to login
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 // ─────────────────────────────────────────────────────────────
 // REMINDER SERVICE
@@ -61,7 +22,7 @@ const reminderService = {
   // Optional query params: ?status=Active&priority=High&type=Follow_up
   // Spring: @RequestParam(required = false) String status, ...
   getAll: (params = {}) => {
-    return api.get("/api/reminders", { params });
+    return API.get("/reminders", { params });
     // params example: { status: "Active", priority: "High", type: "Follow_up" }
   },
 
@@ -71,7 +32,7 @@ const reminderService = {
   //   @GetMapping("/api/reminders/{id}")
   //   public ResponseEntity<ReminderDTO> getReminderById(@PathVariable Long id) { ... }
   getById: (id) => {
-    return api.get(`/api/reminders/${id}`);
+    return API.get(`/reminders/${id}`);
   },
 
   // ── CREATE REMINDER ────────────────────────────────────────
@@ -94,7 +55,7 @@ const reminderService = {
   //     snoozedUntil: null
   //   }
   create: (reminderData) => {
-    return api.post("/api/reminders", reminderData);
+    return API.post("/reminders", reminderData);
   },
 
   // ── UPDATE REMINDER ────────────────────────────────────────
@@ -103,7 +64,7 @@ const reminderService = {
   //   @PutMapping("/api/reminders/{id}")
   //   public ResponseEntity<ReminderDTO> updateReminder(@PathVariable Long id, @RequestBody ReminderDTO dto) { ... }
   update: (id, reminderData) => {
-    return api.put(`/api/reminders/${id}`, reminderData);
+    return API.put(`/reminders/${id}`, reminderData);
   },
 
   // ── PARTIAL UPDATE (PATCH) ─────────────────────────────────
@@ -114,7 +75,7 @@ const reminderService = {
   //
   // Used for quick field updates (status change, snooze, etc.)
   patch: (id, fields) => {
-    return api.patch(`/api/reminders/${id}`, fields);
+    return API.patch(`/reminders/${id}`, fields);
   },
 
   // ── DELETE REMINDER ────────────────────────────────────────
@@ -123,7 +84,7 @@ const reminderService = {
   //   @DeleteMapping("/api/reminders/{id}")
   //   public ResponseEntity<Void> deleteReminder(@PathVariable Long id) { ... }
   delete: (id) => {
-    return api.delete(`/api/reminders/${id}`);
+    return API.delete(`/reminders/${id}`);
   },
 
   // ── MARK COMPLETE ──────────────────────────────────────────
@@ -132,7 +93,7 @@ const reminderService = {
   //   @PatchMapping("/api/reminders/{id}/complete")
   //   public ResponseEntity<ReminderDTO> markComplete(@PathVariable Long id) { ... }
   markComplete: (id) => {
-    return api.patch(`/api/reminders/${id}/complete`);
+    return API.patch(`/reminders/${id}/complete`);
   },
 
   // ── MARK DISMISSED ────────────────────────────────────────
@@ -141,7 +102,7 @@ const reminderService = {
   //   @PatchMapping("/api/reminders/{id}/dismiss")
   //   public ResponseEntity<ReminderDTO> dismiss(@PathVariable Long id) { ... }
   dismiss: (id) => {
-    return api.patch(`/api/reminders/${id}/dismiss`);
+    return API.patch(`/reminders/${id}/dismiss`);
   },
 
   // ── SNOOZE REMINDER ───────────────────────────────────────
@@ -152,7 +113,7 @@ const reminderService = {
   //
   // SnoozeRequest body: { snoozedUntil: "2026-06-21T10:00:00" }
   snooze: (id, snoozedUntilISO) => {
-    return api.patch(`/api/reminders/${id}/snooze`, {
+    return API.patch(`/reminders/${id}/snooze`, {
       snoozedUntil: snoozedUntilISO,
     });
   },
@@ -165,7 +126,7 @@ const reminderService = {
   //
   // LogRequest body: { log: "Called customer, no answer. Retry tomorrow." }
   addLog: (id, logText) => {
-    return api.post(`/api/reminders/${id}/logs`, { log: logText });
+    return API.post(`/reminders/${id}/logs`, { log: logText });
   },
 
   // ── GET OVERDUE REMINDERS ──────────────────────────────────
@@ -175,7 +136,7 @@ const reminderService = {
   //   public ResponseEntity<List<ReminderDTO>> getOverdue() { ... }
   //   // Query: WHERE status='Active' AND due_date < NOW()
   getOverdue: () => {
-    return api.get("/api/reminders/overdue");
+    return API.get("/reminders/overdue");
   },
 
   // ── GET REMINDERS BY LEAD NAME ─────────────────────────────
@@ -184,7 +145,7 @@ const reminderService = {
   //   @GetMapping("/api/reminders/lead/{leadName}")
   //   public ResponseEntity<List<ReminderDTO>> getByLeadName(@PathVariable String leadName) { ... }
   getByLeadName: (leadName) => {
-    return api.get(`/api/reminders/lead/${encodeURIComponent(leadName)}`);
+    return API.get(`/reminders/lead/${encodeURIComponent(leadName)}`);
   },
 
   // ── MARK ALL OVERDUE AS COMPLETE ───────────────────────────
@@ -194,7 +155,7 @@ const reminderService = {
   //   public ResponseEntity<Integer> completeAllOverdue() { ... }
   //   // Returns count of updated records
   completeAllOverdue: () => {
-    return api.patch("/api/reminders/complete-all-overdue");
+    return API.patch("/reminders/complete-all-overdue");
   },
 
   // ── GET STATS / COUNTS ─────────────────────────────────────
@@ -205,7 +166,7 @@ const reminderService = {
   //
   // ReminderStatsDTO: { total, active, overdue, completed, snoozed }
   getStats: () => {
-    return api.get("/api/reminders/stats");
+    return API.get("/reminders/stats");
   },
 
   // ── EXPORT TO CSV ──────────────────────────────────────────
@@ -214,7 +175,7 @@ const reminderService = {
   //   @GetMapping(value="/api/reminders/export/csv", produces="text/csv")
   //   public ResponseEntity<byte[]> exportCsv() { ... }
   exportCSV: () => {
-    return api.get("/api/reminders/export/csv", {
+    return API.get("/reminders/export/csv", {
       responseType: "blob", // important for file download
     });
   },

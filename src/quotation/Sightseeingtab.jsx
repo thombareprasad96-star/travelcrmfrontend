@@ -49,7 +49,7 @@ export default function SightseeingTab({ onDataChange }) {
           <IncludeToggle included={included} onChange={() => setIncluded(p => !p)} label="Include Sightseeing in Quotation" />
           {included && (
             <>
-              <AIBanner text="AI can generate day-wise itinerary based on destination and trip duration." />
+              {/* <AIBanner text="AI can generate day-wise itinerary based on destination and trip duration." /> */}
               <div><Label>Section Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} /></div>
               <div><Label>Sightseeing Notes</Label><RichText value={notes} onChange={setNotes} placeholder="General notes..." rows={3} /></div>
             </>

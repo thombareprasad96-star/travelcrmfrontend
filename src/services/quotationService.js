@@ -772,37 +772,7 @@
 
 // src/services/quotationService.js
 
-import axios from "axios";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-// baseURL already has /api — endpoints mein /api dobara mat lagao
-const api = axios.create({
-  baseURL: "http://localhost:8080/api",
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR ───────────────────────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token"); // leadService se match
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR ──────────────────────────────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 // ═════════════════════════════════════════════════════════════
 // PAYLOAD BUILDER
@@ -1014,51 +984,51 @@ export const quotationService = {
   // 1. CREATE — POST /quotations
   createQuotation: (tabsData) => {
     const payload = buildQuotationPayload(tabsData);
-    return api.post("/quotations", payload);
+    return API.post("/quotations", payload);
   },
 
   // 2. UPDATE — PUT /quotations/{id}
   updateQuotation: (id, tabsData) => {
     const payload = buildQuotationPayload(tabsData);
-    return api.put(`/quotations/${id}`, payload);
+    return API.put(`/quotations/${id}`, payload);
   },
 
   // 3. GET BY ID — GET /quotations/{id}
   getQuotationById: (id) => {
-    return api.get(`/quotations/${id}`);
+    return API.get(`/quotations/${id}`);
   },
 
   // 4. GET BY LEAD — GET /quotations/lead/{leadId}
   getQuotationsByLead: (leadId) => {
-    return api.get(`/quotations/lead/${leadId}`);
+    return API.get(`/quotations/lead/${leadId}`);
   },
 
   // 5. GET ALL — GET /quotations?page=0&size=20
   getAllQuotations: (page = 0, size = 20) => {
-    return api.get("/quotations", { params: { page, size } });
+    return API.get("/quotations", { params: { page, size } });
   },
 
   // 6. DELETE — DELETE /quotations/{id}
   deleteQuotation: (id) => {
-    return api.delete(`/quotations/${id}`);
+    return API.delete(`/quotations/${id}`);
   },
 
   // 7. UPDATE STAGE — PATCH /quotations/{id}/stage
   // stage: "Draft" | "Sent" | "Approved" | "Rejected"
   updateStage: (id, stage) => {
-    return api.patch(`/quotations/${id}/stage`, null, {
+    return API.patch(`/quotations/${id}/stage`, null, {
       params: { stage },
     });
   },
 
   // 8. DUPLICATE — POST /quotations/{id}/duplicate
   duplicateQuotation: (id) => {
-    return api.post(`/quotations/${id}/duplicate`);
+    return API.post(`/quotations/${id}/duplicate`);
   },
 
   // 9. GENERATE PDF — GET /quotations/{id}/pdf
   generatePdf: (id) => {
-    return api.get(`/quotations/${id}/pdf`, {
+    return API.get(`/quotations/${id}/pdf`, {
       responseType: "blob",
     });
   },
@@ -1066,12 +1036,12 @@ export const quotationService = {
   // 10. SEND EMAIL — POST /quotations/{id}/send-email
   // Body: { toEmail, subject, message }
   sendEmail: (id, emailData) => {
-    return api.post(`/quotations/${id}/send-email`, emailData);
+    return API.post(`/quotations/${id}/send-email`, emailData);
   },
 
   // 11. GET SHARE LINK — GET /quotations/{id}/share-link
   getShareLink: (id) => {
-    return api.get(`/quotations/${id}/share-link`);
+    return API.get(`/quotations/${id}/share-link`);
   },
 };
 

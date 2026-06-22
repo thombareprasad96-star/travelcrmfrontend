@@ -1,1076 +1,56 @@
-// import React, { useState, useEffect, memo, useMemo } from 'react';
-// import { leadService } from '../../services/leadService';
-// import {
-//   Users, Trophy, PieChart, TrendingUp, Search,
-//   DownloadCloud, FileText, Plus,
-//   Inbox, User, Calendar, ChevronDown, ChevronRight,
-//   Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle
-// } from 'lucide-react';
-// import { Link } from 'react-router-dom';
-
-// /* ─── COLOR HELPERS ───────────────────────────────────── */
-// const AVATAR_GRADIENTS = [
-//   'from-blue-500 to-blue-600',
-//   'from-orange-500 to-red-600',
-//   'from-violet-400 to-purple-600',
-//   'from-teal-400 to-emerald-600',
-//   'from-pink-400 to-rose-600',
-//   'from-amber-400 to-amber-600',
-// ];
-// const ACCENT_SOLIDS = [ '#d97706'];
-
-// function colorForIndex(idx) {
-//   const i = idx % AVATAR_GRADIENTS.length;
-//   return { avatar: AVATAR_GRADIENTS[i], accent: ACCENT_SOLIDS[i] };
-// }
-
-// const STAGE_PILL = {
-//   'New Lead':  'bg-emerald-100 text-emerald-700 border-emerald-200',
-//   'Contacted': 'bg-blue-100 text-blue-700 border-blue-200',
-//   'Converted': 'bg-green-100 text-green-700 border-green-200',
-//   'Lost':      'bg-red-100 text-red-700 border-red-200',
-// };
-// const stagePill = (stage) => STAGE_PILL[stage] || 'bg-orange-100 text-orange-700 border-orange-200';
-
-// const TYPE_PILL = {
-//   'Fresh Lead': 'bg-blue-100 text-blue-700 border-blue-200',
-//   'Hot Lead':   'bg-red-100 text-red-700 border-red-200',
-//   'Warm Lead':  'bg-amber-100 text-amber-700 border-amber-200',
-//   'Cold Lead':  'bg-teal-100 text-teal-700 border-teal-200',
-// };
-// const typePill = (type) => TYPE_PILL[type] || 'bg-slate-100 text-slate-700 border-slate-200';
-
-// // Exact pastel colors per service, matched to the design mockup
-// const SERVICE_COLORS = {
-//   Hotel:        { bg: '#E6F1FB', text: '#042C53' },
-//   Flight:       { bg: '#EEEDFE', text: '#26215C' },
-//   Cruise:       { bg: '#E1F5EE', text: '#04342C' },
-//   Vehicle:      { bg: '#FAECE7', text: '#4A1B0C' },
-//   Visa:         { bg: '#FBEAF0', text: '#4B1528' },
-//   Passport:     { bg: '#F1EFE8', text: '#2C2C2A' },
-//   Sightseeing:  { bg: '#FAEEDA', text: '#412402' },
-// };
-// const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
-
-// /* ─── PAGINATION ─────────────────────────────────────── */
-// function buildPageNumbers(totalPages, pageIndex) {
-//   if (totalPages <= 0) return [];
-//   return Array.from({ length: totalPages }, (_, i) => i)
-//     .filter(p => p === 0 || p === totalPages - 1 || Math.abs(p - pageIndex) <= 1)
-//     .reduce((acc, p, i, arr) => {
-//       if (i > 0 && p - arr[i - 1] > 1) acc.push('\u2026');
-//       acc.push(p);
-//       return acc;
-//     }, []);
-// }
-
-// const NavButton = memo(function NavButton({ label, onClick, disabled }) {
-//   return (
-//     <button
-//       disabled={disabled}
-//       onClick={onClick}
-//       className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-//         hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-//     >
-//       {label}
-//     </button>
-//   );
-// });
-
-// const PageButton = memo(function PageButton({ page, isActive, onClick }) {
-//   return (
-//     <button
-//       onClick={onClick}
-//       className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
-//         isActive
-//           ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-sm'
-//           : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-//       }`}
-//     >
-//       {page + 1}
-//     </button>
-//   );
-// });
-
-// function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goToPage, changePageSize }) {
-//   const from = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
-//   const to   = Math.min((pageIndex + 1) * pageSize, totalElements);
-
-//   const pageNumbers = useMemo(
-//     () => buildPageNumbers(totalPages, pageIndex),
-//     [totalPages, pageIndex]
-//   );
-
-//   if (totalElements === 0) return null;
-
-//   const isFirst = pageIndex === 0;
-//   const isLast  = pageIndex >= totalPages - 1;
-
-//   return (
-//     <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-//       <p className="text-xs text-slate-400 font-medium">
-//         Showing <span className="font-bold text-slate-600">{from}</span>{'\u2013'}<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
-//       </p>
-//       <div className="flex items-center gap-1.5 flex-wrap justify-center">
-//         <NavButton label="\u00ab" onClick={() => goToPage(0)}             disabled={isFirst} />
-//         <NavButton label="\u2039" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
-//         {pageNumbers.map((p, i) =>
-//           typeof p === 'string'
-//             ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">{'\u2026'}</span>
-//             : <PageButton key={p} page={p} isActive={pageIndex === p} onClick={() => goToPage(p)} />
-//         )}
-//         <NavButton label="\u203a" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
-//         <NavButton label="\u00bb" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
-//         <select
-//           value={pageSize}
-//           onChange={e => changePageSize(Number(e.target.value))}
-//           className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer"
-//         >
-//           {[10, 25, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
-//         </select>
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── STAT CARD ──────────────────────────────────────── */
-// function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }) {
-//   const [displayed, setDisplayed] = useState(0);
-//   useEffect(() => {
-//     let start = 0;
-//     const target = typeof value === 'number' ? value : 0;
-//     if (target === 0) { setDisplayed(0); return; }
-//     const step = Math.ceil(target / 60);
-//     const interval = setInterval(() => {
-//       start = Math.min(start + step, target);
-//       setDisplayed(start);
-//       if (start >= target) clearInterval(interval);
-//     }, 16);
-//     return () => clearInterval(interval);
-//   }, [value]);
-
-//   return (
-//     <div
-//       className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
-//         hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
-//       style={{ animationDelay: `${delay}ms` }}
-//     >
-//       <Icon size={64} strokeWidth={1.5} className="absolute -right-2 -bottom-2 opacity-15" />
-//       <div className="relative z-10">
-//         <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all mb-3">
-//           <Icon size={20} strokeWidth={2.2} />
-//         </div>
-//         <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
-//           {displayed.toLocaleString('en-IN')}{suffix}
-//         </p>
-//         <p className="text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── SKELETON ROW ───────────────────────────────────── */
-// function SkeletonRow() {
-//   return (
-//     <div className="grid items-center gap-2 px-5 py-4" style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}>
-//       {[...Array(7)].map((_, i) => (
-//         <div key={i} className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
-//       ))}
-//     </div>
-//   );
-// }
-
-// /* ─── TOAST ──────────────────────────────────────────── */
-// function Toast({ msg, type, onClose }) {
-//   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
-//   return (
-//     <div
-//       className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
-//         ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}
-//       style={{ animation: 'slideIn .3s ease both' }}
-//     >
-//       {type === 'success' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
-//       <p className="text-sm font-semibold flex-1">{msg}</p>
-//       <button onClick={onClose} className="opacity-50 hover:opacity-100 ml-1"><X size={16} /></button>
-//     </div>
-//   );
-// }
-
-// /* ─── VIEW LEAD MODAL ────────────────────────────────── */
-// function ViewLeadModal({ lead, onClose, onEdit }) {
-//   if (!lead) return null;
-//   return (
-//     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-//       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-//       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto z-10">
-//         <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-5 rounded-t-2xl">
-//           <div className="flex items-start justify-between">
-//             <div className="flex items-center gap-4">
-//               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-extrabold shadow-lg flex-shrink-0">
-//                 {(lead.customerName || 'U').charAt(0).toUpperCase()}
-//               </div>
-//               <div>
-//                 <h2 className="text-white text-xl font-extrabold capitalize">{lead.customerName || 'N/A'}</h2>
-//                 <p className="text-slate-400 text-sm font-medium">Lead #{lead.id}</p>
-//                 <div className="flex items-center gap-2 mt-1.5">
-//                   <span className="text-xs font-bold px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-700">{lead.leadType || 'N/A'}</span>
-//                   <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-//                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{lead.leadStage || 'N/A'}
-//                   </span>
-//                 </div>
-//               </div>
-//             </div>
-//             <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all flex-shrink-0">
-//               <X size={16} />
-//             </button>
-//           </div>
-//         </div>
-//         <div className="p-6 space-y-5">
-//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//             {[
-//               [Phone,    'Phone',      lead.phone,   'bg-green-50 text-green-600'],
-//               [Mail,     'Email',      lead.email,   'bg-blue-50 text-blue-600'],
-//               [Users,    'Travelers',  `${lead.adults || 0} Adults, ${lead.children || 0} Child, ${lead.infants || 0} Infant`, 'bg-purple-50 text-purple-600'],
-//               [User,     'Assigned To', lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || 'Unassigned', 'bg-orange-50 text-orange-600'],
-//               [Calendar, 'Created',   lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014', 'bg-teal-50 text-teal-600'],
-//               [Briefcase,'Lead Type',  lead.leadType, 'bg-indigo-50 text-indigo-600'],
-//             ].map(([Icon, label, val, ic]) => (
-//               <div key={label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
-//                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${ic}`}><Icon size={14} /></div>
-//                 <div className="min-w-0">
-//                   <p className="text-xs text-slate-400 font-medium">{label}</p>
-//                   <p className="text-sm font-bold text-slate-700 truncate">{val || '\u2014'}</p>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//           {lead.itinerary && lead.itinerary.length > 0 && (
-//             <div>
-//               <p className="text-sm font-extrabold text-slate-700 mb-3 flex items-center gap-2"><MapPin size={14} className="text-blue-500" /> Destination & Itinerary</p>
-//               <div className="flex flex-wrap gap-2">
-//                 {lead.itinerary.map((item, i) => (
-//                   <span key={i} className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700">
-//                     {item.destination} <span className="text-blue-600 font-extrabold">({item.nights}N)</span>
-//                   </span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-//           {lead.services && lead.services.length > 0 && (
-//             <div>
-//               <p className="text-sm font-extrabold text-slate-700 mb-3">Services</p>
-//               <div className="flex flex-wrap gap-1.5">
-//                 {lead.services.map((service, i) => (
-//                   <span key={i} className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider">{service}</span>
-//                 ))}
-//               </div>
-//             </div>
-//           )}
-//           <div className="flex flex-wrap gap-2 pt-1">
-//             <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
-//               <Pencil size={14} /> Edit
-//             </button>
-//             <button onClick={onClose} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
-//               Close
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── EDIT LEAD MODAL ────────────────────────────────── */
-// function EditLeadModal({ lead, onClose, onSave }) {
-//   const initialAssignName =
-//     lead?.assignedUser?.fullName ||
-//     lead?.assignedUser?.name ||
-//     lead?.assignedUserName ||
-//     lead?.assignTo ||
-//     'Unassigned';
-
-//   const [form, setForm] = useState({
-//     customerName: lead?.customerName || '',
-//     email:        lead?.email        || '',
-//     phone:        lead?.phone        || '',
-//     adults:       lead?.adults       || 0,
-//     children:     lead?.children     || 0,
-//     infants:      lead?.infants      || 0,
-//     assignTo:     initialAssignName,
-//     leadType:     lead?.leadType     || '',
-//     leadStage:    lead?.leadStage    || '',
-//   });
-
-//   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
-
-//   const fields = [
-//     { key: 'customerName', label: 'Customer Name', type: 'text',   placeholder: 'Enter customer name',  span: true },
-//     { key: 'email',        label: 'Email Address', type: 'email',  placeholder: 'customer@email.com',   span: true },
-//     { key: 'phone',        label: 'Phone Number',  type: 'tel',    placeholder: '+91 98765 43210' },
-//     { key: 'assignTo',     label: 'Assigned To',   type: 'text',   placeholder: 'Agent name' },
-//     { key: 'adults',       label: 'Adults',        type: 'number' },
-//     { key: 'children',     label: 'Children',      type: 'number' },
-//     { key: 'infants',      label: 'Infants',       type: 'number' },
-//     { key: 'leadType',     label: 'Lead Type',     type: 'text',   placeholder: 'e.g. Hot / Cold' },
-//     { key: 'leadStage',    label: 'Lead Stage',    type: 'text',   placeholder: 'e.g. New Lead' },
-//   ];
-
-//   return (
-//     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-//       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-//       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto z-10">
-//         <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5 rounded-t-2xl flex items-center justify-between">
-//           <div>
-//             <h2 className="text-white font-extrabold text-lg">Edit Lead #{lead?.id}</h2>
-//             <p className="text-white/70 text-xs mt-0.5">Update lead information below</p>
-//           </div>
-//           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all"><X size={16} /></button>
-//         </div>
-//         <div className="p-6 space-y-4">
-//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//             {fields.map(f => (
-//               <div key={f.key} className={f.span ? 'sm:col-span-2' : ''}>
-//                 <label className="block text-xs font-bold text-slate-500 mb-1.5">{f.label}</label>
-//                 <input
-//                   type={f.type}
-//                   value={form[f.key]}
-//                   min={f.type === 'number' ? 0 : undefined}
-//                   disabled={f.key === 'assignTo'}
-//                   onChange={e => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
-//                   placeholder={f.placeholder}
-//                   className={`w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all ${
-//                     f.key === 'assignTo' ? 'bg-slate-100 cursor-not-allowed opacity-80' : 'bg-white'
-//                   }`}
-//                 />
-//               </div>
-//             ))}
-//           </div>
-//           <div className="flex gap-3 pt-2">
-//             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-600 font-bold text-sm transition-all bg-white hover:bg-slate-50">Cancel</button>
-//             <button onClick={() => onSave(form)} className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200">Save Changes</button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── DELETE CONFIRM ─────────────────────────────────── */
-// function DeleteConfirm({ lead, onClose, onConfirm }) {
-//   return (
-//     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-//       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-//       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm z-10 p-6 text-center">
-//         <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"><Trash2 size={26} className="text-red-500" /></div>
-//         <h3 className="text-lg font-extrabold text-slate-800 mb-1">Delete Lead?</h3>
-//         <p className="text-sm text-slate-500 mb-5">
-//           Are you sure you want to delete lead <span className="font-bold text-slate-700">#{lead?.id} ({lead?.customerName || 'N/A'})</span>? This action cannot be undone.
-//         </p>
-//         <div className="flex gap-3">
-//           <button onClick={onClose}   className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
-//           <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-200 transition-all">Yes, Delete</button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ─── EXPANDABLE LEAD ROW ─────────────────────────────── */
-// function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onStageChange }) {
-//   const { avatar, accent } = colorForIndex(index);
-//   const name = lead.customerName || 'N/A';
-//   const initial = (name || 'U').charAt(0).toUpperCase();
-
-//   const assigneeName =
-//     lead.assignedUser?.fullName ||
-//     lead.assignedUser?.name ||
-//     lead.assignedUser?.username ||
-//     lead.assignedUserName ||
-//     lead.assignTo ||
-//     null;
-
-//   const destination = lead.itinerary && lead.itinerary.length > 0 ? lead.itinerary[0] : null;
-//   const travelersShort = `${lead.adults || 0} Adults${lead.children ? `, ${lead.children} Child` : ''}`;
-
-//   return (
-//     <div
-//       className="border-t border-slate-100 first:border-t-0 transition-colors"
-//       style={{
-//         borderLeft: `3px solid ${accent}`,
-//         background: isOpen ? `${accent}12` : 'transparent',
-//         animation: 'fadeUp .35s ease both',
-//         animationDelay: `${index * 30}ms`,
-//       }}
-//     >
-//       {/* ── Desktop row (md and up) ── */}
-//       <div
-//         onClick={() => onToggle(lead.id)}
-//         className="hidden md:grid items-center gap-2 px-5 py-4 cursor-pointer transition-colors"
-//         style={{
-//           gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px',
-//           background: isOpen ? `${accent}18` : 'transparent',
-//         }}
-//         onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
-//         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
-//       >
-//         <ChevronRight
-//           size={16}
-//           className="text-slate-400 transition-transform flex-shrink-0"
-//           style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-//         />
-
-//         <div className="flex items-center gap-3 min-w-0">
-//           <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0`}>
-//             {initial}
-//           </div>
-//           <div className="min-w-0">
-//             <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
-//             <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
-//           </div>
-//         </div>
-
-//         <div className="min-w-0">
-//           {destination ? (
-//             <>
-//               <span
-//                 className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
-//                 style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
-//               >
-//                 <MapPin size={11} /> {destination.destination}
-//               </span>
-//               <p className="text-[11px] text-slate-400 mt-1">{destination.nights}N {'\u00b7'} {travelersShort}</p>
-//             </>
-//           ) : (
-//             <span className="text-sm text-slate-400">N/A</span>
-//           )}
-//         </div>
-
-//         <div className="flex items-center gap-2 min-w-0">
-//           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[10px] font-extrabold flex-shrink-0">
-//             {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
-//           </div>
-//           <span className="text-sm font-semibold text-slate-700 truncate">{assigneeName || 'Unassigned'}</span>
-//         </div>
-
-//         <div onClick={(e) => e.stopPropagation()}>
-//           <select
-//             value={lead.leadStage || 'New Lead'}
-//             onChange={(e) => onStageChange(lead, e.target.value)}
-//             className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
-//           >
-//             <option value="New Lead">New Lead</option>
-//             <option value="Contacted">Contacted</option>
-//           </select>
-//         </div>
-
-//         <div className="text-right text-sm font-extrabold text-slate-800">N/A</div>
-
-//         <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-//           <button onClick={() => onView(lead)} title="View" className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={14} /></button>
-//           <button onClick={() => onEdit(lead)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={14} /></button>
-//         </div>
-//       </div>
-
-//       {/* ── Mobile row (below md) ── */}
-//       <div
-//         onClick={() => onToggle(lead.id)}
-//         className="md:hidden px-4 py-3.5 cursor-pointer transition-colors"
-//         style={{ background: isOpen ? `${accent}18` : 'transparent' }}
-//         onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
-//         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
-//       >
-//         <div className="flex items-start gap-3">
-//           <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0 mt-0.5`}>
-//             {initial}
-//           </div>
-//           <div className="flex-1 min-w-0">
-//             <div className="flex items-start justify-between gap-2">
-//               <div className="min-w-0">
-//                 <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
-//                 <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
-//               </div>
-//               <ChevronRight
-//                 size={16}
-//                 className="text-slate-400 transition-transform flex-shrink-0 mt-1"
-//                 style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-//               />
-//             </div>
-
-//             <div className="flex items-center gap-2 flex-wrap mt-2">
-//               {destination ? (
-//                 <span
-//                   className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
-//                   style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
-//                 >
-//                   <MapPin size={11} /> {destination.destination} {'\u00b7'} {destination.nights}N
-//                 </span>
-//               ) : (
-//                 <span className="text-xs text-slate-400">No destination</span>
-//               )}
-//               <div onClick={(e) => e.stopPropagation()}>
-//                 <select
-//                   value={lead.leadStage || 'New Lead'}
-//                   onChange={(e) => onStageChange(lead, e.target.value)}
-//                   className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
-//                 >
-//                   <option value="New Lead">New Lead</option>
-//                   <option value="Contacted">Contacted</option>
-//                 </select>
-//               </div>
-//             </div>
-
-//             <div className="flex items-center justify-between mt-2.5">
-//               <div className="flex items-center gap-1.5">
-//                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[9px] font-extrabold flex-shrink-0">
-//                   {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
-//                 </div>
-//                 <span className="text-xs font-semibold text-slate-600 truncate">{assigneeName || 'Unassigned'}</span>
-//               </div>
-//               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-//                 <button onClick={() => onView(lead)} title="View" className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
-//                 <button onClick={() => onEdit(lead)} title="Edit" className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {isOpen && (
-//         <div
-//           style={{
-//             animation: 'fadeIn .2s ease both',
-//             background: '#f0d3a3',
-//             padding: '0 18px 18px 48px',
-//             borderTop: '1px solid #d4a96a',
-//           }}
-//         >
-
-//           {/* Travelers + Services */}
-//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
-//             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-//               <div>
-//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Travelers</p>
-//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#3B2008' }}>
-//                   {lead.adults || 0} Adults
-//                   {(lead.children > 0 || lead.infants > 0) && `, ${lead.children || 0} Child, ${lead.infants || 0} Infant`}
-//                 </p>
-//               </div>
-//               <div style={{ flex: 1, minWidth: '200px' }}>
-//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Services</p>
-//                 <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: '4px', gap: '4px' }}>
-//                   {lead.services && lead.services.length > 0
-//                     ? lead.services.map((s, i) => {
-//                         const c = serviceColor(s);
-//                         return (
-//                           <span key={i} style={{ background: c.bg, color: c.text, display: 'inline-block', padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 500 }}>{s}</span>
-//                         );
-//                       })
-//                     : <span style={{ fontSize: '13px', color: '#7B4F1E' }}>No services added</span>
-//                   }
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Phone / Type / Margin / Created */}
-//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
-//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px' }}>
-//               <div>
-//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Phone</p>
-//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#3B2008' }}>{lead.phone || '\u2014'}</p>
-//               </div>
-//               <div>
-//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Type</p>
-//                 {(() => {
-//                   const typeColors = {
-//                     'Fresh Lead': { bg: '#E6F1FB', text: '#042C53' },
-//                     'Hot Lead':   { bg: '#FBEAF0', text: '#4B1528' },
-//                     'Warm Lead':  { bg: '#FAEEDA', text: '#633806' },
-//                     'Cold Lead':  { bg: '#E1F5EE', text: '#04342C' },
-//                   };
-//                   const tc = typeColors[lead.leadType] || { bg: '#EEEDFE', text: '#26215C' };
-//                   return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 500, background: tc.bg, color: tc.text }}>{lead.leadType || 'N/A'}</span>;
-//                 })()}
-//               </div>
-//               <div>
-//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Margin</p>
-//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#7B4F1E' }}>{'\u2014'}</p>
-//               </div>
-//               <div>
-//                 <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Created</p>
-//                 <p style={{ fontSize: '13px', fontWeight: 500, color: '#3B2008' }}>
-//                   {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-//                 </p>
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Quotation / Booking / Weblink / Logging */}
-//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
-//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '14px' }}>
-//               {[
-//                 { label: 'Quotation', value: 'Not generated' },
-//                 { label: 'Booking',   value: 'Not booked' },
-//                 { label: 'Weblink',   value: '\u2014' },
-//                 { label: 'Logging',   value: 'No activity yet' },
-//               ].map(({ label, value }) => (
-//                 <div key={label}>
-//                   <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>{label}</p>
-//                   <p style={{ fontSize: '13px', color: '#3B2008' }}>{value}</p>
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-
-//           {/* Lead ID */}
-//           <div style={{ paddingTop: '14px', paddingBottom: '14px', borderBottom: '0.5px solid #d4a96a' }}>
-//             <p style={{ fontSize: '11px', color: '#7B4F1E', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '.07em', fontWeight: 700 }}>Lead ID</p>
-//             <span style={{ fontSize: '12px', fontFamily: 'monospace', color: '#3B2008', fontWeight: 600 }}>{lead.publicId || lead.id}</span>
-//           </div>
-
-//           {/* View Quotation button */}
-//           <div style={{ paddingTop: '14px' }}>
-//             <Link
-//               to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
-//               style={{
-//                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-//                 padding: '6px 14px', borderRadius: '8px',
-//                 border: '0.5px solid #c4904a',
-//                 background: '#fff8ee',
-//                 fontSize: '13px', fontWeight: 500,
-//                 color: '#3B2008',
-//                 textDecoration: 'none', transition: 'background .12s',
-//               }}
-//             >
-//               <FileText size={14} /> View quotation {'\u2197'}
-//             </Link>
-//           </div>
-
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
-// /* ─── MAIN COMPONENT ─────────────────────────────────── */
-// const Leads = () => {
-//   const [leads,   setLeads]   = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   const [pageIndex, setPageIndex] = useState(0);
-//   const [pageSize,  setPageSize]  = useState(10);
-//   const [activeTab, setActiveTab] = useState('All');
-
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [sortOrder,  setSortOrder]  = useState('desc');
-//   const [dateFilter, setDateFilter] = useState('all');
-//   const [startDate,  setStartDate]  = useState('');
-//   const [endDate,    setEndDate]    = useState('');
-
-//   const [openRowId, setOpenRowId] = useState(null);
-
-//   const [viewLead,     setViewLead]     = useState(null);
-//   const [editLead,     setEditLead]     = useState(null);
-//   const [deleteTarget, setDeleteTarget] = useState(null);
-//   const [toast,        setToast]        = useState(null);
-
-//   const showToast = (msg, type = 'success') => setToast({ msg, type });
-
-//   useEffect(() => { fetchLeads(); }, []);
-
-//   const fetchLeads = async () => {
-//     try {
-//       setLoading(true);
-//       const response = await leadService.getAllLeads();
-//       let data = [];
-//       if (response.data) {
-//         if      (Array.isArray(response.data.data))                            data = response.data.data;
-//         else if (response.data.data && Array.isArray(response.data.data.content)) data = response.data.data.content;
-//         else if (Array.isArray(response.data.content))                         data = response.data.content;
-//         else if (Array.isArray(response.data))                                 data = response.data;
-//       }
-//       setLeads(data);
-//     } catch (err) {
-//       console.error('Error fetching leads:', err);
-//       setLeads([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleUpdateSubmit = async (updatedFormData) => {
-//     try {
-//       const safeAssignedUserId =
-//         editLead.assignedUserId ||
-//         editLead.assignedUser?.publicId ||
-//         editLead.assignedUser?.id ||
-//         null;
-
-//       const completePayload = {
-//         ...editLead,
-//         assignedUserId: safeAssignedUserId,
-//         ...updatedFormData
-//       };
-
-//       await leadService.updateLead(
-//         editLead.publicId || editLead.id,
-//         completePayload,
-//         editLead.services  || [],
-//         editLead.itinerary || []
-//       );
-
-//       setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, ...updatedFormData } : l));
-//       showToast('Lead updated successfully!');
-//       setEditLead(null);
-//     } catch (err) {
-//       console.error('Failed to update lead:', err);
-//       showToast('Error updating lead. Please try again.', 'error');
-//     }
-//   };
-
-//   const handleStageChange = async (leadToUpdate, newStage) => {
-//     try {
-//       const safeAssignedUserId =
-//         leadToUpdate.assignedUserId ||
-//         leadToUpdate.assignedUser?.publicId ||
-//         leadToUpdate.assignedUser?.id ||
-//         null;
-
-//       const completePayload = {
-//         ...leadToUpdate,
-//         leadStage: newStage,
-//         assignedUserId: safeAssignedUserId
-//       };
-
-//       await leadService.updateLead(
-//         leadToUpdate.publicId || leadToUpdate.id,
-//         completePayload,
-//         leadToUpdate.services  || [],
-//         leadToUpdate.itinerary || []
-//       );
-
-//       setLeads(prev => prev.map(l => l.id === leadToUpdate.id ? { ...l, leadStage: newStage } : l));
-//       showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
-//     } catch (err) {
-//       console.error('Failed to update stage:', err);
-//       showToast('Error updating lead stage. Please try again.', 'error');
-//     }
-//   };
-
-//   const handleDelete = async () => {
-//     try {
-//       if (typeof leadService.deleteLead === 'function') {
-//         await leadService.deleteLead(deleteTarget.publicId || deleteTarget.id);
-//       }
-//       setLeads(prev => prev.filter(l => l.id !== deleteTarget.id));
-//       showToast(`Lead #${deleteTarget.id} has been deleted.`);
-//       setDeleteTarget(null);
-//     } catch (err) {
-//       console.error('Error deleting lead:', err);
-//       showToast('Failed to delete lead. Please try again.', 'error');
-//     }
-//   };
-
-//   const toggleRow = (id) => setOpenRowId(prev => prev === id ? null : id);
-
-//   const safeLeads = Array.isArray(leads) ? leads : [];
-
-//   const filteredLeads = useMemo(() => {
-//     return safeLeads.filter(lead => {
-//       const q = searchTerm.trim().toLowerCase();
-//       const matchesSearch = q === '' ||
-//         lead.customerName?.toLowerCase().includes(q) ||
-//         lead.email?.toLowerCase().includes(q) ||
-//         lead.phone?.includes(q) ||
-//         lead.id?.toString().includes(q);
-
-//       let matchesDate = true;
-//       if (dateFilter !== 'all' && lead.createdAt) {
-//         const ld    = new Date(lead.createdAt); ld.setHours(0,0,0,0);
-//         const today = new Date();               today.setHours(0,0,0,0);
-//         const yest  = new Date(today);          yest.setDate(today.getDate() - 1);
-//         const week  = new Date(today);          week.setDate(today.getDate() - 7);
-
-//         if      (dateFilter === 'today')     matchesDate = ld.getTime() === today.getTime();
-//         else if (dateFilter === 'yesterday') matchesDate = ld.getTime() === yest.getTime();
-//         else if (dateFilter === 'last_7_days') matchesDate = ld >= week && ld <= today;
-//         else if (dateFilter === 'custom' && startDate && endDate) {
-//           const s = new Date(startDate);
-//           const e = new Date(endDate); e.setHours(23,59,59,999);
-//           matchesDate = ld >= s && ld <= e;
-//         }
-//       }
-
-//       let matchesTab = true;
-//       if (activeTab === 'Fresh') {
-//         matchesTab = lead.leadType === 'Fresh Lead';
-//       } else if (activeTab !== 'All') {
-//         matchesTab = lead.leadStage === activeTab;
-//       }
-
-//       return matchesSearch && matchesDate && matchesTab;
-//     });
-//   }, [safeLeads, searchTerm, dateFilter, startDate, endDate, activeTab]);
-
-//   const sortedLeads = useMemo(() => {
-//     return [...filteredLeads].sort((a, b) => {
-//       if (!a.createdAt || !b.createdAt) return 0;
-//       return sortOrder === 'asc'
-//         ? new Date(a.createdAt) - new Date(b.createdAt)
-//         : new Date(b.createdAt) - new Date(a.createdAt);
-//     });
-//   }, [filteredLeads, sortOrder]);
-
-//   const totalElements = sortedLeads.length;
-//   const totalPages    = Math.max(1, Math.ceil(totalElements / pageSize));
-
-//   useEffect(() => {
-//     setPageIndex(0);
-//   }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
-
-//   const safePageIndex = Math.min(pageIndex, totalPages - 1);
-
-//   const currentLeads = useMemo(() => {
-//     const start = safePageIndex * pageSize;
-//     return sortedLeads.slice(start, start + pageSize);
-//   }, [sortedLeads, safePageIndex, pageSize]);
-
-//   const goToPage = (page) => {
-//     setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
-//   };
-
-//   const changePageSize = (size) => {
-//     setPageSize(size);
-//     setPageIndex(0);
-//   };
-
-//   return (
-//     <div
-//       className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
-//       style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
-//     >
-//       <style>{`
-//         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-//         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-//         @keyframes fadeIn  { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
-//         @keyframes slideIn { from{transform:translateX(110%);opacity:0}  to{transform:translateX(0);opacity:1} }
-//         .fade-up { animation: fadeUp .4s ease both; }
-//       `}</style>
-
-//       {toast        && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-//       {viewLead     && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); setEditLead(l); }} />}
-//       {editLead     && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
-//       {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
-
-//       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
-//         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
-//           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-//             <div className="flex items-center gap-4">
-//               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-lg shadow-blue-200">
-//                 <Users size={24} strokeWidth={2.2} />
-//               </div>
-//               <div>
-//                 <h1 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-//                   Leads Management
-//                   <span className="hidden sm:inline text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-2.5 py-0.5 rounded-full">{safeLeads.length} total</span>
-//                 </h1>
-//                 <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1 font-medium">
-//                   <span className="hover:text-blue-600 cursor-pointer transition-colors">Home</span>
-//                   <span className="mx-1 text-slate-300">/</span>
-//                   <span className="text-blue-600 font-bold">Leads</span>
-//                 </div>
-//               </div>
-//             </div>
-//             <div className="flex items-center gap-2">
-//               <button onClick={fetchLeads} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
-//                 <DownloadCloud size={15} /> Refresh Data
-//               </button>
-//               <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
-//                 <FileText size={15} /> Logs
-//               </button>
-//               <Link to="/CreateLead" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition-all">
-//                 <Plus size={16} strokeWidth={2.5} /> Create Lead
-//               </Link>
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-//         <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-//           <StatCard icon={Users}      label="Total Leads" value={safeLeads.length} gradient="from-blue-500 via-blue-600 to-indigo-700"  delay={0}   />
-//           <StatCard icon={Trophy}     label="Bookings"    value={0}                gradient="from-teal-400 via-emerald-500 to-emerald-700" delay={60}  />
-//           <StatCard icon={PieChart}   label="Conversion"  value={0} suffix="%"     gradient="from-amber-400 via-amber-500 to-orange-600"  delay={120} />
-//           <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-pink-400 via-fuchsia-500 to-purple-700" delay={180} />
-//         </div>
-
-//         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
-
-//           <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-//             <div className="flex items-center gap-3 flex-wrap">
-//               <h2 className="text-base font-extrabold text-slate-700">Leads Directory</h2>
-//               <span className="text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-3 py-1 rounded-full">{totalElements} results</span>
-//             </div>
-//             {(searchTerm || dateFilter !== 'all' || activeTab !== 'All') && (
-//               <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1.5 transition-colors">
-//                 {'\u2715'} Clear all filters
-//               </button>
-//             )}
-//           </div>
-
-//           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-//             <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
-//               <div className="relative flex-1 min-w-[220px] max-w-sm group">
-//                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Search size={15} /></div>
-//                 <input
-//                   type="text" placeholder="Search by name, email, phone, or ID..."
-//                   value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-//                   className="w-full pl-9 pr-3 py-2.5 rounded-full border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all"
-//                 />
-//               </div>
-//               <div className="relative min-w-[160px]">
-//                 <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}
-//                   className="w-full pl-9 pr-8 py-2.5 rounded-full border border-slate-200 bg-white text-sm text-slate-600 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
-//                   <option value="all">All Time</option>
-//                   <option value="today">Today</option>
-//                   <option value="yesterday">Yesterday</option>
-//                   <option value="last_7_days">Last 7 Days</option>
-//                   <option value="custom">Custom Date</option>
-//                 </select>
-//                 <div className="absolute inset-y-0 left-0  pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
-//                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={13} /></div>
-//               </div>
-//               {dateFilter === 'custom' && (
-//                 <div className="flex items-center gap-2 fade-up">
-//                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
-//                   <span className="text-slate-400 text-sm font-medium">to</span>
-//                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-
-//           <div className="px-5 py-4 border-b border-slate-100 overflow-x-auto">
-//             {(() => {
-//               const freshCount = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
-//               const newLeadCount = safeLeads.filter(l => l.leadStage === 'New Lead').length;
-//               const contactedCount = safeLeads.filter(l => l.leadStage === 'Contacted').length;
-
-//               const btnClass = (tabName) => `px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-all border ${
-//                 activeTab === tabName
-//                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent shadow-blue-200'
-//                   : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
-//               }`;
-
-//               const badgeClass = (tabName) => `px-2 py-0.5 rounded-md text-xs font-black ${
-//                 activeTab === tabName ? 'bg-white/20' : 'bg-slate-100 text-slate-700'
-//               }`;
-
-//               return (
-//                 <div className="flex gap-2 min-w-max">
-//                   <button onClick={() => setActiveTab('All')} className={btnClass('All')}>
-//                     All <span className={badgeClass('All')}>{safeLeads.length}</span>
-//                   </button>
-//                   <button onClick={() => setActiveTab('Fresh')} className={btnClass('Fresh')}>
-//                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" /> Fresh
-//                     <span className={badgeClass('Fresh')}>{freshCount}</span>
-//                   </button>
-//                   <button onClick={() => setActiveTab('New Lead')} className={btnClass('New Lead')}>
-//                     New Lead <span className={badgeClass('New Lead')}>{newLeadCount}</span>
-//                   </button>
-//                   <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>
-//                     Contacted <span className={badgeClass('Contacted')}>{contactedCount}</span>
-//                   </button>
-//                 </div>
-//               );
-//             })()}
-//           </div>
-
-//           <div
-//             className="hidden md:grid items-center gap-2 px-5 py-3 bg-slate-50/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider"
-//             style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}
-//           >
-//             <div></div>
-//             <div>Lead info</div>
-//             <div>Destination</div>
-//             <div>Assigned to</div>
-//             <div>Stage</div>
-//             <div className="text-right">Amount</div>
-//             <div className="text-center">Actions</div>
-//           </div>
-
-//           <div>
-//             {loading ? (
-//               [...Array(Math.min(pageSize, 5))].map((_, i) => <SkeletonRow key={i} />)
-//             ) : currentLeads.length === 0 ? (
-//               <div className="text-center py-24 px-5">
-//                 <div className="flex flex-col items-center justify-center">
-//                   <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
-//                     <Inbox size={32} className="text-slate-400" />
-//                   </div>
-//                   <p className="text-lg font-extrabold text-slate-600 mb-1">No Leads Found</p>
-//                   <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto leading-relaxed">We couldn't find any leads matching your selected criteria.</p>
-//                   <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
-//                 </div>
-//               </div>
-//             ) : (
-//               currentLeads.map((lead, idx) => (
-//                 <LeadRow
-//                   key={lead.id}
-//                   lead={lead}
-//                   index={idx}
-//                   isOpen={openRowId === lead.id}
-//                   onToggle={toggleRow}
-//                   onView={setViewLead}
-//                   onEdit={setEditLead}
-//                   onDelete={setDeleteTarget}
-//                   onStageChange={handleStageChange}
-//                 />
-//               ))
-//             )}
-//           </div>
-
-//           <CommonPagination
-//             pageIndex={safePageIndex}
-//             pageSize={pageSize}
-//             totalElements={totalElements}
-//             totalPages={totalPages}
-//             goToPage={goToPage}
-//             changePageSize={changePageSize}
-//           />
-
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Leads;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import { leadService } from '../../services/leadService';
 import {
   Users, Trophy, PieChart, TrendingUp, Search,
   DownloadCloud, FileText, Plus,
-  Inbox, User, ArrowUp, ArrowDown, Calendar, ChevronDown,
-  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase,
-  CheckCircle, XCircle, ExternalLink
+  Inbox, User, Calendar, ChevronDown, ChevronRight,
+  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+
+/* ─── COLOR HELPERS ───────────────────────────────────── */
+const AVATAR_GRADIENTS = [
+  'from-blue-700 to-blue-800',
+  'from-red-600 to-red-800',
+  'from-violet-700 to-purple-800',
+  'from-emerald-700 to-emerald-800',
+  'from-pink-700 to-rose-800',
+  'from-amber-700 to-amber-800',
+];
+const ACCENT_SOLIDS = ['#1553CC', '#B91C1C', '#6D28D9', '#047857', '#BE185D', '#B45309'];
+
+function colorForIndex(idx) {
+  const i = idx % AVATAR_GRADIENTS.length;
+  return { avatar: AVATAR_GRADIENTS[i], accent: ACCENT_SOLIDS[i] };
+}
+
+const STAGE_PILL = {
+  'New Lead':  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'Contacted': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Converted': 'bg-green-100 text-green-700 border-green-200',
+  'Lost':      'bg-red-100 text-red-700 border-red-200',
+};
+const stagePill = (stage) => STAGE_PILL[stage] || 'bg-orange-100 text-orange-700 border-orange-200';
+
+const TYPE_PILL = {
+  'Fresh Lead': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Hot Lead':   'bg-red-100 text-red-700 border-red-200',
+  'Warm Lead':  'bg-amber-100 text-amber-700 border-amber-200',
+  'Cold Lead':  'bg-teal-100 text-teal-700 border-teal-200',
+};
+const typePill = (type) => TYPE_PILL[type] || 'bg-slate-100 text-slate-700 border-slate-200';
+
+// Exact pastel colors per service, matched to the design mockup
+const SERVICE_COLORS = {
+  Hotel:        { bg: '#E6F1FB', text: '#042C53' },
+  Flight:       { bg: '#EEEDFE', text: '#26215C' },
+  Cruise:       { bg: '#E1F5EE', text: '#04342C' },
+  Vehicle:      { bg: '#FAECE7', text: '#4A1B0C' },
+  Visa:         { bg: '#FBEAF0', text: '#4B1528' },
+  Passport:     { bg: '#F1EFE8', text: '#2C2C2A' },
+  Sightseeing:  { bg: '#FAEEDA', text: '#412402' },
+};
+const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
 
 /* ─── PAGINATION ─────────────────────────────────────── */
 function buildPageNumbers(totalPages, pageIndex) {
@@ -1078,7 +58,7 @@ function buildPageNumbers(totalPages, pageIndex) {
   return Array.from({ length: totalPages }, (_, i) => i)
     .filter(p => p === 0 || p === totalPages - 1 || Math.abs(p - pageIndex) <= 1)
     .reduce((acc, p, i, arr) => {
-      if (i > 0 && p - arr[i - 1] > 1) acc.push('…');
+      if (i > 0 && p - arr[i - 1] > 1) acc.push('\u2026');
       acc.push(p);
       return acc;
     }, []);
@@ -1086,9 +66,12 @@ function buildPageNumbers(totalPages, pageIndex) {
 
 const NavButton = memo(function NavButton({ label, onClick, disabled }) {
   return (
-    <button disabled={disabled} onClick={onClick}
+    <button
+      disabled={disabled}
+      onClick={onClick}
       className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-        hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+        hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+    >
       {label}
     </button>
   );
@@ -1096,11 +79,14 @@ const NavButton = memo(function NavButton({ label, onClick, disabled }) {
 
 const PageButton = memo(function PageButton({ page, isActive, onClick }) {
   return (
-    <button onClick={onClick}
+    <button
+      onClick={onClick}
       className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
-        isActive ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                 : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-      }`}>
+        isActive
+          ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-sm'
+          : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+      }`}
+    >
       {page + 1}
     </button>
   );
@@ -1109,27 +95,37 @@ const PageButton = memo(function PageButton({ page, isActive, onClick }) {
 function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goToPage, changePageSize }) {
   const from = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
   const to   = Math.min((pageIndex + 1) * pageSize, totalElements);
-  const pageNumbers = useMemo(() => buildPageNumbers(totalPages, pageIndex), [totalPages, pageIndex]);
+
+  const pageNumbers = useMemo(
+    () => buildPageNumbers(totalPages, pageIndex),
+    [totalPages, pageIndex]
+  );
+
   if (totalElements === 0) return null;
+
   const isFirst = pageIndex === 0;
   const isLast  = pageIndex >= totalPages - 1;
+
   return (
     <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p className="text-xs text-slate-400 font-medium">
-        Showing <span className="font-bold text-slate-600">{from}</span>–<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
+        Showing <span className="font-bold text-slate-600">{from}</span>{'\u2013'}<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
       </p>
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
-        <NavButton label="«" onClick={() => goToPage(0)}             disabled={isFirst} />
-        <NavButton label="‹" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
+        <NavButton label="\u00ab" onClick={() => goToPage(0)}             disabled={isFirst} />
+        <NavButton label="\u2039" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
         {pageNumbers.map((p, i) =>
           typeof p === 'string'
-            ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">…</span>
+            ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">{'\u2026'}</span>
             : <PageButton key={p} page={p} isActive={pageIndex === p} onClick={() => goToPage(p)} />
         )}
-        <NavButton label="›" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
-        <NavButton label="»" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
-        <select value={pageSize} onChange={e => changePageSize(Number(e.target.value))}
-          className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer">
+        <NavButton label="\u203a" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
+        <NavButton label="\u00bb" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
+        <select
+          value={pageSize}
+          onChange={e => changePageSize(Number(e.target.value))}
+          className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer"
+        >
           {[10, 25, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
         </select>
       </div>
@@ -1138,7 +134,7 @@ function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goTo
 }
 
 /* ─── STAT CARD ──────────────────────────────────────── */
-function StatCard({ icon: Icon, label, value, suffix = '', gradient, sub, delay = 0 }) {
+function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }) {
   const [displayed, setDisplayed] = useState(0);
   useEffect(() => {
     let start = 0;
@@ -1152,19 +148,21 @@ function StatCard({ icon: Icon, label, value, suffix = '', gradient, sub, delay 
     }, 16);
     return () => clearInterval(interval);
   }, [value]);
+
   return (
-    <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
-      style={{ animationDelay: `${delay}ms` }}>
-      <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
-      <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
+    <div
+      className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
+        hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      <Icon size={64} strokeWidth={1.5} className="absolute -right-2 -bottom-2 opacity-15" />
       <div className="relative z-10">
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all">
-            <Icon size={20} strokeWidth={2.2} />
-          </div>
-          {sub && <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{sub}</span>}
+        <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all mb-3">
+          <Icon size={20} strokeWidth={2.2} />
         </div>
-        <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">{displayed.toLocaleString('en-IN')}{suffix}</p>
+        <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
+          {displayed.toLocaleString('en-IN')}{suffix}
+        </p>
         <p className="text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
       </div>
     </div>
@@ -1174,13 +172,11 @@ function StatCard({ icon: Icon, label, value, suffix = '', gradient, sub, delay 
 /* ─── SKELETON ROW ───────────────────────────────────── */
 function SkeletonRow() {
   return (
-    <tr>
-      {[...Array(17)].map((_, i) => (
-        <td key={i} className="px-4 py-4">
-          <div className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
-        </td>
+    <div className="grid items-center gap-2 px-5 py-4" style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}>
+      {[...Array(7)].map((_, i) => (
+        <div key={i} className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
       ))}
-    </tr>
+    </div>
   );
 }
 
@@ -1188,9 +184,11 @@ function SkeletonRow() {
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
   return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
+    <div
+      className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
         ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}
-      style={{ animation: 'slideIn .3s ease both' }}>
+      style={{ animation: 'slideIn .3s ease both' }}
+    >
       {type === 'success' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
       <p className="text-sm font-semibold flex-1">{msg}</p>
       <button onClick={onClose} className="opacity-50 hover:opacity-100 ml-1"><X size={16} /></button>
@@ -1200,7 +198,6 @@ function Toast({ msg, type, onClose }) {
 
 /* ─── VIEW LEAD MODAL ────────────────────────────────── */
 function ViewLeadModal({ lead, onClose, onEdit }) {
-  const navigate = useNavigate();
   if (!lead) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -1235,14 +232,14 @@ function ViewLeadModal({ lead, onClose, onEdit }) {
               [Mail,     'Email',      lead.email,   'bg-blue-50 text-blue-600'],
               [Users,    'Travelers',  `${lead.adults || 0} Adults, ${lead.children || 0} Child, ${lead.infants || 0} Infant`, 'bg-purple-50 text-purple-600'],
               [User,     'Assigned To', lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || 'Unassigned', 'bg-orange-50 text-orange-600'],
-              [Calendar, 'Created',   lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—', 'bg-teal-50 text-teal-600'],
+              [Calendar, 'Created',   lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014', 'bg-teal-50 text-teal-600'],
               [Briefcase,'Lead Type',  lead.leadType, 'bg-indigo-50 text-indigo-600'],
             ].map(([Icon, label, val, ic]) => (
               <div key={label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${ic}`}><Icon size={14} /></div>
                 <div className="min-w-0">
                   <p className="text-xs text-slate-400 font-medium">{label}</p>
-                  <p className="text-sm font-bold text-slate-700 truncate">{val || '—'}</p>
+                  <p className="text-sm font-bold text-slate-700 truncate">{val || '\u2014'}</p>
                 </div>
               </div>
             ))}
@@ -1270,18 +267,7 @@ function ViewLeadModal({ lead, onClose, onEdit }) {
             </div>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
-            {/* ── View Quotation Button ── */}
-            <button
-              onClick={() => {
-                onClose();
-                navigate(`/CreateQuotation?leadId=${lead.publicId || lead.id}`);
-              }}
-              className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700
-                hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold
-                flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-200">
-              <FileText size={14} /> View Quotation
-            </button>
-            <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-indigo-200">
+            <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
               <Pencil size={14} /> Edit
             </button>
             <button onClick={onClose} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
@@ -1389,21 +375,385 @@ function DeleteConfirm({ lead, onClose, onConfirm }) {
   );
 }
 
+/* ─── EXPANDABLE LEAD ROW ─────────────────────────────── */
+function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onStageChange }) {
+  const { avatar, accent } = colorForIndex(index);
+  const name = lead.customerName || 'N/A';
+  const initial = (name || 'U').charAt(0).toUpperCase();
+
+  const assigneeName =
+    lead.assignedUser?.fullName ||
+    lead.assignedUser?.name ||
+    lead.assignedUser?.username ||
+    lead.assignedUserName ||
+    lead.assignTo ||
+    null;
+
+  const destination = lead.itinerary && lead.itinerary.length > 0 ? lead.itinerary[0] : null;
+  const travelersShort = `${lead.adults || 0} Adults${lead.children ? `, ${lead.children} Child` : ''}`;
+
+  return (
+    <div
+      className="border-t border-slate-100 first:border-t-0 transition-colors"
+      style={{
+        borderLeft: `3px solid ${accent}`,
+        background: isOpen ? `${accent}12` : 'transparent',
+        animation: 'fadeUp .35s ease both',
+        animationDelay: `${index * 30}ms`,
+      }}
+    >
+      {/* ── Desktop row (md and up) ── */}
+      <div
+        onClick={() => onToggle(lead.id)}
+        className="hidden md:grid items-center gap-2 px-5 py-4 cursor-pointer transition-colors"
+        style={{
+          gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px',
+          background: isOpen ? `${accent}18` : 'transparent',
+        }}
+        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
+        onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
+      >
+        <ChevronRight
+          size={16}
+          className="text-slate-400 transition-transform flex-shrink-0"
+          style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        />
+
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0`}>
+            {initial}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
+            <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
+          </div>
+        </div>
+
+        <div className="min-w-0">
+          {destination ? (
+            <>
+              <span
+                className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
+                style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
+              >
+                <MapPin size={11} /> {destination.destination}
+              </span>
+              <p className="text-[11px] text-slate-400 mt-1">{destination.nights}N {'\u00b7'} {travelersShort}</p>
+            </>
+          ) : (
+            <span className="text-sm text-slate-400">N/A</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[10px] font-extrabold flex-shrink-0">
+            {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <span className="text-sm font-semibold text-slate-700 truncate">{assigneeName || 'Unassigned'}</span>
+        </div>
+
+        <div onClick={(e) => e.stopPropagation()}>
+          <select
+            value={lead.leadStage || 'New Lead'}
+            onChange={(e) => onStageChange(lead, e.target.value)}
+            className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
+          >
+            <option value="New Lead">New Lead</option>
+            <option value="Contacted">Contacted</option>
+          </select>
+        </div>
+
+        <div className="text-right text-sm font-extrabold text-slate-800">N/A</div>
+
+        <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => onView(lead)} title="View" className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={14} /></button>
+          <button onClick={() => onEdit(lead)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={14} /></button>
+        </div>
+      </div>
+
+      {/* ── Mobile row (below md) ── */}
+      <div
+        onClick={() => onToggle(lead.id)}
+        className="md:hidden px-4 py-3.5 cursor-pointer transition-colors"
+        style={{ background: isOpen ? `${accent}18` : 'transparent' }}
+        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
+        onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0 mt-0.5`}>
+            {initial}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
+                <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
+              </div>
+              <ChevronRight
+                size={16}
+                className="text-slate-400 transition-transform flex-shrink-0 mt-1"
+                style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap mt-2">
+              {destination ? (
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
+                  style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
+                >
+                  <MapPin size={11} /> {destination.destination} {'\u00b7'} {destination.nights}N
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400">No destination</span>
+              )}
+              <div onClick={(e) => e.stopPropagation()}>
+                <select
+                  value={lead.leadStage || 'New Lead'}
+                  onChange={(e) => onStageChange(lead, e.target.value)}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
+                >
+                  <option value="New Lead">New Lead</option>
+                  <option value="Contacted">Contacted</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-2.5">
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[9px] font-extrabold flex-shrink-0">
+                  {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="text-xs font-semibold text-slate-600 truncate">{assigneeName || 'Unassigned'}</span>
+              </div>
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => onView(lead)} title="View" className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
+                <button onClick={() => onEdit(lead)} title="Edit" className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div style={{ animation: 'fadeIn .25s ease both' }}>
+
+          {/* ── Top accent bar ── */}
+          <div style={{
+            height: '3px',
+            background: `linear-gradient(90deg, ${accent}, ${accent}99, ${accent}44)`,
+          }} />
+
+          {/* ── Main expand body ── */}
+          <div style={{
+            background: 'linear-gradient(135deg, #fffdf7 0%, #fef9ec 50%, #fdf4e3 100%)',
+            padding: '0 20px 20px 52px',
+            borderBottom: `3px solid ${accent}22`,
+          }}>
+
+            {/* ── Row 1: Avatar + Client info + Services ── */}
+            <div style={{
+              display: 'flex', gap: '16px', flexWrap: 'wrap',
+              padding: '16px 0 14px',
+              borderBottom: '1px dashed #e8c98a',
+            }}>
+
+              {/* Big Avatar */}
+              <div style={{
+                width: '52px', height: '52px', borderRadius: '14px',
+                background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: '20px', fontWeight: 800,
+                flexShrink: 0, boxShadow: `0 4px 14px ${accent}44`,
+              }}>
+                {(lead.customerName || 'U').charAt(0).toUpperCase()}
+              </div>
+
+              {/* Client details */}
+              <div style={{ flex: '0 0 auto', minWidth: '140px' }}>
+                <p style={{ fontSize: '10px', color: '#A07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: '3px' }}>Client</p>
+                <p style={{ fontSize: '15px', fontWeight: 800, color: '#1E293B', marginBottom: '2px' }}>{lead.customerName || 'N/A'}</p>
+                <p style={{ fontSize: '12px', color: '#64748B' }}>{lead.email || '—'}</p>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                  {/* Travelers badge */}
+                  <span style={{
+                    background: `${accent}18`, color: accent,
+                    padding: '2px 10px', borderRadius: '20px',
+                    fontSize: '11px', fontWeight: 700,
+                    border: `1px solid ${accent}33`,
+                  }}>
+                    {lead.adults || 0} Adults
+                    {(lead.children > 0 || lead.infants > 0) && ` · ${lead.children || 0}C ${lead.infants || 0}I`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Services */}
+              <div style={{ flex: 1, minWidth: '180px' }}>
+                <p style={{ fontSize: '10px', color: '#A07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: '8px' }}>Services Requested</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                  {lead.services && lead.services.length > 0
+                    ? lead.services.map((s, i) => {
+                        const c = serviceColor(s);
+                        return (
+                          <span key={i} style={{
+                            background: c.bg, color: c.text,
+                            padding: '4px 10px', borderRadius: '8px',
+                            fontSize: '11px', fontWeight: 600,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                          }}>{s}</span>
+                        );
+                      })
+                    : <span style={{ fontSize: '12px', color: '#94A3B8' }}>No services added</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* ── Row 2: Info cards ── */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+              gap: '10px',
+              padding: '14px 0',
+              borderBottom: '1px dashed #e8c98a',
+            }}>
+              {[
+                { label: 'Phone',   value: lead.phone || '—',  icon: '📞' },
+                { label: 'Created', value: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A', icon: '📅' },
+                { label: 'Margin',  value: '—',                icon: '💰' },
+                { label: 'Lead Type', value: null, icon: '🏷️', isType: true },
+              ].map(({ label, value, icon, isType }) => (
+                <div key={label} style={{
+                  background: '#fff',
+                  border: '1px solid #F0D9A0',
+                  borderRadius: '12px',
+                  padding: '10px 12px',
+                  boxShadow: '0 1px 4px rgba(180,140,60,0.08)',
+                }}>
+                  <p style={{ fontSize: '10px', color: '#A07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '5px' }}>
+                    {icon} {label}
+                  </p>
+                  {isType ? (() => {
+                    const typeColors = {
+                      'Fresh Lead': { bg: '#E6F1FB', text: '#042C53' },
+                      'Hot Lead':   { bg: '#FBEAF0', text: '#4B1528' },
+                      'Warm Lead':  { bg: '#FAEEDA', text: '#633806' },
+                      'Cold Lead':  { bg: '#E1F5EE', text: '#04342C' },
+                    };
+                    const tc = typeColors[lead.leadType] || { bg: '#EEEDFE', text: '#26215C' };
+                    return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: tc.bg, color: tc.text }}>{lead.leadType || 'N/A'}</span>;
+                  })()
+                  : <p style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>{value}</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* ── Row 3: Status cards ── */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+              gap: '10px',
+              padding: '14px 0',
+              borderBottom: '1px dashed #e8c98a',
+            }}>
+              {[
+                { label: 'Quotation', value: 'Not generated', icon: '📄', color: '#3B82F6', bg: '#EFF6FF' },
+                { label: 'Booking',   value: 'Not booked',    icon: '✈️', color: '#8B5CF6', bg: '#F5F3FF' },
+                { label: 'Weblink',   value: '—',        icon: '🔗', color: '#0891B2', bg: '#ECFEFF' },
+                { label: 'Logging',   value: 'No activity',   icon: '📊', color: '#059669', bg: '#ECFDF5' },
+              ].map(({ label, value, icon, color, bg }) => (
+                <div key={label} style={{
+                  background: bg,
+                  border: `1px solid ${color}22`,
+                  borderRadius: '12px',
+                  padding: '10px 12px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                }}>
+                  <p style={{ fontSize: '10px', color: color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '5px' }}>
+                    {icon} {label}
+                  </p>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Row 4: Lead ID + Actions ── */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: '12px',
+              paddingTop: '14px',
+            }}>
+              {/* Lead ID */}
+              <div style={{
+                background: '#1E293B',
+                borderRadius: '10px',
+                padding: '8px 14px',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#38BDF8', flexShrink: 0 }} />
+                <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, marginRight: '4px' }}>ID:</span>
+                <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#38BDF8', fontWeight: 700 }}>
+                  {String(lead.publicId || lead.id).slice(0, 18)}...
+                </span>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <Link
+                  to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '8px 16px', borderRadius: '10px',
+                    background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                    color: '#fff',
+                    fontSize: '12px', fontWeight: 700,
+                    textDecoration: 'none',
+                    boxShadow: `0 4px 12px ${accent}44`,
+                    transition: 'opacity .15s',
+                  }}
+                >
+                  <FileText size={13} /> View Quotation ↗
+                </Link>
+                <button
+                  onClick={() => onDelete(lead)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '8px 14px', borderRadius: '10px',
+                    background: '#FEF2F2', color: '#DC2626',
+                    fontSize: '12px', fontWeight: 700,
+                    border: '1px solid #FECACA',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── MAIN COMPONENT ─────────────────────────────────── */
 const Leads = () => {
-  const navigate = useNavigate();
-
   const [leads,   setLeads]   = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize,  setPageSize]  = useState(10);
   const [activeTab, setActiveTab] = useState('All');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder,  setSortOrder]  = useState('desc');
   const [dateFilter, setDateFilter] = useState('all');
   const [startDate,  setStartDate]  = useState('');
   const [endDate,    setEndDate]    = useState('');
+
+  const [openRowId, setOpenRowId] = useState(null);
 
   const [viewLead,     setViewLead]     = useState(null);
   const [editLead,     setEditLead]     = useState(null);
@@ -1420,10 +770,10 @@ const Leads = () => {
       const response = await leadService.getAllLeads();
       let data = [];
       if (response.data) {
-        if      (Array.isArray(response.data.data))                                data = response.data.data;
+        if      (Array.isArray(response.data.data))                            data = response.data.data;
         else if (response.data.data && Array.isArray(response.data.data.content)) data = response.data.data.content;
-        else if (Array.isArray(response.data.content))                             data = response.data.content;
-        else if (Array.isArray(response.data))                                     data = response.data;
+        else if (Array.isArray(response.data.content))                         data = response.data.content;
+        else if (Array.isArray(response.data))                                 data = response.data;
       }
       setLeads(data);
     } catch (err) {
@@ -1439,9 +789,22 @@ const Leads = () => {
       const safeAssignedUserId =
         editLead.assignedUserId ||
         editLead.assignedUser?.publicId ||
-        editLead.assignedUser?.id || null;
-      const completePayload = { ...editLead, assignedUserId: safeAssignedUserId, ...updatedFormData };
-      await leadService.updateLead(editLead.publicId || editLead.id, completePayload, editLead.services || [], editLead.itinerary || []);
+        editLead.assignedUser?.id ||
+        null;
+
+      const completePayload = {
+        ...editLead,
+        assignedUserId: safeAssignedUserId,
+        ...updatedFormData
+      };
+
+      await leadService.updateLead(
+        editLead.publicId || editLead.id,
+        completePayload,
+        editLead.services  || [],
+        editLead.itinerary || []
+      );
+
       setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, ...updatedFormData } : l));
       showToast('Lead updated successfully!');
       setEditLead(null);
@@ -1456,14 +819,27 @@ const Leads = () => {
       const safeAssignedUserId =
         leadToUpdate.assignedUserId ||
         leadToUpdate.assignedUser?.publicId ||
-        leadToUpdate.assignedUser?.id || null;
-      const completePayload = { ...leadToUpdate, leadStage: newStage, assignedUserId: safeAssignedUserId };
-      await leadService.updateLead(leadToUpdate.publicId || leadToUpdate.id, completePayload, leadToUpdate.services || [], leadToUpdate.itinerary || []);
+        leadToUpdate.assignedUser?.id ||
+        null;
+
+      const completePayload = {
+        ...leadToUpdate,
+        leadStage: newStage,
+        assignedUserId: safeAssignedUserId
+      };
+
+      await leadService.updateLead(
+        leadToUpdate.publicId || leadToUpdate.id,
+        completePayload,
+        leadToUpdate.services  || [],
+        leadToUpdate.itinerary || []
+      );
+
       setLeads(prev => prev.map(l => l.id === leadToUpdate.id ? { ...l, leadStage: newStage } : l));
       showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
     } catch (err) {
       console.error('Failed to update stage:', err);
-      showToast('Error updating lead stage.', 'error');
+      showToast('Error updating lead stage. Please try again.', 'error');
     }
   };
 
@@ -1477,17 +853,12 @@ const Leads = () => {
       setDeleteTarget(null);
     } catch (err) {
       console.error('Error deleting lead:', err);
-      showToast('Failed to delete lead.', 'error');
+      showToast('Failed to delete lead. Please try again.', 'error');
     }
   };
 
-  /* ── View Quotation — navigate with leadId ─────────── */
-  const handleViewQuotation = (lead) => {
-    const id = lead.publicId || lead.id;
-    navigate(`/CreateQuotation?leadId=${id}`);
-  };
+  const toggleRow = (id) => setOpenRowId(prev => prev === id ? null : id);
 
-  const toggleDateSort = () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   const safeLeads = Array.isArray(leads) ? leads : [];
 
   const filteredLeads = useMemo(() => {
@@ -1505,8 +876,9 @@ const Leads = () => {
         const today = new Date();               today.setHours(0,0,0,0);
         const yest  = new Date(today);          yest.setDate(today.getDate() - 1);
         const week  = new Date(today);          week.setDate(today.getDate() - 7);
-        if      (dateFilter === 'today')       matchesDate = ld.getTime() === today.getTime();
-        else if (dateFilter === 'yesterday')   matchesDate = ld.getTime() === yest.getTime();
+
+        if      (dateFilter === 'today')     matchesDate = ld.getTime() === today.getTime();
+        else if (dateFilter === 'yesterday') matchesDate = ld.getTime() === yest.getTime();
         else if (dateFilter === 'last_7_days') matchesDate = ld >= week && ld <= today;
         else if (dateFilter === 'custom' && startDate && endDate) {
           const s = new Date(startDate);
@@ -1516,8 +888,11 @@ const Leads = () => {
       }
 
       let matchesTab = true;
-      if (activeTab === 'Fresh')       matchesTab = lead.leadType === 'Fresh Lead';
-      else if (activeTab !== 'All')    matchesTab = lead.leadStage === activeTab;
+      if (activeTab === 'Fresh') {
+        matchesTab = lead.leadType === 'Fresh Lead';
+      } else if (activeTab !== 'All') {
+        matchesTab = lead.leadStage === activeTab;
+      }
 
       return matchesSearch && matchesDate && matchesTab;
     });
@@ -1535,23 +910,35 @@ const Leads = () => {
   const totalElements = sortedLeads.length;
   const totalPages    = Math.max(1, Math.ceil(totalElements / pageSize));
 
-  useEffect(() => { setPageIndex(0); }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
+  useEffect(() => {
+    setPageIndex(0);
+  }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
 
   const safePageIndex = Math.min(pageIndex, totalPages - 1);
-  const currentLeads  = useMemo(() => {
+
+  const currentLeads = useMemo(() => {
     const start = safePageIndex * pageSize;
     return sortedLeads.slice(start, start + pageSize);
   }, [sortedLeads, safePageIndex, pageSize]);
 
-  const goToPage      = (page) => setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
-  const changePageSize = (size) => { setPageSize(size); setPageIndex(0); };
+  const goToPage = (page) => {
+    setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
+  };
+
+  const changePageSize = (size) => {
+    setPageSize(size);
+    setPageIndex(0);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
-      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
+    >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn  { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{transform:translateX(110%);opacity:0}  to{transform:translateX(0);opacity:1} }
         .fade-up { animation: fadeUp .4s ease both; }
       `}</style>
@@ -1561,7 +948,6 @@ const Leads = () => {
       {editLead     && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
       {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
 
-      {/* PAGE HEADER */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -1572,7 +958,7 @@ const Leads = () => {
               <div>
                 <h1 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
                   Leads Management
-                  <span className="hidden sm:inline text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">{safeLeads.length} total</span>
+                  <span className="hidden sm:inline text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-2.5 py-0.5 rounded-full">{safeLeads.length} total</span>
                 </h1>
                 <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1 font-medium">
                   <span className="hover:text-blue-600 cursor-pointer transition-colors">Home</span>
@@ -1598,48 +984,47 @@ const Leads = () => {
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* STAT CARDS */}
         <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard icon={Users}      label="Total Leads" value={safeLeads.length} gradient="from-cyan-500 to-cyan-600"     delay={0}   />
-          <StatCard icon={Trophy}     label="Bookings"    value={0}                gradient="from-green-500 to-emerald-600" delay={60}  />
-          <StatCard icon={PieChart}   label="Conversion"  value={0} suffix="%"     gradient="from-amber-500 to-orange-500"  delay={120} />
-          <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-indigo-500 to-indigo-600" delay={180} />
+          <StatCard icon={Users}      label="Total Leads" value={safeLeads.length} gradient="from-blue-500 via-blue-600 to-indigo-700"  delay={0}   />
+          <StatCard icon={Trophy}     label="Bookings"    value={0}                gradient="from-teal-400 via-emerald-500 to-emerald-700" delay={60}  />
+          <StatCard icon={PieChart}   label="Conversion"  value={0} suffix="%"     gradient="from-amber-400 via-amber-500 to-orange-600"  delay={120} />
+          <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-pink-400 via-fuchsia-500 to-purple-700" delay={180} />
         </div>
 
-        {/* LEADS TABLE CARD */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 
           <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-base font-extrabold text-slate-700">Leads Directory</h2>
-              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{totalElements} results</span>
+              <span className="text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-3 py-1 rounded-full">{totalElements} results</span>
             </div>
             {(searchTerm || dateFilter !== 'all' || activeTab !== 'All') && (
               <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1.5 transition-colors">
-                ✕ Clear all filters
+                {'\u2715'} Clear all filters
               </button>
             )}
           </div>
 
-          {/* Filters */}
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
             <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
               <div className="relative flex-1 min-w-[220px] max-w-sm group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Search size={15} /></div>
-                <input type="text" placeholder="Search by name, email, phone, or ID..."
+                <input
+                  type="text" placeholder="Search by name, email, phone, or ID..."
                   value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+                  className="w-full pl-9 pr-3 py-2.5 rounded-full border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all"
+                />
               </div>
               <div className="relative min-w-[160px]">
                 <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
+                  className="w-full pl-9 pr-8 py-2.5 rounded-full border border-slate-200 bg-white text-sm text-slate-600 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
                   <option value="all">All Time</option>
                   <option value="today">Today</option>
                   <option value="yesterday">Yesterday</option>
                   <option value="last_7_days">Last 7 Days</option>
                   <option value="custom">Custom Date</option>
                 </select>
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
+                <div className="absolute inset-y-0 left-0  pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={13} /></div>
               </div>
               {dateFilter === 'custom' && (
@@ -1652,185 +1037,84 @@ const Leads = () => {
             </div>
           </div>
 
-          {/* Status Tabs */}
           <div className="px-5 py-4 border-b border-slate-100 overflow-x-auto">
             {(() => {
-              const freshCount    = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
-              const newLeadCount  = safeLeads.filter(l => l.leadStage === 'New Lead').length;
-              const contactedCount= safeLeads.filter(l => l.leadStage === 'Contacted').length;
-              const btnClass = (t) => `px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all ${
-                activeTab === t ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
+              const freshCount = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
+              const newLeadCount = safeLeads.filter(l => l.leadStage === 'New Lead').length;
+              const contactedCount = safeLeads.filter(l => l.leadStage === 'Contacted').length;
+
+              const btnClass = (tabName) => `px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-all border ${
+                activeTab === tabName
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent shadow-blue-200'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
               }`;
-              const bdgClass = (t) => `px-2 py-0.5 rounded-md text-xs font-black ${activeTab === t ? 'bg-white/20' : 'bg-slate-100 text-slate-700'}`;
+
+              const badgeClass = (tabName) => `px-2 py-0.5 rounded-md text-xs font-black ${
+                activeTab === tabName ? 'bg-white/20' : 'bg-slate-100 text-slate-700'
+              }`;
+
               return (
                 <div className="flex gap-2 min-w-max">
-                  <button onClick={() => setActiveTab('All')}       className={btnClass('All')}>All <span className={bdgClass('All')}>{safeLeads.length}</span></button>
-                  <button onClick={() => setActiveTab('Fresh')}     className={btnClass('Fresh')}><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Fresh <span className={bdgClass('Fresh')}>{freshCount}</span></button>
-                  <button onClick={() => setActiveTab('New Lead')}  className={btnClass('New Lead')}>New Lead <span className={bdgClass('New Lead')}>{newLeadCount}</span></button>
-                  <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>Contacted <span className={bdgClass('Contacted')}>{contactedCount}</span></button>
+                  <button onClick={() => setActiveTab('All')} className={btnClass('All')}>
+                    All <span className={badgeClass('All')}>{safeLeads.length}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('Fresh')} className={btnClass('Fresh')}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" /> Fresh
+                    <span className={badgeClass('Fresh')}>{freshCount}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('New Lead')} className={btnClass('New Lead')}>
+                    New Lead <span className={badgeClass('New Lead')}>{newLeadCount}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>
+                    Contacted <span className={badgeClass('Contacted')}>{contactedCount}</span>
+                  </button>
                 </div>
               );
             })()}
           </div>
 
-          {/* TABLE */}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1500px] border-collapse text-sm whitespace-nowrap">
-              <thead className="bg-slate-50/80 border-b border-slate-100">
-                <tr className="text-slate-500 text-xs uppercase tracking-wider font-extrabold">
-                  <th className="px-4 py-3.5 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer" /></th>
-                  <th className="px-4 py-3.5 text-left">LEAD ID</th>
-                  <th className="px-4 py-3.5 text-left">LEAD INFO</th>
-                  <th className="px-4 py-3.5 text-center">DESTINATION</th>
-                  <th className="px-4 py-3.5 text-left">TRAVELERS</th>
-                  <th className="px-4 py-3.5 text-left w-64">SERVICES</th>
-                  <th className="px-4 py-3.5 text-center">QUOTATION</th>
-                  <th className="px-4 py-3.5 text-left">BOOKING</th>
-                  <th className="px-4 py-3.5 text-center">WEBLINK</th>
-                  <th className="px-4 py-3.5 text-center">LOGGING</th>
-                  <th className="px-4 py-3.5 text-left">ASSIGNED TO</th>
-                  <th className="px-4 py-3.5 text-left">AMOUNT</th>
-                  <th className="px-4 py-3.5 text-left">MARGIN</th>
-                  <th className="px-4 py-3.5 text-left">TYPE</th>
-                  <th className="px-4 py-3.5 text-left">STAGE</th>
-                  <th onClick={toggleDateSort} className="px-4 py-3.5 text-left cursor-pointer hover:text-blue-600 select-none transition-colors">
-                    <div className="flex items-center gap-1.5">CREATED {sortOrder === 'asc' ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />}</div>
-                  </th>
-                  <th className="px-4 py-3.5 text-center">ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 bg-white">
-                {loading ? (
-                  [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
-                ) : currentLeads.length === 0 ? (
-                  <tr>
-                    <td colSpan="17" className="text-center py-24">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
-                          <Inbox size={32} className="text-slate-400" />
-                        </div>
-                        <p className="text-lg font-extrabold text-slate-600 mb-1">No Leads Found</p>
-                        <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto leading-relaxed">We couldn't find any leads matching your selected criteria.</p>
-                        <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  currentLeads.map((lead, idx) => (
-                    <tr key={lead.id} className="group transition-all duration-150 hover:bg-blue-50/40 hover:shadow-[inset_3px_0_0_#2563eb]"
-                      style={{ animation: 'fadeUp .35s ease both', animationDelay: `${idx * 30}ms` }}>
-                      <td className="px-4 py-3.5 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600" /></td>
-                      <td className="px-4 py-3.5 text-xs font-extrabold text-blue-600">#{lead.id}</td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0 shadow-sm">
-                            {(lead.customerName || 'U').charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-800 capitalize">{lead.customerName || 'N/A'}</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{lead.email || 'No email'}</p>
-                            <p className="text-xs text-slate-400">{lead.phone || 'No phone'}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-medium text-slate-700">
-                        {lead.itinerary && lead.itinerary.length > 0 ? (
-                          <div className="flex flex-col gap-1 items-center">
-                            {lead.itinerary.map((item, i) => (
-                              <span key={i} className="bg-slate-100 px-2 py-1 rounded-lg text-xs font-semibold text-slate-600">{item.destination} ({item.nights}N)</span>
-                            ))}
-                          </div>
-                        ) : <span className="text-slate-400">N/A</span>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-slate-600">{lead.adults || 0} Adults</span>
-                          {(lead.children > 0 || lead.infants > 0) && (
-                            <span className="text-xs text-slate-400">{lead.children || 0} Child, {lead.infants || 0} Infant</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex flex-wrap gap-1.5 w-64">
-                          {lead.services && lead.services.map((service, i) => (
-                            <span key={i} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider">{service}</span>
-                          ))}
-                        </div>
-                      </td>
+          <div
+            className="hidden md:grid items-center gap-2 px-5 py-3 bg-slate-50/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider"
+            style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}
+          >
+            <div></div>
+            <div>Lead info</div>
+            <div>Destination</div>
+            <div>Assigned to</div>
+            <div>Stage</div>
+            <div className="text-right">Amount</div>
+            <div className="text-center">Actions</div>
+          </div>
 
-                      {/* ── QUOTATION COLUMN — View Quotation button ── */}
-                      <td className="px-4 py-3.5 text-center">
-                        <button
-                          onClick={() => handleViewQuotation(lead)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold
-                            bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200
-                            hover:border-blue-400 transition-all whitespace-nowrap"
-                        >
-                          <FileText size={12} /> View Quotation
-                        </button>
-                      </td>
-
-                      <td className="px-4 py-3.5 text-slate-400">—</td>
-                      <td className="px-4 py-3.5 text-center text-slate-400">—</td>
-                      <td className="px-4 py-3.5 text-center text-slate-400">—</td>
-                      <td className="px-4 py-3.5">
-                        {(() => {
-                          const name = lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || null;
-                          return (
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-xs font-extrabold shadow-sm">
-                                {name ? name.charAt(0).toUpperCase() : 'U'}
-                              </div>
-                              <span className="text-sm font-bold text-slate-700">{name || 'Unassigned'}</span>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-3.5 text-sm font-extrabold text-slate-800">N/A</td>
-                      <td className="px-4 py-3.5 text-slate-400">—</td>
-                      <td className="px-4 py-3.5">
-                        <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-slate-200 bg-slate-100 text-slate-700">{lead.leadType || 'N/A'}</span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <select
-                          value={lead.leadStage || 'New Lead'}
-                          onChange={(e) => handleStageChange(lead, e.target.value)}
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full border border-transparent hover:border-slate-200 outline-none cursor-pointer appearance-none text-center transition-all ${
-                            lead.leadStage === 'Contacted' ? 'bg-blue-100 text-blue-700' :
-                            lead.leadStage === 'New Lead'  ? 'bg-emerald-100 text-emerald-700' :
-                            lead.leadStage === 'Converted' ? 'bg-green-100 text-green-700' :
-                            lead.leadStage === 'Lost'      ? 'bg-red-100 text-red-700' :
-                            'bg-orange-100 text-orange-700'
-                          }`}>
-                          <option value="New Lead">New Lead</option>
-                          <option value="Contacted">Contacted</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="text-sm font-semibold text-slate-600">
-                          {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {lead.createdAt ? new Date(lead.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center justify-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setViewLead(lead)} title="View Detail"
-                            className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={15} /></button>
-                          <button onClick={() => setEditLead(lead)} title="Edit"
-                            className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={15} /></button>
-                          <button onClick={() => handleViewQuotation(lead)} title="View Quotation"
-                            className="w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-all"><ExternalLink size={15} /></button>
-                          <button onClick={() => setDeleteTarget(lead)} title="Delete"
-                            className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all"><Trash2 size={15} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div>
+            {loading ? (
+              [...Array(Math.min(pageSize, 5))].map((_, i) => <SkeletonRow key={i} />)
+            ) : currentLeads.length === 0 ? (
+              <div className="text-center py-24 px-5">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
+                    <Inbox size={32} className="text-slate-400" />
+                  </div>
+                  <p className="text-lg font-extrabold text-slate-600 mb-1">No Leads Found</p>
+                  <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto leading-relaxed">We couldn't find any leads matching your selected criteria.</p>
+                  <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
+                </div>
+              </div>
+            ) : (
+              currentLeads.map((lead, idx) => (
+                <LeadRow
+                  key={lead.id}
+                  lead={lead}
+                  index={idx}
+                  isOpen={openRowId === lead.id}
+                  onToggle={toggleRow}
+                  onView={setViewLead}
+                  onEdit={setEditLead}
+                  onDelete={setDeleteTarget}
+                  onStageChange={handleStageChange}
+                />
+              ))
+            )}
           </div>
 
           <CommonPagination
@@ -1841,6 +1125,7 @@ const Leads = () => {
             goToPage={goToPage}
             changePageSize={changePageSize}
           />
+
         </div>
       </div>
     </div>
@@ -1848,3 +1133,803 @@ const Leads = () => {
 };
 
 export default Leads;
+
+
+
+
+
+
+
+
+
+
+
+// normal table 
+
+// import React, { useState, useEffect, memo, useMemo } from 'react';
+// import { leadService } from '../../services/leadService';
+// import {
+//   Users, Trophy, PieChart, TrendingUp, Search,
+//   DownloadCloud, FileText, Plus,
+//   Inbox, User, ArrowUp, ArrowDown, Calendar, ChevronDown,
+//   Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase,
+//   CheckCircle, XCircle, ExternalLink
+// } from 'lucide-react';
+// import { Link, useNavigate } from 'react-router-dom';
+
+// /* ─── PAGINATION ─────────────────────────────────────── */
+// function buildPageNumbers(totalPages, pageIndex) {
+//   if (totalPages <= 0) return [];
+//   return Array.from({ length: totalPages }, (_, i) => i)
+//     .filter(p => p === 0 || p === totalPages - 1 || Math.abs(p - pageIndex) <= 1)
+//     .reduce((acc, p, i, arr) => {
+//       if (i > 0 && p - arr[i - 1] > 1) acc.push('…');
+//       acc.push(p);
+//       return acc;
+//     }, []);
+// }
+
+// const NavButton = memo(function NavButton({ label, onClick, disabled }) {
+//   return (
+//     <button disabled={disabled} onClick={onClick}
+//       className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
+//         hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+//       {label}
+//     </button>
+//   );
+// });
+
+// const PageButton = memo(function PageButton({ page, isActive, onClick }) {
+//   return (
+//     <button onClick={onClick}
+//       className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
+//         isActive ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+//                  : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+//       }`}>
+//       {page + 1}
+//     </button>
+//   );
+// });
+
+// function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goToPage, changePageSize }) {
+//   const from = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
+//   const to   = Math.min((pageIndex + 1) * pageSize, totalElements);
+//   const pageNumbers = useMemo(() => buildPageNumbers(totalPages, pageIndex), [totalPages, pageIndex]);
+//   if (totalElements === 0) return null;
+//   const isFirst = pageIndex === 0;
+//   const isLast  = pageIndex >= totalPages - 1;
+//   return (
+//     <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+//       <p className="text-xs text-slate-400 font-medium">
+//         Showing <span className="font-bold text-slate-600">{from}</span>–<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
+//       </p>
+//       <div className="flex items-center gap-1.5 flex-wrap justify-center">
+//         <NavButton label="«" onClick={() => goToPage(0)}             disabled={isFirst} />
+//         <NavButton label="‹" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
+//         {pageNumbers.map((p, i) =>
+//           typeof p === 'string'
+//             ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">…</span>
+//             : <PageButton key={p} page={p} isActive={pageIndex === p} onClick={() => goToPage(p)} />
+//         )}
+//         <NavButton label="›" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
+//         <NavButton label="»" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
+//         <select value={pageSize} onChange={e => changePageSize(Number(e.target.value))}
+//           className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer">
+//           {[10, 25, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
+//         </select>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─── STAT CARD ──────────────────────────────────────── */
+// function StatCard({ icon: Icon, label, value, suffix = '', gradient, sub, delay = 0 }) {
+//   const [displayed, setDisplayed] = useState(0);
+//   useEffect(() => {
+//     let start = 0;
+//     const target = typeof value === 'number' ? value : 0;
+//     if (target === 0) { setDisplayed(0); return; }
+//     const step = Math.ceil(target / 60);
+//     const interval = setInterval(() => {
+//       start = Math.min(start + step, target);
+//       setDisplayed(start);
+//       if (start >= target) clearInterval(interval);
+//     }, 16);
+//     return () => clearInterval(interval);
+//   }, [value]);
+//   return (
+//     <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
+//       style={{ animationDelay: `${delay}ms` }}>
+//       <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
+//       <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
+//       <div className="relative z-10">
+//         <div className="flex items-start justify-between mb-3">
+//           <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all">
+//             <Icon size={20} strokeWidth={2.2} />
+//           </div>
+//           {sub && <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{sub}</span>}
+//         </div>
+//         <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">{displayed.toLocaleString('en-IN')}{suffix}</p>
+//         <p className="text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─── SKELETON ROW ───────────────────────────────────── */
+// function SkeletonRow() {
+//   return (
+//     <tr>
+//       {[...Array(17)].map((_, i) => (
+//         <td key={i} className="px-4 py-4">
+//           <div className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
+//         </td>
+//       ))}
+//     </tr>
+//   );
+// }
+
+// /* ─── TOAST ──────────────────────────────────────────── */
+// function Toast({ msg, type, onClose }) {
+//   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
+//   return (
+//     <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
+//         ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}
+//       style={{ animation: 'slideIn .3s ease both' }}>
+//       {type === 'success' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
+//       <p className="text-sm font-semibold flex-1">{msg}</p>
+//       <button onClick={onClose} className="opacity-50 hover:opacity-100 ml-1"><X size={16} /></button>
+//     </div>
+//   );
+// }
+
+// /* ─── VIEW LEAD MODAL ────────────────────────────────── */
+// function ViewLeadModal({ lead, onClose, onEdit }) {
+//   const navigate = useNavigate();
+//   if (!lead) return null;
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+//       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+//       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto z-10">
+//         <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-5 rounded-t-2xl">
+//           <div className="flex items-start justify-between">
+//             <div className="flex items-center gap-4">
+//               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-extrabold shadow-lg flex-shrink-0">
+//                 {(lead.customerName || 'U').charAt(0).toUpperCase()}
+//               </div>
+//               <div>
+//                 <h2 className="text-white text-xl font-extrabold capitalize">{lead.customerName || 'N/A'}</h2>
+//                 <p className="text-slate-400 text-sm font-medium">Lead #{lead.id}</p>
+//                 <div className="flex items-center gap-2 mt-1.5">
+//                   <span className="text-xs font-bold px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-700">{lead.leadType || 'N/A'}</span>
+//                   <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+//                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{lead.leadStage || 'N/A'}
+//                   </span>
+//                 </div>
+//               </div>
+//             </div>
+//             <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all flex-shrink-0">
+//               <X size={16} />
+//             </button>
+//           </div>
+//         </div>
+//         <div className="p-6 space-y-5">
+//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//             {[
+//               [Phone,    'Phone',      lead.phone,   'bg-green-50 text-green-600'],
+//               [Mail,     'Email',      lead.email,   'bg-blue-50 text-blue-600'],
+//               [Users,    'Travelers',  `${lead.adults || 0} Adults, ${lead.children || 0} Child, ${lead.infants || 0} Infant`, 'bg-purple-50 text-purple-600'],
+//               [User,     'Assigned To', lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || 'Unassigned', 'bg-orange-50 text-orange-600'],
+//               [Calendar, 'Created',   lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—', 'bg-teal-50 text-teal-600'],
+//               [Briefcase,'Lead Type',  lead.leadType, 'bg-indigo-50 text-indigo-600'],
+//             ].map(([Icon, label, val, ic]) => (
+//               <div key={label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+//                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${ic}`}><Icon size={14} /></div>
+//                 <div className="min-w-0">
+//                   <p className="text-xs text-slate-400 font-medium">{label}</p>
+//                   <p className="text-sm font-bold text-slate-700 truncate">{val || '—'}</p>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//           {lead.itinerary && lead.itinerary.length > 0 && (
+//             <div>
+//               <p className="text-sm font-extrabold text-slate-700 mb-3 flex items-center gap-2"><MapPin size={14} className="text-blue-500" /> Destination & Itinerary</p>
+//               <div className="flex flex-wrap gap-2">
+//                 {lead.itinerary.map((item, i) => (
+//                   <span key={i} className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700">
+//                     {item.destination} <span className="text-blue-600 font-extrabold">({item.nights}N)</span>
+//                   </span>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+//           {lead.services && lead.services.length > 0 && (
+//             <div>
+//               <p className="text-sm font-extrabold text-slate-700 mb-3">Services</p>
+//               <div className="flex flex-wrap gap-1.5">
+//                 {lead.services.map((service, i) => (
+//                   <span key={i} className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider">{service}</span>
+//                 ))}
+//               </div>
+//             </div>
+//           )}
+//           <div className="flex flex-wrap gap-2 pt-1">
+//             {/* ── View Quotation Button ── */}
+//             <button
+//               onClick={() => {
+//                 onClose();
+//                 navigate(`/CreateQuotation?leadId=${lead.publicId || lead.id}`);
+//               }}
+//               className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700
+//                 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-bold
+//                 flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-200">
+//               <FileText size={14} /> View Quotation
+//             </button>
+//             <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-indigo-200">
+//               <Pencil size={14} /> Edit
+//             </button>
+//             <button onClick={onClose} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
+//               Close
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─── EDIT LEAD MODAL ────────────────────────────────── */
+// function EditLeadModal({ lead, onClose, onSave }) {
+//   const initialAssignName =
+//     lead?.assignedUser?.fullName ||
+//     lead?.assignedUser?.name ||
+//     lead?.assignedUserName ||
+//     lead?.assignTo ||
+//     'Unassigned';
+
+//   const [form, setForm] = useState({
+//     customerName: lead?.customerName || '',
+//     email:        lead?.email        || '',
+//     phone:        lead?.phone        || '',
+//     adults:       lead?.adults       || 0,
+//     children:     lead?.children     || 0,
+//     infants:      lead?.infants      || 0,
+//     assignTo:     initialAssignName,
+//     leadType:     lead?.leadType     || '',
+//     leadStage:    lead?.leadStage    || '',
+//   });
+
+//   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+//   const fields = [
+//     { key: 'customerName', label: 'Customer Name', type: 'text',   placeholder: 'Enter customer name',  span: true },
+//     { key: 'email',        label: 'Email Address', type: 'email',  placeholder: 'customer@email.com',   span: true },
+//     { key: 'phone',        label: 'Phone Number',  type: 'tel',    placeholder: '+91 98765 43210' },
+//     { key: 'assignTo',     label: 'Assigned To',   type: 'text',   placeholder: 'Agent name' },
+//     { key: 'adults',       label: 'Adults',        type: 'number' },
+//     { key: 'children',     label: 'Children',      type: 'number' },
+//     { key: 'infants',      label: 'Infants',       type: 'number' },
+//     { key: 'leadType',     label: 'Lead Type',     type: 'text',   placeholder: 'e.g. Hot / Cold' },
+//     { key: 'leadStage',    label: 'Lead Stage',    type: 'text',   placeholder: 'e.g. New Lead' },
+//   ];
+
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+//       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+//       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto z-10">
+//         <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5 rounded-t-2xl flex items-center justify-between">
+//           <div>
+//             <h2 className="text-white font-extrabold text-lg">Edit Lead #{lead?.id}</h2>
+//             <p className="text-white/70 text-xs mt-0.5">Update lead information below</p>
+//           </div>
+//           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all"><X size={16} /></button>
+//         </div>
+//         <div className="p-6 space-y-4">
+//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//             {fields.map(f => (
+//               <div key={f.key} className={f.span ? 'sm:col-span-2' : ''}>
+//                 <label className="block text-xs font-bold text-slate-500 mb-1.5">{f.label}</label>
+//                 <input
+//                   type={f.type}
+//                   value={form[f.key]}
+//                   min={f.type === 'number' ? 0 : undefined}
+//                   disabled={f.key === 'assignTo'}
+//                   onChange={e => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
+//                   placeholder={f.placeholder}
+//                   className={`w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all ${
+//                     f.key === 'assignTo' ? 'bg-slate-100 cursor-not-allowed opacity-80' : 'bg-white'
+//                   }`}
+//                 />
+//               </div>
+//             ))}
+//           </div>
+//           <div className="flex gap-3 pt-2">
+//             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-600 font-bold text-sm transition-all bg-white hover:bg-slate-50">Cancel</button>
+//             <button onClick={() => onSave(form)} className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200">Save Changes</button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─── DELETE CONFIRM ─────────────────────────────────── */
+// function DeleteConfirm({ lead, onClose, onConfirm }) {
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+//       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+//       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm z-10 p-6 text-center">
+//         <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"><Trash2 size={26} className="text-red-500" /></div>
+//         <h3 className="text-lg font-extrabold text-slate-800 mb-1">Delete Lead?</h3>
+//         <p className="text-sm text-slate-500 mb-5">
+//           Are you sure you want to delete lead <span className="font-bold text-slate-700">#{lead?.id} ({lead?.customerName || 'N/A'})</span>? This action cannot be undone.
+//         </p>
+//         <div className="flex gap-3">
+//           <button onClick={onClose}   className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
+//           <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-200 transition-all">Yes, Delete</button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ─── MAIN COMPONENT ─────────────────────────────────── */
+// const Leads = () => {
+//   const navigate = useNavigate();
+
+//   const [leads,   setLeads]   = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   const [pageIndex, setPageIndex] = useState(0);
+//   const [pageSize,  setPageSize]  = useState(10);
+//   const [activeTab, setActiveTab] = useState('All');
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [sortOrder,  setSortOrder]  = useState('desc');
+//   const [dateFilter, setDateFilter] = useState('all');
+//   const [startDate,  setStartDate]  = useState('');
+//   const [endDate,    setEndDate]    = useState('');
+
+//   const [viewLead,     setViewLead]     = useState(null);
+//   const [editLead,     setEditLead]     = useState(null);
+//   const [deleteTarget, setDeleteTarget] = useState(null);
+//   const [toast,        setToast]        = useState(null);
+
+//   const showToast = (msg, type = 'success') => setToast({ msg, type });
+
+//   useEffect(() => { fetchLeads(); }, []);
+
+//   const fetchLeads = async () => {
+//     try {
+//       setLoading(true);
+//       const response = await leadService.getAllLeads();
+//       let data = [];
+//       if (response.data) {
+//         if      (Array.isArray(response.data.data))                                data = response.data.data;
+//         else if (response.data.data && Array.isArray(response.data.data.content)) data = response.data.data.content;
+//         else if (Array.isArray(response.data.content))                             data = response.data.content;
+//         else if (Array.isArray(response.data))                                     data = response.data;
+//       }
+//       setLeads(data);
+//     } catch (err) {
+//       console.error('Error fetching leads:', err);
+//       setLeads([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleUpdateSubmit = async (updatedFormData) => {
+//     try {
+//       const safeAssignedUserId =
+//         editLead.assignedUserId ||
+//         editLead.assignedUser?.publicId ||
+//         editLead.assignedUser?.id || null;
+//       const completePayload = { ...editLead, assignedUserId: safeAssignedUserId, ...updatedFormData };
+//       await leadService.updateLead(editLead.publicId || editLead.id, completePayload, editLead.services || [], editLead.itinerary || []);
+//       setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, ...updatedFormData } : l));
+//       showToast('Lead updated successfully!');
+//       setEditLead(null);
+//     } catch (err) {
+//       console.error('Failed to update lead:', err);
+//       showToast('Error updating lead. Please try again.', 'error');
+//     }
+//   };
+
+//   const handleStageChange = async (leadToUpdate, newStage) => {
+//     try {
+//       const safeAssignedUserId =
+//         leadToUpdate.assignedUserId ||
+//         leadToUpdate.assignedUser?.publicId ||
+//         leadToUpdate.assignedUser?.id || null;
+//       const completePayload = { ...leadToUpdate, leadStage: newStage, assignedUserId: safeAssignedUserId };
+//       await leadService.updateLead(leadToUpdate.publicId || leadToUpdate.id, completePayload, leadToUpdate.services || [], leadToUpdate.itinerary || []);
+//       setLeads(prev => prev.map(l => l.id === leadToUpdate.id ? { ...l, leadStage: newStage } : l));
+//       showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
+//     } catch (err) {
+//       console.error('Failed to update stage:', err);
+//       showToast('Error updating lead stage.', 'error');
+//     }
+//   };
+
+//   const handleDelete = async () => {
+//     try {
+//       if (typeof leadService.deleteLead === 'function') {
+//         await leadService.deleteLead(deleteTarget.publicId || deleteTarget.id);
+//       }
+//       setLeads(prev => prev.filter(l => l.id !== deleteTarget.id));
+//       showToast(`Lead #${deleteTarget.id} has been deleted.`);
+//       setDeleteTarget(null);
+//     } catch (err) {
+//       console.error('Error deleting lead:', err);
+//       showToast('Failed to delete lead.', 'error');
+//     }
+//   };
+
+//   /* ── View Quotation — navigate with leadId ─────────── */
+//   const handleViewQuotation = (lead) => {
+//     const id = lead.publicId || lead.id;
+//     navigate(`/CreateQuotation?leadId=${id}`);
+//   };
+
+//   const toggleDateSort = () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+//   const safeLeads = Array.isArray(leads) ? leads : [];
+
+//   const filteredLeads = useMemo(() => {
+//     return safeLeads.filter(lead => {
+//       const q = searchTerm.trim().toLowerCase();
+//       const matchesSearch = q === '' ||
+//         lead.customerName?.toLowerCase().includes(q) ||
+//         lead.email?.toLowerCase().includes(q) ||
+//         lead.phone?.includes(q) ||
+//         lead.id?.toString().includes(q);
+
+//       let matchesDate = true;
+//       if (dateFilter !== 'all' && lead.createdAt) {
+//         const ld    = new Date(lead.createdAt); ld.setHours(0,0,0,0);
+//         const today = new Date();               today.setHours(0,0,0,0);
+//         const yest  = new Date(today);          yest.setDate(today.getDate() - 1);
+//         const week  = new Date(today);          week.setDate(today.getDate() - 7);
+//         if      (dateFilter === 'today')       matchesDate = ld.getTime() === today.getTime();
+//         else if (dateFilter === 'yesterday')   matchesDate = ld.getTime() === yest.getTime();
+//         else if (dateFilter === 'last_7_days') matchesDate = ld >= week && ld <= today;
+//         else if (dateFilter === 'custom' && startDate && endDate) {
+//           const s = new Date(startDate);
+//           const e = new Date(endDate); e.setHours(23,59,59,999);
+//           matchesDate = ld >= s && ld <= e;
+//         }
+//       }
+
+//       let matchesTab = true;
+//       if (activeTab === 'Fresh')       matchesTab = lead.leadType === 'Fresh Lead';
+//       else if (activeTab !== 'All')    matchesTab = lead.leadStage === activeTab;
+
+//       return matchesSearch && matchesDate && matchesTab;
+//     });
+//   }, [safeLeads, searchTerm, dateFilter, startDate, endDate, activeTab]);
+
+//   const sortedLeads = useMemo(() => {
+//     return [...filteredLeads].sort((a, b) => {
+//       if (!a.createdAt || !b.createdAt) return 0;
+//       return sortOrder === 'asc'
+//         ? new Date(a.createdAt) - new Date(b.createdAt)
+//         : new Date(b.createdAt) - new Date(a.createdAt);
+//     });
+//   }, [filteredLeads, sortOrder]);
+
+//   const totalElements = sortedLeads.length;
+//   const totalPages    = Math.max(1, Math.ceil(totalElements / pageSize));
+
+//   useEffect(() => { setPageIndex(0); }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
+
+//   const safePageIndex = Math.min(pageIndex, totalPages - 1);
+//   const currentLeads  = useMemo(() => {
+//     const start = safePageIndex * pageSize;
+//     return sortedLeads.slice(start, start + pageSize);
+//   }, [sortedLeads, safePageIndex, pageSize]);
+
+//   const goToPage      = (page) => setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
+//   const changePageSize = (size) => { setPageSize(size); setPageIndex(0); };
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
+//       style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+//       <style>{`
+//         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+//         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+//         @keyframes slideIn { from{transform:translateX(110%);opacity:0}  to{transform:translateX(0);opacity:1} }
+//         .fade-up { animation: fadeUp .4s ease both; }
+//       `}</style>
+
+//       {toast        && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+//       {viewLead     && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); setEditLead(l); }} />}
+//       {editLead     && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
+//       {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
+
+//       {/* PAGE HEADER */}
+//       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
+//         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
+//           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+//             <div className="flex items-center gap-4">
+//               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+//                 <Users size={24} strokeWidth={2.2} />
+//               </div>
+//               <div>
+//                 <h1 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+//                   Leads Management
+//                   <span className="hidden sm:inline text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">{safeLeads.length} total</span>
+//                 </h1>
+//                 <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1 font-medium">
+//                   <span className="hover:text-blue-600 cursor-pointer transition-colors">Home</span>
+//                   <span className="mx-1 text-slate-300">/</span>
+//                   <span className="text-blue-600 font-bold">Leads</span>
+//                 </div>
+//               </div>
+//             </div>
+//             <div className="flex items-center gap-2">
+//               <button onClick={fetchLeads} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
+//                 <DownloadCloud size={15} /> Refresh Data
+//               </button>
+//               <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
+//                 <FileText size={15} /> Logs
+//               </button>
+//               <Link to="/CreateLead" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition-all">
+//                 <Plus size={16} strokeWidth={2.5} /> Create Lead
+//               </Link>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+//         {/* STAT CARDS */}
+//         <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+//           <StatCard icon={Users}      label="Total Leads" value={safeLeads.length} gradient="from-cyan-500 to-cyan-600"     delay={0}   />
+//           <StatCard icon={Trophy}     label="Bookings"    value={0}                gradient="from-green-500 to-emerald-600" delay={60}  />
+//           <StatCard icon={PieChart}   label="Conversion"  value={0} suffix="%"     gradient="from-amber-500 to-orange-500"  delay={120} />
+//           <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-indigo-500 to-indigo-600" delay={180} />
+//         </div>
+
+//         {/* LEADS TABLE CARD */}
+//         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+//           <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+//             <div className="flex items-center gap-3 flex-wrap">
+//               <h2 className="text-base font-extrabold text-slate-700">Leads Directory</h2>
+//               <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{totalElements} results</span>
+//             </div>
+//             {(searchTerm || dateFilter !== 'all' || activeTab !== 'All') && (
+//               <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1.5 transition-colors">
+//                 ✕ Clear all filters
+//               </button>
+//             )}
+//           </div>
+
+//           {/* Filters */}
+//           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+//             <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
+//               <div className="relative flex-1 min-w-[220px] max-w-sm group">
+//                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Search size={15} /></div>
+//                 <input type="text" placeholder="Search by name, email, phone, or ID..."
+//                   value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+//                   className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+//               </div>
+//               <div className="relative min-w-[160px]">
+//                 <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}
+//                   className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
+//                   <option value="all">All Time</option>
+//                   <option value="today">Today</option>
+//                   <option value="yesterday">Yesterday</option>
+//                   <option value="last_7_days">Last 7 Days</option>
+//                   <option value="custom">Custom Date</option>
+//                 </select>
+//                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
+//                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={13} /></div>
+//               </div>
+//               {dateFilter === 'custom' && (
+//                 <div className="flex items-center gap-2 fade-up">
+//                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+//                   <span className="text-slate-400 text-sm font-medium">to</span>
+//                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* Status Tabs */}
+//           <div className="px-5 py-4 border-b border-slate-100 overflow-x-auto">
+//             {(() => {
+//               const freshCount    = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
+//               const newLeadCount  = safeLeads.filter(l => l.leadStage === 'New Lead').length;
+//               const contactedCount= safeLeads.filter(l => l.leadStage === 'Contacted').length;
+//               const btnClass = (t) => `px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all ${
+//                 activeTab === t ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
+//               }`;
+//               const bdgClass = (t) => `px-2 py-0.5 rounded-md text-xs font-black ${activeTab === t ? 'bg-white/20' : 'bg-slate-100 text-slate-700'}`;
+//               return (
+//                 <div className="flex gap-2 min-w-max">
+//                   <button onClick={() => setActiveTab('All')}       className={btnClass('All')}>All <span className={bdgClass('All')}>{safeLeads.length}</span></button>
+//                   <button onClick={() => setActiveTab('Fresh')}     className={btnClass('Fresh')}><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Fresh <span className={bdgClass('Fresh')}>{freshCount}</span></button>
+//                   <button onClick={() => setActiveTab('New Lead')}  className={btnClass('New Lead')}>New Lead <span className={bdgClass('New Lead')}>{newLeadCount}</span></button>
+//                   <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>Contacted <span className={bdgClass('Contacted')}>{contactedCount}</span></button>
+//                 </div>
+//               );
+//             })()}
+//           </div>
+
+//           {/* TABLE */}
+//           <div className="overflow-x-auto">
+//             <table className="w-full min-w-[1500px] border-collapse text-sm whitespace-nowrap">
+//               <thead className="bg-slate-50/80 border-b border-slate-100">
+//                 <tr className="text-slate-500 text-xs uppercase tracking-wider font-extrabold">
+//                   <th className="px-4 py-3.5 w-12 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer" /></th>
+//                   <th className="px-4 py-3.5 text-left">LEAD ID</th>
+//                   <th className="px-4 py-3.5 text-left">LEAD INFO</th>
+//                   <th className="px-4 py-3.5 text-center">DESTINATION</th>
+//                   <th className="px-4 py-3.5 text-left">TRAVELERS</th>
+//                   <th className="px-4 py-3.5 text-left w-64">SERVICES</th>
+//                   <th className="px-4 py-3.5 text-center">QUOTATION</th>
+//                   <th className="px-4 py-3.5 text-left">BOOKING</th>
+//                   <th className="px-4 py-3.5 text-center">WEBLINK</th>
+//                   <th className="px-4 py-3.5 text-center">LOGGING</th>
+//                   <th className="px-4 py-3.5 text-left">ASSIGNED TO</th>
+//                   <th className="px-4 py-3.5 text-left">AMOUNT</th>
+//                   <th className="px-4 py-3.5 text-left">MARGIN</th>
+//                   <th className="px-4 py-3.5 text-left">TYPE</th>
+//                   <th className="px-4 py-3.5 text-left">STAGE</th>
+//                   <th onClick={toggleDateSort} className="px-4 py-3.5 text-left cursor-pointer hover:text-blue-600 select-none transition-colors">
+//                     <div className="flex items-center gap-1.5">CREATED {sortOrder === 'asc' ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />}</div>
+//                   </th>
+//                   <th className="px-4 py-3.5 text-center">ACTIONS</th>
+//                 </tr>
+//               </thead>
+//               <tbody className="divide-y divide-slate-50 bg-white">
+//                 {loading ? (
+//                   [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
+//                 ) : currentLeads.length === 0 ? (
+//                   <tr>
+//                     <td colSpan="17" className="text-center py-24">
+//                       <div className="flex flex-col items-center justify-center">
+//                         <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
+//                           <Inbox size={32} className="text-slate-400" />
+//                         </div>
+//                         <p className="text-lg font-extrabold text-slate-600 mb-1">No Leads Found</p>
+//                         <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto leading-relaxed">We couldn't find any leads matching your selected criteria.</p>
+//                         <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
+//                       </div>
+//                     </td>
+//                   </tr>
+//                 ) : (
+//                   currentLeads.map((lead, idx) => (
+//                     <tr key={lead.id} className="group transition-all duration-150 hover:bg-blue-50/40 hover:shadow-[inset_3px_0_0_#2563eb]"
+//                       style={{ animation: 'fadeUp .35s ease both', animationDelay: `${idx * 30}ms` }}>
+//                       <td className="px-4 py-3.5 text-center"><input type="checkbox" className="rounded border-slate-300 w-4 h-4 text-blue-600" /></td>
+//                       <td className="px-4 py-3.5 text-xs font-extrabold text-blue-600">#{lead.id}</td>
+//                       <td className="px-4 py-3.5">
+//                         <div className="flex items-center gap-3">
+//                           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0 shadow-sm">
+//                             {(lead.customerName || 'U').charAt(0).toUpperCase()}
+//                           </div>
+//                           <div>
+//                             <p className="text-sm font-bold text-slate-800 capitalize">{lead.customerName || 'N/A'}</p>
+//                             <p className="text-xs text-slate-400 mt-0.5">{lead.email || 'No email'}</p>
+//                             <p className="text-xs text-slate-400">{lead.phone || 'No phone'}</p>
+//                           </div>
+//                         </div>
+//                       </td>
+//                       <td className="px-4 py-3.5 text-center font-medium text-slate-700">
+//                         {lead.itinerary && lead.itinerary.length > 0 ? (
+//                           <div className="flex flex-col gap-1 items-center">
+//                             {lead.itinerary.map((item, i) => (
+//                               <span key={i} className="bg-slate-100 px-2 py-1 rounded-lg text-xs font-semibold text-slate-600">{item.destination} ({item.nights}N)</span>
+//                             ))}
+//                           </div>
+//                         ) : <span className="text-slate-400">N/A</span>}
+//                       </td>
+//                       <td className="px-4 py-3.5">
+//                         <div className="flex flex-col">
+//                           <span className="text-sm font-semibold text-slate-600">{lead.adults || 0} Adults</span>
+//                           {(lead.children > 0 || lead.infants > 0) && (
+//                             <span className="text-xs text-slate-400">{lead.children || 0} Child, {lead.infants || 0} Infant</span>
+//                           )}
+//                         </div>
+//                       </td>
+//                       <td className="px-4 py-3.5">
+//                         <div className="flex flex-wrap gap-1.5 w-64">
+//                           {lead.services && lead.services.map((service, i) => (
+//                             <span key={i} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider">{service}</span>
+//                           ))}
+//                         </div>
+//                       </td>
+
+//                       {/* ── QUOTATION COLUMN — View Quotation button ── */}
+//                       <td className="px-4 py-3.5 text-center">
+//                         <button
+//                           onClick={() => handleViewQuotation(lead)}
+//                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold
+//                             bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200
+//                             hover:border-blue-400 transition-all whitespace-nowrap"
+//                         >
+//                           <FileText size={12} /> View Quotation
+//                         </button>
+//                       </td>
+
+//                       <td className="px-4 py-3.5 text-slate-400">—</td>
+//                       <td className="px-4 py-3.5 text-center text-slate-400">—</td>
+//                       <td className="px-4 py-3.5 text-center text-slate-400">—</td>
+//                       <td className="px-4 py-3.5">
+//                         {(() => {
+//                           const name = lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || null;
+//                           return (
+//                             <div className="flex items-center gap-2">
+//                               <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-xs font-extrabold shadow-sm">
+//                                 {name ? name.charAt(0).toUpperCase() : 'U'}
+//                               </div>
+//                               <span className="text-sm font-bold text-slate-700">{name || 'Unassigned'}</span>
+//                             </div>
+//                           );
+//                         })()}
+//                       </td>
+//                       <td className="px-4 py-3.5 text-sm font-extrabold text-slate-800">N/A</td>
+//                       <td className="px-4 py-3.5 text-slate-400">—</td>
+//                       <td className="px-4 py-3.5">
+//                         <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-slate-200 bg-slate-100 text-slate-700">{lead.leadType || 'N/A'}</span>
+//                       </td>
+//                       <td className="px-4 py-3.5">
+//                         <select
+//                           value={lead.leadStage || 'New Lead'}
+//                           onChange={(e) => handleStageChange(lead, e.target.value)}
+//                           className={`text-xs font-bold px-2.5 py-1 rounded-full border border-transparent hover:border-slate-200 outline-none cursor-pointer appearance-none text-center transition-all ${
+//                             lead.leadStage === 'Contacted' ? 'bg-blue-100 text-blue-700' :
+//                             lead.leadStage === 'New Lead'  ? 'bg-emerald-100 text-emerald-700' :
+//                             lead.leadStage === 'Converted' ? 'bg-green-100 text-green-700' :
+//                             lead.leadStage === 'Lost'      ? 'bg-red-100 text-red-700' :
+//                             'bg-orange-100 text-orange-700'
+//                           }`}>
+//                           <option value="New Lead">New Lead</option>
+//                           <option value="Contacted">Contacted</option>
+//                         </select>
+//                       </td>
+//                       <td className="px-4 py-3.5">
+//                         <p className="text-sm font-semibold text-slate-600">
+//                           {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+//                         </p>
+//                         <p className="text-xs text-slate-400">
+//                           {lead.createdAt ? new Date(lead.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+//                         </p>
+//                       </td>
+//                       <td className="px-4 py-3.5">
+//                         <div className="flex items-center justify-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
+//                           <button onClick={() => setViewLead(lead)} title="View Detail"
+//                             className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={15} /></button>
+//                           <button onClick={() => setEditLead(lead)} title="Edit"
+//                             className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={15} /></button>
+//                           <button onClick={() => handleViewQuotation(lead)} title="View Quotation"
+//                             className="w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center transition-all"><ExternalLink size={15} /></button>
+//                           <button onClick={() => setDeleteTarget(lead)} title="Delete"
+//                             className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all"><Trash2 size={15} /></button>
+//                         </div>
+//                       </td>
+//                     </tr>
+//                   ))
+//                 )}
+//               </tbody>
+//             </table>
+//           </div>
+
+//           <CommonPagination
+//             pageIndex={safePageIndex}
+//             pageSize={pageSize}
+//             totalElements={totalElements}
+//             totalPages={totalPages}
+//             goToPage={goToPage}
+//             changePageSize={changePageSize}
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Leads;

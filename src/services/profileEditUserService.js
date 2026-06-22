@@ -6,41 +6,7 @@
 // Covers: Get User | Update User | Reset Password | Permissions
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -70,7 +36,7 @@ export const editUserService = {
   //   lastLogin:   "Jun 19, 2026 9:11 AM"
   // }
   getById: (id) => {
-    return api.get(`/api/users/${id}`);
+    return API.get(`/users/${id}`);
   },
 
   // ── UPDATE USER ────────────────────────────────────────────
@@ -94,7 +60,7 @@ export const editUserService = {
   //
   // Response: updated UserDetailDTO
   update: (id, data) => {
-    return api.put(`/api/users/${id}`, {
+    return API.put(`/users/${id}`, {
       email:    data.email,
       fullName: data.fullName,
       phone:    data.phone || null,
@@ -121,7 +87,7 @@ export const editUserService = {
   //   - Invalidates all existing refresh tokens for the user
   //   - Returns: { message: "Password updated successfully." }
   resetPassword: (id, newPassword, confirmPassword) => {
-    return api.post(`/api/users/${id}/reset-password`, {
+    return API.post(`/users/${id}/reset-password`, {
       newPassword,
       confirmPassword,
     });
@@ -160,7 +126,7 @@ export const editUserService = {
       payload.newPassword     = data.newPassword;
       payload.confirmPassword = data.confirmPassword;
     }
-    return api.put(`/api/users/${id}/full-update`, payload);
+    return API.put(`/users/${id}/full-update`, payload);
   },
 
   // ── GET USER PERMISSIONS ───────────────────────────────────
@@ -182,7 +148,7 @@ export const editUserService = {
   //   ]
   // }
   getPermissions: (id) => {
-    return api.get(`/api/users/${id}/permissions`);
+    return API.get(`/users/${id}/permissions`);
   },
 
   // ── UPDATE USER PERMISSIONS ────────────────────────────────
@@ -201,7 +167,7 @@ export const editUserService = {
   //   ]
   // }
   updatePermissions: (id, permissions) => {
-    return api.put(`/api/users/${id}/permissions`, { permissions });
+    return API.put(`/users/${id}/permissions`, { permissions });
   },
 
   // ── TOGGLE USER STATUS (Active <-> Inactive) ───────────────
@@ -209,7 +175,7 @@ export const editUserService = {
   // @PatchMapping("/api/users/{id}/toggle-status")
   // public ResponseEntity<UserDetailDTO> toggleStatus(@PathVariable Long id)
   toggleStatus: (id) => {
-    return api.patch(`/api/users/${id}/toggle-status`);
+    return API.patch(`/users/${id}/toggle-status`);
   },
 };
 

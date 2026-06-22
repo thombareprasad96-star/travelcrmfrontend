@@ -6,41 +6,7 @@
 // Covers: Create User + Permission Templates + Active Users Count
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add this to your .env file in React project root:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+import API from "./axiosInstance";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -86,7 +52,7 @@ export const createUserService = {
   // 400 - { message: "Password does not meet requirements." }
   // 409 - { message: "Email already registered." }
   create: (data) => {
-    return api.post("/api/users", {
+    return API.post("/users", {
       username:           data.username,
       fullName:           data.fullName,
       email:              data.email,
@@ -108,7 +74,7 @@ export const createUserService = {
   // Response: { available: true } or { available: false }
   // Use for real-time username validation as user types
   checkUsername: (username) => {
-    return api.get("/api/users/check-username", {
+    return API.get("/users/check-username", {
       params: { username },
     });
   },
@@ -121,7 +87,7 @@ export const createUserService = {
   //
   // Response: { available: true } or { available: false }
   checkEmail: (email) => {
-    return api.get("/api/users/check-email", {
+    return API.get("/users/check-email", {
       params: { email },
     });
   },
@@ -134,7 +100,7 @@ export const createUserService = {
   // Response: { count: 4 }
   // Used for the "Active Users: 4" badge in the page header
   getActiveCount: () => {
-    return api.get("/api/users/active-count");
+    return API.get("/users/active-count");
   },
 };
 
@@ -160,7 +126,7 @@ export const permissionTemplateService = {
   //   { value: "custom",  label: "Custom Permissions" }
   // ]
   getAll: () => {
-    return api.get("/api/permission-templates");
+    return API.get("/permission-templates");
   },
 };
 

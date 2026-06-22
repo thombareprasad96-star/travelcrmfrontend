@@ -514,9 +514,9 @@ function ToastContainer() {
 
 // ── Fallback seed data (used when API is unavailable) ──────
 const SEED_DATA = [
-  { id: 1, name: 'Toyota Innova Crysta', type: 'SUV',    capacity: 7,  image: null, description: 'Premium 7-seater SUV for long tours.',            createdAt: '2026-06-01' },
-  { id: 2, name: 'Volvo 9400 Sleeper',   type: 'Bus',    capacity: 40, image: null, description: 'Luxury sleeper bus for intercity travel.',         createdAt: '2026-06-05' },
-  { id: 3, name: 'Mercedes S-Class',     type: 'Sedan',  capacity: 4,  image: null, description: 'Ultra-luxury sedan for VIP clients.',             createdAt: '2026-06-08' },
+  { publicId: 'seed-1', name: 'Toyota Innova Crysta', type: 'SUV',    capacity: 7,  image: null, description: 'Premium 7-seater SUV for long tours.',            createdAt: '2026-06-01' },
+  { publicId: 'seed-2', name: 'Volvo 9400 Sleeper',   type: 'Bus',    capacity: 40, image: null, description: 'Luxury sleeper bus for intercity travel.',         createdAt: '2026-06-05' },
+  { publicId: 'seed-3', name: 'Mercedes S-Class',     type: 'Sedan',  capacity: 4,  image: null, description: 'Ultra-luxury sedan for VIP clients.',             createdAt: '2026-06-08' },
 ];
 
 const EMPTY_FORM = { name: '', type: '', capacity: '', image: null, imagePreview: null, imagePath: null, description: '' };
@@ -656,15 +656,16 @@ export default function VehicleMaster() {
 
     try {
       if (editingVehicle) {
-        // UPDATE
-        const res = await vehicleService.updateVehicle(editingVehicle.id, formData);
-        const updated = res.data ?? { ...editingVehicle, ...formData };
-        setVehicles(prev => prev.map(v => v.id === editingVehicle.id ? { ...v, ...updated } : v));
+        // UPDATE — backend identifies the vehicle by publicId (UUID)
+        const res = await vehicleService.updateVehicle(editingVehicle.publicId, formData);
+        // ApiResponse wraps the DTO under .data
+        const updated = res.data?.data ?? { ...editingVehicle, ...formData };
+        setVehicles(prev => prev.map(v => v.publicId === editingVehicle.publicId ? { ...v, ...updated } : v));
         toast.success("Vehicle updated successfully!");
       } else {
         // CREATE
         const res = await vehicleService.createVehicle(formData);
-        const created = res.data ?? { ...formData, id: Math.floor(Math.random() * 10000), createdAt: new Date().toISOString().slice(0, 10) };
+        const created = res.data?.data ?? { ...formData, createdAt: new Date().toISOString().slice(0, 10) };
         setVehicles(prev => [created, ...prev]);
         toast.success("Vehicle created successfully!");
       }
@@ -683,8 +684,8 @@ export default function VehicleMaster() {
     if (!deletingVehicle) return;
     setActionLoading(true);
     try {
-      await vehicleService.deleteVehicle(deletingVehicle.id);
-      setVehicles(prev => prev.filter(v => v.id !== deletingVehicle.id));
+      await vehicleService.deleteVehicle(deletingVehicle.publicId);
+      setVehicles(prev => prev.filter(v => v.publicId !== deletingVehicle.publicId));
       toast.success("Vehicle deleted successfully!");
       setShowDeleteModal(false);
     } catch (error) {
@@ -794,9 +795,9 @@ export default function VehicleMaster() {
                   </td>
                 </tr>
               ) : (
-                filteredVehicles.map(vehicle => (
-                  <tr key={vehicle.id} className="hover:bg-slate-50/70 transition-colors group">
-                    <td className="px-6 py-4 font-semibold text-slate-500">#{vehicle.id}</td>
+                filteredVehicles.map((vehicle, idx) => (
+                  <tr key={vehicle.publicId} className="hover:bg-slate-50/70 transition-colors group">
+                    <td className="px-6 py-4 font-semibold text-slate-500">#{idx + 1}</td>
                     <td className="px-6 py-4">
                       {vehicle.imagePreview || vehicle.image || vehicle.imagePath ? (
                         <img

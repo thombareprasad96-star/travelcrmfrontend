@@ -1,26 +1,4 @@
-import axios from "axios";
-
-// ============================================================
-// Backend API Base URL Setup
-// ============================================================
-const API = axios.create({
-  baseURL: "http://localhost:8080/api/sightseeings",
-  headers: { "Content-Type": "application/json" },
-});
-
-// ============================================================
-// JWT Token Interceptor
-// ============================================================
-API.interceptors.request.use(
-  (req) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      req.headers.Authorization = `Bearer ${token}`;
-    }
-    return req;
-  },
-  (error) => Promise.reject(error)
-);
+import API from "./axiosInstance";
 
 // ============================================================
 // TRANSFORMER: Frontend form state  ➜  Backend DTO
@@ -96,27 +74,13 @@ export function transformSightseeingResponse(backendData) {
 // DESTINATION SERVICE — destinations list ke liye
 // SightseeingMaster page pe accordion aur dropdowns ke liye
 // ============================================================
-const DEST_API = axios.create({
-  baseURL: "http://localhost:8080/api/destinations",
-  headers: { "Content-Type": "application/json" },
-});
-
-DEST_API.interceptors.request.use(
-  (req) => {
-    const token = localStorage.getItem("token");
-    if (token) req.headers.Authorization = `Bearer ${token}`;
-    return req;
-  },
-  (error) => Promise.reject(error)
-);
-
 export const destinationService = {
   // Destinations accordion ke liye — id, name, attractions count, cities list
-  getAllDestinations: () => DEST_API.get("/"),
+  getAllDestinations: () => API.get("/destinations/"),
 
   // City dropdown ke liye — specific destination ki cities
   getCitiesByDestination: (destinationName) =>
-    DEST_API.get(`/cities`, { params: { destination: destinationName } }),
+    API.get(`/destinations/cities`, { params: { destination: destinationName } }),
 };
 
 // ============================================================
@@ -129,7 +93,7 @@ export const sightseeingService = {
   //    Page load par destinations ke saath attractions load karne ke liye
   // ──────────────────────────────────────────────────────────
   getAllSightseeings: () => {
-    return API.get("/");
+    return API.get("/sightseeings/");
   },
 
   // ──────────────────────────────────────────────────────────
@@ -138,7 +102,7 @@ export const sightseeingService = {
   //    attractions load karne ke liye
   // ──────────────────────────────────────────────────────────
   getSightseeingsByDestination: (destination) => {
-    return API.get("/", { params: { destination } });
+    return API.get("/sightseeings/", { params: { destination } });
   },
 
   // ──────────────────────────────────────────────────────────
@@ -146,7 +110,7 @@ export const sightseeingService = {
   //    City filter ke saath attractions fetch karne ke liye
   // ──────────────────────────────────────────────────────────
   getSightseeingsByCity: (destination, city) => {
-    return API.get("/", { params: { destination, city } });
+    return API.get("/sightseeings/", { params: { destination, city } });
   },
 
   // ──────────────────────────────────────────────────────────
@@ -154,7 +118,7 @@ export const sightseeingService = {
   //    Edit modal open karne se pehle fresh data fetch
   // ──────────────────────────────────────────────────────────
   getSightseeingById: (id) => {
-    return API.get(`/${id}`);
+    return API.get(`/sightseeings/${id}`);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -164,7 +128,7 @@ export const sightseeingService = {
   // ──────────────────────────────────────────────────────────
   createSightseeing: (formData) => {
     const mappedData = transformSightseeingData(formData);
-    return API.post("/", mappedData);
+    return API.post("/sightseeings/", mappedData);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -173,7 +137,7 @@ export const sightseeingService = {
   // ──────────────────────────────────────────────────────────
   updateSightseeing: (id, formData) => {
     const mappedData = transformSightseeingData(formData);
-    return API.put(`/${id}`, mappedData);
+    return API.put(`/sightseeings/${id}`, mappedData);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -181,7 +145,7 @@ export const sightseeingService = {
   //    List row ka delete button
   // ──────────────────────────────────────────────────────────
   deleteSightseeing: (id) => {
-    return API.delete(`/${id}`);
+    return API.delete(`/sightseeings/${id}`);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -193,7 +157,7 @@ export const sightseeingService = {
   uploadSightseeingImage: (imageFile) => {
     const formData = new FormData();
     formData.append("file", imageFile);
-    return API.post("/upload-image", formData, {
+    return API.post("/sightseeings/upload-image", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
@@ -204,6 +168,6 @@ export const sightseeingService = {
   //    Warna frontend filtering already component mein hai
   // ──────────────────────────────────────────────────────────
   searchSightseeings: (query) => {
-    return API.get("/search", { params: { q: query } });
+    return API.get("/sightseeings/search", { params: { q: query } });
   },
 };

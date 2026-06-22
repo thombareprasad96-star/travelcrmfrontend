@@ -81,7 +81,7 @@ import Testimonials from "./masters/Testimonials"
 import AllVendors from "./vendors/AllVendors";
 import CreateVendor from "./vendors/CreateVendor";
 import Reminders from "./reminders/Reminders";
-import Quotation from "./quotation/quotation";
+
 import CreateQuotation from "./quotation/Createquotation"
 import CreateReminder from "./reminders/CreateReminder";
 import BookingReminders from "./reminders/BookingReminders";
@@ -158,7 +158,7 @@ const App = () => {
           <Route path="AllVendors" element={<AllVendors/>}/>
           <Route path="CreateVendor" element={<CreateVendor/>}/>
           <Route path="Reminders" element={<Reminders/>}/>
-          <Route path="quotation" element={<Quotation/>}/>
+         
           <Route path="createquotation"  element={<CreateQuotation/>}/>
           <Route path="CreateReminder" element={<CreateReminder/>}/>
           <Route path="BookingReminders" element={<BookingReminders/>}/>
