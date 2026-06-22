@@ -39,7 +39,7 @@ export const countryService = {
 
   // 1. Saare countries fetch karo (GET)
   getAllCountries: () =>
-    API.get("/countries"),
+    API.get("/v1/countries"),
 
   // 2. Single country fetch karo (GET)
   getCountryById: (id) =>

@@ -253,7 +253,7 @@ export default function TravelDetails({ register, watch, setValue }) {
   }, []);
 
   useEffect(() => {
-    countryService.getCountries()
+    countryService.getAllCountries()
       .then(setCountries)
       .catch((err) => setError(err.message))
       .finally(() => setLoadingCountries(false));

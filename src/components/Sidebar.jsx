@@ -1031,9 +1031,9 @@ const Sidebar = ({ isExpanded }) => {
                 <li><Link to="/allorganization" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>All Organization</span></Link></li>
                 {/* <li><Link to="/add-user" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>Add New Organization</span></Link></li>
                 <li><Link to="/users/permission-templates" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-pink-400/50" /><span>Permission Templates</span></Link></li> */}
-              </ul>
+              {/* </ul>
             )}
-          </li> */}
+          </li> */} 
 
 
 {/* --- Organization Dropdown --- */}
