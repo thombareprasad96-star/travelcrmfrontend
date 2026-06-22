@@ -726,13 +726,6 @@ export default function EditUser() {
           </div>
         </form>
       </div>
-
-      {/* ── FOOTER ── */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 mt-4 border-t border-slate-200
-        flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-        <p>Copyright © {new Date().getFullYear()} <span className="text-blue-600 font-semibold">Tripotomize.</span> All rights reserved.</p>
-        <p>Version 1.0.0</p>
-      </div>
     </div>
   );
 }

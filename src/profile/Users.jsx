@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import {
   FiUsers, FiUserPlus, FiSearch, FiEdit2, FiTrash2,
   FiKey, FiEye, FiEyeOff, FiCheckCircle, FiXCircle,
-  FiAlertCircle, FiChevronLeft, FiChevronRight,
+  FiAlertCircle, FiChevronLeft, FiChevronRight, FiShield,
 } from "react-icons/fi";
 import {
   FaUsers, FaUserCheck, FaUserTimes, FaUserShield,
@@ -294,7 +294,6 @@ export default function Users() {
 
   // Only delete + reset modals remain inline
   const [deleteUser, setDeleteUser] = useState(null);
-  const [resetUser,  setResetUser]  = useState(null);
 
   useEffect(()=>{
     // BACKEND: userService.getAll().then(res=>setUsers(res.data)).finally(()=>setLoading(false));
@@ -355,7 +354,6 @@ export default function Users() {
 
       {toast      && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
       {deleteUser && <DeleteConfirm user={deleteUser} onClose={()=>setDeleteUser(null)} onConfirm={handleDelete}/>}
-      {resetUser  && <ResetPasswordModal user={resetUser} onClose={()=>setResetUser(null)} showToast={showToast}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -554,8 +552,8 @@ export default function Users() {
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
                             {/* ── EDIT → navigates to /EditUser/:id ── */}
-                            {/* <button onClick={()=>navigate(`/EditUser/${u.id}`)} title="Edit User" */}
-                             <button onClick={()=>navigate("/EditUser")} title="Edit User"
+                            {/* <button onClick={()=>navigate(`/EditUser/${u.id}`)} */}
+                             <button onClick={()=>navigate(`/EditUser`)}title="Edit User"
                               className="w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-all text-sm shadow-sm">
                               <FiEdit2 className="w-3.5 h-3.5"/>
                             </button>
@@ -566,10 +564,11 @@ export default function Users() {
                               <FiTrash2 className="w-3.5 h-3.5"/>
                             </button>
 
-                            {/* RESET PASSWORD → inline modal */}
-                            <button onClick={()=>setResetUser(u)} title="Reset Password"
+                            {/* MANAGE PERMISSIONS → navigates to /UserPermissions/:id */}
+                            {/* <button onClick={()=>navigate(`/UserPermissions/${u.id}`)}  */}
+                            <button onClick={()=>navigate(`/UserPermissions`)} title="Manage Permissions"
                               className="w-8 h-8 rounded-lg bg-teal-500 hover:bg-teal-600 text-white flex items-center justify-center transition-all text-sm shadow-sm">
-                              <FiKey className="w-3.5 h-3.5"/>
+                              <FiShield className="w-3.5 h-3.5"/>
                             </button>
                           </div>
                         </td>
@@ -651,15 +650,16 @@ export default function Users() {
                     <div className="flex gap-2">
                       {/* Edit → navigate to EditUser page */}
                       {/* <button onClick={()=>navigate(`/EditUser/${u.id}`)} */}
-                      <button onClick={()=>navigate("/EditUser")}
+                      <button onClick={()=>navigate(`/EditUser`)}
                         className="flex-1 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
                         <FiEdit2 className="w-3 h-3"/> Edit
                       </button>
 
-                      {/* Reset Password → inline modal */}
-                      <button onClick={()=>setResetUser(u)}
+                      {/* Manage Permissions → navigate to /UserPermissions/:id */}
+                      {/* <button onClick={()=>navigate(`/UserPermissions/${u.id}`)} */}
+                      <button onClick={()=>navigate(`/UserPermissions`)}
                         className="flex-1 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
-                        <FiKey className="w-3 h-3"/> Reset PWD
+                        <FiShield className="w-3 h-3"/> Permissions
                       </button>
 
                       {/* Delete → inline modal */}
