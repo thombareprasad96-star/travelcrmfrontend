@@ -397,128 +397,93 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
       className="border-t border-slate-100 first:border-t-0 transition-colors"
       style={{
         borderLeft: `3px solid ${accent}`,
-        background: isOpen ? `${accent}12` : 'transparent',
+        background: isOpen ? '#eeda9215' : 'transparent',
         animation: 'fadeUp .35s ease both',
         animationDelay: `${index * 30}ms`,
       }}
     >
-      {/* ── Desktop row (md and up) ── */}
+      {/* ── Desktop row ── */}
       <div
         onClick={() => onToggle(lead.id)}
         className="hidden md:grid items-center gap-2 px-5 py-4 cursor-pointer transition-colors"
-        style={{
-          gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px',
-          background: isOpen ? `${accent}18` : 'transparent',
-        }}
-        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
+        style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px', background: isOpen ? '#eeda9230' : 'transparent' }}
+        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#eeda9218'; }}
         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
       >
-        <ChevronRight
-          size={16}
-          className="text-slate-400 transition-transform flex-shrink-0"
-          style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-        />
-
+        <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0`}>
-            {initial}
-          </div>
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0`}>{initial}</div>
           <div className="min-w-0">
             <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
             <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
           </div>
         </div>
-
         <div className="min-w-0">
           {destination ? (
             <>
-              <span
-                className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
-                style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
-              >
+              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}>
                 <MapPin size={11} /> {destination.destination}
               </span>
-              <p className="text-[11px] text-slate-400 mt-1">{destination.nights}N {'\u00b7'} {travelersShort}</p>
+              <p className="text-[11px] text-slate-400 mt-1">{destination.nights}N · {travelersShort}</p>
             </>
           ) : (
             <span className="text-sm text-slate-400">N/A</span>
           )}
         </div>
-
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[10px] font-extrabold flex-shrink-0">
             {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
           </div>
           <span className="text-sm font-semibold text-slate-700 truncate">{assigneeName || 'Unassigned'}</span>
         </div>
-
-        <div onClick={(e) => e.stopPropagation()}>
-          <select
-            value={lead.leadStage || 'New Lead'}
-            onChange={(e) => onStageChange(lead, e.target.value)}
-            className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
-          >
+        <div onClick={e => e.stopPropagation()}>
+          <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)}
+            className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}>
             <option value="New Lead">New Lead</option>
             <option value="Contacted">Contacted</option>
           </select>
         </div>
-
         <div className="text-right text-sm font-extrabold text-slate-800">N/A</div>
-
-        <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
           <button onClick={() => onView(lead)} title="View" className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={14} /></button>
           <button onClick={() => onEdit(lead)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={14} /></button>
         </div>
       </div>
 
-      {/* ── Mobile row (below md) ── */}
+      {/* ── Mobile row ── */}
       <div
         onClick={() => onToggle(lead.id)}
         className="md:hidden px-4 py-3.5 cursor-pointer transition-colors"
-        style={{ background: isOpen ? `${accent}18` : 'transparent' }}
-        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = `${accent}0D`; }}
+        style={{ background: isOpen ? '#eeda9230' : 'transparent' }}
+        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#eeda9218'; }}
         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
       >
         <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0 mt-0.5`}>
-            {initial}
-          </div>
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0 mt-0.5`}>{initial}</div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
                 <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
               </div>
-              <ChevronRight
-                size={16}
-                className="text-slate-400 transition-transform flex-shrink-0 mt-1"
-                style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-              />
+              <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0 mt-1" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
             </div>
-
             <div className="flex items-center gap-2 flex-wrap mt-2">
               {destination ? (
-                <span
-                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border"
-                  style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}
-                >
-                  <MapPin size={11} /> {destination.destination} {'\u00b7'} {destination.nights}N
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}>
+                  <MapPin size={11} /> {destination.destination} · {destination.nights}N
                 </span>
               ) : (
                 <span className="text-xs text-slate-400">No destination</span>
               )}
-              <div onClick={(e) => e.stopPropagation()}>
-                <select
-                  value={lead.leadStage || 'New Lead'}
-                  onChange={(e) => onStageChange(lead, e.target.value)}
-                  className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}
-                >
+              <div onClick={e => e.stopPropagation()}>
+                <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}>
                   <option value="New Lead">New Lead</option>
                   <option value="Contacted">Contacted</option>
                 </select>
               </div>
             </div>
-
             <div className="flex items-center justify-between mt-2.5">
               <div className="flex items-center gap-1.5">
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[9px] font-extrabold flex-shrink-0">
@@ -526,207 +491,104 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
                 </div>
                 <span className="text-xs font-semibold text-slate-600 truncate">{assigneeName || 'Unassigned'}</span>
               </div>
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                <button onClick={() => onView(lead)} title="View" className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
-                <button onClick={() => onEdit(lead)} title="Edit" className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <button onClick={() => onView(lead)} className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
+                <button onClick={() => onEdit(lead)} className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* ── Expand Panel ── */}
       {isOpen && (
-        <div style={{ animation: 'fadeIn .25s ease both' }}>
+        <div style={{ animation: 'fadeIn .2s ease both' }}>
 
-          {/* ── Top accent bar ── */}
-          <div style={{
-            height: '3px',
-            background: `linear-gradient(90deg, ${accent}, ${accent}99, ${accent}44)`,
-          }} />
+          {/* Top line — #eeda92 */}
+          <div style={{ height: '2px', background: '#eeda92' }} />
 
-          {/* ── Main expand body ── */}
+          {/* Panel body — #eeda92 tint background */}
           <div style={{
-            background: 'linear-gradient(135deg, #fffdf7 0%, #fef9ec 50%, #fdf4e3 100%)',
-            padding: '0 20px 20px 52px',
-            borderBottom: `3px solid ${accent}22`,
+            background: '#fffdf0',
+            padding: '10px 12px 12px 44px',
+            borderBottom: '2px solid #eeda92',
           }}>
 
-            {/* ── Row 1: Avatar + Client info + Services ── */}
-            <div style={{
-              display: 'flex', gap: '16px', flexWrap: 'wrap',
-              padding: '16px 0 14px',
-              borderBottom: '1px dashed #e8c98a',
-            }}>
-
-              {/* Big Avatar */}
-              <div style={{
-                width: '52px', height: '52px', borderRadius: '14px',
-                background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: '20px', fontWeight: 800,
-                flexShrink: 0, boxShadow: `0 4px 14px ${accent}44`,
-              }}>
-                {(lead.customerName || 'U').charAt(0).toUpperCase()}
+            {/* Row 1: Client + Services */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingBottom: '8px', borderBottom: '1px dashed #eeda92' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eeda92', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a3e00', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
+                {initial}
               </div>
-
-              {/* Client details */}
-              <div style={{ flex: '0 0 auto', minWidth: '140px' }}>
-                <p style={{ fontSize: '10px', color: '#A07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: '3px' }}>Client</p>
-                <p style={{ fontSize: '15px', fontWeight: 800, color: '#1E293B', marginBottom: '2px' }}>{lead.customerName || 'N/A'}</p>
-                <p style={{ fontSize: '12px', color: '#64748B' }}>{lead.email || '—'}</p>
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                  {/* Travelers badge */}
-                  <span style={{
-                    background: `${accent}18`, color: accent,
-                    padding: '2px 10px', borderRadius: '20px',
-                    fontSize: '11px', fontWeight: 700,
-                    border: `1px solid ${accent}33`,
-                  }}>
-                    {lead.adults || 0} Adults
-                    {(lead.children > 0 || lead.infants > 0) && ` · ${lead.children || 0}C ${lead.infants || 0}I`}
-                  </span>
-                </div>
+              <div style={{ flex: '0 0 auto' }}>
+                <p style={{ fontSize: '15px', fontWeight: 800, color: '#1E293B', marginBottom: '1px' }}>{lead.customerName || 'N/A'}</p>
+                <p style={{ fontSize: '10px', color: '#64748B' }}>{lead.email || '—'} · {lead.phone || '—'}</p>
+                <span style={{ display: 'inline-block', marginTop: '3px', background: '#eeda9230', color: '#7a5a00', padding: '1px 7px', borderRadius: '20px', fontSize: '9px', fontWeight: 700, border: '1px solid #eeda92' }}>
+                  {lead.adults || 0}A{lead.children > 0 ? ` ${lead.children}C` : ''}{lead.infants > 0 ? ` ${lead.infants}I` : ''}
+                </span>
               </div>
-
-              {/* Services */}
-              <div style={{ flex: 1, minWidth: '180px' }}>
-                <p style={{ fontSize: '10px', color: '#A07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: '8px' }}>Services Requested</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+              <div style={{ width: '1px', background: '#eeda9255', margin: '2px 4px', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                <p style={{ fontSize: '11px', color: '#a07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '4px' }}>Services</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
                   {lead.services && lead.services.length > 0
                     ? lead.services.map((s, i) => {
                         const c = serviceColor(s);
-                        return (
-                          <span key={i} style={{
-                            background: c.bg, color: c.text,
-                            padding: '4px 10px', borderRadius: '8px',
-                            fontSize: '11px', fontWeight: 600,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
-                          }}>{s}</span>
-                        );
+                        return <span key={i} style={{ background: c.bg, color: c.text, padding: '2px 7px', borderRadius: '5px', fontSize: '11px', fontWeight: 600 }}>{s}</span>;
                       })
-                    : <span style={{ fontSize: '12px', color: '#94A3B8' }}>No services added</span>
+                    : <span style={{ fontSize: '10px', color: '#94A3B8' }}>None</span>
                   }
                 </div>
               </div>
             </div>
 
-            {/* ── Row 2: Info cards ── */}
+            {/* Single row — all 8 fields in one line */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-              gap: '10px',
-              padding: '14px 0',
-              borderBottom: '1px dashed #e8c98a',
+              gridTemplateColumns: 'repeat(8, 1fr)',
+              gap: '6px',
+              padding: '8px 0',
+              borderBottom: '1px dashed #eeda92',
+              overflowX: 'auto',
             }}>
               {[
-                { label: 'Phone',   value: lead.phone || '—',  icon: '📞' },
-                { label: 'Created', value: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A', icon: '📅' },
-                { label: 'Margin',  value: '—',                icon: '💰' },
-                { label: 'Lead Type', value: null, icon: '🏷️', isType: true },
-              ].map(({ label, value, icon, isType }) => (
-                <div key={label} style={{
-                  background: '#fff',
-                  border: '1px solid #F0D9A0',
-                  borderRadius: '12px',
-                  padding: '10px 12px',
-                  boxShadow: '0 1px 4px rgba(180,140,60,0.08)',
-                }}>
-                  <p style={{ fontSize: '10px', color: '#A07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '5px' }}>
-                    {icon} {label}
-                  </p>
-                  {isType ? (() => {
-                    const typeColors = {
-                      'Fresh Lead': { bg: '#E6F1FB', text: '#042C53' },
-                      'Hot Lead':   { bg: '#FBEAF0', text: '#4B1528' },
-                      'Warm Lead':  { bg: '#FAEEDA', text: '#633806' },
-                      'Cold Lead':  { bg: '#E1F5EE', text: '#04342C' },
-                    };
-                    const tc = typeColors[lead.leadType] || { bg: '#EEEDFE', text: '#26215C' };
-                    return <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: tc.bg, color: tc.text }}>{lead.leadType || 'N/A'}</span>;
-                  })()
-                  : <p style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>{value}</p>}
+                { label: 'Phone',     value: lead.phone || '—' },
+                { label: 'Created',   value: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A' },
+                { label: 'Margin',    value: '—' },
+                { label: 'Lead Type', value: lead.leadType || 'N/A' },
+                { label: 'Quotation', value: lead.quotationStatus || 'Not generated' },
+                { label: 'Booking',   value: lead.bookingStatus   || 'Not booked'    },
+                { label: 'Weblink',   value: lead.shareLink       || '—'             },
+                { label: 'Logging',   value: lead.lastActivity    || 'No activity'   },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ minWidth: '70px' }}>
+                  <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '2px', whiteSpace: 'nowrap' }}>{label}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</p>
                 </div>
               ))}
             </div>
 
-            {/* ── Row 3: Status cards ── */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
-              gap: '10px',
-              padding: '14px 0',
-              borderBottom: '1px dashed #e8c98a',
-            }}>
-              {[
-                { label: 'Quotation', value: 'Not generated', icon: '📄', color: '#3B82F6', bg: '#EFF6FF' },
-                { label: 'Booking',   value: 'Not booked',    icon: '✈️', color: '#8B5CF6', bg: '#F5F3FF' },
-                { label: 'Weblink',   value: '—',        icon: '🔗', color: '#0891B2', bg: '#ECFEFF' },
-                { label: 'Logging',   value: 'No activity',   icon: '📊', color: '#059669', bg: '#ECFDF5' },
-              ].map(({ label, value, icon, color, bg }) => (
-                <div key={label} style={{
-                  background: bg,
-                  border: `1px solid ${color}22`,
-                  borderRadius: '12px',
-                  padding: '10px 12px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                }}>
-                  <p style={{ fontSize: '10px', color: color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '5px' }}>
-                    {icon} {label}
-                  </p>
-                  <p style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>{value}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* ── Row 4: Lead ID + Actions ── */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              flexWrap: 'wrap', gap: '12px',
-              paddingTop: '14px',
-            }}>
-              {/* Lead ID */}
-              <div style={{
-                background: '#1E293B',
-                borderRadius: '10px',
-                padding: '8px 14px',
-                display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#38BDF8', flexShrink: 0 }} />
-                <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600, marginRight: '4px' }}>ID:</span>
-                <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#38BDF8', fontWeight: 700 }}>
-                  {String(lead.publicId || lead.id).slice(0, 18)}...
-                </span>
+            {/* Row 4: ID + Action buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#1E293B', borderRadius: '6px', padding: '4px 10px' }}>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#eeda92' }} />
+                <span style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600 }}>ID:</span>
+                <span style={{ fontSize: '9px', fontFamily: 'monospace', color: '#eeda92', fontWeight: 700 }}>{String(lead.publicId || lead.id).slice(0, 14)}...</span>
               </div>
-
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <Link
-                  to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    padding: '8px 16px', borderRadius: '10px',
-                    background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                    color: '#fff',
-                    fontSize: '12px', fontWeight: 700,
-                    textDecoration: 'none',
-                    boxShadow: `0 4px 12px ${accent}44`,
-                    transition: 'opacity .15s',
-                  }}
-                >
-                  <FileText size={13} /> View Quotation ↗
-                </Link>
-                <button
-                  onClick={() => onDelete(lead)}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    padding: '8px 14px', borderRadius: '10px',
-                    background: '#FEF2F2', color: '#DC2626',
-                    fontSize: '12px', fontWeight: 700,
-                    border: '1px solid #FECACA',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Trash2 size={13} /> Delete
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {lead.quotationId ? (
+                  <Link to={`/CreateQuotation?quotationId=${lead.quotationId}&leadId=${lead.publicId || lead.id}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', textDecoration: 'none' }}>
+                    <Eye size={11} /> View Quotation
+                  </Link>
+                ) : (
+                  <Link to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda92', color: '#3d2a00', fontSize: '10px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px #eeda9266' }}>
+                    <FileText size={11} /> New Quotation ↗
+                  </Link>
+                )}
+                <button onClick={() => onDelete(lead)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '7px', background: '#FEF2F2', color: '#DC2626', fontSize: '10px', fontWeight: 700, border: '1px solid #FECACA', cursor: 'pointer' }}>
+                  <Trash2 size={11} /> Delete
                 </button>
               </div>
             </div>
@@ -737,6 +599,7 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
     </div>
   );
 }
+
 
 /* ─── MAIN COMPONENT ─────────────────────────────────── */
 const Leads = () => {
@@ -1133,6 +996,8 @@ const Leads = () => {
 };
 
 export default Leads;
+
+
 
 
 
