@@ -775,7 +775,7 @@ import {
   MapPin, Globe, ChevronDown, AlertCircle, Loader2,
   Home, ChevronRight, RefreshCw
 } from "lucide-react";
-import { cityService }      from "../../services/cityService";
+import { cityService } from "../../services/CityService";
 import { geographyService } from "../../services/geographyService";
 
 /* ─── TOAST ─────────────────────────────────────── */

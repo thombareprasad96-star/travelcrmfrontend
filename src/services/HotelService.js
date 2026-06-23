@@ -105,7 +105,7 @@ export const hotelService = {
   // 1. GET ALL HOTELS
   // Returns a flat list of all hotels across all destinations
   getAllHotels: () => {
-    return API.get("/hotels/");
+    return API.get("/hotels");
   },
 
   // 2. GET ALL HOTELS BY DESTINATION ID
@@ -123,7 +123,7 @@ export const hotelService = {
   // Transforms React form state to backend DTO before posting
   createHotel: (formData) => {
     const mappedData = transformHotelData(formData);
-    return API.post("/hotels/", mappedData);
+    return API.post("/hotels", mappedData);
   },
 
   // 5. UPDATE HOTEL
