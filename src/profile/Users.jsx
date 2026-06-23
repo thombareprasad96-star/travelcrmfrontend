@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   FiUsers, FiUserPlus, FiSearch, FiEdit2, FiTrash2,
   FiKey, FiEye, FiEyeOff, FiCheckCircle, FiXCircle,
@@ -22,7 +23,7 @@ import {
 } from "react-icons/fa";
 
 // ── Uncomment when backend is ready ──────────────────────────
-// import userService from "../services/userService";
+ import userService from "../services/profileUserService";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
 const MOCK_USERS = [
@@ -158,6 +159,7 @@ function ResetPasswordModal({ user, onClose, showToast }) {
   const [showC,   setShowC]   = useState(false);
   const [errs,    setErrs]    = useState({});
   const [saving,  setSaving]  = useState(false);
+  
 
   const ruleResults = PASSWORD_RULES.map(r=>({ ...r, passed:r.test(newPass) }));
   const allPassed   = ruleResults.every(r=>r.passed);
@@ -169,13 +171,31 @@ function ResetPasswordModal({ user, onClose, showToast }) {
     if(!confirm)              e.confirm="Please confirm the password";
     if(newPass!==confirm)     e.confirm="Passwords do not match";
     if(Object.keys(e).length){ setErrs(e); return; }
+    
     setSaving(true);
-    // BACKEND: await userService.resetPassword(user.id, newPass, confirm);
-    await new Promise(r=>setTimeout(r,800));
-    showToast(`Password for ${user.fullName} reset successfully.`);
-    onClose();
-    setSaving(false);
-  };
+
+try {
+  await userService.resetPassword(
+    user.id,
+    newPass,
+    confirm
+  );
+
+  showToast(
+    `Password for ${user.fullName} reset successfully.`
+  );
+
+  onClose();
+} catch (err) {
+  showToast(
+    err?.response?.data?.message ||
+    "Failed to reset password.",
+    "error"
+  );
+} finally {
+  setSaving(false);
+}
+};
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -295,13 +315,25 @@ export default function Users() {
   // Only delete + reset modals remain inline
   const [deleteUser, setDeleteUser] = useState(null);
 
-  useEffect(()=>{
-    // BACKEND: userService.getAll().then(res=>setUsers(res.data)).finally(()=>setLoading(false));
-    const t = setTimeout(()=>{ setUsers(MOCK_USERS); setLoading(false); }, 700);
-    return ()=>clearTimeout(t);
-  },[]);
-
   const showToast = useCallback((msg, type="success")=>setToast({msg,type}),[]);
+
+  useEffect(() => {
+  setLoading(true);
+
+  userService
+    .getAll()
+    .then((res) => {
+      setUsers(res.data);
+    })
+    .catch(() => {
+      showToast("Failed to load users.", "error");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, [showToast]);
+
+  
 
   /* stats */
   const stats = useMemo(()=>({
@@ -316,9 +348,9 @@ export default function Users() {
     let out = [...users];
     const q = search.toLowerCase();
     if(q) out = out.filter(u=>
-      u.username.toLowerCase().includes(q)||
-      u.fullName.toLowerCase().includes(q)||
-      u.email.toLowerCase().includes(q)||
+      (u.username || "").toLowerCase().includes(q)||
+      (u.username || "").toLowerCase().includes(q)||
+      (u.email || "").toLowerCase().includes(q)||
       String(u.id).includes(q)
     );
     if(activeTab==="Active")   out = out.filter(u=>u.status==="Active");
@@ -330,12 +362,27 @@ export default function Users() {
   const pageData   = filtered.slice((page-1)*perPage, page*perPage);
 
   /* delete handler */
-  const handleDelete = () => {
-    // BACKEND: userService.delete(deleteUser.id).then(...)
-    setUsers(p=>p.filter(u=>u.id!==deleteUser.id));
-    showToast(`"${deleteUser.fullName}" deleted.`);
+  const handleDelete = async () => {
+  try {
+    await userService.delete(deleteUser.id);
+
+    setUsers((prev) =>
+      prev.filter((u) => u.id !== deleteUser.id)
+    );
+
+    showToast(
+      `"${deleteUser.fullName}" deleted.`
+    );
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message ||
+      "Failed to delete user.",
+      "error"
+    );
+  } finally {
     setDeleteUser(null);
-  };
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
@@ -552,8 +599,9 @@ export default function Users() {
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
                             {/* ── EDIT → navigates to /EditUser/:id ── */}
-                            {/* <button onClick={()=>navigate(`/EditUser/${u.id}`)} */}
-                             <button onClick={()=>navigate(`/EditUser`)}title="Edit User"
+                             {/* <button onClick={()=>navigate(`/EditUser`)} */}
+                            <button onClick={()=>navigate(`/EditUser/${u.id}`)}
+                             title="Edit User"
                               className="w-8 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-all text-sm shadow-sm">
                               <FiEdit2 className="w-3.5 h-3.5"/>
                             </button>
@@ -565,8 +613,9 @@ export default function Users() {
                             </button>
 
                             {/* MANAGE PERMISSIONS → navigates to /UserPermissions/:id */}
-                            {/* <button onClick={()=>navigate(`/UserPermissions/${u.id}`)}  */}
-                            <button onClick={()=>navigate(`/UserPermissions`)} title="Manage Permissions"
+                            {/* <button onClick={()=>navigate(`/UserPermissions`)}  */}
+                            <button onClick={()=>navigate(`/UserPermissions/${u.id}`)} 
+                            title="Manage Permissions"
                               className="w-8 h-8 rounded-lg bg-teal-500 hover:bg-teal-600 text-white flex items-center justify-center transition-all text-sm shadow-sm">
                               <FiShield className="w-3.5 h-3.5"/>
                             </button>
@@ -649,15 +698,15 @@ export default function Users() {
 
                     <div className="flex gap-2">
                       {/* Edit → navigate to EditUser page */}
-                      {/* <button onClick={()=>navigate(`/EditUser/${u.id}`)} */}
-                      <button onClick={()=>navigate(`/EditUser`)}
+                      {/* <button onClick={()=>navigate(`/EditUser`)} */}
+                      <button onClick={()=>navigate(`/EditUser/${u.id}`)}
                         className="flex-1 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
                         <FiEdit2 className="w-3 h-3"/> Edit
                       </button>
 
                       {/* Manage Permissions → navigate to /UserPermissions/:id */}
-                      {/* <button onClick={()=>navigate(`/UserPermissions/${u.id}`)} */}
-                      <button onClick={()=>navigate(`/UserPermissions`)}
+                      {/* <button onClick={()=>navigate(`/UserPermissions`)} */}
+                      <button onClick={()=>navigate(`/UserPermissions/${u.id}`)}
                         className="flex-1 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
                         <FiShield className="w-3 h-3"/> Permissions
                       </button>

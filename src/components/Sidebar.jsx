@@ -1010,6 +1010,7 @@ const Sidebar = ({ isExpanded }) => {
   )}
 </li>
 
+
           {/* --- Organization Dropdown --- */}
           {/* <li>
           <li>

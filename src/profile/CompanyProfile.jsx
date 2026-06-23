@@ -12,16 +12,19 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiEdit2, FiSave, FiMail, FiPhone, FiGlobe, FiMapPin,
-  FiCalendar, FiKey, FiUsers, FiChevronDown, FiUpload,
+  companyService,
+  taxRateService,
+} from "../services/companyService";
+import {
+  FiEdit2, FiSave,  FiMapPin,
+  FiCalendar, FiKey,  FiChevronDown, FiUpload,
   FiPlus, FiTrash2, FiAlertTriangle, FiInfo, FiCheckCircle,
-  FiRefreshCw, FiX, FiExternalLink, FiAlertCircle,
+  FiRefreshCw, FiExternalLink, FiAlertCircle,
 } from "react-icons/fi";
 import {
-  FaBuilding, FaFileInvoiceDollar, FaCrown, FaRupeeSign,
-  FaStar, FaRoute, FaWhatsapp,
+  FaBuilding, FaFileInvoiceDollar, FaCrown, 
 } from "react-icons/fa";
-import { MdBusinessCenter, MdLocationCity, MdVerified } from "react-icons/md";
+import { MdBusinessCenter, MdLocationCity } from "react-icons/md";
 import { HiSparkles } from "react-icons/hi";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
@@ -197,9 +200,20 @@ function SkeletonCard() {
 /* ══════════════════════════════════════════════════════════════
    LEFT SIDEBAR — profile card + subscription + AI credits
 ══════════════════════════════════════════════════════════════ */
-function Sidebar({ company }) {
+function Sidebar({
+  company,
+  subscription,
+  aiCredits,
+}) {
   const inits = initials(company.name);
-  const creditPct = Math.round(((AI_CREDITS.total - AI_CREDITS.used) / AI_CREDITS.total) * 100);
+  const creditPct =
+  aiCredits?.total
+    ? Math.round(
+        ((aiCredits.total - aiCredits.used) /
+          aiCredits.total) *
+          100
+      )
+    : 0;
 
   return (
     <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
@@ -249,11 +263,11 @@ function Sidebar({ company }) {
           <span className="text-sm font-extrabold text-white">Subscription Information</span>
         </div>
         <div className="px-4 py-4">
-          <p className="text-xs font-extrabold text-blue-600 text-center mb-3 leading-snug">{SUBSCRIPTION.plan}</p>
+          <p className="text-xs font-extrabold text-blue-600 text-center mb-3 leading-snug">{subscription?.plan}</p>
           <div className="divide-y divide-slate-100">
             {[
-              ["Start Date", SUBSCRIPTION.startDate],
-              ["End Date",   SUBSCRIPTION.endDate],
+              ["Start Date", subscription?.startDate],
+              ["End Date",   subscription?.endDate],
             ].map(([l,v])=>(
               <div key={l} className="flex justify-between py-2">
                 <span className="text-xs text-slate-500 font-medium">{l}</span>
@@ -263,7 +277,7 @@ function Sidebar({ company }) {
             <div className="flex justify-between items-center py-2">
               <span className="text-xs text-slate-500 font-medium">Status</span>
               <span className="text-xs font-extrabold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                {SUBSCRIPTION.status}
+                {subscription?.status}
               </span>
             </div>
             <div className="py-2">
@@ -276,11 +290,11 @@ function Sidebar({ company }) {
             </div>
           </div>
           <div className={`mt-3 flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold
-            ${SUBSCRIPTION.daysLeft<=7
+            ${subscription?.daysLeft<=7
               ?"bg-red-50 border-red-200 text-red-600"
               :"bg-slate-50 border-slate-200 text-slate-600"}`}>
             <FiCalendar className="w-3 h-3 flex-shrink-0"/>
-            {SUBSCRIPTION.daysLeft} day{SUBSCRIPTION.daysLeft!==1?"s":""} remaining
+            {subscription?.daysLeft} day{subscription?.daysLeft!==1?"s":""} remaining
           </div>
         </div>
       </div>
@@ -293,18 +307,28 @@ function Sidebar({ company }) {
           <span className="text-sm font-extrabold text-slate-700">AI Features Credits</span>
         </div>
         <div className="text-center mb-2">
-          <span className="text-2xl font-extrabold text-slate-800">{AI_CREDITS.used}</span>
-          <span className="text-slate-400 font-bold"> / {AI_CREDITS.total}</span>
+          <span className="text-2xl font-extrabold text-slate-800">{aiCredits?.used}</span>
+          <span className="text-slate-400 font-bold"> / {aiCredits?.total}</span>
           <p className="text-xs text-slate-400 mt-0.5">remaining lifetime</p>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-2 mb-3 overflow-hidden">
           <div className="bg-red-500 h-2 rounded-full transition-all duration-700"
-            style={{width:`${Math.round((AI_CREDITS.used/AI_CREDITS.total)*100)}%`}}/>
+            style={{
+                width: `${
+                aiCredits?.total
+                ? Math.round(
+                (aiCredits.used /
+                aiCredits.total) *
+                100
+                )
+                : 0
+               }%`,
+             }}/>
         </div>
         <div className="space-y-1.5">
           {[
-            ["bg-green-400",  `Limit: ${AI_CREDITS.total}`],
-            ["bg-blue-400",   `Users used: $${AI_CREDITS.usedCost}`],
+            ["bg-green-400",  `Limit: ${aiCredits?.total}`],
+            ["bg-blue-400",   `Users used: $${aiCredits?.usedCost}`],
             ["bg-orange-400", "One-time limit — contact admin to upgrade"],
           ].map(([dot,txt])=>(
             <div key={txt} className="flex items-start gap-2">
@@ -357,7 +381,7 @@ function AdminSettings() {
 /* ══════════════════════════════════════════════════════════════
    TAB 1 — OVERVIEW / COMPANY DETAILS
 ══════════════════════════════════════════════════════════════ */
-function OverviewTab({ company }) {
+function OverviewTab({ company, aiCredits }) {
   return (
     <div className="space-y-5">
       {/* Stat cards — same system as Customers.jsx */}
@@ -366,7 +390,7 @@ function OverviewTab({ company }) {
           { icon:"⭐", label:"Total Reviews",   value:company.totalReviews,    gradient:"from-amber-500 to-orange-500",  delay:0   },
           { icon:"✈️", label:"Trips Sold",      value:company.tripsSold||0,    gradient:"from-blue-600 to-blue-700",     delay:60  },
           { icon:"📅", label:"Operating Since", value:company.operatingSince,  gradient:"from-teal-500 to-teal-600",     delay:120 },
-          { icon:"🤖", label:"AI Credits Left", value:AI_CREDITS.total-AI_CREDITS.used, gradient:"from-violet-500 to-purple-600", delay:180 },
+          { icon:"🤖", label:"AI Credits Left", value:aiCredits?.total-aiCredits?.used, gradient:"from-violet-500 to-purple-600", delay:180 },
         ].map(c=>(
           <div key={c.label} className="fade-up" style={{animationDelay:`${c.delay}ms`}}>
             <StatCard {...c}/>
@@ -408,6 +432,8 @@ function EditProfileTab({ company, onSave, showToast }) {
   });
   const [errs,    setErrs]    = useState({});
   const [saving,  setSaving]  = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
+  const [faviconFile, setFaviconFile] = useState(null);
   const [logoPreview,    setLogoPreview]    = useState(company.logoUrl||null);
   const [faviconPreview, setFaviconPreview] = useState(company.faviconUrl||null);
   const logoRef = useRef(); const favRef = useRef();
@@ -424,25 +450,76 @@ function EditProfileTab({ company, onSave, showToast }) {
   };
 
   const handleFile = (e, type) => {
-    const file = e.target.files?.[0]; if(!file) return;
-    if(file.size > 2*1024*1024){ showToast("Max file size is 2MB.","error"); return; }
-    const url = URL.createObjectURL(file);
-    type==="logo" ? setLogoPreview(url) : setFaviconPreview(url);
-  };
+  const file = e.target.files?.[0];
+
+  if (!file) return;
+
+  if (file.size > 2 * 1024 * 1024) {
+    showToast("Max file size is 2MB", "error");
+    return;
+  }
+
+  const preview = URL.createObjectURL(file);
+
+  if (type === "logo") {
+    setLogoFile(file);
+    setLogoPreview(preview);
+  } else {
+    setFaviconFile(file);
+    setFaviconPreview(preview);
+  }
+};
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errs2 = validate();
-    if(Object.keys(errs2).length){ setErrs(errs2); showToast("Please fix the errors below.","error"); return; }
-    setSaving(true);
-    try {
-      // BACKEND: await companyService.update(form);
-      await new Promise(r=>setTimeout(r,1000));
-      onSave({...company,...form, logoUrl:logoPreview, faviconUrl:faviconPreview});
-      showToast("Company profile updated successfully! ✅");
-    } catch { showToast("Failed to update. Please try again.","error"); }
-    finally  { setSaving(false); }
-  };
+  e.preventDefault();
+
+  const errs2 = validate();
+
+  if (Object.keys(errs2).length) {
+    setErrs(errs2);
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const res = await companyService.update(form);
+
+    if (logoFile) {
+      const logoRes =
+        await companyService.uploadLogo(
+          logoFile
+        );
+
+      res.data.logoUrl =
+        logoRes.data.logoUrl;
+    }
+
+    if (faviconFile) {
+      const favRes =
+        await companyService.uploadFavicon(
+          faviconFile
+        );
+
+      res.data.faviconUrl =
+        favRes.data.faviconUrl;
+    }
+
+    onSave(res.data);
+
+    showToast(
+      "Company Profile Updated Successfully"
+    );
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message ||
+        "Failed to update profile",
+      "error"
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   const ErrMsg = ({f}) => errs[f]
     ? <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1"><FiAlertCircle className="w-3 h-3"/>{errs[f]}</p>
@@ -659,15 +736,30 @@ function AddressTab({ company }) {
    TAB 5 — TAX CONFIGURATION
 ══════════════════════════════════════════════════════════════ */
 function TaxConfigTab({ showToast }) {
-  const [rates,  setRates]  = useState([
-    {id:1,type:"GST",rate:0,  calculation:"Additive",effectiveFrom:"2026-05-29",description:"Standard GST"},
-    {id:2,type:"TCS",rate:5,  calculation:"Additive",effectiveFrom:"2026-05-29",description:"TCS on packages"},
-  ]);
+  const [rates, setRates] = useState([]);
   const [form,   setForm]   = useState({type:"",rate:"",calculation:"Additive",effectiveFrom:"",description:""});
   const [errs,   setErrs]   = useState({});
   const [saving, setSaving] = useState(false);
   const [delId,  setDelId]  = useState(null);
   const setF=(k,v)=>{ setForm(p=>({...p,[k]:v})); setErrs(p=>({...p,[k]:""})); };
+
+  useEffect(() => {
+  loadTaxRates();
+}, []);
+
+const loadTaxRates = async () => {
+  try {
+    const res =
+      await taxRateService.getAll();
+
+    setRates(res.data);
+  } catch {
+    showToast(
+      "Failed to load tax rates",
+      "error"
+    );
+  }
+};
 
   const validate=()=>{
     const e={};
@@ -678,15 +770,66 @@ function TaxConfigTab({ showToast }) {
     return e;
   };
 
-  const handleAdd=async()=>{
-    const e=validate(); if(Object.keys(e).length){ setErrs(e); return; }
-    setSaving(true);
-    await new Promise(r=>setTimeout(r,700));
-    setRates(p=>[...p,{...form,id:Date.now(),rate:Number(form.rate)}]);
-    setForm({type:"",rate:"",calculation:"Additive",effectiveFrom:"",description:""});
-    showToast("Tax rate added.");
+  const handleAdd = async () => {
+  const e = validate();
+
+  if (Object.keys(e).length) {
+    setErrs(e);
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const res =
+      await taxRateService.create(form);
+
+    setRates((prev) => [
+      ...prev,
+      res.data,
+    ]);
+
+    setForm({
+      type: "",
+      rate: "",
+      calculation: "Additive",
+      effectiveFrom: "",
+      description: "",
+    });
+
+    showToast(
+      "Tax rate added successfully"
+    );
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message ||
+        "Failed to add tax rate",
+      "error"
+    );
+  } finally {
     setSaving(false);
-  };
+  }
+};
+
+
+const handleDelete = async (id) => {
+  try {
+    await taxRateService.delete(id);
+
+    setRates((prev) =>
+      prev.filter((r) => r.id !== id)
+    );
+
+    setDelId(null);
+
+    showToast("Tax rate removed");
+  } catch {
+    showToast(
+      "Failed to delete tax rate",
+      "error"
+    );
+  }
+};
 
   const ErrMsg=({f})=>errs[f]?<p className="mt-1 text-xs text-red-500">{errs[f]}</p>:null;
 
@@ -715,8 +858,10 @@ function TaxConfigTab({ showToast }) {
                 </div>
                 {delId===r.id ? (
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button onClick={()=>{setRates(p=>p.filter(t=>t.id!==r.id));setDelId(null);showToast("Tax rate removed.");}}
-                      className="text-xs font-bold text-red-600 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition-all">
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      className="text-xs font-bold text-red-600 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition-all"
+                    >
                       Delete
                     </button>
                     <button onClick={()=>setDelId(null)}
@@ -812,17 +957,38 @@ function TaxConfigTab({ showToast }) {
 export default function CompanyProfile() {
   const navigate   = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
-  const [company,   setCompany]   = useState(INITIAL_COMPANY);
-  const [loading,   setLoading]   = useState(true);
+  const [company, setCompany] = useState(INITIAL_COMPANY);
+  const [subscription, setSubscription] = useState(null);
+  const [aiCredits, setAiCredits] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [toast,     setToast]     = useState(null);
 
-  useEffect(()=>{
-    // BACKEND: companyService.get().then(res=>setCompany(res.data)).finally(()=>setLoading(false));
-    const t = setTimeout(()=>setLoading(false), 700);
-    return ()=>clearTimeout(t);
-  },[]);
 
   const showToast = useCallback((msg,type="success")=>setToast({msg,type}),[]);
+
+  useEffect(() => {
+  setLoading(true);
+
+  Promise.all([
+    companyService.get(),
+    companyService.getSubscription(),
+    companyService.getAiCredits(),
+  ])
+    .then(([companyRes, subRes, aiRes]) => {
+      setCompany(companyRes.data);
+      setSubscription(subRes.data);
+      setAiCredits(aiRes.data);
+    })
+    .catch((err) => {
+      console.error(err);
+      showToast("Failed to load company profile", "error");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, []);
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
@@ -900,7 +1066,11 @@ export default function CompanyProfile() {
           <div className="flex flex-col lg:flex-row gap-6">
 
             {/* LEFT SIDEBAR */}
-            <Sidebar company={company}/>
+            <Sidebar
+              company={company}
+              subscription={subscription}
+              aiCredits={aiCredits}
+            />
 
             {/* RIGHT CONTENT */}
             <div className="flex-1 min-w-0 space-y-5">
@@ -923,7 +1093,7 @@ export default function CompanyProfile() {
               </div>
 
               {/* TAB CONTENT */}
-              {activeTab==="overview"  && <OverviewTab     company={company}/>}
+              {activeTab==="overview"  && <OverviewTab    company={company} aiCredits={aiCredits}/>}
               {activeTab==="edit"      && <EditProfileTab  company={company} onSave={setCompany} showToast={showToast}/>}
               {activeTab==="business"  && <BusinessInfoTab company={company}/>}
               {activeTab==="address"   && <AddressTab      company={company}/>}
