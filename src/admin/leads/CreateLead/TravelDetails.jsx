@@ -193,7 +193,7 @@ import {
   FiCalendar, FiGlobe, FiMapPin, FiHome, FiUsers
 } from "react-icons/fi";
 import { MdChildCare, MdBabyChangingStation, MdHotel } from "react-icons/md";
-import { countryService } from "../../../services/CountryService";
+import { geographyService } from "../../../services/geographyService";
 import SearchableSelect from "../../../components/SearchableSelect";
 
 function NumberInput({ label, icon: Icon, value, onChange, min = 0, max = 20, color = "blue" }) {
@@ -253,7 +253,7 @@ export default function TravelDetails({ register, watch, setValue }) {
   }, []);
 
   useEffect(() => {
-    countryService.getAllCountries()
+    geographyService.getCountries()
       .then(setCountries)
       .catch((err) => setError(err.message))
       .finally(() => setLoadingCountries(false));

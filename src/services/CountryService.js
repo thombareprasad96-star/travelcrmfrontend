@@ -24,6 +24,43 @@
 
 // src/services/countryService.js
 
+// import API from "./axiosInstance";
+
+// // ── Transform → Java DTO ──────────────────────────────────
+// function transformCountryData(name, code) {
+//   return {
+//     name   : name,
+//     code   : code ? code.toUpperCase() : "",
+//     status : "Active",
+//   };
+// }
+
+// export const countryService = {
+
+//   // 1. Saare countries fetch karo (GET)
+//   getAllCountries: () =>
+//     API.get("/v1/countries"),
+
+//   // 2. Single country fetch karo (GET)
+//   getCountryById: (id) =>
+//     API.get(`/countries/${id}`),
+
+//   // 3. Nayi country create karo (POST)
+//   createCountry: (name, code) =>
+//     API.post("/countries", transformCountryData(name, code)),
+
+//   // 4. Country update karo (PUT)
+//   updateCountry: (id, name, code) =>
+//     API.put(`/countries/${id}`, transformCountryData(name, code)),
+
+//   // 5. Country delete karo (DELETE)
+//   deleteCountry: (id) =>
+//     API.delete(`/countries/${id}`),
+// };
+
+
+
+
 import API from "./axiosInstance";
 
 // ── Transform → Java DTO ──────────────────────────────────
@@ -37,23 +74,23 @@ function transformCountryData(name, code) {
 
 export const countryService = {
 
-  // 1. Saare countries fetch karo (GET)
+  // 1. Saare countries fetch karo (GET) — backend CountryController @ /api/v1/countries
   getAllCountries: () =>
     API.get("/v1/countries"),
 
   // 2. Single country fetch karo (GET)
   getCountryById: (id) =>
-    API.get(`/countries/${id}`),
+    API.get(`/v1/countries/${id}`),
 
   // 3. Nayi country create karo (POST)
   createCountry: (name, code) =>
-    API.post("/countries", transformCountryData(name, code)),
+    API.post("/v1/countries", transformCountryData(name, code)),
 
   // 4. Country update karo (PUT)
   updateCountry: (id, name, code) =>
-    API.put(`/countries/${id}`, transformCountryData(name, code)),
+    API.put(`/v1/countries/${id}`, transformCountryData(name, code)),
 
   // 5. Country delete karo (DELETE)
   deleteCountry: (id) =>
-    API.delete(`/countries/${id}`),
+    API.delete(`/v1/countries/${id}`),
 };

@@ -78,7 +78,7 @@ export const vehicleService = {
 
   // ──────────────────────────────────────────────────────────
   getAllVehicles: () => {
-    return API.get("/vehicles/");
+    return API.get("/vehicles");
   },
 
   // ──────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ export const vehicleService = {
  
   // ──────────────────────────────────────────────────────────
   getVehicleById: (publicId) => {
-    return API.get(`/vehicles/${publicId}`);
+    return API.get(`/vehicles${publicId}`);
   },
 
   // ──────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ export const vehicleService = {
   // ──────────────────────────────────────────────────────────
   createVehicle: (formData) => {
     const mappedData = transformVehicleData(formData);
-    return API.post("/vehicles/", mappedData);
+    return API.post("/vehicles", mappedData);
   },
 
   // ──────────────────────────────────────────────────────────

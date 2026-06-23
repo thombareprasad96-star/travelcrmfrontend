@@ -990,7 +990,6 @@
 
 
 
-
 import { useState, useMemo, useEffect } from "react";
 import {
   Search, Plus, ChevronDown, ChevronUp, X, Star, MapPin,
@@ -1200,6 +1199,8 @@ export default function HotelMaster() {
   const [mealSaving,       setMealSaving]       = useState(false);
   const [hotelImageFile,   setHotelImageFile]   = useState(null);
   const [roomImageFiles,   setRoomImageFiles]   = useState(null);
+  // Mobile modal tab — "info" ya "rooms"
+  const [mobileTab,        setMobileTab]        = useState("info");
 
   useEffect(() => {
     (async () => {
@@ -1305,7 +1306,9 @@ export default function HotelMaster() {
 
   const openAdd = () => {
     setEditingHotel(null); setForm(emptyHotel); setErrors({});
-    setSaveError(""); setHotelImageFile(null); resetCascade(); setShowModal(true);
+    setSaveError(""); setHotelImageFile(null); resetCascade();
+    setMobileTab("info"); // reset to hotel info tab
+    setShowModal(true);
   };
 
   const openAddForDestination = (destId) => {
@@ -1319,7 +1322,9 @@ export default function HotelMaster() {
     setEditingHotel({ ...hotel, destinationId: destId });
     setForm(transformHotelResponse({ ...hotel, destinationId: destId }));
     setErrors({}); setSaveError(""); setHotelImageFile(null);
-    prefillCascade(destId); setShowModal(true);
+    prefillCascade(destId);
+    setMobileTab("info"); // reset to hotel info tab
+    setShowModal(true);
   };
 
   const closeModal = () => { setShowModal(false); setEditingHotel(null); setHotelImageFile(null); };
@@ -1477,6 +1482,9 @@ export default function HotelMaster() {
         .hotel-card:hover { box-shadow: 0 8px 30px rgba(15,23,42,0.08); transform: translateY(-1px); }
         .amenity-btn { transition: all .15s; }
         .amenity-btn:hover { transform: translateY(-1px); }
+        /* Mobile scroll fix */
+        html, body { overflow-x: hidden; }
+        .modal-scroll { -webkit-overflow-scrolling: touch; }
       `}</style>
 
       {/* ── API Error Banner ── */}
@@ -1519,11 +1527,11 @@ export default function HotelMaster() {
         </div>
       </div>
 
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-5 space-y-5">
+      <div className="max-w-screen-xl mx-auto px-3 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-5">
 
         {/* ── Filters ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 fade-up">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3 sm:p-4 fade-up">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="relative flex-1">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input value={search} onChange={e => setSearch(e.target.value)}
@@ -1593,7 +1601,7 @@ export default function HotelMaster() {
 
                   {/* Destination Header */}
                   <div
-                    className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 gap-3 cursor-pointer
+                    className="flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-6 py-3 sm:py-4 gap-2 sm:gap-3 cursor-pointer
                       hover:bg-slate-50/60 transition-colors"
                     onClick={() => setExpanded(e => ({ ...e, [dest.id]: !e[dest.id] }))}
                   >
@@ -1666,7 +1674,7 @@ export default function HotelMaster() {
                         <div className="divide-y divide-slate-50">
                           {dest.hotels.map((hotel, hi) => (
                             <div key={hotel.id}
-                              className="px-4 sm:px-6 py-4 hover:bg-blue-50/20 transition-colors group"
+                              className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-blue-50/20 transition-colors group"
                               style={{ animation: `fadeIn .2s ease ${hi * 30}ms both` }}>
                               <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
 
@@ -1748,11 +1756,11 @@ export default function HotelMaster() {
       {/* MAIN HOTEL MODAL                                   */}
       {/* ═══════════════════════════════════════════════════ */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-4"
+        <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-4 overflow-y-auto"
           style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}
           onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className="bg-white w-full sm:rounded-2xl shadow-2xl flex flex-col"
-            style={{ maxWidth: 1280, maxHeight: "96vh", minHeight: "60vh", animation: "slideUp .25s ease both" }}>
+            style={{ maxWidth: 1280, maxHeight: "100dvh", minHeight: "60vh", animation: "slideUp .25s ease both" }}>
 
             {/* Modal Header */}
             <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4
@@ -1795,11 +1803,38 @@ export default function HotelMaster() {
               </div>
             )}
 
+            {/* Mobile Tab Switcher — sirf mobile pe dikhe */}
+            <div className="flex lg:hidden border-b border-slate-100 bg-white flex-shrink-0">
+              <button
+                onClick={() => setMobileTab("info")}
+                className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all
+                  ${mobileTab === "info"
+                    ? "border-blue-600 text-blue-600 bg-blue-50/40"
+                    : "border-transparent text-slate-400 hover:text-slate-600"}`}>
+                <Hotel size={15} /> Hotel Info
+              </button>
+              <button
+                onClick={() => setMobileTab("rooms")}
+                className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all
+                  ${mobileTab === "rooms"
+                    ? "border-blue-600 text-blue-600 bg-blue-50/40"
+                    : "border-transparent text-slate-400 hover:text-slate-600"}`}>
+                <Building2 size={15} />
+                Rooms & Meals
+                {(form.roomTypes?.length > 0 || form.mealPlans?.length > 0) && (
+                  <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+                    {(form.roomTypes?.length || 0) + (form.mealPlans?.length || 0)}
+                  </span>
+                )}
+              </button>
+            </div>
+
             {/* Modal Body */}
             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
 
-              {/* ── Left: Hotel Info ── */}
-              <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {/* ── Left: Hotel Info — mobile pe tab se control ── */}
+              <div className={`flex-1 min-w-0 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-4
+                ${mobileTab === "info" ? "block" : "hidden lg:block"}`}>
 
                 {/* Basic Info */}
                 <SectionCard icon={Hotel} iconBg="bg-blue-100" iconColor="text-blue-600" title="Basic Information">
@@ -1919,8 +1954,9 @@ export default function HotelMaster() {
                 </SectionCard>
               </div>
 
-              {/* ── Right: Rooms + Meals ── */}
-              <div className="lg:w-[420px] xl:w-[460px] flex-shrink-0 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/40">
+              {/* ── Right: Rooms + Meals — mobile pe tab se control ── */}
+              <div className={`lg:w-[420px] xl:w-[460px] flex-shrink-0 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-4 bg-slate-50/40
+                ${mobileTab === "rooms" ? "block" : "hidden lg:block"}`}>
 
                 {/* Room Types */}
                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
