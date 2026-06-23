@@ -106,7 +106,7 @@ import InternationalDomestic from "./reports/InternationalDomestic";
 
 const App = () => {
   // ✅ FIX: Check localStorage right away so the app remembers the user on refresh.
-  // The '!!' converts a found token string to true, and a null result to false.
+  
   const [isAuthenticated, setIsAuthenticated] = useState(() => 
     !!localStorage.getItem("token")
   );
