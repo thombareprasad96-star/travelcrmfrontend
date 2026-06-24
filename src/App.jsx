@@ -242,6 +242,9 @@ import BookingRevenueAnalysis from "./reports/BookingRevenueAnalysis";
 import TravelDateAnalysis from "./reports/TravelDateAnalysis";
 import InternationalDomestic from "./reports/InternationalDomestic";
 import { PublicQuotationPage } from "./quotation/QuotationWebView";
+import LeadLogs from "./admin/leads/LeadLogs";
+import AddLeadLog from "./admin/leads/AddLeadLog";
+import AllLeadLogs from "./admin/leads/AllLeadLogs";
 
 
 const App = () => {
@@ -323,6 +326,9 @@ const App = () => {
           <Route path="BookingRevenueAnalysis" element={<BookingRevenueAnalysis/>}/>
           <Route path="TravelDateAnalysis" element={<TravelDateAnalysis/>}/>
           <Route path="InternationalDomestic" element={<InternationalDomestic/>}/>
+          <Route path="LeadLogs" element={<LeadLogs/>}/>
+          <Route path="AddLeadLog" element={<AddLeadLog/>}/>
+          <Route path="AllLeadLogs" element={<AllLeadLogs/>}/>
         </Route>
  
       </Routes>
