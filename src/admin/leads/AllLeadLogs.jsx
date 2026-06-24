@@ -1,0 +1,552 @@
+// src/components/Leads/AllLeadLogs.jsx
+// ─────────────────────────────────────────────────────────────
+// All Lead Logs Page — Travel CRM
+// Route: /Leads/Logs
+// Reference: company/reminders/logs.php screenshot
+// Features:
+//   - 4 hero stat cards: Total Logs | Total Leads | Today (date) | Total Pages
+//   - Search bar (lead name or comment) + Stage dropdown + User dropdown
+//   - Lead cards grid — each card shows:
+//       Lead name + phone + Stage badge + log count
+//       Latest Log: date | comment (left-border accent) | added by | follow-up date
+//       Action buttons: View Logs (list icon) | Add Log (+ icon) — both navigate
+//   - Fully responsive (2-col sm, 3-col lg, 1-col mobile)
+//   - Skeleton loading + Toast + Empty state
+//   - Pagination
+// ─────────────────────────────────────────────────────────────
+
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FiSearch, FiArrowLeft, FiChevronDown,
+  FiPhone, FiFileText, FiPlus, FiList,
+  FiChevronLeft, FiChevronRight,
+  FiCalendar, FiUser,
+} from "react-icons/fi";
+import {
+  FaClipboardList, FaUsers, FaCalendarAlt, FaAngleDoubleLeft, FaAngleDoubleRight,
+} from "react-icons/fa";
+import { MdOutlinePages } from "react-icons/md";
+
+// ── Uncomment when backend ready ─────────────────────────────
+// import leadLogsService from "../services/leadLogsService";
+
+/* ─── MOCK DATA ──────────────────────────────────────────────── */
+const MOCK_DATA = [
+  {
+    leadId:   "123",
+    leadName: "Pratik",
+    phone:    "+91888888888",
+    stage:    "New Lead",
+    logCount: 1,
+    latestLog: {
+      date:         "Jun 01, 2026 12:31",
+      comment:      "CALL ON FRIDAY, NEED 4 STAR HOTEL",
+      addedBy:      "Raghvendra Shahi (Admin)",
+      followUpDate: "Jun 02, 2026",
+    },
+  },
+  {
+    leadId:   "124",
+    leadName: "Priyanshu Agrawal",
+    phone:    "+91 83029 32798",
+    stage:    "Contacted",
+    logCount: 2,
+    latestLog: {
+      date:         "Jun 05, 2026 00:11",
+      comment:      "Client interested in Manali package for family of 4. Sent itinerary.",
+      addedBy:      "Vaishnavi Shrikant Jagtap (Staff)",
+      followUpDate: "Jun 08, 2026",
+    },
+  },
+  {
+    leadId:   "125",
+    leadName: "Madhu Singh",
+    phone:    "9143223086",
+    stage:    "Ready to Book",
+    logCount: 3,
+    latestLog: {
+      date:         "Jun 09, 2026 14:30",
+      comment:      "Nepal package confirmed. Need final quotation with hotel upgrade.",
+      addedBy:      "Deepti Paul (Staff)",
+      followUpDate: "Jun 12, 2026",
+    },
+  },
+  {
+    leadId:   "126",
+    leadName: "Anushka Narkhede",
+    phone:    "+91 98765 11111",
+    stage:    "Follow Up",
+    logCount: 1,
+    latestLog: {
+      date:         "Jun 08, 2026 09:30",
+      comment:      "Initial contact made. Client needs Bhutan package for October.",
+      addedBy:      "Shreyash Raghvendra Shahi (Admin)",
+      followUpDate: "Jun 10, 2026",
+    },
+  },
+];
+
+const STAGES = [
+  "All Stages", "New Lead", "Contacted", "Follow Up",
+  "Qualified", "Proposal Sent", "Ready to Book", "Converted", "Lost",
+];
+const USERS = [
+  "All Users", "Raghvendra Shahi", "Vaishnavi Shrikant Jagtap",
+  "Deepti Paul", "Shreyash Raghvendra Shahi",
+];
+
+const STAGE_CFG = {
+  "New Lead":      { bg:"bg-blue-500",   text:"text-white" },
+  "Contacted":     { bg:"bg-cyan-500",   text:"text-white" },
+  "Follow Up":     { bg:"bg-amber-500",  text:"text-white" },
+  "Qualified":     { bg:"bg-indigo-500", text:"text-white" },
+  "Proposal Sent": { bg:"bg-purple-500", text:"text-white" },
+  "Ready to Book": { bg:"bg-teal-500",   text:"text-white" },
+  "Converted":     { bg:"bg-green-600",  text:"text-white" },
+  "Lost":          { bg:"bg-red-500",    text:"text-white" },
+};
+const STAGE_DEF = { bg:"bg-slate-400", text:"text-white" };
+
+const PER_PAGE = 12;
+
+/* ─── TOAST ──────────────────────────────────────────────────── */
+function Toast({ msg, type, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3500);
+    return () => clearTimeout(t);
+  }, [onClose]);
+  return (
+    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-sm
+      ${type==="success"
+        ? "bg-green-50 border-green-200 text-green-800"
+        : "bg-red-50 border-red-200 text-red-800"}`}
+      style={{animation:"slideIn .3s ease both"}}>
+      <span className="text-lg">{type==="success"?"✅":"❌"}</span>
+      <p className="text-sm font-semibold flex-1">{msg}</p>
+      <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg">×</button>
+    </div>
+  );
+}
+
+/* ─── HERO STAT CARD ─────────────────────────────────────────── */
+function HeroCard({ value, label, bg, icon, isDate, delay=0 }) {
+  const [disp, setDisp] = useState(isDate ? value : 0);
+  useEffect(() => {
+    if (isDate) { setDisp(value); return; }
+    let s = 0;
+    const step = Math.max(1, Math.ceil(value / 40));
+    const iv = setInterval(() => {
+      s = Math.min(s + step, value);
+      setDisp(s);
+      if (s >= value) clearInterval(iv);
+    }, 16);
+    return () => clearInterval(iv);
+  }, [value, isDate]);
+
+  return (
+    <div className={`${bg} rounded-2xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden group
+      hover:-translate-y-1 hover:shadow-xl transition-all duration-300`}
+      style={{animation:"fadeUp .4s ease both", animationDelay:`${delay}ms`}}>
+      <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform"/>
+      <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10"/>
+      <div className="relative z-10 flex items-start justify-between">
+        <div>
+          <p className={`font-extrabold leading-none mb-1 ${isDate ? "text-2xl sm:text-3xl" : "text-4xl sm:text-5xl"}`}>
+            {disp}
+          </p>
+          <p className="text-xs font-extrabold uppercase tracking-widest opacity-85">{label}</p>
+        </div>
+        <div className="text-white/20 text-5xl sm:text-6xl flex-shrink-0 ml-2">{icon}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SKELETON CARD ──────────────────────────────────────────── */
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-5 space-y-3 animate-pulse">
+      <div className="h-5 bg-slate-200 rounded-lg w-2/5"/>
+      <div className="h-3.5 bg-slate-100 rounded-lg w-3/5"/>
+      <div className="h-3 bg-slate-100 rounded-lg w-1/4"/>
+      <div className="border-l-4 border-slate-200 pl-3 space-y-2 py-2">
+        <div className="h-3.5 bg-slate-200 rounded w-full"/>
+        <div className="h-3.5 bg-slate-100 rounded w-3/4"/>
+      </div>
+      <div className="h-3 bg-slate-100 rounded w-2/5"/>
+    </div>
+  );
+}
+
+/* ─── LEAD LOG CARD ──────────────────────────────────────────── */
+function LeadCard({ lead, onNavigateLogs, onNavigateAddLog, idx }) {
+  const sc = STAGE_CFG[lead.stage] || STAGE_DEF;
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm
+      hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+      style={{animation:"fadeUp .4s ease both", animationDelay:`${idx * 50}ms`}}>
+
+      {/* Card top accent bar */}
+      <div className="h-1 bg-gradient-to-r from-blue-500 to-teal-400"/>
+
+      <div className="p-4 space-y-3">
+        {/* Lead name + stage badge */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base font-extrabold text-slate-800 leading-tight">{lead.leadName}</h3>
+          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0 ${sc.bg} ${sc.text}`}>
+            ✦ {lead.stage}
+          </span>
+        </div>
+
+        {/* Phone + log count */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <FiPhone className="w-3 h-3 text-slate-400 flex-shrink-0"/>
+            <span className="font-mono">{lead.phone}</span>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-slate-400">
+            <FiFileText className="w-3 h-3"/>
+            <span className="font-bold text-slate-600">{lead.logCount}</span>
+            <span>log{lead.logCount !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+
+        {/* Latest Log section */}
+        {lead.latestLog && (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-extrabold text-slate-600">Latest Log:</p>
+              <p className="text-[11px] text-slate-400 font-mono">{lead.latestLog.date}</p>
+            </div>
+
+            {/* Comment with left border accent — matches screenshot */}
+            <div className="border-l-4 border-blue-400 bg-blue-50/50 pl-3 py-1.5 rounded-r-lg">
+              <p className="text-xs text-slate-700 leading-relaxed line-clamp-2 font-medium">
+                {lead.latestLog.comment}
+              </p>
+            </div>
+
+            {/* Added by */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <FiUser className="w-3 h-3 text-slate-400 flex-shrink-0"/>
+              <span>{lead.latestLog.addedBy}</span>
+            </div>
+
+            {/* Follow-up date */}
+            {lead.latestLog.followUpDate && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600">
+                <FiCalendar className="w-3 h-3 flex-shrink-0"/>
+                <span className="font-medium">Follow-up: {lead.latestLog.followUpDate}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action buttons — View Logs + Add Log (circular, matches screenshot) */}
+        <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+          {/* View Lead Logs */}
+          <button
+            title="View Lead Logs"
+            onClick={() => onNavigateLogs(lead)}
+            className="w-9 h-9 rounded-full border-2 border-teal-400 text-teal-500
+              hover:bg-teal-50 flex items-center justify-center transition-all hover:scale-105">
+            <FiList className="w-4 h-4"/>
+          </button>
+          {/* Add Log — navigates to AddLeadLog page */}
+          <button
+            title="Add Log"
+            onClick={() => onNavigateAddLog(lead)}
+            className="w-9 h-9 rounded-full border-2 border-green-400 text-green-500
+              hover:bg-green-50 flex items-center justify-center transition-all hover:scale-105">
+            <FiPlus className="w-4 h-4"/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN PAGE ──────────────────────────────────────────────── */
+export default function AllLeadLogs() {
+  const navigate = useNavigate();
+
+  const [data,    setData]    = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search,  setSearch]  = useState("");
+  const [stage,   setStage]   = useState("All Stages");
+  const [user,    setUser]    = useState("All Users");
+  const [page,    setPage]    = useState(1);
+  const [toast,   setToast]   = useState(null);
+
+  const showToast = useCallback((msg, type="success") => setToast({msg, type}), []);
+
+  useEffect(() => {
+    setLoading(true);
+    // BACKEND: leadLogsService.getAllLogs(page, PER_PAGE, search, stage)
+    const t = setTimeout(() => { setData(MOCK_DATA); setLoading(false); }, 700);
+    return () => clearTimeout(t);
+  }, [page]);
+
+  /* client-side filter */
+  const filtered = useMemo(() =>
+    data.filter(l => {
+      const q = search.toLowerCase();
+      if (q && !l.leadName.toLowerCase().includes(q) &&
+          !(l.latestLog?.comment?.toLowerCase().includes(q))) return false;
+      if (stage !== "All Stages" && l.stage !== stage) return false;
+      if (user  !== "All Users"  && !l.latestLog?.addedBy?.toLowerCase().includes(user.toLowerCase())) return false;
+      return true;
+    })
+  , [data, search, stage, user]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const pageData   = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+
+  /* summary stats */
+  const todayStr = new Date().toLocaleDateString("en-US", {
+    month:"short", day:"numeric", year:"numeric"
+  });
+  const totalLogs = data.reduce((s, l) => s + l.logCount, 0);
+
+  /* navigation handlers */
+  const handleNavigateLogs   = (lead) =>
+    navigate(`/LeadLogs/${lead.leadId}?name=${encodeURIComponent(lead.leadName)}`);
+
+  const handleNavigateAddLog = (lead) =>
+    navigate(
+      `/AddLeadLog/${lead.leadId}` +
+      `?name=${encodeURIComponent(lead.leadName)}` +
+      `&phone=${encodeURIComponent(lead.phone)}` +
+      `&stage=${encodeURIComponent(lead.stage)}` +
+      `&logs=${lead.logCount}`
+    );
+
+  const handleSearch = (e) => { e.preventDefault(); setPage(1); };
+
+  const selectCls =
+    "w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 font-medium " +
+    "focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer " +
+    "transition-all hover:border-slate-300";
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
+      style={{fontFamily:"'Plus Jakarta Sans', system-ui, sans-serif"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        @keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        .fade-up { animation: fadeUp .4s ease both; }
+        select { -webkit-appearance:none; appearance:none; }
+        .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px}
+        ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+      `}</style>
+
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
+
+      {/* ── PAGE HEADER ── */}
+      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-lg shadow-blue-200 flex-shrink-0">
+                <FaClipboardList className="w-5 h-5"/>
+              </div>
+              <div>
+                <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">Lead Logs</h1>
+                <p className="text-sm text-slate-400 mt-0.5">
+                  All log entries across all leads
+                  <span className="hidden sm:inline ml-3 text-slate-300">|</span>
+                  <span className="hidden sm:inline ml-3 text-xs">
+                    <span className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/")}>Home</span>
+                    <span className="mx-1 text-slate-300">/</span>
+                    <span className="hover:text-blue-600 cursor-pointer" onClick={() => navigate("/Leads")}>Leads</span>
+                    <span className="mx-1 text-slate-300">/</span>
+                    <span className="text-blue-600 font-bold">Lead Logs</span>
+                  </span>
+                </p>
+              </div>
+            </div>
+            <button onClick={() => navigate("/Leads")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200
+                hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600
+                text-sm font-bold transition-all shadow-sm">
+              <FiArrowLeft className="w-4 h-4"/> Back to Leads
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+
+        {/* ── 4 HERO STAT CARDS ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <HeroCard
+            value={totalLogs}
+            label="Total Logs"
+            bg="bg-gradient-to-br from-teal-500 to-cyan-600"
+            icon={<FaClipboardList/>}
+            delay={0}
+          />
+          <HeroCard
+            value={data.length}
+            label="Total Leads"
+            bg="bg-gradient-to-br from-green-500 to-emerald-600"
+            icon={<FaUsers/>}
+            delay={60}
+          />
+          <HeroCard
+            value={todayStr}
+            label="Today"
+            bg="bg-gradient-to-br from-amber-500 to-orange-500"
+            icon={<FaCalendarAlt/>}
+            isDate
+            delay={120}
+          />
+          <HeroCard
+            value={totalPages}
+            label="Total Pages"
+            bg="bg-gradient-to-br from-red-500 to-rose-600"
+            icon={<MdOutlinePages/>}
+            delay={180}
+          />
+        </div>
+
+        {/* ── SEARCH + FILTERS ── */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm p-4 fade-up">
+          <form onSubmit={handleSearch}
+            className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
+              <input
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Search in leads or comments..."
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm
+                  text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2
+                  focus:ring-blue-50 outline-none transition-all hover:border-slate-300"
+              />
+            </div>
+            {/* Search button */}
+            <button type="submit"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700
+                text-white text-sm font-bold shadow-md shadow-blue-200 transition-all flex-shrink-0">
+              <FiSearch className="w-4 h-4"/>
+            </button>
+            {/* Stage filter */}
+            <div className="relative sm:w-52">
+              <select value={stage} onChange={e => { setStage(e.target.value); setPage(1); }}
+                className={selectCls + " pr-9"}>
+                {STAGES.map(s => <option key={s}>{s}</option>)}
+              </select>
+              <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"/>
+            </div>
+            {/* User filter */}
+            <div className="relative sm:w-52">
+              <select value={user} onChange={e => { setUser(e.target.value); setPage(1); }}
+                className={selectCls + " pr-9"}>
+                {USERS.map(u => <option key={u}>{u}</option>)}
+              </select>
+              <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"/>
+            </div>
+          </form>
+        </div>
+
+        {/* ── LEAD CARDS GRID ── */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => <SkeletonCard key={i}/>)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm
+            flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="text-6xl mb-4">📋</div>
+            <p className="text-lg font-extrabold text-slate-600 mb-2">No Logs Found</p>
+            <p className="text-sm text-slate-400 mb-6 max-w-xs">
+              No log entries match your search. Try adjusting the filters or search terms.
+            </p>
+            <button onClick={() => { setSearch(""); setStage("All Stages"); setUser("All Users"); setPage(1); }}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm
+                shadow-md shadow-blue-200 transition-all">
+              Clear Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {pageData.map((lead, idx) => (
+              <LeadCard
+                key={lead.leadId}
+                lead={lead}
+                idx={idx}
+                onNavigateLogs={handleNavigateLogs}
+                onNavigateAddLog={handleNavigateAddLog}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ── PAGINATION ── */}
+        {filtered.length > PER_PAGE && (
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm
+            px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 fade-up">
+            <p className="text-xs text-slate-400 font-medium">
+              Showing{" "}
+              <span className="font-bold text-slate-600">{(page-1)*PER_PAGE+1}</span>–
+              <span className="font-bold text-slate-600">{Math.min(page*PER_PAGE, filtered.length)}</span>
+              {" "}of{" "}
+              <span className="font-bold text-slate-600">{filtered.length}</span> leads
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button disabled={page===1} onClick={() => setPage(1)}
+                className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500
+                  hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all flex items-center justify-center">
+                <FaAngleDoubleLeft className="text-xs"/>
+              </button>
+              <button disabled={page===1} onClick={() => setPage(p => p-1)}
+                className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500
+                  hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all flex items-center justify-center">
+                <FiChevronLeft className="w-3.5 h-3.5"/>
+              </button>
+              {Array.from({length: totalPages}, (_, i) => i+1)
+                .filter(p => p===1 || p===totalPages || Math.abs(p-page)<=1)
+                .reduce((acc, p, i, arr) => {
+                  if (i > 0 && p - arr[i-1] > 1) acc.push("…");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, i) =>
+                  typeof p === "string"
+                    ? <span key={`e${i}`} className="px-1 text-xs text-slate-400">…</span>
+                    : <button key={p} onClick={() => setPage(p)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold border transition-all
+                          ${page===p
+                            ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"}`}>
+                        {p}
+                      </button>
+                )}
+              <button disabled={page===totalPages} onClick={() => setPage(p => p+1)}
+                className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500
+                  hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all flex items-center justify-center">
+                <FiChevronRight className="w-3.5 h-3.5"/>
+              </button>
+              <button disabled={page===totalPages} onClick={() => setPage(totalPages)}
+                className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500
+                  hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-all flex items-center justify-center">
+                <FaAngleDoubleRight className="text-xs"/>
+              </button>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
