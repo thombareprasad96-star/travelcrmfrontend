@@ -1,5 +1,4 @@
 
-// // new code
 
 
 
@@ -8,125 +7,217 @@
 //   Search, Plus, ChevronDown, ChevronUp, X, Star, MapPin,
 //   Phone, Mail, Globe, Upload, Eye, Hotel, Building2,
 //   Utensils, Wifi, Car, Dumbbell, Waves, ConciergeBell,
-//   PlaneTakeoff, Edit2, Trash2, Check, AlertCircle
+//   PlaneTakeoff, Edit2, Trash2, Check, AlertCircle,
+//   Home, ChevronRight, Sparkles, Shield
 // } from "lucide-react";
 // import { hotelService, transformHotelResponse } from "../services/HotelService";
 // import { geographyService } from "../services/geographyService";
 
+// /* ─── CONSTANTS ──────────────────────────────────────────── */
 // const AMENITIES = [
-//   { id: "wifi",        label: "Free WiFi",        icon: Wifi },
-//   { id: "pool",        label: "Swimming Pool",     icon: Waves },
-//   { id: "restaurant",  label: "Restaurant",        icon: Utensils },
-//   { id: "parking",     label: "Parking",           icon: Car },
-//   { id: "spa",         label: "Spa",               icon: Star },
-//   { id: "gym",         label: "Gym",               icon: Dumbbell },
-//   { id: "roomservice", label: "Room Service",      icon: ConciergeBell },
-//   { id: "airport",     label: "Airport Transfer",  icon: PlaneTakeoff },
+//   { id: "wifi",        label: "Free WiFi",       icon: Wifi        },
+//   { id: "pool",        label: "Swimming Pool",    icon: Waves       },
+//   { id: "restaurant",  label: "Restaurant",       icon: Utensils    },
+//   { id: "parking",     label: "Parking",          icon: Car         },
+//   { id: "spa",         label: "Spa",              icon: Star        },
+//   { id: "gym",         label: "Gym",              icon: Dumbbell    },
+//   { id: "roomservice", label: "Room Service",     icon: ConciergeBell },
+//   { id: "airport",     label: "Airport Transfer", icon: PlaneTakeoff },
 // ];
 
-// const BED_TYPES = ["Single", "Double", "Queen", "King", "Twin", "Bunk"];
+// const BED_TYPES          = ["Single", "Double", "Queen", "King", "Twin", "Bunk"];
 // const MEAL_PLAN_EXAMPLES = ["EP (Room Only)", "CP (Breakfast)", "MAP (Half Board)", "AP (Full Board)"];
 
-// const emptyHotel = { name: "", city: "", destinationId: "", stars: 3, rating: "", address: "", contact: "", phone: "", email: "", website: "", mapUrl: "", lat: "", lng: "", overview: "", amenities: [], isDefault: false, roomTypes: [], mealPlans: [] };
-// const emptyRoom  = { name: "", size: "", occupancy: "", bedType: "King", description: "" };
-// const emptyMeal  = { name: "", price: "", description: "" };
+// const emptyHotel = {
+//   name: "", city: "", destinationId: "", stars: 3, rating: "",
+//   address: "", contact: "", phone: "", email: "", website: "",
+//   mapUrl: "", lat: "", lng: "", overview: "",
+//   amenities: [], isDefault: false, roomTypes: [], mealPlans: [],
+// };
+// const emptyRoom = { name: "", size: "", occupancy: "", bedType: "King", description: "" };
+// const emptyMeal = { name: "", price: "", description: "" };
 
-// // ── Small UI helpers (unchanged) ─────────────────────────────
+// /* ─── DESIGN TOKENS ──────────────────────────────────────── */
+// const STAR_COLORS = {
+//   5: "from-amber-400 to-amber-500",
+//   4: "from-blue-400 to-blue-500",
+//   3: "from-violet-400 to-violet-500",
+//   2: "from-slate-400 to-slate-500",
+//   1: "from-rose-400 to-rose-500",
+// };
+
+// /* ─── SMALL UI HELPERS ───────────────────────────────────── */
 // function Badge({ children, color = "blue" }) {
-//   const map = { blue: "bg-blue-100 text-blue-700", green: "bg-green-100 text-green-700", amber: "bg-amber-100 text-amber-700", red: "bg-red-100 text-red-700", cyan: "bg-cyan-100 text-cyan-700" };
-//   return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${map[color]}`}>{children}</span>;
+//   const map = {
+//     blue:  "bg-blue-100 text-blue-700 border-blue-200",
+//     green: "bg-emerald-100 text-emerald-700 border-emerald-200",
+//     amber: "bg-amber-100 text-amber-700 border-amber-200",
+//     red:   "bg-red-100 text-red-700 border-red-200",
+//     cyan:  "bg-cyan-100 text-cyan-700 border-cyan-200",
+//   };
+//   return (
+//     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${map[color]}`}>
+//       {children}
+//     </span>
+//   );
 // }
+
 // function StarRow({ count }) {
-//   return <span className="flex gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} size={12} className={i <= count ? "text-amber-400 fill-amber-400" : "text-gray-300"} />)}</span>;
-// }
-// function Input({ label, required, error, ...props }) {
 //   return (
-//     <div className="flex flex-col gap-1">
-//       {label && <label className="text-xs font-medium text-gray-600">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>}
-//       <input className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`} {...props} />
-//       {error && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{error}</span>}
+//     <span className="flex gap-0.5">
+//       {[1,2,3,4,5].map(i => (
+//         <Star key={i} size={11}
+//           className={i <= count ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"} />
+//       ))}
+//     </span>
+//   );
+// }
+
+// function FInput({ label, required, error, className = "", ...props }) {
+//   return (
+//     <div className={`flex flex-col gap-1 ${className}`}>
+//       {label && (
+//         <label className="text-xs font-semibold text-slate-600">
+//           {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
+//         </label>
+//       )}
+//       <input
+//         className={`border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all
+//           ${error ? "border-red-300 bg-red-50/50 focus:ring-red-200" : "border-slate-200 bg-white hover:border-slate-300"}`}
+//         {...props}
+//       />
+//       {error && (
+//         <span className="text-xs text-red-500 flex items-center gap-1 font-medium">
+//           <AlertCircle size={10} />{error}
+//         </span>
+//       )}
 //     </div>
 //   );
 // }
-// function Select({ label, required, children, error, ...props }) {
+
+// function FSelect({ label, required, children, error, className = "", ...props }) {
 //   return (
-//     <div className="flex flex-col gap-1">
-//       {label && <label className="text-xs font-medium text-gray-600">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>}
-//       <select className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition ${error ? "border-red-400" : "border-gray-200"}`} {...props}>{children}</select>
-//       {error && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{error}</span>}
+//     <div className={`flex flex-col gap-1 ${className}`}>
+//       {label && (
+//         <label className="text-xs font-semibold text-slate-600">
+//           {label}{required && <span className="text-rose-500 ml-0.5">*</span>}
+//         </label>
+//       )}
+//       <select
+//         className={`border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 bg-white transition-all
+//           ${error ? "border-red-300" : "border-slate-200 hover:border-slate-300"}`}
+//         {...props}
+//       >
+//         {children}
+//       </select>
+//       {error && (
+//         <span className="text-xs text-red-500 flex items-center gap-1 font-medium">
+//           <AlertCircle size={10} />{error}
+//         </span>
+//       )}
 //     </div>
 //   );
 // }
-// function Textarea({ label, ...props }) {
+
+// function FTextarea({ label, className = "", ...props }) {
 //   return (
-//     <div className="flex flex-col gap-1">
-//       {label && <label className="text-xs font-medium text-gray-600">{label}</label>}
-//       <textarea className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none transition" rows={3} {...props} />
+//     <div className={`flex flex-col gap-1 ${className}`}>
+//       {label && <label className="text-xs font-semibold text-slate-600">{label}</label>}
+//       <textarea
+//         className="border border-slate-200 hover:border-slate-300 rounded-xl px-3 py-2.5 text-sm
+//           focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400
+//           bg-white resize-none transition-all"
+//         rows={3}
+//         {...props}
+//       />
 //     </div>
 //   );
 // }
-// function NestedModal({ title, onClose, children }) {
+
+// function SectionCard({ icon: Icon, iconBg, iconColor, title, children }) {
 //   return (
-//     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-//       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col animate-in fade-in zoom-in-95 duration-200">
-//         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-//           <h3 className="font-semibold text-gray-800">{title}</h3>
-//           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition"><X size={16} /></button>
+//     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+//       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
+//         <div className={`w-7 h-7 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0`}>
+//           <Icon size={14} className={iconColor} />
 //         </div>
-//         <div className="p-6 overflow-y-auto max-h-[70vh]">{children}</div>
+//         <p className="text-[13px] font-bold text-slate-700">{title}</p>
+//       </div>
+//       <div className="p-4 sm:p-5">{children}</div>
+//     </div>
+//   );
+// }
+
+// function NestedModal({ title, subtitle, icon: Icon, iconBg, onClose, children }) {
+//   return (
+//     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
+//       style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}>
+//       <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col"
+//         style={{ animation: "slideUp .25s ease both", maxHeight: "92vh" }}>
+//         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
+//           <div className="flex items-center gap-3">
+//             {Icon && (
+//               <div className={`w-8 h-8 rounded-xl ${iconBg || "bg-blue-100"} flex items-center justify-center flex-shrink-0`}>
+//                 <Icon size={15} className="text-blue-600" />
+//               </div>
+//             )}
+//             <div>
+//               <h3 className="font-bold text-slate-800 text-[15px]">{title}</h3>
+//               {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+//             </div>
+//           </div>
+//           <button onClick={onClose}
+//             className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all">
+//             <X size={15} />
+//           </button>
+//         </div>
+//         <div className="p-5 overflow-y-auto flex-1">{children}</div>
 //       </div>
 //     </div>
 //   );
 // }
 
-// // ── Main component ────────────────────────────────────────────
+// /* ─── MAIN COMPONENT ─────────────────────────────────────── */
 // export default function HotelMaster() {
-//   const [destinations, setDestinations] = useState([]);
-//   const [loading, setLoading]           = useState(true);   // initial data fetch
-//   const [apiError, setApiError]         = useState("");      // top-level error banner
-
-//   // ── Form cascade (Country → Destination → City), wired to geography API ──
+//   const [destinations,     setDestinations]     = useState([]);
+//   const [loading,          setLoading]          = useState(true);
+//   const [apiError,         setApiError]         = useState("");
 //   const [formCountries,    setFormCountries]    = useState([]);
 //   const [formCountryId,    setFormCountryId]    = useState("");
 //   const [formDestinations, setFormDestinations] = useState([]);
 //   const [formCities,       setFormCities]       = useState([]);
 //   const [loadingFormDest,  setLoadingFormDest]  = useState(false);
 //   const [loadingFormCity,  setLoadingFormCity]  = useState(false);
+//   const [search,           setSearch]           = useState("");
+//   const [filterDest,       setFilterDest]       = useState("");
+//   const [filterCity,       setFilterCity]       = useState("");
+//   const [filterStar,       setFilterStar]       = useState("");
+//   const [expanded,         setExpanded]         = useState({});
+//   const [showModal,        setShowModal]        = useState(false);
+//   const [editingHotel,     setEditingHotel]     = useState(null);
+//   const [form,             setForm]             = useState(emptyHotel);
+//   const [errors,           setErrors]           = useState({});
+//   const [saving,           setSaving]           = useState(false);
+//   const [saveError,        setSaveError]        = useState("");
+//   const [roomModal,        setRoomModal]        = useState(false);
+//   const [mealModal,        setMealModal]        = useState(false);
+//   const [roomForm,         setRoomForm]         = useState(emptyRoom);
+//   const [mealForm,         setMealForm]         = useState(emptyMeal);
+//   const [editRoomIdx,      setEditRoomIdx]      = useState(null);
+//   const [editMealIdx,      setEditMealIdx]      = useState(null);
+//   const [roomErrors,       setRoomErrors]       = useState({});
+//   const [mealErrors,       setMealErrors]       = useState({});
+//   const [roomSaving,       setRoomSaving]       = useState(false);
+//   const [mealSaving,       setMealSaving]       = useState(false);
+//   const [hotelImageFile,   setHotelImageFile]   = useState(null);
+//   const [roomImageFiles,   setRoomImageFiles]   = useState(null);
+//   // Mobile modal tab — "info" ya "rooms"
+//   const [mobileTab,        setMobileTab]        = useState("info");
 
-//   const [search,     setSearch]     = useState("");
-//   const [filterDest, setFilterDest] = useState("");
-//   const [filterCity, setFilterCity] = useState("");
-//   const [filterStar, setFilterStar] = useState("");
-//   const [expanded,   setExpanded]   = useState({});
-
-//   const [showModal,     setShowModal]     = useState(false);
-//   const [editingHotel,  setEditingHotel]  = useState(null);
-//   const [form,          setForm]          = useState(emptyHotel);
-//   const [errors,        setErrors]        = useState({});
-//   const [saving,        setSaving]        = useState(false);
-//   const [saveError,     setSaveError]     = useState("");
-
-//   const [roomModal,    setRoomModal]    = useState(false);
-//   const [mealModal,    setMealModal]    = useState(false);
-//   const [roomForm,     setRoomForm]     = useState(emptyRoom);
-//   const [mealForm,     setMealForm]     = useState(emptyMeal);
-//   const [editRoomIdx,  setEditRoomIdx]  = useState(null);
-//   const [editMealIdx,  setEditMealIdx]  = useState(null);
-//   const [roomErrors,   setRoomErrors]   = useState({});
-//   const [mealErrors,   setMealErrors]   = useState({});
-//   const [roomSaving,   setRoomSaving]   = useState(false);
-//   const [mealSaving,   setMealSaving]   = useState(false);
-
-//   // pending image files (not yet uploaded — held until hotel is saved)
-//   const [hotelImageFile, setHotelImageFile] = useState(null);
-//   const [roomImageFiles, setRoomImageFiles] = useState(null);
-
-//   // ── 1. Fetch all hotels + countries on mount ──────────────
 //   useEffect(() => {
 //     (async () => {
 //       try {
 //         const res = await hotelService.getAllHotels();
-//         // Backend returns destinations[] with hotels[] nested.
 //         setDestinations(res.data && Array.isArray(res.data) ? res.data : []);
 //       } catch {
 //         setDestinations([]);
@@ -137,43 +228,29 @@
 //     })();
 //   }, []);
 
-//   // Load countries for the form cascade once.
 //   useEffect(() => {
 //     (async () => {
-//       try {
-//         setFormCountries(await geographyService.getCountries());
-//       } catch {
-//         setFormCountries([]);
-//       }
+//       try { setFormCountries(await geographyService.getCountries()); }
+//       catch { setFormCountries([]); }
 //     })();
 //   }, []);
 
-//   // ── Form cascade loaders/handlers ─────────────────────────
 //   const loadFormDestinations = async (countryId) => {
-//     setFormDestinations([]);
-//     setFormCities([]);
+//     setFormDestinations([]); setFormCities([]);
 //     if (!countryId) return;
 //     setLoadingFormDest(true);
-//     try {
-//       setFormDestinations(await geographyService.getDestinationsByCountry(countryId));
-//     } catch {
-//       setFormDestinations([]);
-//     } finally {
-//       setLoadingFormDest(false);
-//     }
+//     try { setFormDestinations(await geographyService.getDestinationsByCountry(countryId)); }
+//     catch { setFormDestinations([]); }
+//     finally { setLoadingFormDest(false); }
 //   };
 
 //   const loadFormCities = async (destinationId) => {
 //     setFormCities([]);
 //     if (!destinationId) return;
 //     setLoadingFormCity(true);
-//     try {
-//       setFormCities(await geographyService.getCitiesByDestination(destinationId));
-//     } catch {
-//       setFormCities([]);
-//     } finally {
-//       setLoadingFormCity(false);
-//     }
+//     try { setFormCities(await geographyService.getCitiesByDestination(destinationId)); }
+//     catch { setFormCities([]); }
+//     finally { setLoadingFormCity(false); }
 //   };
 
 //   const handleFormCountryChange = (countryId) => {
@@ -187,41 +264,26 @@
 //     loadFormCities(destinationId);
 //   };
 
-//   // Pre-fill the cascade from an existing destinationId (edit / quick-add from a
-//   // destination card): resolve the parent country, then load its lists.
 //   const prefillCascade = async (destinationId) => {
-//     setFormCountryId("");
-//     setFormDestinations([]);
-//     setFormCities([]);
+//     setFormCountryId(""); setFormDestinations([]); setFormCities([]);
 //     if (!destinationId) return;
 //     try {
 //       const dest = await geographyService.getDestinationById(destinationId);
 //       if (dest?.countryId != null) {
 //         setFormCountryId(String(dest.countryId));
 //         setLoadingFormDest(true);
-//         try {
-//           setFormDestinations(await geographyService.getDestinationsByCountry(dest.countryId));
-//         } finally {
-//           setLoadingFormDest(false);
-//         }
+//         try { setFormDestinations(await geographyService.getDestinationsByCountry(dest.countryId)); }
+//         finally { setLoadingFormDest(false); }
 //       }
 //       setLoadingFormCity(true);
-//       try {
-//         setFormCities(await geographyService.getCitiesByDestination(destinationId));
-//       } finally {
-//         setLoadingFormCity(false);
-//       }
-//     } catch {
-//       /* leave cascade empty on failure — user can re-select */
-//     }
+//       try { setFormCities(await geographyService.getCitiesByDestination(destinationId)); }
+//       finally { setLoadingFormCity(false); }
+//     } catch {}
 //   };
 
 //   const resetCascade = () => {
-//     setFormCountryId("");
-//     setFormDestinations([]);
-//     setFormCities([]);
-//     setLoadingFormDest(false);
-//     setLoadingFormCity(false);
+//     setFormCountryId(""); setFormDestinations([]); setFormCities([]);
+//     setLoadingFormDest(false); setLoadingFormCity(false);
 //   };
 
 //   const allCities = useMemo(
@@ -235,60 +297,50 @@
 //       const hotels = d.hotels.filter(h => {
 //         if (filterCity && h.city !== filterCity) return false;
 //         if (filterStar && h.stars !== parseInt(filterStar)) return false;
-//         if (search && !h.name.toLowerCase().includes(search.toLowerCase()) && !d.name.toLowerCase().includes(search.toLowerCase())) return false;
+//         if (search && !h.name.toLowerCase().includes(search.toLowerCase()) &&
+//             !d.name.toLowerCase().includes(search.toLowerCase())) return false;
 //         return true;
 //       });
 //       return hotels.length > 0 || (!filterCity && !filterStar && !search);
 //     })
-//     .map(d => ({ ...d, hotels: d.hotels.filter(h => {
-//       if (filterCity && h.city !== filterCity) return false;
-//       if (filterStar && h.stars !== parseInt(filterStar)) return false;
-//       if (search && !h.name.toLowerCase().includes(search.toLowerCase()) && !d.name.toLowerCase().includes(search.toLowerCase())) return false;
-//       return true;
-//     })})),
+//     .map(d => ({
+//       ...d,
+//       hotels: d.hotels.filter(h => {
+//         if (filterCity && h.city !== filterCity) return false;
+//         if (filterStar && h.stars !== parseInt(filterStar)) return false;
+//         if (search && !h.name.toLowerCase().includes(search.toLowerCase()) &&
+//             !d.name.toLowerCase().includes(search.toLowerCase())) return false;
+//         return true;
+//       }),
+//     })),
 //     [destinations, search, filterDest, filterCity, filterStar]
 //   );
 
-//   // ── Modal open/close ──────────────────────────────────────
 //   const openAdd = () => {
-//     setEditingHotel(null);
-//     setForm(emptyHotel);
-//     setErrors({});
-//     setSaveError("");
-//     setHotelImageFile(null);
-//     resetCascade();
+//     setEditingHotel(null); setForm(emptyHotel); setErrors({});
+//     setSaveError(""); setHotelImageFile(null); resetCascade();
+//     setMobileTab("info"); // reset to hotel info tab
 //     setShowModal(true);
 //   };
 
-//   // Quick-add a hotel under a specific destination card.
 //   const openAddForDestination = (destId) => {
 //     setEditingHotel(null);
 //     setForm({ ...emptyHotel, destinationId: destId != null ? String(destId) : "" });
-//     setErrors({});
-//     setSaveError("");
-//     setHotelImageFile(null);
-//     prefillCascade(destId);
-//     setShowModal(true);
+//     setErrors({}); setSaveError(""); setHotelImageFile(null);
+//     prefillCascade(destId); setShowModal(true);
 //   };
 
 //   const openEdit = (hotel, destId) => {
-//     // transformHotelResponse converts backend numbers → form strings
 //     setEditingHotel({ ...hotel, destinationId: destId });
 //     setForm(transformHotelResponse({ ...hotel, destinationId: destId }));
-//     setErrors({});
-//     setSaveError("");
-//     setHotelImageFile(null);
+//     setErrors({}); setSaveError(""); setHotelImageFile(null);
 //     prefillCascade(destId);
+//     setMobileTab("info"); // reset to hotel info tab
 //     setShowModal(true);
 //   };
 
-//   const closeModal = () => {
-//     setShowModal(false);
-//     setEditingHotel(null);
-//     setHotelImageFile(null);
-//   };
+//   const closeModal = () => { setShowModal(false); setEditingHotel(null); setHotelImageFile(null); };
 
-//   // ── Validation ────────────────────────────────────────────
 //   const validate = () => {
 //     const e = {};
 //     if (!form.destinationId) e.destinationId = "Required";
@@ -299,599 +351,748 @@
 //     return Object.keys(e).length === 0;
 //   };
 
-//   // ── 2. Save hotel (create or update) ─────────────────────
 //   const handleSave = async () => {
 //     if (!validate()) return;
-//     setSaving(true);
-//     setSaveError("");
-
+//     setSaving(true); setSaveError("");
 //     try {
 //       let savedHotel;
-
 //       if (editingHotel) {
-//         // UPDATE existing hotel
 //         const res = await hotelService.updateHotel(editingHotel.id, form);
 //         savedHotel = res.data;
 //       } else {
-//         // CREATE new hotel
 //         const res = await hotelService.createHotel(form);
 //         savedHotel = res.data;
 //       }
+//       if (hotelImageFile && savedHotel?.id) await hotelService.uploadHotelImage(hotelImageFile);
+//       if (form.isDefault && savedHotel?.id) await hotelService.setDefaultHotel(savedHotel.id, form.destinationId);
 
-//       // Upload hotel image if one was selected
-//       if (hotelImageFile && savedHotel?.id) {
-//         await hotelService.uploadHotelImage(hotelImageFile);
-//       }
-
-//       // If isDefault, tell backend to set this hotel as default
-//       if (form.isDefault && savedHotel?.id) {
-//         await hotelService.setDefaultHotel(savedHotel.id, form.destinationId);
-//       }
-
-//       // ── Optimistic local state update ──────────────────
 //       const destId = parseInt(form.destinationId);
 //       setDestinations(prev => prev.map(d => {
 //         if (d.id !== destId) return d;
-//         const newHotel = {
-//           ...form,
-//           id:    savedHotel?.id ?? (editingHotel ? editingHotel.id : Date.now()),
-//           stars: parseInt(form.stars),
-//         };
+//         const newHotel = { ...form, id: savedHotel?.id ?? (editingHotel ? editingHotel.id : Date.now()), stars: parseInt(form.stars) };
 //         if (form.isDefault) {
-//           return {
-//             ...d,
-//             hotels: d.hotels
-//               .filter(h => editingHotel ? h.id !== editingHotel.id : true)
-//               .map(h => ({ ...h, isDefault: false }))
-//               .concat([{ ...newHotel, isDefault: true }]),
-//           };
+//           return { ...d, hotels: d.hotels.filter(h => editingHotel ? h.id !== editingHotel.id : true).map(h => ({ ...h, isDefault: false })).concat([{ ...newHotel, isDefault: true }]) };
 //         }
-//         if (editingHotel) {
-//           return { ...d, hotels: d.hotels.map(h => h.id === editingHotel.id ? newHotel : h) };
-//         }
+//         if (editingHotel) return { ...d, hotels: d.hotels.map(h => h.id === editingHotel.id ? newHotel : h) };
 //         return { ...d, hotels: [...d.hotels, newHotel] };
 //       }));
-
 //       closeModal();
 //     } catch (err) {
-//       setSaveError(
-//         err?.response?.data?.message || "Failed to save hotel. Please try again."
-//       );
+//       setSaveError(err?.response?.data?.message || "Failed to save hotel. Please try again.");
 //     } finally {
 //       setSaving(false);
 //     }
 //   };
 
-//   // ── 3. Delete hotel ───────────────────────────────────────
 //   const handleDelete = async (destId, hotelId) => {
 //     if (!window.confirm("Delete this hotel?")) return;
 //     try {
 //       await hotelService.deleteHotel(hotelId);
-//       setDestinations(prev =>
-//         prev.map(d => d.id === destId
-//           ? { ...d, hotels: d.hotels.filter(h => h.id !== hotelId) }
-//           : d
-//         )
-//       );
+//       setDestinations(prev => prev.map(d => d.id === destId ? { ...d, hotels: d.hotels.filter(h => h.id !== hotelId) } : d));
 //     } catch (err) {
 //       alert(err?.response?.data?.message || "Failed to delete hotel.");
 //     }
 //   };
 
-//   // ── Room modal ────────────────────────────────────────────
 //   const openAddRoom  = () => { setEditRoomIdx(null); setRoomForm(emptyRoom); setRoomErrors({}); setRoomImageFiles(null); setRoomModal(true); };
 //   const openEditRoom = (idx) => { setEditRoomIdx(idx); setRoomForm({ ...form.roomTypes[idx] }); setRoomErrors({}); setRoomImageFiles(null); setRoomModal(true); };
 
-//   // ── 4. Save room type ─────────────────────────────────────
 //   const saveRoom = async () => {
 //     const e = {};
 //     if (!roomForm.name.trim()) e.name = "Required";
 //     if (!roomForm.occupancy)   e.occupancy = "Required";
 //     setRoomErrors(e);
 //     if (Object.keys(e).length) return;
-
 //     setRoomSaving(true);
 //     try {
 //       const hotelId = editingHotel?.id;
-
 //       if (hotelId) {
-//         // ── Persisted hotel: call API ───────────────────
 //         if (editRoomIdx !== null) {
-//           const roomId = form.roomTypes[editRoomIdx].id;
-//           await hotelService.updateRoomType(hotelId, roomId, roomForm);
+//           await hotelService.updateRoomType(hotelId, form.roomTypes[editRoomIdx].id, roomForm);
 //         } else {
 //           const res = await hotelService.addRoomType(hotelId, roomForm);
-//           // Upload room images if selected
-//           if (roomImageFiles && res.data?.id) {
-//             await hotelService.uploadRoomImages(hotelId, res.data.id, roomImageFiles);
-//           }
+//           if (roomImageFiles && res.data?.id) await hotelService.uploadRoomImages(hotelId, res.data.id, roomImageFiles);
 //         }
 //       }
-
-//       // ── Local state update (works for both new & existing hotels) ──
 //       const rooms = [...(form.roomTypes || [])];
-//       if (editRoomIdx !== null) {
-//         rooms[editRoomIdx] = { ...roomForm, id: rooms[editRoomIdx].id };
-//       } else {
-//         rooms.push({ ...roomForm, id: Date.now() });
-//       }
+//       if (editRoomIdx !== null) { rooms[editRoomIdx] = { ...roomForm, id: rooms[editRoomIdx].id }; }
+//       else { rooms.push({ ...roomForm, id: Date.now() }); }
 //       setForm(f => ({ ...f, roomTypes: rooms }));
 //       setRoomModal(false);
 //     } catch (err) {
 //       setRoomErrors({ api: err?.response?.data?.message || "Failed to save room type." });
-//     } finally {
-//       setRoomSaving(false);
-//     }
+//     } finally { setRoomSaving(false); }
 //   };
 
-//   // ── 5. Delete room type ───────────────────────────────────
 //   const deleteRoom = async (idx) => {
 //     const hotelId = editingHotel?.id;
 //     const roomId  = form.roomTypes[idx]?.id;
-
 //     if (hotelId && roomId) {
-//       try {
-//         await hotelService.deleteRoomType(hotelId, roomId);
-//       } catch (err) {
-//         alert(err?.response?.data?.message || "Failed to delete room type.");
-//         return;
-//       }
+//       try { await hotelService.deleteRoomType(hotelId, roomId); }
+//       catch (err) { alert(err?.response?.data?.message || "Failed to delete."); return; }
 //     }
 //     setForm(f => ({ ...f, roomTypes: f.roomTypes.filter((_, i) => i !== idx) }));
 //   };
 
-//   // ── Meal modal ────────────────────────────────────────────
 //   const openAddMeal  = () => { setEditMealIdx(null); setMealForm(emptyMeal); setMealErrors({}); setMealModal(true); };
 //   const openEditMeal = (idx) => { setEditMealIdx(idx); setMealForm({ ...form.mealPlans[idx] }); setMealErrors({}); setMealModal(true); };
 
-//   // ── 6. Save meal plan ─────────────────────────────────────
 //   const saveMeal = async () => {
 //     const e = {};
-//     if (!mealForm.name.trim())                       e.name  = "Required";
-//     if (!mealForm.price && mealForm.price !== 0)     e.price = "Required";
+//     if (!mealForm.name.trim())               e.name  = "Required";
+//     if (!mealForm.price && mealForm.price !== 0) e.price = "Required";
 //     setMealErrors(e);
 //     if (Object.keys(e).length) return;
-
 //     setMealSaving(true);
 //     try {
 //       const hotelId = editingHotel?.id;
-
 //       if (hotelId) {
-//         if (editMealIdx !== null) {
-//           const mealId = form.mealPlans[editMealIdx].id;
-//           await hotelService.updateMealPlan(hotelId, mealId, mealForm);
-//         } else {
-//           await hotelService.addMealPlan(hotelId, mealForm);
-//         }
+//         if (editMealIdx !== null) { await hotelService.updateMealPlan(hotelId, form.mealPlans[editMealIdx].id, mealForm); }
+//         else { await hotelService.addMealPlan(hotelId, mealForm); }
 //       }
-
 //       const meals = [...(form.mealPlans || [])];
-//       if (editMealIdx !== null) {
-//         meals[editMealIdx] = { ...mealForm, id: meals[editMealIdx].id };
-//       } else {
-//         meals.push({ ...mealForm, id: Date.now() });
-//       }
+//       if (editMealIdx !== null) { meals[editMealIdx] = { ...mealForm, id: meals[editMealIdx].id }; }
+//       else { meals.push({ ...mealForm, id: Date.now() }); }
 //       setForm(f => ({ ...f, mealPlans: meals }));
 //       setMealModal(false);
 //     } catch (err) {
 //       setMealErrors({ api: err?.response?.data?.message || "Failed to save meal plan." });
-//     } finally {
-//       setMealSaving(false);
-//     }
+//     } finally { setMealSaving(false); }
 //   };
 
-//   // ── 7. Delete meal plan ───────────────────────────────────
 //   const deleteMeal = async (idx) => {
 //     const hotelId = editingHotel?.id;
 //     const mealId  = form.mealPlans[idx]?.id;
-
 //     if (hotelId && mealId) {
-//       try {
-//         await hotelService.deleteMealPlan(hotelId, mealId);
-//       } catch (err) {
-//         alert(err?.response?.data?.message || "Failed to delete meal plan.");
-//         return;
-//       }
+//       try { await hotelService.deleteMealPlan(hotelId, mealId); }
+//       catch (err) { alert(err?.response?.data?.message || "Failed to delete."); return; }
 //     }
 //     setForm(f => ({ ...f, mealPlans: f.mealPlans.filter((_, i) => i !== idx) }));
 //   };
 
-//   const toggleAmenity = (id) => {
-//     setForm(f => ({
-//       ...f,
-//       amenities: f.amenities.includes(id)
-//         ? f.amenities.filter(a => a !== id)
-//         : [...f.amenities, id],
-//     }));
-//   };
+//   const toggleAmenity = (id) => setForm(f => ({
+//     ...f,
+//     amenities: f.amenities.includes(id) ? f.amenities.filter(a => a !== id) : [...f.amenities, id],
+//   }));
 
-//   // ─────────────────────────────────────────────────────────
-//   // RENDER
-//   // ─────────────────────────────────────────────────────────
+//   const totalHotels = destinations.reduce((acc, d) => acc + d.hotels.length, 0);
+
+//   /* ─── RENDER ──────────────────────────────────────────── */
 //   return (
-//     <div className="min-h-screen bg-gray-50">
+//     <div className="min-h-screen font-sans"
+//       style={{
+//         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+//         background: "linear-gradient(135deg, #f8fafc 0%, #eff6ff20 50%, #f8fafc 100%)",
+//       }}>
+//       <style>{`
+//         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+//         @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+//         @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+//         @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+//         .fade-up { animation: fadeUp .4s ease both; }
+//         .hotel-card { transition: box-shadow .2s, transform .2s; }
+//         .hotel-card:hover { box-shadow: 0 8px 30px rgba(15,23,42,0.08); transform: translateY(-1px); }
+//         .amenity-btn { transition: all .15s; }
+//         .amenity-btn:hover { transform: translateY(-1px); }
+//         /* Mobile scroll fix */
+//         html, body { overflow-x: hidden; }
+//         .modal-scroll { -webkit-overflow-scrolling: touch; }
+//       `}</style>
 
-//       {/* API error banner */}
+//       {/* ── API Error Banner ── */}
 //       {apiError && (
-//         <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-700 flex items-center gap-2">
-//           <AlertCircle size={13} /> {apiError}
-//           <button onClick={() => setApiError("")} className="ml-auto"><X size={13} /></button>
+//         <div className="bg-amber-50 border-b border-amber-200 px-4 sm:px-6 py-2.5 flex items-center gap-2 text-sm text-amber-700">
+//           <AlertCircle size={14} className="flex-shrink-0" /> {apiError}
+//           <button onClick={() => setApiError("")} className="ml-auto p-1 hover:bg-amber-100 rounded-lg transition"><X size={13} /></button>
 //         </div>
 //       )}
 
-//       {/* Header */}
-//       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-//           <div>
-//             <div className="flex items-center gap-2">
-//               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-//                 <Hotel size={16} className="text-white" />
+//       {/* ── Page Header ── */}
+//       <div className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-20 shadow-sm">
+//         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-4">
+//           <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+
+//             <div className="flex items-center gap-4">
+//               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+//                 <Hotel size={20} strokeWidth={2.2} />
 //               </div>
-//               <h1 className="text-xl font-bold text-gray-900">Hotel Master</h1>
+//               <div>
+//                 <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-0.5">
+//                   <Home size={11} />
+//                   <ChevronRight size={9} className="text-slate-300" />
+//                   <span className="text-blue-600 font-bold">Hotel Master</span>
+//                 </div>
+//                 <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Hotel Master</h1>
+//                 <p className="text-xs text-slate-400 font-medium hidden sm:block">
+//                   {destinations.length} destinations · {totalHotels} hotels
+//                 </p>
+//               </div>
 //             </div>
-//             <p className="text-xs text-gray-500 mt-0.5 ml-10">Organized by destinations</p>
+
+//             <button onClick={openAdd}
+//               className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800
+//                 text-white px-4 sm:px-5 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95
+//                 shadow-md shadow-blue-200 hover:shadow-lg">
+//               <Plus size={16} strokeWidth={2.5} /> Add New Hotel
+//             </button>
 //           </div>
-//           <button
-//             onClick={openAdd}
-//             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm shadow-blue-200"
-//           >
-//             <Plus size={16} /> Add New Hotel
-//           </button>
 //         </div>
 //       </div>
 
-//       {/* Filters */}
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-//         <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row gap-3">
-//           <div className="relative flex-1">
-//             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-//             <input
-//               value={search} onChange={e => setSearch(e.target.value)}
-//               placeholder="Search hotels or cities..."
-//               className="w-full border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-//             />
-//           </div>
-//           <select value={filterDest} onChange={e => setFilterDest(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[140px]">
-//             <option value="">All Destinations</option>
-//             {destinations.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-//           </select>
-//           <select value={filterCity} onChange={e => setFilterCity(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[130px]">
-//             <option value="">All Cities</option>
-//             {allCities.map(c => <option key={c} value={c}>{c}</option>)}
-//           </select>
-//           <select value={filterStar} onChange={e => setFilterStar(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[130px]">
-//             <option value="">All Star Categories</option>
-//             {[5,4,3,2,1].map(s => <option key={s} value={s}>{s} Star</option>)}
-//           </select>
-//         </div>
-//       </div>
+//       <div className="max-w-screen-xl mx-auto px-3 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-5">
 
-//       {/* Loading skeleton */}
-//       {loading && (
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-3">
-//           {[1,2,3].map(i => (
-//             <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5 animate-pulse">
-//               <div className="flex items-center gap-3">
-//                 <div className="w-10 h-10 bg-gray-200 rounded-xl" />
-//                 <div className="flex-1 space-y-2">
-//                   <div className="h-4 bg-gray-200 rounded w-32" />
-//                   <div className="h-3 bg-gray-100 rounded w-24" />
+//         {/* ── Filters ── */}
+//         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3 sm:p-4 fade-up">
+//           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+//             <div className="relative flex-1">
+//               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+//               <input value={search} onChange={e => setSearch(e.target.value)}
+//                 placeholder="Search hotels or destinations..."
+//                 className="w-full border border-slate-200 hover:border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm
+//                   focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all bg-white" />
+//             </div>
+//             {[
+//               { value: filterDest, onChange: e => setFilterDest(e.target.value), placeholder: "All Destinations", options: destinations.map(d => ({ v: d.id, l: d.name })) },
+//               { value: filterCity, onChange: e => setFilterCity(e.target.value), placeholder: "All Cities",       options: allCities.map(c => ({ v: c, l: c })) },
+//               { value: filterStar, onChange: e => setFilterStar(e.target.value), placeholder: "All Stars",        options: [5,4,3,2,1].map(s => ({ v: s, l: `${s} Star` })) },
+//             ].map((sel, i) => (
+//               <select key={i} value={sel.value} onChange={sel.onChange}
+//                 className="border border-slate-200 hover:border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white
+//                   focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all min-w-[130px]">
+//                 <option value="">{sel.placeholder}</option>
+//                 {sel.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+//               </select>
+//             ))}
+//             {(search || filterDest || filterCity || filterStar) && (
+//               <button onClick={() => { setSearch(""); setFilterDest(""); setFilterCity(""); setFilterStar(""); }}
+//                 className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-500 hover:text-red-500
+//                   bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-xl transition-all whitespace-nowrap">
+//                 <X size={12} /> Clear
+//               </button>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* ── Loading skeleton ── */}
+//         {loading && (
+//           <div className="space-y-3">
+//             {[1,2,3].map(i => (
+//               <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 animate-pulse">
+//                 <div className="flex items-center gap-3">
+//                   <div className="w-11 h-11 bg-slate-200 rounded-2xl" />
+//                   <div className="flex-1 space-y-2">
+//                     <div className="h-4 bg-slate-200 rounded-lg w-36" />
+//                     <div className="h-3 bg-slate-100 rounded-lg w-24" />
+//                   </div>
 //                 </div>
 //               </div>
-//             </div>
-//           ))}
-//         </div>
-//       )}
+//             ))}
+//           </div>
+//         )}
 
-//       {/* Destination Accordion */}
-//       {!loading && (
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 space-y-3">
-//           {filtered.length === 0 ? (
-//             <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
-//               <Hotel size={36} className="mx-auto text-gray-300 mb-3" />
-//               <p className="text-gray-500 font-medium">No hotels found</p>
-//               <p className="text-gray-400 text-sm mt-1">Try adjusting your search or filters</p>
-//             </div>
-//           ) : filtered.map(dest => {
-//             const isOpen      = expanded[dest.id];
-//             const defaultHotel = dest.hotels.find(h => h.isDefault);
-//             const uniqueCities = [...new Set(dest.hotels.map(h => h.city))];
-//             return (
-//               <div key={dest.id} className="bg-white rounded-2xl border border-gray-200 overflow-hidden transition-shadow hover:shadow-md">
-//                 {/* Destination Header */}
-//                 <div
-//                   className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-6 gap-3 cursor-pointer"
-//                   onClick={() => setExpanded(e => ({ ...e, [dest.id]: !e[dest.id] }))}
-//                 >
-//                   <div className="flex items-center gap-3 flex-1 min-w-0">
-//                     <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-//                       <MapPin size={18} className="text-blue-600" />
-//                     </div>
-//                     <div className="min-w-0">
-//                       <div className="flex items-center gap-2 flex-wrap">
-//                         <h2 className="font-bold text-gray-800 text-base">{dest.name}</h2>
-//                         {defaultHotel && <Badge color="green">Default: {defaultHotel.name}</Badge>}
-//                       </div>
-//                       <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-//                         <span className="text-xs text-gray-500 flex items-center gap-1"><Hotel size={11} />{dest.hotels.length} Hotels</span>
-//                         <span className="text-xs text-gray-500 flex items-center gap-1"><Building2 size={11} />{uniqueCities.length} Cities</span>
-//                       </div>
-//                     </div>
-//                   </div>
-//                   <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
-//                     <button
-//                       onClick={() => openAddForDestination(dest.id)}
-//                       className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition"
-//                     >
-//                       <Plus size={13} /> Add Hotel
-//                     </button>
-//                     <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition">
-//                       <Eye size={13} /> View
-//                     </button>
-//                     <div className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-400">
-//                       {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-//                     </div>
-//                   </div>
+//         {/* ── Destination Accordion ── */}
+//         {!loading && (
+//           <div className="space-y-3">
+//             {filtered.length === 0 ? (
+//               <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-14 text-center fade-up">
+//                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+//                   <Hotel size={28} className="text-slate-300" />
 //                 </div>
+//                 <p className="text-slate-600 font-bold text-base mb-1">No hotels found</p>
+//                 <p className="text-slate-400 text-sm">Try adjusting your search or filters</p>
+//               </div>
+//             ) : filtered.map((dest, di) => {
+//               const isOpen       = expanded[dest.id];
+//               const defaultHotel = dest.hotels.find(h => h.isDefault);
+//               const uniqueCities = [...new Set(dest.hotels.map(h => h.city))];
+//               const maxStars     = dest.hotels.reduce((max, h) => Math.max(max, h.stars || 0), 0);
+//               return (
+//                 <div key={dest.id}
+//                   className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden hotel-card fade-up"
+//                   style={{ animationDelay: `${di * 40}ms` }}>
 
-//                 {/* Hotels List */}
-//                 {isOpen && (
-//                   <div className="border-t border-gray-100 divide-y divide-gray-50">
-//                     {dest.hotels.length === 0 ? (
-//                       <div className="p-8 text-center">
-//                         <p className="text-gray-400 text-sm">No hotels in this destination yet.</p>
+//                   {/* Destination Header */}
+//                   <div
+//                     className="flex flex-col sm:flex-row sm:items-center justify-between px-3 sm:px-6 py-3 sm:py-4 gap-2 sm:gap-3 cursor-pointer
+//                       hover:bg-slate-50/60 transition-colors"
+//                     onClick={() => setExpanded(e => ({ ...e, [dest.id]: !e[dest.id] }))}
+//                   >
+//                     <div className="flex items-center gap-3 flex-1 min-w-0">
+//                       {/* Destination Icon */}
+//                       <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-100
+//                         flex items-center justify-center flex-shrink-0 shadow-sm">
+//                         <MapPin size={18} className="text-blue-600" />
 //                       </div>
-//                     ) : dest.hotels.map(hotel => (
-//                       <div key={hotel.id} className="px-6 py-4 hover:bg-gray-50/50 transition group">
-//                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-//                           <div className="flex items-start gap-3 min-w-0">
-//                             <div className="w-9 h-9 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-//                               <Hotel size={16} className="text-blue-600" />
-//                             </div>
-//                             <div className="min-w-0">
-//                               <div className="flex items-center gap-2 flex-wrap">
-//                                 <span className="font-semibold text-gray-800 text-sm">{hotel.name}</span>
-//                                 {hotel.isDefault && <Badge color="cyan">Default</Badge>}
-//                                 <Badge color="amber">{hotel.stars}★</Badge>
-//                               </div>
-//                               <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-//                                 <span className="text-xs text-gray-500 flex items-center gap-1"><MapPin size={10} />{hotel.city}</span>
-//                                 <span className="text-xs text-gray-500 flex items-center gap-1"><Phone size={10} />{hotel.phone}</span>
-//                                 <StarRow count={hotel.stars} />
-//                               </div>
-//                               {hotel.amenities?.length > 0 && (
-//                                 <div className="flex gap-1 mt-1.5 flex-wrap">
-//                                   {hotel.amenities.slice(0, 4).map(a => {
-//                                     const am = AMENITIES.find(x => x.id === a);
-//                                     return am ? <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{am.label}</span> : null;
-//                                   })}
-//                                   {hotel.amenities.length > 4 && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">+{hotel.amenities.length - 4} more</span>}
-//                                 </div>
-//                               )}
-//                             </div>
-//                           </div>
-//                           <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition">
-//                             <button onClick={() => openEdit(hotel, dest.id)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition"><Edit2 size={14} /></button>
-//                             <button onClick={() => handleDelete(dest.id, hotel.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition"><Trash2 size={14} /></button>
-//                           </div>
+//                       <div className="min-w-0">
+//                         <div className="flex items-center gap-2 flex-wrap">
+//                           <h2 className="font-extrabold text-slate-800 text-[15px]">{dest.name}</h2>
+//                           {defaultHotel && (
+//                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+//                               ✓ Default: {defaultHotel.name}
+//                             </span>
+//                           )}
+//                           {maxStars > 0 && (
+//                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white bg-gradient-to-r ${STAR_COLORS[maxStars] || "from-slate-400 to-slate-500"}`}>
+//                               Up to {maxStars}★
+//                             </span>
+//                           )}
+//                         </div>
+//                         <div className="flex items-center gap-3 mt-1 flex-wrap">
+//                           <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+//                             <Hotel size={11} className="text-blue-400" />
+//                             {dest.hotels.length} {dest.hotels.length === 1 ? "Hotel" : "Hotels"}
+//                           </span>
+//                           <span className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+//                             <Building2 size={11} className="text-violet-400" />
+//                             {uniqueCities.length} {uniqueCities.length === 1 ? "City" : "Cities"}
+//                           </span>
+//                           {uniqueCities.slice(0, 3).map(c => (
+//                             <span key={c} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">{c}</span>
+//                           ))}
+//                           {uniqueCities.length > 3 && (
+//                             <span className="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">+{uniqueCities.length - 3}</span>
+//                           )}
 //                         </div>
 //                       </div>
-//                     ))}
-//                   </div>
-//                 )}
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
+//                     </div>
 
-//       {/* ── Main Hotel Modal ─────────────────────────────── */}
+//                     {/* Actions */}
+//                     <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+//                       <button onClick={() => openAddForDestination(dest.id)}
+//                         className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100
+//                           border border-blue-200 hover:border-blue-300 px-3 py-1.5 rounded-xl transition-all">
+//                         <Plus size={12} strokeWidth={2.5} /> Add Hotel
+//                       </button>
+//                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-slate-400
+//                         transition-all ${isOpen ? "bg-blue-50 text-blue-500 rotate-0" : "bg-slate-50"}`}>
+//                         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+//                       </div>
+//                     </div>
+//                   </div>
+
+//                   {/* Hotels List */}
+//                   {isOpen && (
+//                     <div className="border-t border-slate-100">
+//                       {dest.hotels.length === 0 ? (
+//                         <div className="py-10 text-center">
+//                           <Hotel size={28} className="mx-auto text-slate-300 mb-2" />
+//                           <p className="text-slate-400 text-sm font-medium">No hotels yet.</p>
+//                           <button onClick={() => openAddForDestination(dest.id)}
+//                             className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-700 underline underline-offset-2">
+//                             Add the first hotel
+//                           </button>
+//                         </div>
+//                       ) : (
+//                         <div className="divide-y divide-slate-50">
+//                           {dest.hotels.map((hotel, hi) => (
+//                             <div key={hotel.id}
+//                               className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-blue-50/20 transition-colors group"
+//                               style={{ animation: `fadeIn .2s ease ${hi * 30}ms both` }}>
+//                               <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+
+//                                 {/* Hotel Info */}
+//                                 <div className="flex items-start gap-3 min-w-0">
+//                                   {/* Hotel avatar */}
+//                                   <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${STAR_COLORS[hotel.stars] || "from-slate-400 to-slate-500"}
+//                                     flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm`}>
+//                                     <Hotel size={16} className="text-white" strokeWidth={2} />
+//                                   </div>
+//                                   <div className="min-w-0 flex-1">
+//                                     <div className="flex items-center gap-2 flex-wrap">
+//                                       <span className="font-bold text-slate-800 text-[14px]">{hotel.name}</span>
+//                                       {hotel.isDefault && <Badge color="cyan">Default</Badge>}
+//                                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white
+//                                         bg-gradient-to-r ${STAR_COLORS[hotel.stars] || "from-slate-400 to-slate-500"}`}>
+//                                         {hotel.stars}★
+//                                       </span>
+//                                     </div>
+//                                     <div className="flex items-center gap-3 mt-1 flex-wrap">
+//                                       <span className="text-xs text-slate-500 flex items-center gap-1">
+//                                         <MapPin size={10} className="text-rose-400" />{hotel.city}
+//                                       </span>
+//                                       {hotel.phone && (
+//                                         <span className="text-xs text-slate-500 flex items-center gap-1">
+//                                           <Phone size={10} className="text-emerald-400" />{hotel.phone}
+//                                         </span>
+//                                       )}
+//                                       <StarRow count={hotel.stars} />
+//                                     </div>
+//                                     {hotel.amenities?.length > 0 && (
+//                                       <div className="flex gap-1.5 mt-2 flex-wrap">
+//                                         {hotel.amenities.slice(0, 5).map(a => {
+//                                           const am = AMENITIES.find(x => x.id === a);
+//                                           return am ? (
+//                                             <span key={a} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+//                                               {am.label}
+//                                             </span>
+//                                           ) : null;
+//                                         })}
+//                                         {hotel.amenities.length > 5 && (
+//                                           <span className="text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-medium">
+//                                             +{hotel.amenities.length - 5} more
+//                                           </span>
+//                                         )}
+//                                       </div>
+//                                     )}
+//                                   </div>
+//                                 </div>
+
+//                                 {/* Action buttons */}
+//                                 <div className="flex items-center gap-1.5 flex-shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
+//                                   <button onClick={() => openEdit(hotel, dest.id)}
+//                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100
+//                                       text-blue-600 text-xs font-bold border border-blue-200 hover:border-blue-300 transition-all">
+//                                     <Edit2 size={12} /> Edit
+//                                   </button>
+//                                   <button onClick={() => handleDelete(dest.id, hotel.id)}
+//                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100
+//                                       text-rose-500 text-xs font-bold border border-rose-200 hover:border-rose-300 transition-all">
+//                                     <Trash2 size={12} /> Delete
+//                                   </button>
+//                                 </div>
+//                               </div>
+//                             </div>
+//                           ))}
+//                         </div>
+//                       )}
+//                     </div>
+//                   )}
+//                 </div>
+//               );
+//             })}
+//           </div>
+//         )}
+//       </div>
+
+//       {/* ═══════════════════════════════════════════════════ */}
+//       {/* MAIN HOTEL MODAL                                   */}
+//       {/* ═══════════════════════════════════════════════════ */}
 //       {showModal && (
-//         <div className="fixed inset-0 z-50 flex items-stretch sm:items-start justify-center p-0 sm:p-4 sm:pt-6 overflow-y-auto" style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(3px)" }}>
-//           <div className="bg-white sm:rounded-2xl shadow-2xl w-full max-w-[1280px] sm:my-auto flex flex-col min-h-screen sm:min-h-0 animate-in fade-in zoom-in-95 duration-200">
+//         <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center p-0 sm:p-4 overflow-y-auto"
+//           style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}
+//           onClick={e => e.target === e.currentTarget && closeModal()}>
+//           <div className="bg-white w-full sm:rounded-2xl shadow-2xl flex flex-col"
+//             style={{ maxWidth: 1280, maxHeight: "100dvh", minHeight: "60vh", animation: "slideUp .25s ease both" }}>
 
 //             {/* Modal Header */}
-//             <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-500 sticky top-0 z-20 sm:rounded-t-2xl shadow-sm">
+//             <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4
+//               bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500
+//               sm:rounded-t-2xl flex-shrink-0 shadow-sm">
 //               <div className="flex items-center gap-3 min-w-0">
-//                 <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/30">
+//                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-white/30">
 //                   <Hotel size={18} className="text-white" />
 //                 </div>
 //                 <div className="min-w-0">
-//                   <h2 className="font-bold text-white text-base sm:text-lg leading-tight truncate">{editingHotel ? "Edit Hotel" : "Hotel Information"}</h2>
-//                   <p className="text-[11px] sm:text-xs text-blue-100">Fill in the details below</p>
+//                   <h2 className="font-extrabold text-white text-[16px] sm:text-lg leading-tight">
+//                     {editingHotel ? `Edit — ${editingHotel.name || "Hotel"}` : "Add New Hotel"}
+//                   </h2>
+//                   <p className="text-[11px] text-blue-200 font-medium hidden sm:block">
+//                     Fill in the details below · Fields marked * are required
+//                   </p>
 //                 </div>
 //               </div>
 //               <div className="flex items-center gap-2 flex-shrink-0">
-//                 <button
-//                   onClick={handleSave}
-//                   disabled={saving}
-//                   className="flex items-center gap-2 bg-white hover:bg-blue-50 disabled:opacity-70 text-blue-700 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 shadow-sm"
-//                 >
+//                 <button onClick={handleSave} disabled={saving}
+//                   className="flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-bold
+//                     px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm transition-all active:scale-95 shadow-sm disabled:opacity-60">
 //                   {saving
 //                     ? <><div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" /><span className="hidden sm:inline">Saving...</span></>
-//                     : <><Check size={15} /> <span className="hidden sm:inline">Save Hotel</span></>}
+//                     : <><Check size={15} strokeWidth={2.5} /><span className="hidden sm:inline">Save Hotel</span></>
+//                   }
 //                 </button>
-//                 <button onClick={closeModal} className="p-2 rounded-xl bg-white/10 hover:bg-white/25 text-white transition"><X size={18} /></button>
+//                 <button onClick={closeModal}
+//                   className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-all">
+//                   <X size={18} />
+//                 </button>
 //               </div>
 //             </div>
 
 //             {/* Save error */}
 //             {saveError && (
-//               <div className="mx-4 sm:mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center gap-2">
-//                 <AlertCircle size={15} className="flex-shrink-0" /> {saveError}
+//               <div className="mx-4 sm:mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center gap-2 flex-shrink-0">
+//                 <AlertCircle size={14} className="flex-shrink-0" /> {saveError}
+//                 <button onClick={() => setSaveError("")} className="ml-auto"><X size={13} /></button>
 //               </div>
 //             )}
 
-//             {/* Modal Body */}
-//             <div className="flex flex-col lg:flex-row gap-0 divide-y lg:divide-y-0 lg:divide-x divide-gray-100 flex-1">
+//             {/* Mobile Tab Switcher — sirf mobile pe dikhe */}
+//             <div className="flex lg:hidden border-b border-slate-100 bg-white flex-shrink-0">
+//               <button
+//                 onClick={() => setMobileTab("info")}
+//                 className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all
+//                   ${mobileTab === "info"
+//                     ? "border-blue-600 text-blue-600 bg-blue-50/40"
+//                     : "border-transparent text-slate-400 hover:text-slate-600"}`}>
+//                 <Hotel size={15} /> Hotel Info
+//               </button>
+//               <button
+//                 onClick={() => setMobileTab("rooms")}
+//                 className={`flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all
+//                   ${mobileTab === "rooms"
+//                     ? "border-blue-600 text-blue-600 bg-blue-50/40"
+//                     : "border-transparent text-slate-400 hover:text-slate-600"}`}>
+//                 <Building2 size={15} />
+//                 Rooms & Meals
+//                 {(form.roomTypes?.length > 0 || form.mealPlans?.length > 0) && (
+//                   <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">
+//                     {(form.roomTypes?.length || 0) + (form.mealPlans?.length || 0)}
+//                   </span>
+//                 )}
+//               </button>
+//             </div>
 
-//               {/* Left: Hotel Info */}
-//               <div className="flex-1 min-w-0 p-4 sm:p-6 space-y-5 lg:max-h-[78vh] lg:overflow-y-auto">
+//             {/* Modal Body */}
+//             <div className="flex flex-col lg:flex-row flex-1 overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+
+//               {/* ── Left: Hotel Info — mobile pe tab se control ── */}
+//               <div className={`flex-1 min-w-0 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-4
+//                 ${mobileTab === "info" ? "block" : "hidden lg:block"}`}>
 
 //                 {/* Basic Info */}
-//                 <section className="bg-gray-50/70 rounded-2xl border border-gray-100 p-4 sm:p-5">
-//                   <div className="flex items-center gap-2.5 mb-4">
-//                     <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0"><Hotel size={14} className="text-blue-600" /></div>
-//                     <h3 className="text-sm font-bold text-gray-800">Basic Information</h3>
-//                   </div>
+//                 <SectionCard icon={Hotel} iconBg="bg-blue-100" iconColor="text-blue-600" title="Basic Information">
 //                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Select label="Country" required value={formCountryId} onChange={e => handleFormCountryChange(e.target.value)}>
-//                       <option value="">{formCountries.length === 0 ? "Loading countries…" : "Select country"}</option>
+//                     <FSelect label="Country" required value={formCountryId} onChange={e => handleFormCountryChange(e.target.value)}>
+//                       <option value="">{formCountries.length === 0 ? "Loading…" : "Select country"}</option>
 //                       {formCountries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-//                     </Select>
-//                     <Select label="Destination" required error={errors.destinationId} value={form.destinationId} onChange={e => handleFormDestinationChange(e.target.value)} disabled={!formCountryId || loadingFormDest}>
-//                       <option value="">
-//                         {!formCountryId ? "Select country first" : loadingFormDest ? "Loading…" : formDestinations.length === 0 ? "No destinations" : "Select destination"}
-//                       </option>
+//                     </FSelect>
+//                     <FSelect label="Destination" required error={errors.destinationId}
+//                       value={form.destinationId} onChange={e => handleFormDestinationChange(e.target.value)}
+//                       disabled={!formCountryId || loadingFormDest}>
+//                       <option value="">{!formCountryId ? "Select country first" : loadingFormDest ? "Loading…" : formDestinations.length === 0 ? "No destinations" : "Select destination"}</option>
 //                       {formDestinations.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-//                     </Select>
-//                     <Select label="City" required error={errors.city} value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} disabled={!form.destinationId || loadingFormCity}>
-//                       <option value="">
-//                         {!form.destinationId ? "Select destination first" : loadingFormCity ? "Loading…" : formCities.length === 0 ? "No cities" : "Select city"}
-//                       </option>
+//                     </FSelect>
+//                     <FSelect label="City" required error={errors.city}
+//                       value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+//                       disabled={!form.destinationId || loadingFormCity}>
+//                       <option value="">{!form.destinationId ? "Select destination first" : loadingFormCity ? "Loading…" : formCities.length === 0 ? "No cities" : "Select city"}</option>
 //                       {formCities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-//                     </Select>
-//                     <Input label="Hotel Name" required error={errors.name} placeholder="e.g. The Grand Palace" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+//                     </FSelect>
+//                     <FInput label="Hotel Name" required error={errors.name}
+//                       placeholder="e.g. The Grand Palace"
+//                       value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
 
-//                     {/* Hotel image upload — stores file for upload on save */}
-//                     <div className="flex flex-col gap-1 sm:col-span-2">
-//                       <label className="text-xs font-medium text-gray-600">Hotel Image</label>
-//                       <label className="border-2 border-dashed border-gray-200 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition group">
-//                         <Upload size={16} className={hotelImageFile ? "text-blue-500" : "text-gray-400 group-hover:text-blue-500"} />
-//                         <span className={`text-sm truncate ${hotelImageFile ? "text-blue-600 font-medium" : "text-gray-400 group-hover:text-blue-500"}`}>
-//                           {hotelImageFile ? hotelImageFile.name : "Upload image"}
-//                         </span>
-//                         <input
-//                           type="file"
-//                           className="hidden"
-//                           accept="image/*"
-//                           onChange={e => setHotelImageFile(e.target.files?.[0] || null)}
-//                         />
+//                     {/* Image Upload */}
+//                     <div className="sm:col-span-2">
+//                       <label className="text-xs font-semibold text-slate-600 block mb-1.5">Hotel Image</label>
+//                       <label className="border-2 border-dashed border-slate-200 hover:border-blue-300 hover:bg-blue-50/40
+//                         rounded-xl p-4 flex items-center gap-3 cursor-pointer transition-all group">
+//                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+//                           ${hotelImageFile ? "bg-blue-100" : "bg-slate-100 group-hover:bg-blue-100"}`}>
+//                           <Upload size={16} className={hotelImageFile ? "text-blue-500" : "text-slate-400 group-hover:text-blue-500"} />
+//                         </div>
+//                         <div className="min-w-0">
+//                           <p className={`text-sm font-semibold truncate ${hotelImageFile ? "text-blue-600" : "text-slate-400 group-hover:text-blue-500"}`}>
+//                             {hotelImageFile ? hotelImageFile.name : "Click to upload hotel image"}
+//                           </p>
+//                           <p className="text-xs text-slate-400">PNG, JPG up to 10MB</p>
+//                         </div>
+//                         <input type="file" className="hidden" accept="image/*"
+//                           onChange={e => setHotelImageFile(e.target.files?.[0] || null)} />
 //                       </label>
 //                     </div>
 
-//                     <Input label="Address" placeholder="Full address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="sm:col-span-2" />
-//                     <Select label="Star Category" required error={errors.stars} value={form.stars} onChange={e => setForm(f => ({ ...f, stars: e.target.value }))}>
+//                     <FInput label="Full Address" placeholder="Street, area, landmark..."
+//                       className="sm:col-span-2"
+//                       value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+//                     <FSelect label="Star Category" required error={errors.stars}
+//                       value={form.stars} onChange={e => setForm(f => ({ ...f, stars: e.target.value }))}>
 //                       {[5,4,3,2,1].map(s => <option key={s} value={s}>{s} Star</option>)}
-//                     </Select>
-//                     <Input label="Star Rating" type="number" min="0" max="5" step="0.1" placeholder="e.g. 4.5" value={form.rating} onChange={e => setForm(f => ({ ...f, rating: e.target.value }))} />
+//                     </FSelect>
+//                     <FInput label="Review Rating" type="number" min="0" max="5" step="0.1"
+//                       placeholder="e.g. 4.5 / 5.0"
+//                       value={form.rating} onChange={e => setForm(f => ({ ...f, rating: e.target.value }))} />
 //                   </div>
-//                   <label htmlFor="defaultHotel" className="mt-4 flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-3 py-2.5 cursor-pointer hover:border-blue-300 transition">
-//                     <input type="checkbox" id="defaultHotel" checked={form.isDefault} onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked }))} className="w-4 h-4 accent-blue-600 cursor-pointer" />
-//                     <span className="text-sm text-gray-600">Set as default hotel for this city</span>
+
+//                   {/* Default toggle */}
+//                   <label htmlFor="defaultHotel"
+//                     className="mt-4 flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100
+//                       hover:border-blue-300 rounded-xl cursor-pointer transition-all">
+//                     <input type="checkbox" id="defaultHotel" checked={form.isDefault}
+//                       onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked }))}
+//                       className="w-4 h-4 accent-blue-600 cursor-pointer" />
+//                     <div>
+//                       <p className="text-sm font-semibold text-slate-700">Set as default hotel</p>
+//                       <p className="text-xs text-slate-400">This hotel will be auto-selected for this destination</p>
+//                     </div>
+//                     {form.isDefault && (
+//                       <span className="ml-auto text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+//                         Active
+//                       </span>
+//                     )}
 //                   </label>
-//                 </section>
+//                 </SectionCard>
 
 //                 {/* Contact Info */}
-//                 <section className="bg-gray-50/70 rounded-2xl border border-gray-100 p-4 sm:p-5">
-//                   <div className="flex items-center gap-2.5 mb-4">
-//                     <div className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0"><Phone size={14} className="text-indigo-600" /></div>
-//                     <h3 className="text-sm font-bold text-gray-800">Contact Information</h3>
-//                   </div>
+//                 <SectionCard icon={Phone} iconBg="bg-indigo-100" iconColor="text-indigo-600" title="Contact Information">
 //                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Input label="Contact Person" placeholder="Full name" value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} />
-//                     <Input label="Phone Number" placeholder="+91 xxxxxxxxxx" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
-//                     <Input label="Email" type="email" placeholder="hotel@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-//                     <Input label="Website" placeholder="www.example.com" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
+//                     <FInput label="Contact Person" placeholder="Full name"
+//                       value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} />
+//                     <FInput label="Phone Number" placeholder="+91 xxxxxxxxxx"
+//                       value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+//                     <FInput label="Email Address" type="email" placeholder="hotel@example.com"
+//                       value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+//                     <FInput label="Website" placeholder="www.example.com"
+//                       value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} />
 //                   </div>
-//                 </section>
+//                 </SectionCard>
 
 //                 {/* Description & Amenities */}
-//                 <section className="bg-gray-50/70 rounded-2xl border border-gray-100 p-4 sm:p-5">
-//                   <div className="flex items-center gap-2.5 mb-4">
-//                     <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0"><Globe size={14} className="text-violet-600" /></div>
-//                     <h3 className="text-sm font-bold text-gray-800">Description</h3>
-//                   </div>
-//                   <Textarea label="Hotel Overview" placeholder="Describe the hotel..." value={form.overview} onChange={e => setForm(f => ({ ...f, overview: e.target.value }))} rows={4} />
+//                 <SectionCard icon={Globe} iconBg="bg-violet-100" iconColor="text-violet-600" title="Description & Amenities">
+//                   <FTextarea label="Hotel Overview"
+//                     placeholder="Describe the hotel, its location, unique features..."
+//                     value={form.overview} onChange={e => setForm(f => ({ ...f, overview: e.target.value }))}
+//                     rows={3} />
 //                   <div className="mt-4">
-//                     <label className="text-xs font-medium text-gray-600 block mb-2">Amenities</label>
+//                     <p className="text-xs font-semibold text-slate-600 mb-2.5">Amenities</p>
 //                     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
 //                       {AMENITIES.map(a => {
-//                         const Icon = a.icon;
+//                         const Icon     = a.icon;
 //                         const selected = form.amenities?.includes(a.id);
 //                         return (
-//                           <button key={a.id} type="button" onClick={() => toggleAmenity(a.id)} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${selected ? "border-blue-400 bg-blue-50 text-blue-700 shadow-sm" : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"}`}>
-//                             <Icon size={13} className={selected ? "text-blue-500" : "text-gray-400"} />
-//                             <span className="truncate">{a.label}</span>
-//                             {selected && <Check size={11} className="text-blue-500 ml-auto flex-shrink-0" />}
+//                           <button key={a.id} type="button" onClick={() => toggleAmenity(a.id)}
+//                             className={`amenity-btn flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all
+//                               ${selected
+//                                 ? "border-blue-400 bg-blue-600 text-white shadow-md shadow-blue-200"
+//                                 : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+//                               }`}>
+//                             <Icon size={13} className={selected ? "text-white" : "text-slate-400"} />
+//                             <span className="truncate flex-1 text-left">{a.label}</span>
+//                             {selected && <Check size={11} className="text-white flex-shrink-0" />}
 //                           </button>
 //                         );
 //                       })}
 //                     </div>
 //                   </div>
-//                 </section>
+//                 </SectionCard>
 //               </div>
 
-//               {/* Right: Room Types + Meal Plans */}
-//               <div className="lg:w-[420px] flex-shrink-0 p-4 sm:p-6 space-y-5 bg-gray-50/40 lg:max-h-[78vh] lg:overflow-y-auto">
+//               {/* ── Right: Rooms + Meals — mobile pe tab se control ── */}
+//               <div className={`lg:w-[420px] xl:w-[460px] flex-shrink-0 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-4 bg-slate-50/40
+//                 ${mobileTab === "rooms" ? "block" : "hidden lg:block"}`}>
 
 //                 {/* Room Types */}
-//                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-//                   <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-100">
-//                     <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2"><Building2 size={14} className="text-blue-500" />Room Types</h3>
-//                     <button onClick={openAddRoom} className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 px-3 py-1.5 rounded-lg transition">
-//                       <Plus size={13} /> Add Room Type
+//                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+//                   <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
+//                     <div className="flex items-center gap-2.5">
+//                       <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+//                         <Building2 size={13} className="text-blue-600" />
+//                       </div>
+//                       <div>
+//                         <p className="text-[13px] font-bold text-slate-700">Room Types</p>
+//                         <p className="text-[10px] text-slate-400">{form.roomTypes?.length || 0} added</p>
+//                       </div>
+//                     </div>
+//                     <button onClick={openAddRoom}
+//                       className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50
+//                         hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600
+//                         px-3 py-1.5 rounded-xl transition-all">
+//                       <Plus size={12} strokeWidth={2.5} /> Add Room
 //                     </button>
 //                   </div>
+
 //                   {!form.roomTypes?.length ? (
-//                     <div className="p-6 text-center">
-//                       <Building2 size={24} className="mx-auto text-gray-300 mb-2" />
-//                       <p className="text-xs text-gray-400">No room types added yet</p>
+//                     <div className="py-10 text-center">
+//                       <Building2 size={28} className="mx-auto text-slate-300 mb-2" />
+//                       <p className="text-xs text-slate-400 font-medium">No room types added yet</p>
+//                       <button onClick={openAddRoom}
+//                         className="mt-3 text-xs font-bold text-blue-500 hover:text-blue-600 underline underline-offset-2">
+//                         Add first room type
+//                       </button>
 //                     </div>
 //                   ) : (
-//                     <div className="overflow-x-auto">
-//                       <table className="w-full text-xs">
-//                         <thead><tr className="border-b border-gray-200 bg-gray-50"><th className="px-4 py-2 text-left text-gray-600 font-semibold">Room</th><th className="px-3 py-2 text-left text-gray-600 font-semibold">Occ.</th><th className="px-3 py-2 text-left text-gray-600 font-semibold">Bed</th><th className="px-3 py-2 text-right text-gray-600 font-semibold">Actions</th></tr></thead>
-//                         <tbody className="divide-y divide-gray-100">
-//                           {form.roomTypes.map((r, i) => (
-//                             <tr key={i} className="hover:bg-blue-50/40 transition">
-//                               <td className="px-4 py-2.5 font-medium text-gray-700">{r.name}</td>
-//                               <td className="px-3 py-2.5 text-gray-500">{r.occupancy}</td>
-//                               <td className="px-3 py-2.5 text-gray-500">{r.bedType}</td>
-//                               <td className="px-3 py-2.5 text-right whitespace-nowrap">
-//                                 <button onClick={() => openEditRoom(i)} className="p-1 rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition mr-1"><Edit2 size={12} /></button>
-//                                 <button onClick={() => deleteRoom(i)} className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition"><Trash2 size={12} /></button>
-//                               </td>
-//                             </tr>
-//                           ))}
-//                         </tbody>
-//                       </table>
+//                     <div className="divide-y divide-slate-50">
+//                       {form.roomTypes.map((r, i) => (
+//                         <div key={i} className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-blue-50/30 transition-colors group">
+//                           <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+//                             <Building2 size={13} className="text-blue-500" />
+//                           </div>
+//                           <div className="flex-1 min-w-0">
+//                             <p className="text-sm font-bold text-slate-700 truncate">{r.name}</p>
+//                             <p className="text-xs text-slate-400">
+//                               {r.bedType} · {r.occupancy} pax
+//                               {r.size && ` · ${r.size}`}
+//                             </p>
+//                           </div>
+//                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+//                             <button onClick={() => openEditRoom(i)}
+//                               className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 flex items-center justify-center transition-all">
+//                               <Edit2 size={12} />
+//                             </button>
+//                             <button onClick={() => deleteRoom(i)}
+//                               className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-400 flex items-center justify-center transition-all">
+//                               <Trash2 size={12} />
+//                             </button>
+//                           </div>
+//                         </div>
+//                       ))}
 //                     </div>
 //                   )}
 //                 </div>
 
 //                 {/* Meal Plans */}
-//                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-//                   <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-100">
-//                     <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2"><Utensils size={14} className="text-green-500" />Meal Plans</h3>
-//                     <button onClick={openAddMeal} className="flex items-center gap-1.5 text-xs font-medium text-green-600 hover:text-white bg-green-50 hover:bg-green-600 px-3 py-1.5 rounded-lg transition">
-//                       <Plus size={13} /> Add Meal Plan
+//                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+//                   <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/60">
+//                     <div className="flex items-center gap-2.5">
+//                       <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+//                         <Utensils size={13} className="text-emerald-600" />
+//                       </div>
+//                       <div>
+//                         <p className="text-[13px] font-bold text-slate-700">Meal Plans</p>
+//                         <p className="text-[10px] text-slate-400">{form.mealPlans?.length || 0} added</p>
+//                       </div>
+//                     </div>
+//                     <button onClick={openAddMeal}
+//                       className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50
+//                         hover:bg-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-600
+//                         px-3 py-1.5 rounded-xl transition-all">
+//                       <Plus size={12} strokeWidth={2.5} /> Add Plan
 //                     </button>
 //                   </div>
+
 //                   {!form.mealPlans?.length ? (
-//                     <div className="p-6 text-center">
-//                       <Utensils size={24} className="mx-auto text-gray-300 mb-2" />
-//                       <p className="text-xs text-gray-400">No meal plans added yet</p>
+//                     <div className="py-10 text-center">
+//                       <Utensils size={28} className="mx-auto text-slate-300 mb-2" />
+//                       <p className="text-xs text-slate-400 font-medium">No meal plans added yet</p>
+//                       <button onClick={openAddMeal}
+//                         className="mt-3 text-xs font-bold text-emerald-500 hover:text-emerald-600 underline underline-offset-2">
+//                         Add first meal plan
+//                       </button>
 //                     </div>
 //                   ) : (
-//                     <div className="overflow-x-auto">
-//                       <table className="w-full text-xs">
-//                         <thead><tr className="border-b border-gray-200 bg-gray-50"><th className="px-4 py-2 text-left text-gray-600 font-semibold">Plan</th><th className="px-3 py-2 text-left text-gray-600 font-semibold">Price</th><th className="px-3 py-2 text-right text-gray-600 font-semibold">Actions</th></tr></thead>
-//                         <tbody className="divide-y divide-gray-100">
-//                           {form.mealPlans.map((m, i) => (
-//                             <tr key={i} className="hover:bg-green-50/40 transition">
-//                               <td className="px-4 py-2.5 font-medium text-gray-700">{m.name}</td>
-//                               <td className="px-3 py-2.5 text-gray-500">₹{m.price}</td>
-//                               <td className="px-3 py-2.5 text-right whitespace-nowrap">
-//                                 <button onClick={() => openEditMeal(i)} className="p-1 rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition mr-1"><Edit2 size={12} /></button>
-//                                 <button onClick={() => deleteMeal(i)} className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition"><Trash2 size={12} /></button>
-//                               </td>
-//                             </tr>
-//                           ))}
-//                         </tbody>
-//                       </table>
+//                     <div className="divide-y divide-slate-50">
+//                       {form.mealPlans.map((m, i) => (
+//                         <div key={i} className="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-emerald-50/30 transition-colors group">
+//                           <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+//                             <Utensils size={13} className="text-emerald-500" />
+//                           </div>
+//                           <div className="flex-1 min-w-0">
+//                             <p className="text-sm font-bold text-slate-700 truncate">{m.name}</p>
+//                             <p className="text-xs text-emerald-600 font-semibold">₹{m.price} / person</p>
+//                           </div>
+//                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+//                             <button onClick={() => openEditMeal(i)}
+//                               className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-500 flex items-center justify-center transition-all">
+//                               <Edit2 size={12} />
+//                             </button>
+//                             <button onClick={() => deleteMeal(i)}
+//                               className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-400 flex items-center justify-center transition-all">
+//                               <Trash2 size={12} />
+//                             </button>
+//                           </div>
+//                         </div>
+//                       ))}
 //                     </div>
 //                   )}
+//                 </div>
+
+//                 {/* Trust badge */}
+//                 <div className="flex items-center gap-2.5 p-3 bg-white border border-slate-200 rounded-xl">
+//                   <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
+//                     <Shield size={13} className="text-white" />
+//                   </div>
+//                   <p className="text-[11px] text-slate-500 font-semibold">
+//                     All changes are saved securely to Tripotomize.
+//                   </p>
 //                 </div>
 //               </div>
 //             </div>
@@ -899,59 +1100,74 @@
 //         </div>
 //       )}
 
-//       {/* ── Room Type Nested Modal ────────────────────────── */}
+//       {/* ── Room Type Modal ── */}
 //       {roomModal && (
-//         <NestedModal title={editRoomIdx !== null ? "Edit Room Type" : "Add Room Type"} onClose={() => setRoomModal(false)}>
+//         <NestedModal
+//           title={editRoomIdx !== null ? "Edit Room Type" : "Add Room Type"}
+//           subtitle="Configure room capacity, size and bed type"
+//           icon={Building2}
+//           iconBg="bg-blue-100"
+//           onClose={() => setRoomModal(false)}
+//         >
 //           <div className="space-y-4">
 //             {roomErrors.api && (
 //               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center gap-2">
 //                 <AlertCircle size={14} /> {roomErrors.api}
 //               </div>
 //             )}
-//             <Input label="Room Name" required error={roomErrors.name} placeholder="e.g. Deluxe Room" value={roomForm.name} onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))} />
+//             <FInput label="Room Name" required error={roomErrors.name}
+//               placeholder="e.g. Deluxe Sea View Room"
+//               value={roomForm.name} onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))} />
 //             <div className="grid grid-cols-2 gap-4">
-//               <Input label="Room Size" placeholder="e.g. 45 sqm" value={roomForm.size} onChange={e => setRoomForm(f => ({ ...f, size: e.target.value }))} />
-//               <Input label="Max Occupancy" required error={roomErrors.occupancy} type="number" min="1" placeholder="e.g. 2" value={roomForm.occupancy} onChange={e => setRoomForm(f => ({ ...f, occupancy: e.target.value }))} />
+//               <FInput label="Room Size" placeholder="e.g. 45 sqm"
+//                 value={roomForm.size} onChange={e => setRoomForm(f => ({ ...f, size: e.target.value }))} />
+//               <FInput label="Max Occupancy" required error={roomErrors.occupancy}
+//                 type="number" min="1" placeholder="e.g. 2"
+//                 value={roomForm.occupancy} onChange={e => setRoomForm(f => ({ ...f, occupancy: e.target.value }))} />
 //             </div>
-//             <Select label="Bed Type" value={roomForm.bedType} onChange={e => setRoomForm(f => ({ ...f, bedType: e.target.value }))}>
+//             <FSelect label="Bed Type" value={roomForm.bedType}
+//               onChange={e => setRoomForm(f => ({ ...f, bedType: e.target.value }))}>
 //               {BED_TYPES.map(b => <option key={b}>{b}</option>)}
-//             </Select>
-
-//             {/* Room images — stored for upload after room is created */}
-//             <div className="flex flex-col gap-1">
-//               <label className="text-xs font-medium text-gray-600">Room Images</label>
-//               <label className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-blue-300 hover:bg-blue-50 transition">
-//                 <Upload size={20} className={roomImageFiles?.length ? "text-blue-500" : "text-gray-300"} />
-//                 <span className={`text-sm ${roomImageFiles?.length ? "text-blue-600 font-medium" : "text-gray-400"}`}>
+//             </FSelect>
+//             <div>
+//               <label className="text-xs font-semibold text-slate-600 block mb-1.5">Room Images</label>
+//               <label className="border-2 border-dashed border-slate-200 hover:border-blue-300 hover:bg-blue-50/40
+//                 rounded-xl p-5 flex flex-col items-center gap-2 cursor-pointer transition-all">
+//                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${roomImageFiles?.length ? "bg-blue-100" : "bg-slate-100"}`}>
+//                   <Upload size={18} className={roomImageFiles?.length ? "text-blue-500" : "text-slate-400"} />
+//                 </div>
+//                 <span className={`text-sm font-medium ${roomImageFiles?.length ? "text-blue-600" : "text-slate-400"}`}>
 //                   {roomImageFiles?.length ? `${roomImageFiles.length} file(s) selected` : "Upload room images"}
 //                 </span>
-//                 <input
-//                   type="file"
-//                   className="hidden"
-//                   accept="image/*"
-//                   multiple
-//                   onChange={e => setRoomImageFiles(e.target.files)}
-//                 />
+//                 <span className="text-xs text-slate-400">PNG, JPG · Multiple allowed</span>
+//                 <input type="file" className="hidden" accept="image/*" multiple
+//                   onChange={e => setRoomImageFiles(e.target.files)} />
 //               </label>
 //             </div>
-
-//             <Textarea label="Description" placeholder="Describe the room..." value={roomForm.description} onChange={e => setRoomForm(f => ({ ...f, description: e.target.value }))} />
-//             <button
-//               onClick={saveRoom}
-//               disabled={roomSaving}
-//               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-2.5 rounded-xl text-sm font-medium transition active:scale-95 flex items-center justify-center gap-2"
-//             >
+//             <FTextarea label="Description"
+//               placeholder="Describe the room, view, features..."
+//               value={roomForm.description} onChange={e => setRoomForm(f => ({ ...f, description: e.target.value }))} />
+//             <button onClick={saveRoom} disabled={roomSaving}
+//               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800
+//                 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-bold transition-all active:scale-[.98]
+//                 flex items-center justify-center gap-2 shadow-md shadow-blue-200">
 //               {roomSaving
 //                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving...</>
-//                 : editRoomIdx !== null ? "Update Room Type" : "Add Room Type"}
+//                 : <><Check size={15} /> {editRoomIdx !== null ? "Update Room Type" : "Add Room Type"}</>}
 //             </button>
 //           </div>
 //         </NestedModal>
 //       )}
 
-//       {/* ── Meal Plan Nested Modal ────────────────────────── */}
+//       {/* ── Meal Plan Modal ── */}
 //       {mealModal && (
-//         <NestedModal title={editMealIdx !== null ? "Edit Meal Plan" : "Add Meal Plan"} onClose={() => setMealModal(false)}>
+//         <NestedModal
+//           title={editMealIdx !== null ? "Edit Meal Plan" : "Add Meal Plan"}
+//           subtitle="Set meal plan name, price and description"
+//           icon={Utensils}
+//           iconBg="bg-emerald-100"
+//           onClose={() => setMealModal(false)}
+//         >
 //           <div className="space-y-4">
 //             {mealErrors.api && (
 //               <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 flex items-center gap-2">
@@ -959,27 +1175,35 @@
 //               </div>
 //             )}
 //             <div className="flex flex-col gap-1">
-//               <label className="text-xs font-medium text-gray-600">Meal Plan Name <span className="text-red-500">*</span></label>
-//               <input
-//                 list="mealExamples"
-//                 placeholder="e.g. CP (Breakfast)"
-//                 value={mealForm.name}
-//                 onChange={e => setMealForm(f => ({ ...f, name: e.target.value }))}
-//                 className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${mealErrors.name ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`}
-//               />
-//               <datalist id="mealExamples">{MEAL_PLAN_EXAMPLES.map(m => <option key={m} value={m} />)}</datalist>
-//               {mealErrors.name && <span className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={10} />{mealErrors.name}</span>}
+//               <label className="text-xs font-semibold text-slate-600">
+//                 Meal Plan Name <span className="text-rose-500">*</span>
+//               </label>
+//               <input list="mealExamples" placeholder="e.g. CP (Breakfast)"
+//                 value={mealForm.name} onChange={e => setMealForm(f => ({ ...f, name: e.target.value }))}
+//                 className={`border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all
+//                   ${mealErrors.name ? "border-red-300 bg-red-50/50" : "border-slate-200 bg-white hover:border-slate-300"}`} />
+//               <datalist id="mealExamples">
+//                 {MEAL_PLAN_EXAMPLES.map(m => <option key={m} value={m} />)}
+//               </datalist>
+//               {mealErrors.name && (
+//                 <span className="text-xs text-red-500 flex items-center gap-1 font-medium">
+//                   <AlertCircle size={10} />{mealErrors.name}
+//                 </span>
+//               )}
 //             </div>
-//             <Input label="Price (₹)" required error={mealErrors.price} type="number" min="0" placeholder="e.g. 800" value={mealForm.price} onChange={e => setMealForm(f => ({ ...f, price: e.target.value }))} />
-//             <Textarea label="Description" placeholder="What's included in this plan?" value={mealForm.description} onChange={e => setMealForm(f => ({ ...f, description: e.target.value }))} />
-//             <button
-//               onClick={saveMeal}
-//               disabled={mealSaving}
-//               className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-2.5 rounded-xl text-sm font-medium transition active:scale-95 flex items-center justify-center gap-2"
-//             >
+//             <FInput label="Price (₹ per person)" required error={mealErrors.price}
+//               type="number" min="0" placeholder="e.g. 800"
+//               value={mealForm.price} onChange={e => setMealForm(f => ({ ...f, price: e.target.value }))} />
+//             <FTextarea label="What's Included"
+//               placeholder="Breakfast buffet, evening snacks, beverages..."
+//               value={mealForm.description} onChange={e => setMealForm(f => ({ ...f, description: e.target.value }))} />
+//             <button onClick={saveMeal} disabled={mealSaving}
+//               className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800
+//                 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-bold transition-all active:scale-[.98]
+//                 flex items-center justify-center gap-2 shadow-md shadow-emerald-200">
 //               {mealSaving
 //                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving...</>
-//                 : editMealIdx !== null ? "Update Meal Plan" : "Add Meal Plan"}
+//                 : <><Check size={15} /> {editMealIdx !== null ? "Update Meal Plan" : "Add Meal Plan"}</>}
 //             </button>
 //           </div>
 //         </NestedModal>
@@ -1205,9 +1429,48 @@ export default function HotelMaster() {
   useEffect(() => {
     (async () => {
       try {
+        // 1. Fetch all hotels (flat list)
         const res = await hotelService.getAllHotels();
-        setDestinations(res.data && Array.isArray(res.data) ? res.data : []);
-      } catch {
+        const raw  = res.data?.data ?? res.data;
+        const list = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.content)
+          ? raw.content
+          : [];
+
+        console.log("Hotels flat list:", list);
+
+        // 2. Fetch all destinations to get names
+        let allDestinations = [];
+        try {
+          allDestinations = await geographyService.getAllDestinations();
+        } catch { allDestinations = []; }
+
+        // Build destinationId → name map
+        const destNameMap = new Map();
+        allDestinations.forEach(d => destNameMap.set(String(d.id), d.name));
+
+        // 3. Group hotels by destinationId
+        const destMap = new Map();
+        list.forEach(hotel => {
+          const dId   = String(hotel.destinationId ?? hotel.destination?.id ?? "unknown");
+          // Try: destNameMap first, then hotel's own field, then fallback
+          const dName = destNameMap.get(dId)
+            ?? hotel.destinationName
+            ?? hotel.destination?.name
+            ?? `Destination ${dId}`;
+
+          if (!destMap.has(dId)) {
+            destMap.set(dId, { id: dId, name: dName, hotels: [] });
+          }
+          destMap.get(dId).hotels.push(hotel);
+        });
+
+        const grouped = Array.from(destMap.values());
+        console.log("Grouped destinations:", grouped);
+        setDestinations(grouped);
+      } catch (err) {
+        console.error("Hotels fetch error:", err);
         setDestinations([]);
         setApiError("Could not load hotels. Please try again.");
       } finally {
@@ -1275,29 +1538,35 @@ export default function HotelMaster() {
   };
 
   const allCities = useMemo(
-    () => [...new Set(destinations.flatMap(d => d.cities))],
+    () => [...new Set(
+      (Array.isArray(destinations) ? destinations : [])
+        .flatMap(d => d?.hotels?.map(h => h?.city).filter(Boolean) ?? [])
+    )],
     [destinations]
   );
 
-  const filtered = useMemo(() => destinations
+  const filtered = useMemo(() => (Array.isArray(destinations) ? destinations : [])
     .filter(d => {
+      if (!d) return false;
       if (filterDest && d.id !== parseInt(filterDest)) return false;
-      const hotels = d.hotels.filter(h => {
+      const hotels = (d.hotels || []).filter(h => {
+        if (!h) return false;
         if (filterCity && h.city !== filterCity) return false;
         if (filterStar && h.stars !== parseInt(filterStar)) return false;
-        if (search && !h.name.toLowerCase().includes(search.toLowerCase()) &&
-            !d.name.toLowerCase().includes(search.toLowerCase())) return false;
+        if (search && !h.name?.toLowerCase().includes(search.toLowerCase()) &&
+            !d.name?.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       });
       return hotels.length > 0 || (!filterCity && !filterStar && !search);
     })
     .map(d => ({
       ...d,
-      hotels: d.hotels.filter(h => {
+      hotels: (d.hotels || []).filter(h => {
+        if (!h) return false;
         if (filterCity && h.city !== filterCity) return false;
         if (filterStar && h.stars !== parseInt(filterStar)) return false;
-        if (search && !h.name.toLowerCase().includes(search.toLowerCase()) &&
-            !d.name.toLowerCase().includes(search.toLowerCase())) return false;
+        if (search && !h.name?.toLowerCase().includes(search.toLowerCase()) &&
+            !d.name?.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
     })),
@@ -1346,24 +1615,45 @@ export default function HotelMaster() {
       let savedHotel;
       if (editingHotel) {
         const res = await hotelService.updateHotel(editingHotel.id, form);
-        savedHotel = res.data;
+        savedHotel = res.data?.data ?? res.data;
       } else {
         const res = await hotelService.createHotel(form);
-        savedHotel = res.data;
+        savedHotel = res.data?.data ?? res.data;
       }
       if (hotelImageFile && savedHotel?.id) await hotelService.uploadHotelImage(hotelImageFile);
       if (form.isDefault && savedHotel?.id) await hotelService.setDefaultHotel(savedHotel.id, form.destinationId);
 
-      const destId = parseInt(form.destinationId);
-      setDestinations(prev => prev.map(d => {
-        if (d.id !== destId) return d;
-        const newHotel = { ...form, id: savedHotel?.id ?? (editingHotel ? editingHotel.id : Date.now()), stars: parseInt(form.stars) };
-        if (form.isDefault) {
-          return { ...d, hotels: d.hotels.filter(h => editingHotel ? h.id !== editingHotel.id : true).map(h => ({ ...h, isDefault: false })).concat([{ ...newHotel, isDefault: true }]) };
-        }
-        if (editingHotel) return { ...d, hotels: d.hotels.map(h => h.id === editingHotel.id ? newHotel : h) };
-        return { ...d, hotels: [...d.hotels, newHotel] };
-      }));
+      // Refetch latest data from backend after save
+      try {
+        const refreshRes = await hotelService.getAllHotels();
+        const raw2   = refreshRes.data?.data ?? refreshRes.data;
+        const list2  = Array.isArray(raw2) ? raw2
+          : Array.isArray(raw2?.content) ? raw2.content : [];
+        // Re-group by destination
+        let allDest2 = [];
+        try { allDest2 = await geographyService.getAllDestinations(); } catch {}
+        const dNameMap2 = new Map();
+        allDest2.forEach(d => dNameMap2.set(String(d.id), d.name));
+        const destMap2 = new Map();
+        list2.forEach(hotel => {
+          const dId   = String(hotel.destinationId ?? hotel.destination?.id ?? "unknown");
+          const dName = dNameMap2.get(dId) ?? hotel.destinationName ?? hotel.destination?.name ?? `Destination ${dId}`;
+          if (!destMap2.has(dId)) {
+            destMap2.set(dId, { id: dId, name: dName, hotels: [] });
+          }
+          destMap2.get(dId).hotels.push(hotel);
+        });
+        setDestinations(Array.from(destMap2.values()));
+      } catch {
+        // Fallback: optimistic update
+        const destId = parseInt(form.destinationId);
+        setDestinations(prev => prev.map(d => {
+          if (d.id !== destId) return d;
+          const newHotel = { ...form, id: savedHotel?.id ?? (editingHotel ? editingHotel.id : Date.now()), stars: parseInt(form.stars) };
+          if (editingHotel) return { ...d, hotels: d.hotels.map(h => h.id === editingHotel.id ? newHotel : h) };
+          return { ...d, hotels: [...d.hotels, newHotel] };
+        }));
+      }
       closeModal();
     } catch (err) {
       setSaveError(err?.response?.data?.message || "Failed to save hotel. Please try again.");
@@ -1376,7 +1666,7 @@ export default function HotelMaster() {
     if (!window.confirm("Delete this hotel?")) return;
     try {
       await hotelService.deleteHotel(hotelId);
-      setDestinations(prev => prev.map(d => d.id === destId ? { ...d, hotels: d.hotels.filter(h => h.id !== hotelId) } : d));
+      setDestinations(prev => prev.map(d => d.id === destId ? { ...d, hotels: (d.hotels || []).filter(h => h.id !== hotelId) } : d));
     } catch (err) {
       alert(err?.response?.data?.message || "Failed to delete hotel.");
     }
@@ -1463,7 +1753,8 @@ export default function HotelMaster() {
     amenities: f.amenities.includes(id) ? f.amenities.filter(a => a !== id) : [...f.amenities, id],
   }));
 
-  const totalHotels = destinations.reduce((acc, d) => acc + d.hotels.length, 0);
+  const totalHotels = (Array.isArray(destinations) ? destinations : [])
+    .reduce((acc, d) => acc + (d?.hotels?.length || 0), 0);
 
   /* ─── RENDER ──────────────────────────────────────────── */
   return (
