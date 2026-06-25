@@ -245,6 +245,17 @@ import { PublicQuotationPage } from "./quotation/QuotationWebView";
 import LeadLogs from "./admin/leads/LeadLogs";
 import AddLeadLog from "./admin/leads/AddLeadLog";
 import AllLeadLogs from "./admin/leads/AllLeadLogs";
+import CompanySettings from "./settings/CompanySettings";
+import EmailConfiguration from "./settings/EmailConfiguration";
+import WhatsAppConfiguration from "./settings/WhatsAppConfiguration";
+import SubscriptionInfo from "./subscription/SubscriptionInfo";
+
+import { isSuperAdmin, hasPermission, P } from "./services/access";
+
+// Route-level guard (defense-in-depth; backend is the real gate, menus already hide these).
+function Guard({ allow, children }) {
+  return allow ? children : <Navigate to="/" replace />;
+}
 
 
 const App = () => {
@@ -312,13 +323,15 @@ const App = () => {
           <Route path="NotificationSettings" element={<NotificationSettings/>}/>
           <Route path="CompanyProfile" element={<CompanyProfile/>}/>
           <Route path="ChangePassword" element={<ChangePassword/>}/>
-          <Route path="Users" element={<Users/>}/>
-          <Route path="CreateUser" element={<CreateUser/>}/>
-          <Route path="EditUser" element={<EditUser/>}/>
-          <Route path="UserPermissions" element={<UserPermissions/>}/>
+          <Route path="Users" element={<Guard allow={hasPermission(P.USER_READ)}><Users/></Guard>}/>
+          <Route path="CreateUser" element={<Guard allow={hasPermission(P.USER_CREATE)}><CreateUser/></Guard>}/>
+          <Route path="EditUser/:id" element={<Guard allow={hasPermission(P.USER_UPDATE)}><EditUser/></Guard>}/>
+          <Route path="UserPermissions/:id" element={<Guard allow={hasPermission(P.USER_UPDATE)}><UserPermissions/></Guard>}/>
+          {/* Template "Edit Permissions" reuses the same grid editor in template mode. */}
+          <Route path="UserPermissions/template/:id" element={<Guard allow={hasPermission(P.USER_UPDATE)}><UserPermissions/></Guard>}/>
           <Route path="AllCustomers" element={<AllCustomers/>}/>
-          <Route path="PermissionTemplates" element={<PermissionTemplates/>}/>
-          <Route path="CreatePermissionTemplate" element={<CreatePermissionTemplate/>}/>
+          <Route path="PermissionTemplates" element={<Guard allow={hasPermission(P.USER_READ)}><PermissionTemplates/></Guard>}/>
+          <Route path="CreatePermissionTemplate" element={<Guard allow={hasPermission(P.USER_UPDATE)}><CreatePermissionTemplate/></Guard>}/>
           <Route path="ReportsDashboard" element={<ReportsDashboard/>}/>
           <Route path="ActivityReports" element={<ActivityReports/>}/>
           <Route path="GeographicDistribution" element={<GeographicDistribution/>}/>
@@ -329,6 +342,10 @@ const App = () => {
           <Route path="LeadLogs" element={<LeadLogs/>}/>
           <Route path="AddLeadLog" element={<AddLeadLog/>}/>
           <Route path="AllLeadLogs" element={<AllLeadLogs/>}/>
+          <Route path="CompanySettings" element={<CompanySettings/>}/>
+          <Route path="EmailConfiguration" element={<EmailConfiguration/>}/>
+          <Route path="WhatsAppConfiguration" element={<WhatsAppConfiguration/>}/>
+          <Route path="SubscriptionInfo" element={<SubscriptionInfo/>}/>
         </Route>
  
       </Routes>

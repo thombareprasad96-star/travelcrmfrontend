@@ -155,7 +155,7 @@ export default function AddLeadLog() {
                   <span className="hidden sm:inline ml-3 text-xs">
                     <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/")}>Home</span>
                     <span className="mx-1 text-slate-300">/</span>
-                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/Leads")}>Leads</span>
+                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/allleads")}>Leads</span>
                     <span className="mx-1 text-slate-300">/</span>
                     <span className="hover:text-blue-600 cursor-pointer transition-colors"
                       onClick={() => navigate(`/LeadLogs/${id}?name=${encodeURIComponent(leadName)}`)}>
@@ -218,7 +218,7 @@ export default function AddLeadLog() {
                     Stage is read-only. To change stage, use the stage dropdown in the{" "}
                     <span
                       className="text-blue-500 font-semibold cursor-pointer hover:underline"
-                      onClick={() => navigate("/Leads")}>
+                      onClick={() => navigate("/allleads")}>
                       leads list
                     </span>.
                   </p>
@@ -333,7 +333,7 @@ export default function AddLeadLog() {
                   {/* Back to Leads */}
                   <button
                     type="button"
-                    onClick={() => navigate("/Leads")}
+                    onClick={() => navigate("/allleads")}
                     disabled={saving}
                     className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl
                       border-2 border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50
@@ -345,7 +345,8 @@ export default function AddLeadLog() {
                   {/* View Lead Logs — with count badge matching screenshot */}
                   <button
                     type="button"
-                    onClick={() => navigate(`/LeadLogs/${id}?name=${encodeURIComponent(leadName)}`)}
+                    // onClick={() => navigate(`/LeadLogs/${id}?name=${encodeURIComponent(leadName)}`)}
+                    onClick={() => navigate("/LeadLogs")}
                     disabled={saving}
                     className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
                       bg-slate-600 hover:bg-slate-700 text-white font-bold text-sm
