@@ -164,7 +164,7 @@ export default function LeadLogs() {
                   <span className="hidden sm:inline ml-3 text-xs">
                     <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/")}>Home</span>
                     <span className="mx-1 text-slate-300">/</span>
-                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/Leads")}>Leads</span>
+                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/allleads")}>Leads</span>
                     <span className="mx-1 text-slate-300">/</span>
                     <span className="hover:text-blue-600 cursor-pointer transition-colors">Logs</span>
                     <span className="mx-1 text-slate-300">/</span>
@@ -202,19 +202,20 @@ export default function LeadLogs() {
             {/* Action buttons — matching screenshot exactly */}
             <div className="flex flex-wrap items-center gap-2">
               {/* + Add Log → navigates to /AddLeadLog/:id */}
-              <button onClick={() => navigate(`/AddLeadLog/${id}?name=${encodeURIComponent(leadName)}&stage=${encodeURIComponent("New Lead")}&logs=${logs.length}`)}
+              {/* <button onClick={() => navigate(`/AddLeadLog/${id}?name=${encodeURIComponent(leadName)}&stage=${encodeURIComponent("New Lead")}&logs=${logs.length}`)} */}
+              <button onClick={() => navigate("/AddLeadLog")}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700
                   text-white text-xs font-bold shadow-md shadow-blue-200 transition-all">
                 <FiPlus className="w-3.5 h-3.5"/> Add Log
               </button>
               {/* Back to Leads */}
-              <button onClick={() => navigate("/Leads")}
+              <button onClick={() => navigate("/allleads")}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700
                   text-white text-xs font-bold shadow-md shadow-blue-200 transition-all">
                 <FiList className="w-3.5 h-3.5"/> Back to Leads
               </button>
               {/* Back to All Logs */}
-              <button onClick={() => navigate("/Leads/Logs")}
+              <button onClick={() => navigate("/AllLeadLogs")}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600
                   text-white text-xs font-bold shadow-md shadow-teal-200 transition-all">
                 <FaClipboardList className="w-3.5 h-3.5"/> Back to All Logs
