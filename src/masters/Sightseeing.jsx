@@ -715,9 +715,6 @@
 
 
 
-
-
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   Map, ChevronDown, ChevronRight, Search, Plus, Eye, X,
@@ -1157,29 +1154,46 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
 // =========================================================================
 // 🌟 DESTINATION ROW
 // =========================================================================
-function DestinationRow({ dest, onAddSightseeing, onEdit, onDelete }) {
+function DestinationRow({ dest, onAddSightseeing, onEdit, onDelete, refreshSignal }) {
   const [expanded, setExpanded]         = useState(false);
   const [sightseeings, setSightseeings]   = useState([]);
   const [loadingSight, setLoadingSight]   = useState(false);
 
+  const loadSightseeings = async () => {
+    setLoadingSight(true);
+    try {
+      if (sightseeingService && sightseeingService.getSightseeingsByDestination) {
+        const res = await sightseeingService.getSightseeingsByDestination(dest.name);
+        // 🔍 DEBUG
+        console.log(`=== SIGHTSEEINGS for "${dest.name}" ===`, res.data);
+        // PagedApiResponse → data.content, ya plain data array — sab handle karo
+        const raw = res.data?.data ?? res.data;
+        const list = Array.isArray(raw) ? raw
+          : Array.isArray(raw?.content) ? raw.content : [];
+        console.log("Sightseeings loaded:", list.length, list);
+        setSightseeings(list);
+      }
+    } catch {
+      setSightseeings([]);
+    } finally {
+      setLoadingSight(false);
+    }
+  };
+
   const handleExpand = async () => {
     const opening = !expanded;
     setExpanded(opening);
-    if (opening && sightseeings.length === 0) {
-      setLoadingSight(true);
-      try {
-        if (sightseeingService && sightseeingService.getSightseeingsByDestination) {
-          const res = await sightseeingService.getSightseeingsByDestination(dest.name);
-          const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
-          setSightseeings(list);
-        }
-      } catch {
-        setSightseeings([]);
-      } finally {
-        setLoadingSight(false);
-      }
+    if (opening) {
+      await loadSightseeings();  // har baar fresh load (save ke baad bhi naya data)
     }
   };
+
+  // refreshSignal badle to (agar expanded hai) reload karo
+  useEffect(() => {
+    if (expanded && refreshSignal) {
+      loadSightseeings();
+    }
+  }, [refreshSignal]);
 
   // cityList fallback — agar backend se na aaye
   const cityChips = dest.cityList || dest.cities_list || [];
@@ -1268,12 +1282,20 @@ export default function SightseeingMaster() {
   const [filterDest,  setFilterDest]  = useState("");
   const [filterCity,  setFilterCity]  = useState("");
 
+  // Save ke baad rows ko refresh trigger karne ke liye
+  const [refreshSignal, setRefreshSignal] = useState(0);
+
   useEffect(() => {
     (async () => {
       try {
         if (sightseeingService && sightseeingService.getAllDestinations) {
           const res = await sightseeingService.getAllDestinations();
-          const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+          // 🔍 DEBUG
+          console.log("=== DESTINATIONS RESPONSE ===", res.data);
+          const raw = res.data?.data ?? res.data;
+          const list = Array.isArray(raw) ? raw
+            : Array.isArray(raw?.content) ? raw.content : [];
+          console.log("Destinations loaded:", list.length, list[0]);
           setDestinations(list);
         }
       } catch {
@@ -1297,6 +1319,8 @@ export default function SightseeingMaster() {
         )
       );
     }
+    // Rows ko signal do ki naya data load karein
+    setRefreshSignal((n) => n + 1);
   };
 
   const handleDelete = async (id, destName) => {
@@ -1421,6 +1445,7 @@ export default function SightseeingMaster() {
                 onAddSightseeing={openAdd}
                 onEdit={openEdit}
                 onDelete={handleDelete}
+                refreshSignal={refreshSignal}
               />
             ))
           ) : (

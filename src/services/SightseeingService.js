@@ -175,7 +175,6 @@
 
 
 
-
 import API from "./axiosInstance";
 
 // ============================================================
@@ -322,7 +321,7 @@ export function transformSightseeingResponse(backendData) {
 // ============================================================
 export const destinationService = {
   // Destinations accordion ke liye — id, name, attractions count, cities list
-  getAllDestinations: () => API.get("/destinations/"),
+  getAllDestinations: () => API.get("/destinations"),
 
   // City dropdown ke liye — specific destination ki cities
   getCitiesByDestination: (destinationName) =>
@@ -338,28 +337,28 @@ export const sightseeingService = {
   // 1. GET ALL SIGHTSEEINGS
   // ──────────────────────────────────────────────────────────
   getAllSightseeings: () => {
-    return API.get("/sightseeings/");
+    return API.get("/sightseeings");
   },
 
   // ──────────────────────────────────────────────────────────
   // 1b. GET ALL DESTINATIONS (accordion ke liye)
   // ──────────────────────────────────────────────────────────
   getAllDestinations: () => {
-    return API.get("/destinations/");
+    return API.get("/destinations");
   },
 
   // ──────────────────────────────────────────────────────────
   // 2. GET BY DESTINATION
   // ──────────────────────────────────────────────────────────
   getSightseeingsByDestination: (destination) => {
-    return API.get("/sightseeings/", { params: { destination } });
+    return API.get("/sightseeings", { params: { destination } });
   },
 
   // ──────────────────────────────────────────────────────────
   // 3. GET BY DESTINATION + CITY
   // ──────────────────────────────────────────────────────────
   getSightseeingsByCity: (destination, city) => {
-    return API.get("/sightseeings/", { params: { destination, city } });
+    return API.get("/sightseeings", { params: { destination, city } });
   },
 
   // ──────────────────────────────────────────────────────────
@@ -375,7 +374,7 @@ export const sightseeingService = {
   // ──────────────────────────────────────────────────────────
   createSightseeing: (formData) => {
     const mappedData = transformSightseeingData(formData);
-    return API.post("/sightseeings/", mappedData);
+    return API.post("/sightseeings", mappedData);
   },
 
   // ──────────────────────────────────────────────────────────

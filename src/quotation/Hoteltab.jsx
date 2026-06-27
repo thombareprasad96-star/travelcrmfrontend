@@ -342,8 +342,8 @@
 //   }, [open]);
 
 //   const getImage = (h) =>
-//     h.imagePath || h.imageUrl || h.image || h.photo || h.coverImage
-//     || h.hotelImage || h.imageURL || h.img
+//     h.imagePath || h.imagePath || h.image || h.photo || h.coverImage
+//     || h.hotelImage || h.imagePath || h.img
 //     || (Array.isArray(h.images) && h.images[0]) || null;
 //   const getCity = (h) =>
 //     h.city || h.destinationName || h.cityName || h.location || "";
@@ -499,7 +499,7 @@
 //       name: "", city: "", checkIn: "", checkOut: "",
 //       roomType: "", mealPlan: "", refundable: true,
 //       pricePerRoom: 0, rooms: 1,
-//       imageUrl: "", hotelId: null, stars: 0,
+//       imagePath: "", hotelId: null, stars: 0,
 //     };
 //   }
 
@@ -527,7 +527,7 @@
 //         ...h,
 //         name:     hotel.name || h.name,
 //         city:     hotel._city || hotel.city || hotel.destinationName || h.city,
-//         imageUrl: hotel._image || hotel.imagePath || hotel.imageUrl || "",
+//         imagePath: hotel._image || hotel.imagePath || hotel.imagePath || "",
 //         hotelId:  hotel.publicId || hotel.hotelId || hotel.id || null,
 //         stars:    hotel.stars || 0,
 //       };
@@ -618,10 +618,10 @@
 //               </div>
 
 //               {/* ── Hotel image preview (select hone par) ── */}
-//               {h.imageUrl && (
+//               {h.imagePath && (
 //                 <div className="flex items-center gap-3 p-2.5 bg-violet-50 rounded-xl border border-violet-100">
 //                   <img
-//                     src={h.imageUrl}
+//                     src={h.imagePath}
 //                     alt={h.name}
 //                     className="w-20 h-16 rounded-lg object-cover flex-shrink-0 border border-violet-200 shadow-sm"
 //                   />
@@ -864,8 +864,8 @@ function HotelSearchDropdown({ value, onSelect, allHotels, loading, onAdd, onEdi
   }, [open]);
 
   const getImage = (h) =>
-    h.imagePath || h.imageUrl || h.image || h.photo || h.coverImage
-    || h.hotelImage || h.imageURL || h.img
+    h.imagePath || h.imagePath || h.image || h.photo || h.coverImage
+    || h.hotelImage || h.imagePath || h.img
     || (Array.isArray(h.images) && h.images[0]) || null;
   const getCity = (h) =>
     h.city || h.destinationName || h.cityName || h.location || "";
@@ -1037,7 +1037,7 @@ function HotelFormModal({ open, onClose, editHotel, onSaved }) {
         city:          editHotel.city || "",
         stars:         editHotel.stars || 3,
         rating:        editHotel.rating?.toString() || "",
-        imagePath:     editHotel.imagePath || editHotel.imageUrl || "",
+        imagePath:     editHotel.imagePath || editHotel.imagePath || "",
         roomType:      editHotel.roomTypes?.[0]?.name || "Standard",
       });
       // Prefill cascade
@@ -1343,7 +1343,7 @@ export default function HotelTab({ onDataChange }) {
       name: "", city: "", checkIn: "", checkOut: "",
       roomType: "", mealPlan: "", refundable: true,
       pricePerRoom: 0, rooms: 1,
-      imageUrl: "", hotelId: null, stars: 0,
+      imagePath: "", hotelId: null, stars: 0,
     };
   }
 
@@ -1369,7 +1369,7 @@ export default function HotelTab({ onDataChange }) {
         ...h,
         name:     hotel.name || h.name,
         city:     hotel._city || hotel.city || hotel.destinationName || h.city,
-        imageUrl: hotel._image || hotel.imagePath || hotel.imageUrl || "",
+        imagePath: hotel._image || hotel.imagePath || hotel.imagePath || "",
         hotelId:  hotel.publicId || hotel.hotelId || hotel.id || null,
         stars:    hotel.stars || 0,
       };
@@ -1405,7 +1405,7 @@ export default function HotelTab({ onDataChange }) {
     ) || savedHotel;
 
     if (fresh && activeRowId != null) {
-      const getImg  = (h) => h.imagePath || h.imageUrl || h.image || "";
+      const getImg  = (h) => h.imagePath || h.imagePath || h.image || "";
       const getCity = (h) => h.city || h.destinationName || "";
       setHotels(prev => prev.map(h => {
         if (h.id !== activeRowId) return h;
@@ -1413,7 +1413,7 @@ export default function HotelTab({ onDataChange }) {
           ...h,
           name:     fresh.name || h.name,
           city:     getCity(fresh) || h.city,
-          imageUrl: getImg(fresh) || "",
+          imagePath: getImg(fresh) || "",
           hotelId:  fresh.publicId || fresh.hotelId || fresh.id || null,
           stars:    fresh.stars || 0,
         };
@@ -1505,9 +1505,9 @@ export default function HotelTab({ onDataChange }) {
               </div>
 
               {/* ── Hotel image preview ── */}
-              {h.imageUrl && (
+              {h.imagePath && (
                 <div className="flex items-center gap-3 p-2.5 bg-violet-50 rounded-xl border border-violet-100">
-                  <img src={h.imageUrl} alt={h.name}
+                  <img src={h.imagePath} alt={h.name}
                     className="w-20 h-16 rounded-lg object-cover flex-shrink-0 border border-violet-200 shadow-sm" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">

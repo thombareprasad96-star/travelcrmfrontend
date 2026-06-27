@@ -1,5 +1,12 @@
 
 
+
+
+
+
+
+
+
 // // src/services/quotationService.js
 
 // import API from "./axiosInstance";
@@ -273,6 +280,11 @@
 //   getShareLink: (id) => {
 //     return API.get(`/quotations/${id}/share-link`);
 //   },
+
+//   // 12. WEBLINK VIEW ANALYTICS — GET /quotations/{id}/weblink-analytics
+//   getWeblinkAnalytics: (id) => {
+//     return API.get(`/quotations/${id}/weblink-analytics`);
+//   },
 // };
 
 // export default quotationService;
@@ -284,9 +296,40 @@
 
 
 
+
 // src/services/quotationService.js
 
-import API from "./axiosInstance";
+import axios from "axios";
+
+// ── AXIOS INSTANCE ────────────────────────────────────────────
+// baseURL already has /api — endpoints mein /api dobara mat lagao
+const api = axios.create({
+  baseURL: "http://localhost:8080/api",
+  headers: { "Content-Type": "application/json" },
+  timeout: 15000,
+});
+
+// ── REQUEST INTERCEPTOR ───────────────────────────────────────
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token"); // leadService se match
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ── RESPONSE INTERCEPTOR ──────────────────────────────────────
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 // ═════════════════════════════════════════════════════════════
 // PAYLOAD BUILDER
@@ -396,13 +439,20 @@ export function buildQuotationPayload({
       amount   : Number(hotelAmount) || 0,
       notes    : hotelNotes,
       hotels   : hotels.map(h => ({
-        name       : h.name      || "",
-        city       : h.city      || "",
-        checkIn    : h.checkIn   || "",
-        checkOut   : h.checkOut  || "",
-        roomType   : h.roomType  || "",
-        mealPlan   : h.mealPlan  || "",
-        refundable : h.refundable ?? true,
+        name         : h.name      || "",
+        city         : h.city      || "",
+        checkIn      : h.checkIn   || "",
+        checkOut     : h.checkOut  || "",
+        roomType     : h.roomType  || "",
+        mealPlan     : h.mealPlan  || "",
+        refundable   : h.refundable ?? true,
+        // ☁️ Hotel image (Cloudinary URL) — weblink/PDF mein dikhane ke liye
+        imagePath    : h.imagePath || h.imageUrl || "",
+        // Extra fields jo HotelTab bhejta hai
+        stars        : Number(h.stars)        || 0,
+        rooms        : Number(h.rooms)        || 1,
+        pricePerRoom : Number(h.pricePerRoom) || 0,
+        hotelId      : h.hotelId   || null,
       })),
     },
 
@@ -421,6 +471,7 @@ export function buildQuotationPayload({
           description : act.description || "",
           meals       : act.meals       || [],
           transfer    : act.transfer    || "Private",
+          imagePath   : act.imagePath   || act.imageUrl || "",
         })),
       })),
     },
@@ -455,6 +506,8 @@ export function buildQuotationPayload({
         endDate   : v.endDate   || "",
         price     : Number(v.price) || 0,
         notes     : v.notes     || "",
+        imagePath : v.imagePath || v.imageUrl || "",
+        qty       : Number(v.qty) || 1,
       })),
     },
 
@@ -498,51 +551,51 @@ export const quotationService = {
   // 1. CREATE — POST /quotations
   createQuotation: (tabsData) => {
     const payload = buildQuotationPayload(tabsData);
-    return API.post("/quotations", payload);
+    return api.post("/quotations", payload);
   },
 
   // 2. UPDATE — PUT /quotations/{id}
   updateQuotation: (id, tabsData) => {
     const payload = buildQuotationPayload(tabsData);
-    return API.put(`/quotations/${id}`, payload);
+    return api.put(`/quotations/${id}`, payload);
   },
 
   // 3. GET BY ID — GET /quotations/{id}
   getQuotationById: (id) => {
-    return API.get(`/quotations/${id}`);
+    return api.get(`/quotations/${id}`);
   },
 
   // 4. GET BY LEAD — GET /quotations/lead/{leadId}
   getQuotationsByLead: (leadId) => {
-    return API.get(`/quotations/lead/${leadId}`);
+    return api.get(`/quotations/lead/${leadId}`);
   },
 
   // 5. GET ALL — GET /quotations?page=0&size=20
   getAllQuotations: (page = 0, size = 20) => {
-    return API.get("/quotations", { params: { page, size } });
+    return api.get("/quotations", { params: { page, size } });
   },
 
   // 6. DELETE — DELETE /quotations/{id}
   deleteQuotation: (id) => {
-    return API.delete(`/quotations/${id}`);
+    return api.delete(`/quotations/${id}`);
   },
 
   // 7. UPDATE STAGE — PATCH /quotations/{id}/stage
   // stage: "Draft" | "Sent" | "Approved" | "Rejected"
   updateStage: (id, stage) => {
-    return API.patch(`/quotations/${id}/stage`, null, {
+    return api.patch(`/quotations/${id}/stage`, null, {
       params: { stage },
     });
   },
 
   // 8. DUPLICATE — POST /quotations/{id}/duplicate
   duplicateQuotation: (id) => {
-    return API.post(`/quotations/${id}/duplicate`);
+    return api.post(`/quotations/${id}/duplicate`);
   },
 
   // 9. GENERATE PDF — GET /quotations/{id}/pdf
   generatePdf: (id) => {
-    return API.get(`/quotations/${id}/pdf`, {
+    return api.get(`/quotations/${id}/pdf`, {
       responseType: "blob",
     });
   },
@@ -550,17 +603,12 @@ export const quotationService = {
   // 10. SEND EMAIL — POST /quotations/{id}/send-email
   // Body: { toEmail, subject, message }
   sendEmail: (id, emailData) => {
-    return API.post(`/quotations/${id}/send-email`, emailData);
+    return api.post(`/quotations/${id}/send-email`, emailData);
   },
 
   // 11. GET SHARE LINK — GET /quotations/{id}/share-link
   getShareLink: (id) => {
-    return API.get(`/quotations/${id}/share-link`);
-  },
-
-  // 12. WEBLINK VIEW ANALYTICS — GET /quotations/{id}/weblink-analytics
-  getWeblinkAnalytics: (id) => {
-    return API.get(`/quotations/${id}/weblink-analytics`);
+    return api.get(`/quotations/${id}/share-link`);
   },
 };
 
