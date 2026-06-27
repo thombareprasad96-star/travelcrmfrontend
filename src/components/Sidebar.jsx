@@ -1706,7 +1706,7 @@ const Sidebar = ({ isExpanded }) => {
           {/* Settings & Bottom links */}
           <li>
             <Link 
-              to="/settings" 
+              to="/CompanySettings" 
               onClick={() => handleLinkClick('Settings')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Settings' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
@@ -1745,7 +1745,7 @@ const Sidebar = ({ isExpanded }) => {
 
           <li>
             <Link 
-              to="/subscription" 
+              to="/SubscriptionInfo" 
               onClick={() => handleLinkClick('Subscription')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Subscription' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'

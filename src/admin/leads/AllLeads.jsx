@@ -3848,240 +3848,289 @@
 
 
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import  bookingService from "../../services/bookingService";
-import  EditBookingModal from "../../bookings/EditBookingModal";
-import CancelBookingModal from "../../bookings/CancelBookingModal";
-import { hasPermission, P } from "../../services/access";
+import React, { useState, useEffect, memo, useMemo } from 'react';
+import { leadService } from '../../services/leadService';
+import { quotationService } from '../../services/quotationService';
+import { hasPermission, P } from '../../services/access';
+import AccessDenied from '../../components/AccessDenied';
+import {
+  Users, Trophy, PieChart, TrendingUp, Search,
+  DownloadCloud, FileText, Plus,
+  Inbox, User, Calendar, ChevronDown, ChevronRight,
+  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle, Copy, BarChart3, ArrowRightLeft
+} from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import QuotationWebView from '../../quotation/QuotationWebView';
+import WeblinkAnalyticsModal from '../../quotation/WeblinkAnalyticsModal';
+import ConvertToBookingModal from './ConvertToBookingModal';
 
-/* ─────────────────────────────────────────
-   CONSTANTS
-───────────────────────────────────────── */
-export const BOOKING_STATUSES = ["Confirmed","Pending","Cancelled","Completed","Refunded"];
-export const PAY_STATUSES     = ["Paid","Partial","Unpaid","Refunded"];
-const MONTHS = ["January","February","March","April","May","June",
-                "July","August","September","October","November","December"];
-
-const STATUS_STYLE = {
-  Confirmed:  "bg-green-100 text-green-700 border-green-200",
-  Pending:    "bg-amber-100 text-amber-700 border-amber-200",
-  Cancelled:  "bg-red-100 text-red-600 border-red-200",
-  Completed:  "bg-blue-100 text-blue-700 border-blue-200",
-  Refunded:   "bg-purple-100 text-purple-700 border-purple-200",
-};
-const PAY_STYLE = {
-  Paid:     "bg-emerald-100 text-emerald-700",
-  Partial:  "bg-orange-100 text-orange-700",
-  Unpaid:   "bg-rose-100 text-rose-700",
-  Refunded: "bg-slate-100 text-slate-600",
-};
-const STATUS_DOT = {
-  Confirmed:"bg-green-500", Pending:"bg-amber-500",
-  Cancelled:"bg-red-500",   Completed:"bg-blue-500", Refunded:"bg-purple-500",
-};
-const STAT_CARDS = [
-  { key:"total",     label:"Total Bookings", icon:"✈️",  gradient:"from-cyan-500 to-cyan-400",     money:false },
-  { key:"confirmed", label:"Confirmed",      icon:"✅",  gradient:"from-green-500 to-emerald-400", money:false },
-  { key:"revenue",   label:"Total Revenue",  icon:"💰",  gradient:"from-amber-500 to-yellow-400",  money:true  },
-  { key:"net",       label:"Net Revenue",    icon:"📊",  gradient:"from-blue-600 to-blue-400",     money:true  },
-  { key:"refunds",   label:"Total Refunds",  icon:"↩️",  gradient:"from-rose-500 to-red-400",      money:true  },
-  { key:"profit",    label:"Net Profit",     icon:"📈",  gradient:"from-slate-600 to-slate-500",   money:true  },
+/* ─── COLOR HELPERS ───────────────────────────────────── */
+const AVATAR_GRADIENTS = [
+  'from-blue-700 to-blue-800',
+  'from-red-600 to-red-800',
+  'from-violet-700 to-purple-800',
+  'from-emerald-700 to-emerald-800',
+  'from-pink-700 to-rose-800',
+  'from-amber-700 to-amber-800',
 ];
+const ACCENT_SOLIDS = ['#1553CC', '#B91C1C', '#6D28D9', '#047857', '#BE185D', '#B45309'];
 
-/* ─────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────── */
-export function fmtINR(n) {
-  return "₹" + Number(n).toLocaleString("en-IN");
-}
-export function fmtDate(d) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
+function colorForIndex(idx) {
+  const i = idx % AVATAR_GRADIENTS.length;
+  return { avatar: AVATAR_GRADIENTS[i], accent: ACCENT_SOLIDS[i] };
 }
 
-// Backend enums are UPPERCASE (CONFIRMED / PAID); this page's style maps are Title Case.
-const titleCase = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
+const STAGE_PILL = {
+  'New Lead':  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'Contacted': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Converted': 'bg-green-100 text-green-700 border-green-200',
+  'Lost':      'bg-red-100 text-red-700 border-red-200',
+};
+const stagePill = (stage) => STAGE_PILL[stage] || 'bg-orange-100 text-orange-700 border-orange-200';
 
-// Map a backend BookingResponseDTO → the shape this page renders. publicId is the only
-// id exposed, so it doubles as the row key / selection id (never the internal Long id).
-function normalizeBooking(b = {}) {
-  return {
-    id:             b.publicId,
-    code:           b.bookingCode,
-    customer:       b.customerNameSnapshot,
-    createdBy:      b.createdBy,
-    destination:    b.destinationSnapshot,
-    services:       Array.isArray(b.services) ? b.services : [],
-    bookingDate:    b.bookingDate,
-    travelDate:     b.travelDate,
-    customerAmount: Number(b.customerAmount) || 0,
-    vendorCost:     Number(b.vendorCost) || 0,
-    gst:            Number(b.gst) || 0,
-    tcs:            Number(b.tcs) || 0,
-    totalPayable:   Number(b.totalPayable) || 0,
-    paid:           Number(b.paidAmount) || 0,
-    netProfit:      Number(b.netProfit) || 0,
-    status:         titleCase(b.status),
-    payStatus:      titleCase(b.paymentStatus),
-  };
+const TYPE_PILL = {
+  'Fresh Lead': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Hot Lead':   'bg-red-100 text-red-700 border-red-200',
+  'Warm Lead':  'bg-amber-100 text-amber-700 border-amber-200',
+  'Cold Lead':  'bg-teal-100 text-teal-700 border-teal-200',
+};
+const typePill = (type) => TYPE_PILL[type] || 'bg-slate-100 text-slate-700 border-slate-200';
+
+// Exact pastel colors per service, matched to the design mockup
+const SERVICE_COLORS = {
+  Hotel:        { bg: '#E6F1FB', text: '#042C53' },
+  Flight:       { bg: '#EEEDFE', text: '#26215C' },
+  Cruise:       { bg: '#E1F5EE', text: '#04342C' },
+  Vehicle:      { bg: '#FAECE7', text: '#4A1B0C' },
+  Visa:         { bg: '#FBEAF0', text: '#4B1528' },
+  Passport:     { bg: '#F1EFE8', text: '#2C2C2A' },
+  Sightseeing:  { bg: '#FAEEDA', text: '#412402' },
+};
+const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
+
+/* ─── PAGINATION ─────────────────────────────────────── */
+function buildPageNumbers(totalPages, pageIndex) {
+  if (totalPages <= 0) return [];
+  return Array.from({ length: totalPages }, (_, i) => i)
+    .filter(p => p === 0 || p === totalPages - 1 || Math.abs(p - pageIndex) <= 1)
+    .reduce((acc, p, i, arr) => {
+      if (i > 0 && p - arr[i - 1] > 1) acc.push('\u2026');
+      acc.push(p);
+      return acc;
+    }, []);
 }
 
-// 👉 FIX: Component ke bahar empty array define kiya taaki memory reference stable rahe
-const EMPTY_BOOKINGS_ARRAY = [];
-
-/* ─────────────────────────────────────────
-   SUB-COMPONENTS
-───────────────────────────────────────── */
-
-// Toast notification
-function Toast({ msg, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
+const NavButton = memo(function NavButton({ label, onClick, disabled }) {
   return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
-      animate-[slideIn_.3s_ease_both]
-      ${type === "success"
-        ? "bg-green-50 border-green-200 text-green-800"
-        : "bg-red-50 border-red-200 text-red-800"}`}
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
+        hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      <span className="text-lg">{type === "success" ? "✅" : "❌"}</span>
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg ml-1">×</button>
-    </div>
+      {label}
+    </button>
   );
-}
+});
 
-// Stat card
-function StatCard({ card, value }) {
+const PageButton = memo(function PageButton({ page, isActive, onClick }) {
   return (
-    <div className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden`}>
-      <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-white/10" />
-      <div className="absolute -right-2 -bottom-6 w-28 h-28 rounded-full bg-white/10" />
-      <div className="flex items-start justify-between relative z-10">
-        <div>
-          <p className="text-xs font-bold opacity-80 uppercase tracking-widest mb-1">{card.label}</p>
-          <p className="text-2xl sm:text-3xl font-extrabold leading-none">
-            {card.money ? fmtINR(value) : value}
-          </p>
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">
-          {card.icon}
-        </div>
+    <button
+      onClick={onClick}
+      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
+        isActive
+          ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-sm'
+          : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+      }`}
+    >
+      {page + 1}
+    </button>
+  );
+});
+
+function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goToPage, changePageSize }) {
+  const from = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
+  const to   = Math.min((pageIndex + 1) * pageSize, totalElements);
+
+  const pageNumbers = useMemo(
+    () => buildPageNumbers(totalPages, pageIndex),
+    [totalPages, pageIndex]
+  );
+
+  if (totalElements === 0) return null;
+
+  const isFirst = pageIndex === 0;
+  const isLast  = pageIndex >= totalPages - 1;
+
+  return (
+    <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p className="text-xs text-slate-400 font-medium">
+        Showing <span className="font-bold text-slate-600">{from}</span>{'\u2013'}<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
+      </p>
+      <div className="flex items-center gap-1.5 flex-wrap justify-center">
+        <NavButton label="\u00ab" onClick={() => goToPage(0)}             disabled={isFirst} />
+        <NavButton label="\u2039" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
+        {pageNumbers.map((p, i) =>
+          typeof p === 'string'
+            ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">{'\u2026'}</span>
+            : <PageButton key={p} page={p} isActive={pageIndex === p} onClick={() => goToPage(p)} />
+        )}
+        <NavButton label="\u203a" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
+        <NavButton label="\u00bb" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
+        <select
+          value={pageSize}
+          onChange={e => changePageSize(Number(e.target.value))}
+          className="ml-2 h-8 px-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium bg-white focus:border-blue-400 outline-none cursor-pointer"
+        >
+          {[10, 25, 50, 100].map(s => <option key={s} value={s}>{s} / page</option>)}
+        </select>
       </div>
     </div>
   );
 }
 
-// Booking detail modal
-function BookingModal({ booking, onClose, onEdit, onCancel }) {
-  if (!booking) return null;
-  const canCancel = hasPermission(P.BOOKING_CANCEL) && booking.status !== "Completed" && booking.status !== "Cancelled";
-  const payPct = booking.totalPayable > 0
-    ? Math.round(booking.paid / booking.totalPayable * 100)
-    : 0;
+/* ─── STAT CARD ──────────────────────────────────────── */
+function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }) {
+  const [displayed, setDisplayed] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    const target = typeof value === 'number' ? value : 0;
+    if (target === 0) { setDisplayed(0); return; }
+    const step = Math.ceil(target / 60);
+    const interval = setInterval(() => {
+      start = Math.min(start + step, target);
+      setDisplayed(start);
+      if (start >= target) clearInterval(interval);
+    }, 16);
+    return () => clearInterval(interval);
+  }, [value]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    <div
+      className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
+        hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
+      style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto
-        animate-[popIn_.25s_ease_both]"
-      >
-        {/* Modal Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 rounded-t-2xl flex items-start justify-between">
-          <div>
-            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-0.5">Booking Detail</p>
-            <h2 className="text-white text-xl font-extrabold">{booking.code}</h2>
-            <p className="text-blue-100 text-sm mt-0.5">{booking.customer}</p>
-          </div>
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-lg transition-all">
-            ×
-          </button>
+      <Icon size={64} strokeWidth={1.5} className="absolute -right-2 -bottom-2 opacity-15" />
+      <div className="relative z-10">
+        <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all mb-3">
+          <Icon size={20} strokeWidth={2.2} />
         </div>
+        <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
+          {displayed.toLocaleString('en-IN')}{suffix}
+        </p>
+        <p className="text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
+      </div>
+    </div>
+  );
+}
 
-        <div className="p-6 space-y-5">
-          {/* Badges */}
-          <div className="flex flex-wrap gap-2">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${STATUS_STYLE[booking.status]}`}>
-              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${STATUS_DOT[booking.status]}`} />
-              {booking.status}
-            </span>
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${PAY_STYLE[booking.payStatus]}`}>
-              💳 {booking.payStatus}
-            </span>
-            {booking.services?.map(s => (
-              <span key={s} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">{s}</span>
-            ))}
+/* ─── SKELETON ROW ───────────────────────────────────── */
+function SkeletonRow() {
+  return (
+    <div className="grid items-center gap-2 px-5 py-4" style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}>
+      {[...Array(7)].map((_, i) => (
+        <div key={i} className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
+      ))}
+    </div>
+  );
+}
+
+/* ─── TOAST ──────────────────────────────────────────── */
+function Toast({ msg, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
+  return (
+    <div
+      className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
+        ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}
+      style={{ animation: 'slideIn .3s ease both' }}
+    >
+      {type === 'success' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
+      <p className="text-sm font-semibold flex-1">{msg}</p>
+      <button onClick={onClose} className="opacity-50 hover:opacity-100 ml-1"><X size={16} /></button>
+    </div>
+  );
+}
+
+/* ─── VIEW LEAD MODAL ────────────────────────────────── */
+function ViewLeadModal({ lead, onClose, onEdit, canEdit }) {
+  if (!lead) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto z-10">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-5 rounded-t-2xl">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-extrabold shadow-lg flex-shrink-0">
+                {(lead.customerName || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h2 className="text-white text-xl font-extrabold capitalize">{lead.customerName || 'N/A'}</h2>
+                <p className="text-slate-400 text-sm font-medium">Lead #{lead.id}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-700">{lead.leadType || 'N/A'}</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{lead.leadStage || 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all flex-shrink-0">
+              <X size={16} />
+            </button>
           </div>
-
-          {/* Detail grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        </div>
+        <div className="p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              ["📍","Destination",   booking.destination],
-              ["📅","Travel Date",   fmtDate(booking.travelDate)],
-              ["🗓️","Booking Date",  fmtDate(booking.bookingDate)],
-              ["👤","Created By",    booking.createdBy],
-              ["💰","Customer Amt",  fmtINR(booking.customerAmount)],
-              ["🏷️","Vendor Cost",   fmtINR(booking.vendorCost)],
-              ["🧾","GST (5%)",      fmtINR(booking.gst)],
-              ["📋","TCS (5%)",      fmtINR(booking.tcs)],
-              ["💳","Total Payable", fmtINR(booking.totalPayable)],
-            ].map(([icon, label, val]) => (
-              <div key={label} className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                <p className="text-xs text-slate-400 font-medium mb-0.5">{icon} {label}</p>
-                <p className="text-sm font-bold text-slate-700">{val}</p>
+              [Phone,    'Phone',      lead.phone,   'bg-green-50 text-green-600'],
+              [Mail,     'Email',      lead.email,   'bg-blue-50 text-blue-600'],
+              [Users,    'Travelers',  `${lead.adults || 0} Adults, ${lead.children || 0} Child, ${lead.infants || 0} Infant`, 'bg-purple-50 text-purple-600'],
+              [User,     'Assigned To', lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || 'Unassigned', 'bg-orange-50 text-orange-600'],
+              [Calendar, 'Created',   lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014', 'bg-teal-50 text-teal-600'],
+              [Briefcase,'Lead Type',  lead.leadType, 'bg-indigo-50 text-indigo-600'],
+            ].map(([Icon, label, val, ic]) => (
+              <div key={label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${ic}`}><Icon size={14} /></div>
+                <div className="min-w-0">
+                  <p className="text-xs text-slate-400 font-medium">{label}</p>
+                  <p className="text-sm font-bold text-slate-700 truncate">{val || '\u2014'}</p>
+                </div>
               </div>
             ))}
           </div>
-
-          {/* Payment progress */}
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-bold text-slate-600">Payment Progress</p>
-              <p className="text-sm font-extrabold text-blue-600">{payPct}%</p>
-            </div>
-            <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-700
-                ${payPct === 100 ? "bg-green-500" : payPct > 0 ? "bg-blue-500" : "bg-slate-300"}`}
-                style={{ width: `${payPct}%` }} />
-            </div>
-            <div className="flex justify-between mt-1.5 text-xs text-slate-400 font-medium">
-              <span>Paid: {fmtINR(booking.paid)}</span>
-              <span>Due: {fmtINR(Math.max(0, booking.totalPayable - booking.paid))}</span>
-            </div>
-          </div>
-
-          {/* Profit */}
-          <div className={`rounded-xl p-4 border flex items-center gap-3
-            ${booking.netProfit >= 0 ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}`}>
-            <span className="text-2xl">{booking.netProfit >= 0 ? "📈" : "📉"}</span>
+          {lead.itinerary && lead.itinerary.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-slate-500">Net Profit</p>
-              <p className={`text-lg font-extrabold ${booking.netProfit >= 0 ? "text-green-700" : "text-red-600"}`}>
-                {fmtINR(booking.netProfit)}
-              </p>
+              <p className="text-sm font-extrabold text-slate-700 mb-3 flex items-center gap-2"><MapPin size={14} className="text-blue-500" /> Destination & Itinerary</p>
+              <div className="flex flex-wrap gap-2">
+                {lead.itinerary.map((item, i) => (
+                  <span key={i} className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700">
+                    {item.destination} <span className="text-blue-600 font-extrabold">({item.nights}N)</span>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Actions */}
+          )}
+          {lead.services && lead.services.length > 0 && (
+            <div>
+              <p className="text-sm font-extrabold text-slate-700 mb-3">Services</p>
+              <div className="flex flex-wrap gap-1.5">
+                {lead.services.map((service, i) => (
+                  <span key={i} className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider">{service}</span>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={() => { onClose(); onEdit?.(booking); }}
-              className="flex-1 min-w-[120px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all">
-              ✏️ Edit Booking
-            </button>
-            {canCancel && (
-              <button onClick={() => { onClose(); onCancel?.(booking); }}
-                className="flex-1 min-w-[120px] py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-sm font-bold transition-all">
-                🚫 Cancel Booking
+            {canEdit && (
+              <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
+                <Pencil size={14} /> Edit
               </button>
             )}
-            <button className="flex-1 min-w-[120px] py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-bold transition-all">
-              🖨️ Print
+            <button onClick={onClose} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
+              Close
             </button>
           </div>
         </div>
@@ -4090,530 +4139,981 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
   );
 }
 
-// Mobile booking card
-function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete }) {
-  const canCancel = hasPermission(P.BOOKING_CANCEL) && b.status !== "Completed" && b.status !== "Cancelled";
-  const payPct = b.totalPayable > 0 ? Math.round(b.paid / b.totalPayable * 100) : 0;
+/* ─── EDIT LEAD MODAL ────────────────────────────────── */
+function EditLeadModal({ lead, onClose, onSave }) {
+  const initialAssignName =
+    lead?.assignedUser?.fullName ||
+    lead?.assignedUser?.name ||
+    lead?.assignedUserName ||
+    lead?.assignTo ||
+    'Unassigned';
+
+  const [form, setForm] = useState({
+    customerName: lead?.customerName || '',
+    email:        lead?.email        || '',
+    phone:        lead?.phone        || '',
+    adults:       lead?.adults       || 0,
+    children:     lead?.children     || 0,
+    infants:      lead?.infants      || 0,
+    assignTo:     initialAssignName,
+    leadType:     lead?.leadType     || '',
+    leadStage:    lead?.leadStage    || '',
+  });
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const fields = [
+    { key: 'customerName', label: 'Customer Name', type: 'text',   placeholder: 'Enter customer name',  span: true },
+    { key: 'email',        label: 'Email Address', type: 'email',  placeholder: 'customer@email.com',   span: true },
+    { key: 'phone',        label: 'Phone Number',  type: 'tel',    placeholder: '+91 98765 43210' },
+    { key: 'assignTo',     label: 'Assigned To',   type: 'text',   placeholder: 'Agent name' },
+    { key: 'adults',       label: 'Adults',        type: 'number' },
+    { key: 'children',     label: 'Children',      type: 'number' },
+    { key: 'infants',      label: 'Infants',       type: 'number' },
+    { key: 'leadType',     label: 'Lead Type',     type: 'text',   placeholder: 'e.g. Hot / Cold' },
+    { key: 'leadStage',    label: 'Lead Stage',    type: 'text',   placeholder: 'e.g. New Lead' },
+  ];
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">{b.code}</span>
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[b.status]}`}>
-              <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${STATUS_DOT[b.status]}`} />
-              {b.status}
-            </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto z-10">
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-6 py-5 rounded-t-2xl flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-extrabold text-lg">Edit Lead #{lead?.id}</h2>
+            <p className="text-white/70 text-xs mt-0.5">Update lead information below</p>
           </div>
-          <p className="font-bold text-slate-800 text-sm">{b.customer}</p>
-          <p className="text-xs text-slate-400 mt-0.5">📍 {b.destination}</p>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all"><X size={16} /></button>
         </div>
-        <div className="text-right">
-          <p className="text-base font-extrabold text-slate-800">{fmtINR(b.totalPayable)}</p>
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${PAY_STYLE[b.payStatus]}`}>{b.payStatus}</span>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {fields.map(f => (
+              <div key={f.key} className={f.span ? 'sm:col-span-2' : ''}>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">{f.label}</label>
+                <input
+                  type={f.type}
+                  value={form[f.key]}
+                  min={f.type === 'number' ? 0 : undefined}
+                  disabled={f.key === 'assignTo'}
+                  onChange={e => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
+                  placeholder={f.placeholder}
+                  className={`w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all ${
+                    f.key === 'assignTo' ? 'bg-slate-100 cursor-not-allowed opacity-80' : 'bg-white'
+                  }`}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-600 font-bold text-sm transition-all bg-white hover:bg-slate-50">Cancel</button>
+            <button onClick={() => onSave(form)} className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200">Save Changes</button>
+          </div>
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {b.services?.map(s => (
-          <span key={s} className="text-xs bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded-full">{s}</span>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>📅 {fmtDate(b.travelDate)}</span>
-        <span>Profit: <span className={b.netProfit >= 0 ? "text-green-600 font-bold" : "text-red-500 font-bold"}>{fmtINR(b.netProfit)}</span></span>
-      </div>
-
-      <div>
-        <div className="flex justify-between text-xs text-slate-400 mb-1">
-          <span>Payment</span><span>{payPct}%</span>
-        </div>
-        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${payPct === 100 ? "bg-green-500" : payPct > 0 ? "bg-blue-500" : "bg-slate-200"}`}
-            style={{ width: `${payPct}%` }} />
-        </div>
-      </div>
-
-      <div className="flex gap-2 pt-1">
-        <button onClick={() => onView(b)} className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all">👁 View</button>
-        <button onClick={() => onEdit?.(b)} className="flex-1 py-2 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-xs font-bold transition-all">✏️ Edit</button>
-        {canCancel && (
-          <button onClick={() => onCancel?.(b)} className="flex-1 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold transition-all">🚫 Cancel</button>
-        )}
-        <button onClick={() => onDelete(b.id)} className="w-9 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 text-xs font-bold transition-all flex items-center justify-center">🗑</button>
       </div>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────
-   MAIN PAGE
-───────────────────────────────────────── */
-export default function BookingsPage({
-  bookings: propBookings = EMPTY_BOOKINGS_ARRAY, // 👉 FIX: Stable memory reference instead of `[]`
-  loading: propLoading = false,
-  onCreateLead,
-  onEdit,
-  onRefresh,
-}) {
-  const [bookings, setBookings]     = useState(propBookings);
-  const [loading, setLoading]       = useState(propLoading);
-  const [search, setSearch]         = useState("");
-  const [filterStatus, setFilterStatus]   = useState("All Status");
-  const [filterPay, setFilterPay]         = useState("All Payment Status");
-  const [filterMonth, setFilterMonth]     = useState("All Booking Months");
-  const [filterTravel, setFilterTravel]   = useState("All Travel Months");
-  const [sortKey, setSortKey]       = useState("id");
-  const [sortDir, setSortDir]       = useState("desc");
-  const [page, setPage]             = useState(1);
-  const perPage = 10;
-  const [selected, setSelected]     = useState(new Set());
-  const [modal, setModal]           = useState(null);
-  const [editBooking, setEditBooking]     = useState(null);
-  const [cancelBooking, setCancelBooking] = useState(null);
-  const [toast, setToast]           = useState(null);
+/* ─── DELETE CONFIRM ─────────────────────────────────── */
+function DeleteConfirm({ lead, onClose, onConfirm }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm z-10 p-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"><Trash2 size={26} className="text-red-500" /></div>
+        <h3 className="text-lg font-extrabold text-slate-800 mb-1">Delete Lead?</h3>
+        <p className="text-sm text-slate-500 mb-5">
+          Are you sure you want to delete lead <span className="font-bold text-slate-700">#{lead?.id} ({lead?.customerName || 'N/A'})</span>? This action cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose}   className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
+          <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-200 transition-all">Yes, Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const showToast = (msg, type = "success") => setToast({ msg, type });
+/* ─── EXPANDABLE LEAD ROW ─────────────────────────────── */
+function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onStageChange, onViewQuotations, onConvert, canEdit, canDelete, canConvert }) {
+  const isConverted = lead.leadStage === 'Converted' || !!lead.convertedBookingPublicId;
+  const { avatar, accent } = colorForIndex(index);
+  const name = lead.customerName || 'N/A';
+  const initial = (name || 'U').charAt(0).toUpperCase();
 
-  // Standalone usage (the /Allbookings route renders this with no props) → fetch from the
-  // API ourselves. When a parent supplies bookings via props, mirror those instead.
-  const selfManaged = propBookings.length === 0;
+  const assigneeName =
+    lead.assignedUser?.fullName ||
+    lead.assignedUser?.name ||
+    lead.assignedUser?.username ||
+    lead.assignedUserName ||
+    lead.assignTo ||
+    null;
 
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
+  const destination = lead.itinerary && lead.itinerary.length > 0 ? lead.itinerary[0] : null;
+  const travelersShort = `${lead.adults || 0} Adults${lead.children ? `, ${lead.children} Child` : ''}`;
+
+  return (
+    <div
+      className="border-t border-slate-100 first:border-t-0 transition-colors"
+      style={{
+        borderLeft: `3px solid ${accent}`,
+        background: isOpen ? '#eeda9215' : 'transparent',
+        animation: 'fadeUp .35s ease both',
+        animationDelay: `${index * 30}ms`,
+      }}
+    >
+      {/* ── Desktop row ── */}
+      <div
+        onClick={() => onToggle(lead.id)}
+        className="hidden md:grid items-center gap-2 px-5 py-4 cursor-pointer transition-colors"
+        style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px', background: isOpen ? '#eeda9230' : 'transparent' }}
+        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#eeda9218'; }}
+        onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
+      >
+        <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0`}>{initial}</div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
+            <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
+          </div>
+        </div>
+        <div className="min-w-0">
+          {destination ? (
+            <>
+              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}>
+                <MapPin size={11} /> {destination.destination}
+              </span>
+              <p className="text-[11px] text-slate-400 mt-1">{destination.nights}N · {travelersShort}</p>
+            </>
+          ) : (
+            <span className="text-sm text-slate-400">N/A</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[10px] font-extrabold flex-shrink-0">
+            {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <span className="text-sm font-semibold text-slate-700 truncate">{assigneeName || 'Unassigned'}</span>
+        </div>
+        <div onClick={e => e.stopPropagation()}>
+          <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)} disabled={!canEdit}
+            className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none appearance-none text-center transition-all ${canEdit ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'} ${stagePill(lead.leadStage)}`}>
+            <option value="New Lead">New Lead</option>
+            <option value="Contacted">Contacted</option>
+          </select>
+        </div>
+        <div className="text-right text-sm font-extrabold text-slate-800">N/A</div>
+        <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
+          <button onClick={() => onView(lead)} title="View" className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={14} /></button>
+          {canEdit && <button onClick={() => onEdit(lead)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={14} /></button>}
+        </div>
+      </div>
+
+      {/* ── Mobile row ── */}
+      <div
+        onClick={() => onToggle(lead.id)}
+        className="md:hidden px-4 py-3.5 cursor-pointer transition-colors"
+        style={{ background: isOpen ? '#eeda9230' : 'transparent' }}
+        onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#eeda9218'; }}
+        onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
+      >
+        <div className="flex items-start gap-3">
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0 mt-0.5`}>{initial}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
+                <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0 mt-1" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap mt-2">
+              {destination ? (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border" style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}>
+                  <MapPin size={11} /> {destination.destination} · {destination.nights}N
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400">No destination</span>
+              )}
+              <div onClick={e => e.stopPropagation()}>
+                <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)} disabled={!canEdit}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none appearance-none text-center transition-all ${canEdit ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'} ${stagePill(lead.leadStage)}`}>
+                  <option value="New Lead">New Lead</option>
+                  <option value="Contacted">Contacted</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2.5">
+              <div className="flex items-center gap-1.5">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[9px] font-extrabold flex-shrink-0">
+                  {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="text-xs font-semibold text-slate-600 truncate">{assigneeName || 'Unassigned'}</span>
+              </div>
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <button onClick={() => onView(lead)} className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
+                {canEdit && <button onClick={() => onEdit(lead)} className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Expand Panel ── */}
+      {isOpen && (
+        <div style={{ animation: 'fadeIn .2s ease both' }}>
+
+          {/* Top line — #eeda92 */}
+          <div style={{ height: '2px', background: '#eeda92' }} />
+
+          {/* Panel body — #eeda92 tint background */}
+          <div style={{
+            background: '#fffdf0',
+            padding: '10px 12px 12px 44px',
+            borderBottom: '2px solid #eeda92',
+          }}>
+
+            {/* Row 1: Client + Services */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingBottom: '8px', borderBottom: '1px dashed #eeda92' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eeda92', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a3e00', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
+                {initial}
+              </div>
+              <div style={{ flex: '0 0 auto' }}>
+                <p style={{ fontSize: '15px', fontWeight: 800, color: '#1E293B', marginBottom: '1px' }}>{lead.customerName || 'N/A'}</p>
+                <p style={{ fontSize: '10px', color: '#64748B' }}>{lead.email || '—'} · {lead.phone || '—'}</p>
+                <span style={{ display: 'inline-block', marginTop: '3px', background: '#eeda9230', color: '#7a5a00', padding: '1px 7px', borderRadius: '20px', fontSize: '9px', fontWeight: 700, border: '1px solid #eeda92' }}>
+                  {lead.adults || 0}A{lead.children > 0 ? ` ${lead.children}C` : ''}{lead.infants > 0 ? ` ${lead.infants}I` : ''}
+                </span>
+              </div>
+              <div style={{ width: '1px', background: '#eeda9255', margin: '2px 4px', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: '140px' }}>
+                <p style={{ fontSize: '11px', color: '#a07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '4px' }}>Services</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                  {lead.services && lead.services.length > 0
+                    ? lead.services.map((s, i) => {
+                        const c = serviceColor(s);
+                        return <span key={i} style={{ background: c.bg, color: c.text, padding: '2px 7px', borderRadius: '5px', fontSize: '11px', fontWeight: 600 }}>{s}</span>;
+                      })
+                    : <span style={{ fontSize: '10px', color: '#94A3B8' }}>None</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Single row — all 8 fields in one line */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(8, 1fr)',
+              gap: '6px',
+              padding: '8px 0',
+              borderBottom: '1px dashed #eeda92',
+              overflowX: 'auto',
+            }}>
+              {[
+                { label: 'Phone',     value: lead.phone || '—' },
+                { label: 'Created',   value: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A' },
+                { label: 'Margin',    value: '—' },
+                { label: 'Lead Type', value: lead.leadType || 'N/A' },
+                { label: 'Quotation', value: lead.latestQuotation?.publicId ? 'Generated' : 'Not generated' },
+                { label: 'Booking',   value: lead.bookingStatus   || 'Not booked'    },
+                { label: 'Weblink',   value: lead.shareLink       || '—'             },
+                { label: 'Logging',   value: lead.lastActivity    || 'No activity'   },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ minWidth: '70px' }}>
+                  <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '2px', whiteSpace: 'nowrap' }}>{label}</p>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Row 4: ID + Action buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#1E293B', borderRadius: '6px', padding: '4px 10px' }}>
+                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#eeda92' }} />
+                <span style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600 }}>ID:</span>
+                <span style={{ fontSize: '9px', fontFamily: 'monospace', color: '#eeda92', fontWeight: 700 }}>{String(lead.publicId || lead.id).slice(0, 14)}...</span>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {lead.latestQuotation?.publicId ? (
+                  <>
+                    {/* Existing quotation(s) → open a popup listing all of them, latest first */}
+                    <button onClick={() => onViewQuotations(lead)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', cursor: 'pointer' }}>
+                      <Eye size={11} /> View Quotations
+                    </button>
+                    {/* …and still allow creating a fresh one */}
+                    <Link to={`/createquotation?leadId=${lead.publicId || lead.id}`}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda92', color: '#3d2a00', fontSize: '10px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px #eeda9266' }}>
+                      <FileText size={11} /> Create New Quotation ↗
+                    </Link>
+                  </>
+                ) : (
+                  <Link to={`/createquotation?leadId=${lead.publicId || lead.id}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda92', color: '#3d2a00', fontSize: '10px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px #eeda9266' }}>
+                    <FileText size={11} /> Create Quotation ↗
+                  </Link>
+                )}
+                {isConverted ? (
+                  <Link to="/Allbookings"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#DCFCE7', color: '#15803D', fontSize: '10px', fontWeight: 700, textDecoration: 'none', border: '1px solid #BBF7D0' }}>
+                    <CheckCircle size={11} /> Booked ↗
+                  </Link>
+                ) : canConvert && (
+                  <button onClick={() => onConvert(lead)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#2563EB', color: '#fff', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px #2563eb55' }}>
+                    <ArrowRightLeft size={11} /> Convert to Booking
+                  </button>
+                )}
+                {canDelete && (
+                  <button onClick={() => onDelete(lead)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '7px', background: '#FEF2F2', color: '#DC2626', fontSize: '10px', fontWeight: 700, border: '1px solid #FECACA', cursor: 'pointer' }}>
+                    <Trash2 size={11} /> Delete
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+/* ─── QUOTATIONS LIST MODAL ──────────────────────────── */
+const QUOTE_STAGE_PILL = {
+  Draft:    'bg-slate-100 text-slate-700 border-slate-200',
+  Sent:     'bg-blue-100 text-blue-700 border-blue-200',
+  Approved: 'bg-green-100 text-green-700 border-green-200',
+  Rejected: 'bg-red-100 text-red-700 border-red-200',
+};
+
+function QuotationsModal({ lead, onClose, onToast }) {
+  const [list, setList]               = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [downloadingId, setDownloading] = useState(null);
+  const [emailingId, setEmailing]     = useState(null);
+  const [webViewQ, setWebViewQ]       = useState(null);   // quotation shown in the web view overlay
+  const [copied, setCopied]           = useState(false);
+  const [analyticsQ, setAnalyticsQ]   = useState(null);   // quotation shown in the weblink-analytics modal
+
+  const leadId = lead.publicId || lead.id;
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const res  = await quotationService.getQuotationsByLead(leadId);
+        const body = res.data;
+        const data = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        // Defensive client-side sort: latest → oldest (backend already orders by createdAt desc)
+        data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        if (active) setList(data);
+      } catch (e) {
+        console.error('Failed to load quotations:', e);
+        if (active) setError('Could not load quotations. Please try again.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [leadId]);
+
+  const downloadPdf = async (q) => {
     try {
-      const res     = await bookingService.getAll(0, 500);
-      const body    = res.data;
-      const rawList = Array.isArray(body?.data) ? body.data
-                    : Array.isArray(body)       ? body
-                    : [];
-      setBookings(rawList.map(normalizeBooking));
+      setDownloading(q.publicId);
+      const res = await quotationService.generatePdf(q.publicId);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quotation-${q.version || q.publicId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (e) {
-      console.error("Failed to load bookings:", e);
-      setToast({ msg: "Failed to load bookings.", type: "error" });
+      console.error('PDF download failed:', e);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  // The shareable WEB link (customer-facing web view): {origin}/q/{publicId}.
+  const webLink = (q) => `${window.location.origin}/q/${q.publicId}`;
+
+  // Copy the web link so the agent can paste it anywhere to share with the client.
+  const copyLink = async (q) => {
+    try {
+      await navigator.clipboard.writeText(webLink(q));
+      setCopied(true);
+      onToast?.('Link copied to clipboard', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      onToast?.('Could not copy the link.', 'error');
+    }
+  };
+
+  // Share on WhatsApp — opens wa.me with a prefilled message + the web-view link.
+  const shareWhatsApp = (q) => {
+    const url = webLink(q);
+    const msg = `Hi ${lead.customerName || ''}, here is your travel quotation ${q.version || ''}: ${url}`.trim();
+    const phone = (lead.phone || '').replace(/\D/g, '');
+    const wa = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(wa, '_blank', 'noopener,noreferrer');
+  };
+
+  // Email — sends the PDF to the lead's email via the backend, with the web link in the body.
+  // Confirmed first (outward action).
+  const shareEmail = async (q) => {
+    if (!lead.email) { onToast?.('This lead has no email address.', 'error'); return; }
+    if (!window.confirm(`Send quotation ${q.version || ''} to ${lead.email}?`)) return;
+    const url = webLink(q);
+    try {
+      setEmailing(q.publicId);
+      await quotationService.sendEmail(q.publicId, {
+        toEmail: lead.email,
+        subject: `Travel Quotation ${q.version || ''}`.trim(),
+        message: `Dear ${lead.customerName || 'Customer'},\n\nView your travel quotation online: ${url}\n\n(A PDF copy is attached.)\n\nRegards,\nTeam`,
+      });
+      onToast?.(`Quotation emailed to ${lead.email}`, 'success');
+    } catch (e) {
+      console.error('Email share failed:', e);
+      onToast?.('Failed to send the email.', 'error');
+    } finally {
+      setEmailing(null);
+    }
+  };
+
+  const fmtMoney = (v) => v == null ? '—' : `₹${Number(v).toLocaleString('en-IN')}`;
+  const fmtDate  = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col z-10">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white flex-shrink-0"><FileText size={18} /></div>
+            <div className="min-w-0">
+              <h2 className="text-white font-extrabold text-base truncate">Quotations{!loading && ` (${list.length})`}</h2>
+              <p className="text-slate-300 text-xs truncate">{lead.customerName || 'Lead'} {'·'} latest first</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center flex-shrink-0"><X size={16} /></button>
+        </div>
+
+        <div className="p-5 overflow-y-auto">
+          {loading ? (
+            <div className="py-10 text-center text-slate-400 text-sm">Loading quotations{'…'}</div>
+          ) : error ? (
+            <div className="py-10 text-center text-red-500 text-sm">{error}</div>
+          ) : list.length === 0 ? (
+            <div className="py-10 text-center text-slate-400 text-sm">No quotations yet for this lead.</div>
+          ) : (
+            <div className="space-y-3">
+              {list.map((q, idx) => (
+                <div key={q.publicId} className={`border rounded-xl p-4 transition-all ${idx === 0 ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 hover:border-blue-300'}`}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-extrabold text-slate-900">{q.version || 'v1.0'}</span>
+                        <p className="text-sm font-semibold text-slate-600 truncate">{q.title || 'Quotation'}</p>
+                        {idx === 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">Latest</span>}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${QUOTE_STAGE_PILL[q.quotationStage] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{q.quotationStage || '—'}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 truncate">
+                        {q.destination ? `${q.destination} · ` : ''}{fmtDate(q.createdAt)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-extrabold text-slate-800 whitespace-nowrap">{fmtMoney(q.grandTotal)}</p>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <button onClick={() => setWebViewQ(q)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all">
+                      <Eye size={13} /> Weblink
+                    </button>
+                    <button onClick={() => downloadPdf(q)} disabled={downloadingId === q.publicId}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all disabled:opacity-50">
+                      <DownloadCloud size={13} /> {downloadingId === q.publicId ? 'Downloading…' : 'PDF'}
+                    </button>
+                    {/* Share — icon only */}
+                    <button onClick={() => shareWhatsApp(q)} title="Share on WhatsApp"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 transition-all">
+                      <FaWhatsapp size={15} />
+                    </button>
+                    <button onClick={() => shareEmail(q)} disabled={emailingId === q.publicId} title="Email to customer"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all disabled:opacity-50">
+                      <Mail size={14} />
+                    </button>
+                    <button onClick={() => setAnalyticsQ(q)} title="Weblink views"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all">
+                      <BarChart3 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Web-format view of a selected quotation, shown over the list, with Share controls */}
+      {webViewQ && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
+            <button onClick={() => setWebViewQ(null)}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-blue-600 flex-shrink-0">
+              <X size={16} /> Back
+            </button>
+            {/* Share this quotation with the client */}
+            <div className="flex items-center gap-2">
+              <button onClick={() => copyLink(webViewQ)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
+                <Copy size={13} /> {copied ? 'Copied!' : 'Copy link'}
+              </button>
+              <button onClick={() => shareWhatsApp(webViewQ)} title="Share on WhatsApp"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 transition-all">
+                <FaWhatsapp size={15} />
+              </button>
+              <button onClick={() => shareEmail(webViewQ)} disabled={emailingId === webViewQ.publicId} title="Email to customer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all disabled:opacity-50">
+                <Mail size={14} />
+              </button>
+            </div>
+          </div>
+          <QuotationWebView publicId={webViewQ.publicId} />
+        </div>
+      )}
+
+      {analyticsQ && <WeblinkAnalyticsModal quotation={analyticsQ} onClose={() => setAnalyticsQ(null)} />}
+    </div>
+  );
+}
+
+/* ─── MAIN COMPONENT ─────────────────────────────────── */
+const Leads = () => {
+  const [leads,   setLeads]   = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize,  setPageSize]  = useState(10);
+  const [activeTab, setActiveTab] = useState('All');
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder,  setSortOrder]  = useState('desc');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [startDate,  setStartDate]  = useState('');
+  const [endDate,    setEndDate]    = useState('');
+
+  const [openRowId, setOpenRowId] = useState(null);
+
+  const [viewLead,     setViewLead]     = useState(null);
+  const [editLead,     setEditLead]     = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [quotationsLead, setQuotationsLead] = useState(null);
+  const [convertLead,  setConvertLead]  = useState(null);
+  const [toast,        setToast]        = useState(null);
+  const [denied,       setDenied]       = useState(false);
+
+  const showToast = (msg, type = 'success') => setToast({ msg, type });
+
+  useEffect(() => { fetchLeads(); }, []);
+
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      const response = await leadService.getAllLeads();
+      let data = [];
+      if (response.data) {
+        if      (Array.isArray(response.data.data))                            data = response.data.data;
+        else if (response.data.data && Array.isArray(response.data.data.content)) data = response.data.data.content;
+        else if (Array.isArray(response.data.content))                         data = response.data.content;
+        else if (Array.isArray(response.data))                                 data = response.data;
+      }
+      setLeads(data);
+    } catch (err) {
+      console.error('Error fetching leads:', err);
+      // A 403 here means the page was opened without LEAD_READ (e.g. by URL) —
+      // show the friendly access-denied page instead of a blank list.
+      if (err.response?.status === 403) setDenied(true);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
+
+  const handleUpdateSubmit = async (updatedFormData) => {
+    try {
+      const safeAssignedUserId =
+        editLead.assignedUserId ||
+        editLead.assignedUser?.publicId ||
+        editLead.assignedUser?.id ||
+        null;
+
+      const completePayload = {
+        ...editLead,
+        assignedUserId: safeAssignedUserId,
+        ...updatedFormData
+      };
+
+      await leadService.updateLead(
+        editLead.publicId || editLead.id,
+        completePayload,
+        editLead.services  || [],
+        editLead.itinerary || []
+      );
+
+      setLeads(prev => prev.map(l => l.id === editLead.id ? { ...l, ...updatedFormData } : l));
+      showToast('Lead updated successfully!');
+      setEditLead(null);
+    } catch (err) {
+      console.error('Failed to update lead:', err);
+      showToast(err.response?.data?.message || 'Error updating lead. Please try again.', 'error');
+    }
+  };
+
+  const handleStageChange = async (leadToUpdate, newStage) => {
+    try {
+      const safeAssignedUserId =
+        leadToUpdate.assignedUserId ||
+        leadToUpdate.assignedUser?.publicId ||
+        leadToUpdate.assignedUser?.id ||
+        null;
+
+      const completePayload = {
+        ...leadToUpdate,
+        leadStage: newStage,
+        assignedUserId: safeAssignedUserId
+      };
+
+      await leadService.updateLead(
+        leadToUpdate.publicId || leadToUpdate.id,
+        completePayload,
+        leadToUpdate.services  || [],
+        leadToUpdate.itinerary || []
+      );
+
+      setLeads(prev => prev.map(l => l.id === leadToUpdate.id ? { ...l, leadStage: newStage } : l));
+      showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
+    } catch (err) {
+      console.error('Failed to update stage:', err);
+      showToast(err.response?.data?.message || 'Error updating lead stage. Please try again.', 'error');
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (typeof leadService.deleteLead === 'function') {
+        await leadService.deleteLead(deleteTarget.publicId || deleteTarget.id);
+      }
+      setLeads(prev => prev.filter(l => l.id !== deleteTarget.id));
+      showToast(`Lead #${deleteTarget.id} has been deleted.`);
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error('Error deleting lead:', err);
+      showToast(err.response?.data?.message || 'Failed to delete lead. Please try again.', 'error');
+    }
+  };
+
+  // Reflect a successful conversion in the list: flip the lead to Converted and link the booking,
+  // so the row's action relabels to "Booked ↗" and a second conversion can't be started.
+  const handleConverted = (convertedLead, booking) => {
+    setLeads(prev => prev.map(l => l.id === convertedLead.id
+      ? { ...l, leadStage: 'Converted', convertedBookingPublicId: booking?.publicId }
+      : l));
+  };
+
+  const toggleRow = (id) => setOpenRowId(prev => prev === id ? null : id);
+
+  const safeLeads = Array.isArray(leads) ? leads : [];
+
+  const filteredLeads = useMemo(() => {
+    return safeLeads.filter(lead => {
+      const q = searchTerm.trim().toLowerCase();
+      const matchesSearch = q === '' ||
+        lead.customerName?.toLowerCase().includes(q) ||
+        lead.email?.toLowerCase().includes(q) ||
+        lead.phone?.includes(q) ||
+        lead.id?.toString().includes(q);
+
+      let matchesDate = true;
+      if (dateFilter !== 'all' && lead.createdAt) {
+        const ld    = new Date(lead.createdAt); ld.setHours(0,0,0,0);
+        const today = new Date();               today.setHours(0,0,0,0);
+        const yest  = new Date(today);          yest.setDate(today.getDate() - 1);
+        const week  = new Date(today);          week.setDate(today.getDate() - 7);
+
+        if      (dateFilter === 'today')     matchesDate = ld.getTime() === today.getTime();
+        else if (dateFilter === 'yesterday') matchesDate = ld.getTime() === yest.getTime();
+        else if (dateFilter === 'last_7_days') matchesDate = ld >= week && ld <= today;
+        else if (dateFilter === 'custom' && startDate && endDate) {
+          const s = new Date(startDate);
+          const e = new Date(endDate); e.setHours(23,59,59,999);
+          matchesDate = ld >= s && ld <= e;
+        }
+      }
+
+      let matchesTab = true;
+      if (activeTab === 'Fresh') {
+        matchesTab = lead.leadType === 'Fresh Lead';
+      } else if (activeTab !== 'All') {
+        matchesTab = lead.leadStage === activeTab;
+      }
+
+      return matchesSearch && matchesDate && matchesTab;
+    });
+  }, [safeLeads, searchTerm, dateFilter, startDate, endDate, activeTab]);
+
+  const sortedLeads = useMemo(() => {
+    return [...filteredLeads].sort((a, b) => {
+      if (!a.createdAt || !b.createdAt) return 0;
+      return sortOrder === 'asc'
+        ? new Date(a.createdAt) - new Date(b.createdAt)
+        : new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }, [filteredLeads, sortOrder]);
+
+  const totalElements = sortedLeads.length;
+  const totalPages    = Math.max(1, Math.ceil(totalElements / pageSize));
 
   useEffect(() => {
-    if (selfManaged) { fetchBookings(); return; }
-    setBookings(propBookings);
-    setLoading(propLoading);
-  }, [propBookings, propLoading, selfManaged, fetchBookings]);
+    setPageIndex(0);
+  }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
 
-  /* stats */
-  const stats = useMemo(() => ({
-    total:     bookings.length,
-    confirmed: bookings.filter(b => b.status === "Confirmed").length,
-    revenue:   bookings.reduce((s, b) => s + (b.customerAmount || 0), 0),
-    net:       bookings.reduce((s, b) => s + (b.paid || 0), 0),
-    refunds:   bookings.filter(b => b.payStatus === "Refunded").reduce((s, b) => s + (b.paid || 0), 0),
-    profit:    bookings.reduce((s, b) => s + (b.netProfit || 0), 0),
-  }), [bookings]);
+  const safePageIndex = Math.min(pageIndex, totalPages - 1);
 
-  /* filter + sort */
-  const filtered = useMemo(() => {
-    let out = [...bookings];
-    const q = search.toLowerCase();
-    if (q) out = out.filter(b =>
-      (b.code||"").toLowerCase().includes(q) ||
-      (b.customer||"").toLowerCase().includes(q) ||
-      (b.destination||"").toLowerCase().includes(q)
-    );
-    if (filterStatus !== "All Status")
-      out = out.filter(b => b.status === filterStatus);
-    if (filterPay !== "All Payment Status")
-      out = out.filter(b => b.payStatus === filterPay);
-    if (filterMonth !== "All Booking Months") {
-      const mi = MONTHS.indexOf(filterMonth) + 1;
-      out = out.filter(b => new Date(b.bookingDate).getMonth() + 1 === mi);
-    }
-    if (filterTravel !== "All Travel Months") {
-      const mi = MONTHS.indexOf(filterTravel) + 1;
-      out = out.filter(b => new Date(b.travelDate).getMonth() + 1 === mi);
-    }
-    out.sort((a, b) => {
-      let av = a[sortKey], bv = b[sortKey];
-      if (typeof av === "string") { av = av.toLowerCase(); bv = bv.toLowerCase(); }
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ?  1 : -1;
-      return 0;
-    });
-    return out;
-  }, [bookings, search, filterStatus, filterPay, filterMonth, filterTravel, sortKey, sortDir]);
+  const currentLeads = useMemo(() => {
+    const start = safePageIndex * pageSize;
+    return sortedLeads.slice(start, start + pageSize);
+  }, [sortedLeads, safePageIndex, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
-  const pageData   = filtered.slice((page - 1) * perPage, page * perPage);
-
-  const handleSort = key => {
-    if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
-  const sortIcon = key => sortKey === key ? (sortDir === "asc" ? "↑" : "↓") : "↕";
-
-  const toggleSelect = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleAll    = () => selected.size === pageData.length
-    ? setSelected(new Set())
-    : setSelected(new Set(pageData.map(b => b.id)));
-
-  // Edit defers to a parent-provided onEdit when present, else opens the local edit modal.
-  const openEdit   = (b) => (onEdit ? onEdit(b) : setEditBooking(b));
-  const openCancel = (b) => setCancelBooking(b);
-  const refreshList = onRefresh || fetchBookings;
-
-  const handleDelete = useCallback(id => {
-    setBookings(p => p.filter(b => b.id !== id));
-    setSelected(s => { const n = new Set(s); n.delete(id); return n; });
-    showToast("Booking deleted successfully.");
-  }, []);
-
-  const handleBulkDelete = () => {
-    setBookings(p => p.filter(b => !selected.has(b.id)));
-    showToast(`${selected.size} booking(s) deleted.`);
-    setSelected(new Set());
+  const goToPage = (page) => {
+    setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
   };
 
-  const resetFilters = () => {
-    setSearch(""); setFilterStatus("All Status");
-    setFilterPay("All Payment Status"); setFilterMonth("All Booking Months");
-    setFilterTravel("All Travel Months"); setPage(1);
+  const changePageSize = (size) => {
+    setPageSize(size);
+    setPageIndex(0);
   };
 
-  const anyFilter = search || filterStatus !== "All Status" || filterPay !== "All Payment Status"
-    || filterMonth !== "All Booking Months" || filterTravel !== "All Travel Months";
-
-  // helper components
-  function Sel({ value, onChange, options, className = "" }) {
-    return (
-      <div className={`relative ${className}`}>
-        <select value={value} onChange={e => { onChange(e.target.value); setPage(1); }}
-          className="w-full pl-3 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 font-medium
-            focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none cursor-pointer appearance-none transition-all">
-          {options.map(o => <option key={o}>{o}</option>)}
-        </select>
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">▼</span>
-      </div>
-    );
-  }
-
-  function TH({ label, sKey, sortable, right }) {
-    return (
-      <th onClick={sortable ? () => handleSort(sKey) : undefined}
-        className={`px-4 py-3.5 text-left text-xs font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap
-          ${sortable ? "cursor-pointer hover:text-blue-600 select-none" : ""}
-          ${right ? "text-right" : ""}`}>
-        {label} {sortable && <span className="opacity-50">{sortIcon(sKey)}</span>}
-      </th>
-    );
-  }
-
-  function SkeletonRow() {
-    return (
-      <tr>
-        {[...Array(13)].map((_, i) => (
-          <td key={i} className="px-4 py-3.5">
-            <div className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
-          </td>
-        ))}
-      </tr>
-    );
-  }
+  // Blocked page (no LEAD_READ, or the list load was forbidden) → friendly full-page block.
+  if (denied || !hasPermission(P.LEAD_READ)) return <AccessDenied />;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-      {modal && <BookingModal booking={modal} onClose={() => setModal(null)} onEdit={openEdit} onCancel={openCancel} />}
-      {editBooking && (
-        <EditBookingModal booking={editBooking} onClose={() => setEditBooking(null)}
-          onSaved={refreshList} onToast={showToast} />
-      )}
-      {cancelBooking && (
-        <CancelBookingModal booking={cancelBooking} onClose={() => setCancelBooking(null)}
-          onCancelled={refreshList} onToast={showToast} />
-      )}
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 font-sans"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn  { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideIn { from{transform:translateX(110%);opacity:0}  to{transform:translateX(0);opacity:1} }
+        .fade-up { animation: fadeUp .4s ease both; }
+      `}</style>
 
-      {/* Topbar */}
-      {/* <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow">T</div>
-            <span className="font-extrabold text-slate-800 hidden sm:block">TravelCRM</span>
-          </div>
-          <nav className="text-xs text-slate-400 flex items-center gap-1">
-            <span className="hover:text-blue-600 cursor-pointer">Home</span>
-            <span className="mx-1">/</span>
-            <span className="text-blue-600 font-bold">Bookings</span>
-          </nav>
-        </div>
-      </nav> */}
+      {toast        && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {viewLead     && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); setEditLead(l); }} canEdit={hasPermission(P.LEAD_UPDATE)} />}
+      {editLead     && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
+      {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
+      {quotationsLead && <QuotationsModal lead={quotationsLead} onClose={() => setQuotationsLead(null)} onToast={showToast} />}
+      {convertLead && <ConvertToBookingModal lead={convertLead} onClose={() => setConvertLead(null)} onConverted={handleConverted} onToast={showToast} />}
 
-      {/* Page header */}
-      <div className="bg-white border-b border-slate-100">
+      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-2xl shadow-lg shadow-blue-200">
-                ✈️
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                <Users size={24} strokeWidth={2.2} />
               </div>
               <div>
-                <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">Bookings</h1>
-                <p className="text-sm text-slate-400 mt-0.5">Manage all travel bookings & financial records</p>
+                <h1 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+                  Leads Management
+                  <span className="hidden sm:inline text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-2.5 py-0.5 rounded-full">{safeLeads.length} total</span>
+                </h1>
+                <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1 font-medium">
+                  <span className="hover:text-blue-600 cursor-pointer transition-colors">Home</span>
+                  <span className="mx-1 text-slate-300">/</span>
+                  <span className="text-blue-600 font-bold">Leads</span>
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => (window.location.href = "/allleads")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
-                shadow-md shadow-blue-200 hover:shadow-lg transition-all"
-            >
-              ＋ Create from Lead
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={fetchLeads} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
+                <DownloadCloud size={15} /> Refresh Data
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
+                <FileText size={15} /> Logs
+              </button>
+              {hasPermission(P.LEAD_CREATE) && (
+                <Link to="/CreateLead" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition-all">
+                  <Plus size={16} strokeWidth={2.5} /> Create Lead
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-          {STAT_CARDS.map(card => (
-            <StatCard key={card.key} card={card} value={stats[card.key]} />
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard icon={Users}      label="Total Leads" value={safeLeads.length} gradient="from-blue-500 via-blue-600 to-indigo-700"  delay={0}   />
+          <StatCard icon={Trophy}     label="Bookings"    value={0}                gradient="from-teal-400 via-emerald-500 to-emerald-700" delay={60}  />
+          <StatCard icon={PieChart}   label="Conversion"  value={0} suffix="%"     gradient="from-amber-400 via-amber-500 to-orange-600"  delay={120} />
+          <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-pink-400 via-fuchsia-500 to-purple-700" delay={180} />
         </div>
 
-        {/* Tax & Profit Summary */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">📋 Tax & Profit Summary (Current Page)</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              ["💵","Total Charges",  pageData.reduce((s,b)=>s+(b.totalPayable||0),0), "blue"],
-              ["📊","Net Profit",     pageData.reduce((s,b)=>s+(b.netProfit||0),0),    "green"],
-              ["🧾","GST Collected",  pageData.reduce((s,b)=>s+(b.gst||0),0),          "amber"],
-              ["📋","TCS Collected",  pageData.reduce((s,b)=>s+(b.tcs||0),0),          "purple"],
-            ].map(([icon,label,val,color]) => (
-              <div key={label} className={`bg-${color}-50 border border-${color}-100 rounded-xl px-4 py-3`}>
-                <p className="text-xs text-slate-500 font-medium mb-0.5">{icon} {label}</p>
-                <p className={`text-base font-extrabold text-${color}-700`}>{fmtINR(val)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 
-        {/* Booking list */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-
-          {/* List header */}
           <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-base font-extrabold text-slate-700">Booking List</h2>
-              <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full">{filtered.length} bookings</span>
-              {selected.size > 0 && (
-                <button onClick={handleBulkDelete}
-                  className="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-3 py-1.5 rounded-lg transition-all">
-                  🗑 Delete {selected.size} selected
-                </button>
-              )}
+              <h2 className="text-base font-extrabold text-slate-700">Leads Directory</h2>
+              <span className="text-xs bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold px-3 py-1 rounded-full">{totalElements} results</span>
             </div>
-            <div className="flex items-center gap-2">
-              {(onRefresh || selfManaged) && (
-                <button onClick={onRefresh || fetchBookings}
-                  className="text-xs text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-200 font-semibold px-3 py-1.5 rounded-lg transition-all">
-                  🔄 Refresh
-                </button>
-              )}
-              {anyFilter && (
-                <button onClick={resetFilters}
-                  className="text-xs text-slate-400 hover:text-red-500 font-semibold flex items-center gap-1 transition-colors">
-                  ✕ Clear filters
-                </button>
-              )}
-            </div>
+            {(searchTerm || dateFilter !== 'all' || activeTab !== 'All') && (
+              <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="text-xs text-slate-400 hover:text-red-500 font-bold flex items-center gap-1.5 transition-colors">
+                {'\u2715'} Clear all filters
+              </button>
+            )}
           </div>
 
-          {/* Filters */}
           <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60">
-            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-[200px]">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-                <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Search by code, customer, destination..."
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400
-                    focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-stretch sm:items-center">
+              <div className="relative flex-1 min-w-[220px] max-w-sm group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Search size={15} /></div>
+                <input
+                  type="text" placeholder="Search by name, email, phone, or ID..."
+                  value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-full border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all"
+                />
               </div>
-              <Sel value={filterStatus} onChange={setFilterStatus} className="min-w-[150px]"
-                options={["All Status", ...BOOKING_STATUSES]} />
-              <Sel value={filterPay} onChange={setFilterPay} className="min-w-[170px]"
-                options={["All Payment Status", ...PAY_STATUSES]} />
-              <Sel value={filterMonth} onChange={setFilterMonth} className="min-w-[170px]"
-                options={["All Booking Months", ...MONTHS]} />
-              <Sel value={filterTravel} onChange={setFilterTravel} className="min-w-[160px]"
-                options={["All Travel Months", ...MONTHS]} />
+              <div className="relative min-w-[160px]">
+                <select value={dateFilter} onChange={e => setDateFilter(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2.5 rounded-full border border-slate-200 bg-white text-sm text-slate-600 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all">
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="last_7_days">Last 7 Days</option>
+                  <option value="custom">Custom Date</option>
+                </select>
+                <div className="absolute inset-y-0 left-0  pl-3 flex items-center pointer-events-none text-slate-400"><Calendar size={15} /></div>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={13} /></div>
+              </div>
+              {dateFilter === 'custom' && (
+                <div className="flex items-center gap-2 fade-up">
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+                  <span className="text-slate-400 text-sm font-medium">to</span>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Desktop table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full min-w-[1100px]">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-4 py-3.5 w-10">
-                    <input type="checkbox" checked={pageData.length > 0 && selected.size === pageData.length}
-                      onChange={toggleAll}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
-                  </th>
-                  <TH label="Booking Code" sortable sKey="code" />
-                  <TH label="Customer"     sortable sKey="customer" />
-                  <TH label="Destination" />
-                  <TH label="Travel Date"  sortable sKey="travelDate" />
-                  <TH label="Amount"       sortable sKey="customerAmount" right />
-                  <TH label="GST"          right />
-                  <TH label="TCS"          right />
-                  <TH label="Total"        sortable sKey="totalPayable" right />
-                  <TH label="Payment" />
-                  <TH label="Net Profit"   sortable sKey="netProfit" right />
-                  <TH label="Status"       sortable sKey="status" />
-                  <TH label="Actions" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {loading
-                  ? [...Array(8)].map((_, i) => <SkeletonRow key={i} />)
-                  : pageData.length === 0
-                  ? (
-                    <tr>
-                      <td colSpan={13} className="text-center py-20">
-                        <div className="text-5xl mb-3">📭</div>
-                        <p className="text-slate-400 font-semibold text-sm">No bookings found</p>
-                        {anyFilter && (
-                          <button onClick={resetFilters} className="mt-3 text-sm text-blue-600 hover:underline font-semibold">Clear filters</button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                  : pageData.map(b => {
-                    const payPct = b.totalPayable > 0 ? Math.round(b.paid / b.totalPayable * 100) : 0;
-                    return (
-                      <tr key={b.id} className="transition-all duration-150 hover:bg-slate-50 hover:shadow-[inset_3px_0_0_#2563eb]">
-                        <td className="px-4 py-3.5">
-                          <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggleSelect(b.id)}
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">{b.code}</span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <p className="text-sm font-bold text-slate-700">{b.customer}</p>
-                          <p className="text-xs text-slate-400">{b.createdBy}</p>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <p className="text-xs font-semibold text-slate-600">{b.destination}</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {b.services?.slice(0, 2).map(s => (
-                              <span key={s} className="text-xs bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{s}</span>
-                            ))}
-                            {b.services?.length > 2 && <span className="text-xs text-slate-400">+{b.services.length - 2}</span>}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5 text-sm font-semibold text-slate-600 whitespace-nowrap">{fmtDate(b.travelDate)}</td>
-                        <td className="px-4 py-3.5 text-sm font-bold text-slate-700 text-right">{fmtINR(b.customerAmount)}</td>
-                        <td className="px-4 py-3.5 text-xs text-slate-500 text-right">{fmtINR(b.gst)}</td>
-                        <td className="px-4 py-3.5 text-xs text-slate-500 text-right">{fmtINR(b.tcs)}</td>
-                        <td className="px-4 py-3.5 text-right">
-                          <p className="text-sm font-extrabold text-slate-800">{fmtINR(b.totalPayable)}</p>
-                          <div className="w-full h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div className={`h-full rounded-full ${payPct === 100 ? "bg-green-500" : payPct > 0 ? "bg-blue-400" : "bg-slate-200"}`}
-                              style={{ width: `${payPct}%` }} />
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${PAY_STYLE[b.payStatus]}`}>{b.payStatus}</span>
-                        </td>
-                        <td className="px-4 py-3.5 text-right">
-                          <span className={`text-sm font-extrabold ${b.netProfit >= 0 ? "text-green-600" : "text-red-500"}`}>
-                            {fmtINR(b.netProfit)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${STATUS_STYLE[b.status]}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[b.status]}`} />
-                            {b.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <button onClick={() => setModal(b)}
-                              className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center text-sm transition-all" title="View">👁</button>
-                            <button onClick={() => openEdit(b)}
-                              className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500 flex items-center justify-center text-sm transition-all" title="Edit">✏️</button>
-                            {hasPermission(P.BOOKING_CANCEL) && b.status !== "Completed" && b.status !== "Cancelled" && (
-                              <button onClick={() => openCancel(b)}
-                                className="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center text-sm transition-all" title="Cancel">🚫</button>
-                            )}
-                            <button onClick={() => handleDelete(b.id)}
-                              className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center text-sm transition-all" title="Delete">🗑</button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+          <div className="px-5 py-4 border-b border-slate-100 overflow-x-auto">
+            {(() => {
+              const freshCount = safeLeads.filter(l => l.leadType === 'Fresh Lead').length;
+              const newLeadCount = safeLeads.filter(l => l.leadStage === 'New Lead').length;
+              const contactedCount = safeLeads.filter(l => l.leadStage === 'Contacted').length;
+
+              const btnClass = (tabName) => `px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-all border ${
+                activeTab === tabName
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent shadow-blue-200'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+              }`;
+
+              const badgeClass = (tabName) => `px-2 py-0.5 rounded-md text-xs font-black ${
+                activeTab === tabName ? 'bg-white/20' : 'bg-slate-100 text-slate-700'
+              }`;
+
+              return (
+                <div className="flex gap-2 min-w-max">
+                  <button onClick={() => setActiveTab('All')} className={btnClass('All')}>
+                    All <span className={badgeClass('All')}>{safeLeads.length}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('Fresh')} className={btnClass('Fresh')}>
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" /> Fresh
+                    <span className={badgeClass('Fresh')}>{freshCount}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('New Lead')} className={btnClass('New Lead')}>
+                    New Lead <span className={badgeClass('New Lead')}>{newLeadCount}</span>
+                  </button>
+                  <button onClick={() => setActiveTab('Contacted')} className={btnClass('Contacted')}>
+                    Contacted <span className={badgeClass('Contacted')}>{contactedCount}</span>
+                  </button>
+                </div>
+              );
+            })()}
           </div>
 
-          {/* Mobile cards */}
-          <div className="md:hidden p-4 space-y-3">
-            {loading
-              ? [...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 space-y-3">
-                    {[...Array(4)].map((_, j) => <div key={j} className="h-4 rounded-lg bg-slate-200 animate-pulse" />)}
+          <div
+            className="hidden md:grid items-center gap-2 px-5 py-3 bg-slate-50/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider"
+            style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}
+          >
+            <div></div>
+            <div>Lead info</div>
+            <div>Destination</div>
+            <div>Assigned to</div>
+            <div>Stage</div>
+            <div className="text-right">Amount</div>
+            <div className="text-center">Actions</div>
+          </div>
+
+          <div>
+            {loading ? (
+              [...Array(Math.min(pageSize, 5))].map((_, i) => <SkeletonRow key={i} />)
+            ) : currentLeads.length === 0 ? (
+              <div className="text-center py-24 px-5">
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
+                    <Inbox size={32} className="text-slate-400" />
                   </div>
-                ))
-              : pageData.length === 0
-              ? <div className="text-center py-16"><div className="text-4xl mb-2">📭</div><p className="text-slate-400 font-semibold">No bookings found</p></div>
-              : pageData.map(b => (
-                  <MobileBookingCard key={b.id} b={b} onView={setModal} onEdit={openEdit} onCancel={openCancel} onDelete={handleDelete} />
-                ))
-            }
+                  <p className="text-lg font-extrabold text-slate-600 mb-1">No Leads Found</p>
+                  <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto leading-relaxed">We couldn't find any leads matching your selected criteria.</p>
+                  <button onClick={() => { setDateFilter('all'); setSearchTerm(''); setActiveTab('All'); }} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
+                </div>
+              </div>
+            ) : (
+              currentLeads.map((lead, idx) => (
+                <LeadRow
+                  key={lead.id}
+                  lead={lead}
+                  index={idx}
+                  isOpen={openRowId === lead.id}
+                  onToggle={toggleRow}
+                  onView={setViewLead}
+                  onEdit={setEditLead}
+                  onDelete={setDeleteTarget}
+                  onStageChange={handleStageChange}
+                  onViewQuotations={setQuotationsLead}
+                  onConvert={setConvertLead}
+                  canEdit={hasPermission(P.LEAD_UPDATE)}
+                  canDelete={hasPermission(P.LEAD_DELETE)}
+                  canConvert={hasPermission(P.BOOKING_CREATE)}
+                />
+              ))
+            )}
           </div>
 
-          {/* Pagination */}
-          {filtered.length > 0 && (
-            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-slate-400 font-medium">
-                Showing <span className="font-bold text-slate-600">{(page-1)*perPage+1}</span>–<span className="font-bold text-slate-600">{Math.min(page*perPage,filtered.length)}</span> of <span className="font-bold text-slate-600">{filtered.length}</span>
-              </p>
-              <div className="flex items-center gap-1.5">
-                {["«","‹"].map((lbl,i) => (
-                  <button key={lbl} disabled={page===1} onClick={()=>setPage(i===0?1:p=>p-1)}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                    {lbl}
-                  </button>
-                ))}
-                {Array.from({length:totalPages},(_,i)=>i+1)
-                  .filter(p => p===1||p===totalPages||Math.abs(p-page)<=1)
-                  .reduce((acc,p,i,arr)=>{ if(i>0&&p-arr[i-1]>1) acc.push("…"); acc.push(p); return acc; },[])
-                  .map((p,i)=>
-                    typeof p==="string"
-                    ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">…</span>
-                    : <button key={p} onClick={()=>setPage(p)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border
-                          ${page===p?"bg-blue-600 border-blue-600 text-white shadow-sm":"bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"}`}>
-                        {p}
-                      </button>
-                  )
-                }
-                {["›","»"].map((lbl,i) => (
-                  <button key={lbl} disabled={page===totalPages} onClick={()=>setPage(i===0?p=>p+1:totalPages)}
-                    className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <CommonPagination
+            pageIndex={safePageIndex}
+            pageSize={pageSize}
+            totalElements={totalElements}
+            totalPages={totalPages}
+            goToPage={goToPage}
+            changePageSize={changePageSize}
+          />
+
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Leads;
