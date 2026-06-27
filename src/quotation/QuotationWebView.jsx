@@ -285,7 +285,6 @@
 
 
 
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -297,6 +296,12 @@ const fmtDate = (d) => {
   try { return new Date(d).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }); }
   catch { return d; }
 };
+
+// ── Hotel image — multiple field names try karo ──
+const hotelImg = (h) =>
+  h.imageUrl || h.imagePath || h.image || h.photo || h.coverImage
+  || h.hotelImage || h.imageURL || h.img
+  || (Array.isArray(h.images) && h.images[0]) || null;
 
 /* ━━━ SECTION CARD — colored gradient header ━━━ */
 function GCard({ title, sub, amount, icon, grad, lightBg, lightBorder, children }) {
@@ -415,7 +420,14 @@ export default function QuotationWebView({ publicId }) {
         const res = await fetch(`${API}/public/quotations/${publicId}`);
         if (!res.ok) throw new Error(res.status === 404 ? "This quotation link is invalid or no longer available." : "Failed to load the quotation.");
         const body = await res.json();
-        if (active) setQ(body?.data || body);
+        const data = body?.data || body;
+        // DEBUG — hotels ka data console mein dekho
+        console.log("=== QUOTATION DATA ===", data);
+        if (data?.hotel?.hotels?.[0]) {
+          console.log("First hotel in weblink:", data.hotel.hotels[0]);
+          console.log("Hotel image field:", hotelImg(data.hotel.hotels[0]));
+        }
+        if (active) setQ(data);
       } catch (e) {
         if (active) setError(e.message || "Failed to load the quotation.");
       } finally {
@@ -543,28 +555,56 @@ export default function QuotationWebView({ publicId }) {
           </div>
         )}
 
-        {/* HOTELS — Purple */}
+        {/* ━━━ HOTELS — Purple (IMAGE ke saath) ━━━ */}
         {q.hotel?.included && q.hotel?.hotels?.length > 0 && (
           <div className="qu2">
             <GCard title={q.hotel.title||"Hotels"} sub={`${q.hotel.hotels.length} property(s)`} amount={q.hotel.amount} icon="🏨" grad="linear-gradient(135deg,#4a148c,#7b1fa2,#ab47bc)">
-              {q.hotel.hotels.map((h, i) => (
-                <RItem key={i} bg="#f3e5f5" border="#ce93d8">
-                  <div style={{ display:"flex", gap:10 }}>
-                    {h.imageUrl
-                      ? <img src={h.imageUrl} alt="" style={{ width:52, height:52, borderRadius:9, objectFit:"cover", flexShrink:0, border:"2px solid #e1bee7" }} />
-                      : <div style={{ width:52, height:52, borderRadius:9, background:"linear-gradient(135deg,#e1bee7,#ce93d8)", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🏨</div>
-                    }
-                    <div style={{ minWidth:0, flex:1 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:3 }}>
-                        <span style={{ fontSize:13, fontWeight:800, color:"#4a148c" }}>{h.name}</span>
-                        {h.stars && <span style={{ fontSize:11, color:"#f59e0b" }}>{"★".repeat(h.stars)}</span>}
+              {q.hotel.hotels.map((h, i) => {
+                const img = hotelImg(h);
+                return (
+                  <div key={i} style={{ background:"#fff", border:"1px solid #ce93d8", borderRadius:13, overflow:"hidden", marginBottom:10 }}>
+                    {/* Bada hotel image banner (agar hai) */}
+                    {img && (
+                      <div style={{ width:"100%", height:140, overflow:"hidden", position:"relative" }}>
+                        <img
+                          src={img}
+                          alt={h.name}
+                          style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+                          onError={(e) => { e.target.parentElement.style.display = "none"; }}
+                        />
+                        {/* Stars badge upar image pe */}
+                        {h.stars > 0 && (
+                          <span style={{ position:"absolute", top:8, right:8, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(4px)", borderRadius:100, padding:"3px 10px", fontSize:11, color:"#fbbf24", fontWeight:700 }}>
+                            {"★".repeat(h.stars)}
+                          </span>
+                        )}
                       </div>
-                      <p style={{ fontSize:10, color:"#7b1fa2", fontWeight:600, margin:"0 0 2px" }}>{[h.city,h.roomType,h.mealPlan].filter(Boolean).join(" · ")}</p>
-                      <p style={{ fontSize:10, color:"#78909c", margin:0 }}>{fmtDate(h.checkIn)} → {fmtDate(h.checkOut)}{h.rooms?` · ${h.rooms} room(s)`:""}</p>
+                    )}
+                    {/* Hotel details */}
+                    <div style={{ padding:"10px 12px", background:"#f3e5f5" }}>
+                      <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                        {/* Agar image upar nahi hai, toh chhota thumbnail/emoji */}
+                        {!img && (
+                          <div style={{ width:48, height:48, borderRadius:9, background:"linear-gradient(135deg,#e1bee7,#ce93d8)", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🏨</div>
+                        )}
+                        <div style={{ minWidth:0, flex:1 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:3 }}>
+                            <span style={{ fontSize:14, fontWeight:800, color:"#4a148c" }}>{h.name}</span>
+                            {!img && h.stars > 0 && <span style={{ fontSize:11, color:"#f59e0b" }}>{"★".repeat(h.stars)}</span>}
+                          </div>
+                          <p style={{ fontSize:11, color:"#7b1fa2", fontWeight:600, margin:"0 0 2px" }}>
+                            {[h.city, h.roomType, h.mealPlan].filter(Boolean).join(" · ")}
+                          </p>
+                          <p style={{ fontSize:10, color:"#78909c", margin:0 }}>
+                            {fmtDate(h.checkIn)} → {fmtDate(h.checkOut)}{h.rooms ? ` · ${h.rooms} room(s)` : ""}
+                            {h.refundable === false ? " · Non-Refundable" : ""}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </RItem>
-              ))}
+                );
+              })}
             </GCard>
           </div>
         )}

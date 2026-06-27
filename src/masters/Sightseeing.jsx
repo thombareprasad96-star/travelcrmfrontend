@@ -1,7 +1,5 @@
 
 
-
-
 // import React, { useState, useRef, useEffect } from "react";
 // import {
 //   Map, ChevronDown, ChevronRight, Search, Plus, Eye, X,
@@ -13,6 +11,8 @@
 
 // // Note: Ensure this service file exists in your project. If not, the code will use mock data.
 // import { sightseeingService, transformSightseeingResponse } from "../services/SightseeingService";
+// import { geographyService } from "../services/geographyService";
+// import { cityService } from "../services/CityService";
 
 // // =========================================================================
 // // 🌟 TOAST SYSTEM
@@ -104,16 +104,6 @@
 //   );
 // };
 
-// // =========================================================================
-// // 🌟 MOCK DATA & CONSTANTS
-// // =========================================================================
-// const SEED_DESTINATIONS = [
-//   { id: 1, name: "Andaman Island", attractions: 21, cities: 3, cityList: ["Port Blair", "Havelock Island", "Neil Island"], flag: "🏝️" },
-//   { id: 2, name: "Azerbaijan",     attractions: 6,  cities: 1, cityList: ["Baku"],                                         flag: "🏔️" },
-//   { id: 3, name: "Goa",            attractions: 4,  cities: 1, cityList: ["Panaji"],                                       flag: "🌊" },
-//   { id: 4, name: "Rajasthan",      attractions: 18, cities: 4, cityList: ["Jaipur", "Udaipur", "Jodhpur", "Jaisalmer"],    flag: "🏰" },
-//   { id: 5, name: "Kerala",         attractions: 12, cities: 2, cityList: ["Kochi", "Munnar"],                              flag: "🌴" },
-// ];
 
 // const emptyForm = {
 //   destination: "", city: "", title: "", sequence: "1",
@@ -127,7 +117,7 @@
 // // =========================================================================
 // // 🌟 ADD / EDIT MODAL COMPONENT
 // // =========================================================================
-// function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem, destinations, onSaved }) {
+// function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem, onSaved }) {
 //   const [form, setForm]               = useState({ ...emptyForm });
 //   const [resetKey, setResetKey]       = useState(Date.now());
 //   const [saving, setSaving]           = useState(false);
@@ -135,20 +125,76 @@
 //   const [saveError, setSaveError]     = useState("");
 //   const fileRef = useRef();
 
-//   const availableCities = form.destination
-//     ? (destinations.find((d) => d.name === form.destination)?.cityList || [])
-//     : [];
+//   // ── Geography cascade (Country → Destination → City), API-driven ──
+//   const [countries,   setCountries]   = useState([]);
+//   const [countryId,   setCountryId]   = useState("");
+//   const [destOptions, setDestOptions] = useState([]);
+//   const [cityOptions, setCityOptions] = useState([]);
+//   const [loadingDest, setLoadingDest] = useState(false);
+//   const [loadingCity, setLoadingCity] = useState(false);
 
+//   // Load countries + initialise the form whenever the modal opens.
 //   useEffect(() => {
 //     if (!isOpen) return;
 //     setSaveError("");
+//     setCountryId("");
+//     setDestOptions([]);
+
+//     geographyService.getCountries().then(setCountries).catch(() => setCountries([]));
+
+//     const initDest = editingItem
+//       ? (transformSightseeingResponse ? transformSightseeingResponse(editingItem).destination : editingItem.destination)
+//       : (prefillDestination || "");
+
 //     if (editingItem) {
 //       setForm(transformSightseeingResponse ? transformSightseeingResponse(editingItem) : editingItem);
 //     } else {
 //       setForm({ ...emptyForm, destination: prefillDestination || "" });
 //     }
+
+//     // Preserve the saved/prefilled destination: load its cities by name so the
+//     // City dropdown is populated even before a country is re-selected.
+//     if (initDest) {
+//       setLoadingCity(true);
+//       geographyService.getCitiesByDestinationName(initDest)
+//         .then(setCityOptions).catch(() => setCityOptions([])).finally(() => setLoadingCity(false));
+//     } else {
+//       setCityOptions([]);
+//     }
 //     setResetKey(Date.now());
 //   }, [isOpen, editingItem, prefillDestination]);
+
+//   // ── Cascade handlers ──
+//   const handleCountryChange = async (cid) => {
+//     setCountryId(cid);
+//     setForm((prev) => ({ ...prev, destination: "", city: "" }));
+//     setDestOptions([]);
+//     setCityOptions([]);
+//     if (!cid) return;
+//     setLoadingDest(true);
+//     try { setDestOptions(await geographyService.getDestinationsByCountry(cid)); }
+//     catch { setDestOptions([]); }
+//     finally { setLoadingDest(false); }
+//   };
+
+//   const handleDestinationChange = async (name) => {
+//     setForm((prev) => ({ ...prev, destination: name, city: "" }));
+//     setCityOptions([]);
+//     if (!name) return;
+//     setLoadingCity(true);
+//     try { setCityOptions(await geographyService.getCitiesByDestinationName(name)); }
+//     catch { setCityOptions([]); }
+//     finally { setLoadingCity(false); }
+//   };
+
+//   // Inject the currently-saved value as an option so edit mode shows it even
+//   // before a country is chosen (real persisted record, not seed data).
+//   const destList = (form.destination && !destOptions.some((d) => d.name === form.destination))
+//     ? [{ id: `cur_${form.destination}`, name: form.destination }, ...destOptions]
+//     : destOptions;
+//   const cityList = (form.city && !cityOptions.some((c) => c.name === form.city))
+//     ? [{ id: `cur_${form.city}`, name: form.city }, ...cityOptions]
+//     : cityOptions;
 
 //   const handleChange = (field, value) => {
 //     setForm((prev) => ({ ...prev, [field]: value, ...(field === "destination" ? { city: "" } : {}) }));
@@ -248,14 +294,25 @@
 //         <form onSubmit={handleSave}>
 //           <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-10 bg-slate-50/50">
 //             <div className="space-y-6">
-//               <div className="grid grid-cols-2 gap-5">
+//               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+//                 <div>
+//                   <label className="block text-sm font-bold text-slate-800 mb-2">Country <span className="text-rose-500">*</span></label>
+//                   <div className="relative">
+//                     <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+//                     <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer`} value={countryId} onChange={(e) => handleCountryChange(e.target.value)}>
+//                       <option value="">{countries.length === 0 ? "Loading…" : "Select country"}</option>
+//                       {countries.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+//                     </select>
+//                     <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+//                   </div>
+//                 </div>
 //                 <div>
 //                   <label className="block text-sm font-bold text-slate-800 mb-2">Destination <span className="text-rose-500">*</span></label>
 //                   <div className="relative">
-//                     <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-//                     <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer`} value={form.destination} onChange={(e) => handleChange("destination", e.target.value)}>
-//                       <option value="">Select destination</option>
-//                       {destinations.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
+//                     <Map size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+//                     <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`} value={form.destination} onChange={(e) => handleDestinationChange(e.target.value)} disabled={(!countryId && destList.length === 0) || loadingDest}>
+//                       <option value="">{loadingDest ? "Loading…" : !countryId && destList.length === 0 ? "Select country first" : destList.length === 0 ? "No destinations" : "Select destination"}</option>
+//                       {destList.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
 //                     </select>
 //                     <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
 //                   </div>
@@ -264,9 +321,9 @@
 //                   <label className="block text-sm font-bold text-slate-800 mb-2">City <span className="text-rose-500">*</span></label>
 //                   <div className="relative">
 //                     <Building2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-//                     <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`} value={form.city} onChange={(e) => handleChange("city", e.target.value)} disabled={!form.destination}>
-//                       <option value="">Select city</option>
-//                       {availableCities.map((c) => <option key={c} value={c}>{c}</option>)}
+//                     <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`} value={form.city} onChange={(e) => handleChange("city", e.target.value)} disabled={!form.destination || loadingCity}>
+//                       <option value="">{!form.destination ? "Select destination first" : loadingCity ? "Loading…" : cityList.length === 0 ? "No cities" : "Select city"}</option>
+//                       {cityList.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
 //                     </select>
 //                     <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
 //                   </div>
@@ -462,7 +519,7 @@
 // // 🌟 MAIN EXPORT COMPONENT
 // // =========================================================================
 // export default function SightseeingMaster() {
-//   const [destinations, setDestinations] = useState(SEED_DESTINATIONS);
+//   const [destinations, setDestinations] = useState([]);
 //   const [destLoading, setDestLoading]   = useState(true);
 
 //   const [modalOpen,     setModalOpen]     = useState(false);
@@ -479,10 +536,10 @@
 //         if(sightseeingService && sightseeingService.getAllDestinations) {
 //             const res = await sightseeingService.getAllDestinations();
 //             const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
-//             if (list.length > 0) setDestinations(list);
+//             setDestinations(list);
 //         }
 //       } catch {
-//         // Keep seed data silently
+//         setDestinations([]);
 //       } finally {
 //         setDestLoading(false);
 //       }
@@ -661,11 +718,6 @@
 
 
 
-
-
-
-
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   Map, ChevronDown, ChevronRight, Search, Plus, Eye, X,
@@ -675,9 +727,9 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// Note: Ensure this service file exists in your project. If not, the code will use mock data.
 import { sightseeingService, transformSightseeingResponse } from "../services/SightseeingService";
 import { geographyService } from "../services/geographyService";
+import { cityService } from "../services/CityService";
 
 // =========================================================================
 // 🌟 TOAST SYSTEM
@@ -690,7 +742,6 @@ const toast = {
 
 function ToastContainer() {
   const [toasts, setToasts] = useState([]);
-  
   useEffect(() => {
     _toastSetter = (t) => {
       setToasts((prev) => [...prev, t]);
@@ -698,7 +749,6 @@ function ToastContainer() {
     };
     return () => { _toastSetter = null; };
   }, []);
-
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3">
       {toasts.map((t) => (
@@ -715,26 +765,22 @@ function ToastContainer() {
 // =========================================================================
 const RichTextEditor = ({ name, initialValue, onChange, placeholder }) => {
   const editorRef = useRef(null);
-  
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== initialValue) {
       editorRef.current.innerHTML = initialValue || "";
     }
   }, []);
-  
   const handleInput = () => {
     if (onChange && editorRef.current) {
       onChange({ target: { name, value: editorRef.current.innerHTML } });
     }
   };
-  
   const executeCommand = (e, command, arg = null) => {
     e.preventDefault();
     document.execCommand(command, false, arg);
     editorRef.current.focus();
     handleInput();
   };
-
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden bg-white hover:bg-slate-50 focus-within:bg-white shadow-sm focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all duration-300">
       <div className="bg-slate-50 border-b border-slate-200 px-3 py-2 flex flex-wrap items-center gap-x-1.5 gap-y-2 text-slate-600 text-sm select-none">
@@ -769,9 +815,8 @@ const RichTextEditor = ({ name, initialValue, onChange, placeholder }) => {
   );
 };
 
-
 const emptyForm = {
-  destination: "", city: "", title: "", sequence: "1",
+  destination: "", destinationId: "", city: "", title: "", sequence: "1",
   estimatedHours: "", suggestedStartTime: "",
   image: null, imagePreview: null, imagePath: null,
   description: "", remarks: "",
@@ -790,7 +835,7 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
   const [saveError, setSaveError]     = useState("");
   const fileRef = useRef();
 
-  // ── Geography cascade (Country → Destination → City), API-driven ──
+  // ── Geography cascade (Country → Destination → City) ──
   const [countries,   setCountries]   = useState([]);
   const [countryId,   setCountryId]   = useState("");
   const [destOptions, setDestOptions] = useState([]);
@@ -798,41 +843,50 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
   const [loadingDest, setLoadingDest] = useState(false);
   const [loadingCity, setLoadingCity] = useState(false);
 
-  // Load countries + initialise the form whenever the modal opens.
+  // Load countries + initialise form when modal opens
   useEffect(() => {
     if (!isOpen) return;
     setSaveError("");
     setCountryId("");
     setDestOptions([]);
+    setCityOptions([]);
 
     geographyService.getCountries().then(setCountries).catch(() => setCountries([]));
 
-    const initDest = editingItem
-      ? (transformSightseeingResponse ? transformSightseeingResponse(editingItem).destination : editingItem.destination)
-      : (prefillDestination || "");
-
     if (editingItem) {
-      setForm(transformSightseeingResponse ? transformSightseeingResponse(editingItem) : editingItem);
+      const data = transformSightseeingResponse ? transformSightseeingResponse(editingItem) : editingItem;
+      setForm({ ...emptyForm, ...data });
+
+      // Edit mode — destinationId se cities + country prefill
+      const destId = data.destinationId || editingItem.destinationId;
+      if (destId) {
+        (async () => {
+          try {
+            // Destination ka full data → countryId nikaalo
+            const dest = await geographyService.getDestinationById(destId);
+            if (dest?.countryId != null) {
+              setCountryId(String(dest.countryId));
+              setLoadingDest(true);
+              try { setDestOptions(await geographyService.getDestinationsByCountry(dest.countryId)); }
+              finally { setLoadingDest(false); }
+            }
+            // Cities load karo destinationId se
+            setLoadingCity(true);
+            try { setCityOptions(await geographyService.getCitiesByDestination(destId)); }
+            finally { setLoadingCity(false); }
+          } catch {}
+        })();
+      }
     } else {
       setForm({ ...emptyForm, destination: prefillDestination || "" });
-    }
-
-    // Preserve the saved/prefilled destination: load its cities by name so the
-    // City dropdown is populated even before a country is re-selected.
-    if (initDest) {
-      setLoadingCity(true);
-      geographyService.getCitiesByDestinationName(initDest)
-        .then(setCityOptions).catch(() => setCityOptions([])).finally(() => setLoadingCity(false));
-    } else {
-      setCityOptions([]);
     }
     setResetKey(Date.now());
   }, [isOpen, editingItem, prefillDestination]);
 
-  // ── Cascade handlers ──
+  // ── Country change → destinations load ──
   const handleCountryChange = async (cid) => {
     setCountryId(cid);
-    setForm((prev) => ({ ...prev, destination: "", city: "" }));
+    setForm((prev) => ({ ...prev, destination: "", destinationId: "", city: "" }));
     setDestOptions([]);
     setCityOptions([]);
     if (!cid) return;
@@ -842,27 +896,30 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
     finally { setLoadingDest(false); }
   };
 
-  const handleDestinationChange = async (name) => {
-    setForm((prev) => ({ ...prev, destination: name, city: "" }));
+  // ── Destination change → cities load (ID se, NAME bhi store) ──
+  const handleDestinationChange = async (destId) => {
+    // Selected destination ka name nikaalo
+    const selectedDest = destOptions.find((d) => String(d.id) === String(destId));
+    const destName = selectedDest?.name || "";
+
+    setForm((prev) => ({ ...prev, destinationId: destId, destination: destName, city: "" }));
     setCityOptions([]);
-    if (!name) return;
+    if (!destId) return;
+
     setLoadingCity(true);
-    try { setCityOptions(await geographyService.getCitiesByDestinationName(name)); }
-    catch { setCityOptions([]); }
-    finally { setLoadingCity(false); }
+    try {
+      // ✅ ID se cities laao (yeh confirmed kaam karta hai)
+      const cities = await geographyService.getCitiesByDestination(destId);
+      setCityOptions(cities);
+    } catch {
+      setCityOptions([]);
+    } finally {
+      setLoadingCity(false);
+    }
   };
 
-  // Inject the currently-saved value as an option so edit mode shows it even
-  // before a country is chosen (real persisted record, not seed data).
-  const destList = (form.destination && !destOptions.some((d) => d.name === form.destination))
-    ? [{ id: `cur_${form.destination}`, name: form.destination }, ...destOptions]
-    : destOptions;
-  const cityList = (form.city && !cityOptions.some((c) => c.name === form.city))
-    ? [{ id: `cur_${form.city}`, name: form.city }, ...cityOptions]
-    : cityOptions;
-
   const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value, ...(field === "destination" ? { city: "" } : {}) }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleInputChange = (e) => {
@@ -873,21 +930,23 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
   const handleFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+    if (!file.type.match("image.*")) {
+      toast.error("Please select a valid image file.");
+      return;
+    }
+    // Local preview turant dikhao
     const reader = new FileReader();
     reader.onload = (ev) =>
       setForm((prev) => ({ ...prev, image: file, imagePreview: ev.target.result }));
     reader.readAsDataURL(file);
 
+    // ☁️ Cloudinary pe upload — secure_url (string) wapas aata hai
     setImageUploading(true);
     try {
-      if(sightseeingService && sightseeingService.uploadSightseeingImage) {
-          const res = await sightseeingService.uploadSightseeingImage(file);
-          const path = res.data?.imagePath || res.data?.url || res.data?.path || null;
-          setForm((prev) => ({ ...prev, imagePath: path }));
-      }
-    } catch {
-      toast.error("Image upload failed. File saved locally only.");
+      const url = await sightseeingService.uploadSightseeingImage(file);
+      setForm((prev) => ({ ...prev, imagePath: url, imagePreview: url }));
+    } catch (err) {
+      toast.error(err.message || "Image upload failed.");
     } finally {
       setImageUploading(false);
     }
@@ -908,7 +967,7 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
           const res = await sightseeingService.updateSightseeing(editingItem.id, form);
           saved = res.data;
           toast.success("Sightseeing updated successfully!");
-        } else if(sightseeingService.createSightseeing) {
+        } else if (sightseeingService.createSightseeing) {
           const res = await sightseeingService.createSightseeing(form);
           saved = res.data;
           toast.success("Sightseeing created successfully!");
@@ -960,6 +1019,7 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
           <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-10 bg-slate-50/50">
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {/* Country */}
                 <div>
                   <label className="block text-sm font-bold text-slate-800 mb-2">Country <span className="text-rose-500">*</span></label>
                   <div className="relative">
@@ -971,24 +1031,32 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
                     <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
+                {/* Destination — ab value = ID */}
                 <div>
                   <label className="block text-sm font-bold text-slate-800 mb-2">Destination <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <Map size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`} value={form.destination} onChange={(e) => handleDestinationChange(e.target.value)} disabled={(!countryId && destList.length === 0) || loadingDest}>
-                      <option value="">{loadingDest ? "Loading…" : !countryId && destList.length === 0 ? "Select country first" : destList.length === 0 ? "No destinations" : "Select destination"}</option>
-                      {destList.map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
+                    <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`}
+                      value={form.destinationId}
+                      onChange={(e) => handleDestinationChange(e.target.value)}
+                      disabled={!countryId || loadingDest}>
+                      <option value="">{loadingDest ? "Loading…" : !countryId ? "Select country first" : destOptions.length === 0 ? "No destinations" : "Select destination"}</option>
+                      {destOptions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                     <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
+                {/* City */}
                 <div>
                   <label className="block text-sm font-bold text-slate-800 mb-2">City <span className="text-rose-500">*</span></label>
                   <div className="relative">
                     <Building2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`} value={form.city} onChange={(e) => handleChange("city", e.target.value)} disabled={!form.destination || loadingCity}>
-                      <option value="">{!form.destination ? "Select destination first" : loadingCity ? "Loading…" : cityList.length === 0 ? "No cities" : "Select city"}</option>
-                      {cityList.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    <select className={`${inputCls} pl-10 appearance-none pr-8 cursor-pointer disabled:opacity-60`}
+                      value={form.city}
+                      onChange={(e) => handleChange("city", e.target.value)}
+                      disabled={!form.destinationId || loadingCity}>
+                      <option value="">{!form.destinationId ? "Select destination first" : loadingCity ? "Loading…" : cityOptions.length === 0 ? "No cities" : "Select city"}</option>
+                      {cityOptions.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
                     </select>
                     <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
@@ -1100,10 +1168,10 @@ function DestinationRow({ dest, onAddSightseeing, onEdit, onDelete }) {
     if (opening && sightseeings.length === 0) {
       setLoadingSight(true);
       try {
-        if(sightseeingService && sightseeingService.getSightseeingsByDestination) {
-            const res = await sightseeingService.getSightseeingsByDestination(dest.name);
-            const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
-            setSightseeings(list);
+        if (sightseeingService && sightseeingService.getSightseeingsByDestination) {
+          const res = await sightseeingService.getSightseeingsByDestination(dest.name);
+          const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+          setSightseeings(list);
         }
       } catch {
         setSightseeings([]);
@@ -1112,6 +1180,9 @@ function DestinationRow({ dest, onAddSightseeing, onEdit, onDelete }) {
       }
     }
   };
+
+  // cityList fallback — agar backend se na aaye
+  const cityChips = dest.cityList || dest.cities_list || [];
 
   return (
     <div className="group border-b border-slate-100 last:border-0">
@@ -1138,14 +1209,16 @@ function DestinationRow({ dest, onAddSightseeing, onEdit, onDelete }) {
 
       {expanded && (
         <div className="bg-slate-50/50 border-t border-slate-100">
-          <div className="px-5 sm:px-16 py-3 flex flex-wrap items-center gap-2.5 border-b border-slate-100">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Cities:</span>
-            {dest.cityList.map((city) => (
-              <span key={city} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-700 shadow-sm">
-                <Building2 size={12} className="text-blue-500" /> {city}
-              </span>
-            ))}
-          </div>
+          {cityChips.length > 0 && (
+            <div className="px-5 sm:px-16 py-3 flex flex-wrap items-center gap-2.5 border-b border-slate-100">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Cities:</span>
+              {cityChips.map((city) => (
+                <span key={city} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-700 shadow-sm">
+                  <Building2 size={12} className="text-blue-500" /> {city}
+                </span>
+              ))}
+            </div>
+          )}
 
           {loadingSight ? (
             <div className="px-16 py-4 text-sm text-slate-400 animate-pulse">Loading attractions...</div>
@@ -1198,10 +1271,10 @@ export default function SightseeingMaster() {
   useEffect(() => {
     (async () => {
       try {
-        if(sightseeingService && sightseeingService.getAllDestinations) {
-            const res = await sightseeingService.getAllDestinations();
-            const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
-            setDestinations(list);
+        if (sightseeingService && sightseeingService.getAllDestinations) {
+          const res = await sightseeingService.getAllDestinations();
+          const list = Array.isArray(res.data) ? res.data : Array.isArray(res.data?.data) ? res.data.data : [];
+          setDestinations(list);
         }
       } catch {
         setDestinations([]);
@@ -1229,8 +1302,8 @@ export default function SightseeingMaster() {
   const handleDelete = async (id, destName) => {
     if (!window.confirm("Delete this sightseeing?")) return;
     try {
-      if(sightseeingService && sightseeingService.deleteSightseeing) {
-          await sightseeingService.deleteSightseeing(id);
+      if (sightseeingService && sightseeingService.deleteSightseeing) {
+        await sightseeingService.deleteSightseeing(id);
       }
       setDestinations((prev) =>
         prev.map((d) =>
@@ -1367,7 +1440,6 @@ export default function SightseeingMaster() {
         onClose={() => setModalOpen(false)}
         prefillDestination={prefillDest}
         editingItem={editingItem}
-        destinations={destinations}
         onSaved={handleSaved}
       />
 
