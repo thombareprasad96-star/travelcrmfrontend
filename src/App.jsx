@@ -249,6 +249,7 @@ import CompanySettings from "./settings/CompanySettings";
 import EmailConfiguration from "./settings/EmailConfiguration";
 import WhatsAppConfiguration from "./settings/WhatsAppConfiguration";
 import SubscriptionInfo from "./subscription/SubscriptionInfo";
+import Dashboard from "./dashboard/Dashboard";
 
 import { isSuperAdmin, hasPermission, P } from "./services/access";
 
@@ -346,6 +347,7 @@ const App = () => {
           <Route path="EmailConfiguration" element={<EmailConfiguration/>}/>
           <Route path="WhatsAppConfiguration" element={<WhatsAppConfiguration/>}/>
           <Route path="SubscriptionInfo" element={<SubscriptionInfo/>}/>
+          <Route path="Dashboard" element={<Dashboard/>}/>
         </Route>
  
       </Routes>
