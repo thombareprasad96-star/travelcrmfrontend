@@ -1,12 +1,5 @@
 
 
-
-// prasad page
-
-
-
-
-
 // import React, { useState, useRef, useEffect } from 'react';
 // import {
 //   Search, Plus, Eye, Edit, Trash2, Map, Globe, Image as ImageIcon, X,
@@ -16,7 +9,7 @@
 // } from 'lucide-react';
 // import { Link } from 'react-router-dom';
 // import { destinationService, uploadImageToCloudinary } from '../services/DestinationService';
-// import {geographyService} from "../services/geographyService"
+// import { geographyService } from "../services/geographyService";
 
 // const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 // const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
@@ -149,11 +142,33 @@
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [resetKey, setResetKey] = useState(Date.now());
 
+//   // ── DYNAMIC COUNTRIES FROM BACKEND ────────────────────────────────────
+//   const [countries, setCountries] = useState([]);          // { id, name }[]
+//   const [countriesLoading, setCountriesLoading] = useState(false);
+
 //   // ── 2-step modal state ──────────────────────────────────────────────────
 //   const [modalStep, setModalStep] = useState(1);
 //   const [step1Errors, setStep1Errors] = useState({});
 
 //   const isSuperAdmin = isSuperAdminRole();
+
+//   // ── Fetch countries from geographyService on mount ────────────────────
+//   useEffect(() => {
+//     const fetchCountries = async () => {
+//       setCountriesLoading(true);
+//       try {
+//         // geographyService.getCountries() returns [{ id, name }] directly
+//         const data = await geographyService.getCountries();
+//         setCountries(Array.isArray(data) ? data : []);
+//       } catch (err) {
+//         console.error('Failed to load countries:', err);
+//         setCountries([]);
+//       } finally {
+//         setCountriesLoading(false);
+//       }
+//     };
+//     fetchCountries();
+//   }, []);
 
 //   const loadDestinations = async () => {
 //     setListLoading(true);
@@ -191,6 +206,7 @@
 //     inclusions: '', exclusions: '', paymentPolicies: '', cancellationPolicies: '', bookingTerms: ''
 //   });
 
+//   // ── Filter — now uses dynamic country name ────────────────────────────
 //   const filteredDestinations = destinations.filter(dest => {
 //     const matchesSearch = dest.name.toLowerCase().includes(searchTerm.toLowerCase());
 //     const matchesCountry = selectedCountry === '' || dest.country === selectedCountry;
@@ -200,7 +216,6 @@
 //   const handleInputChange = (e) => {
 //     const { name, value } = e.target;
 //     setFormData(prev => ({ ...prev, [name]: value }));
-//     // Clear validation error on change
 //     if (step1Errors[name]) setStep1Errors(prev => ({ ...prev, [name]: '' }));
 //   };
 
@@ -262,7 +277,6 @@
 //   };
 
 //   const closeModal = () => {
-//     console.log()
 //     if (isLoading || isUploading) return;
 //     setIsModalOpen(false);
 //   };
@@ -295,8 +309,8 @@
 //     setIsLoading(true);
 //     try {
 //       await destinationService.createDestination(formData);
-//      // setIsModalOpen(false);
 //       await loadDestinations();
+//       closeModal();
 //     } catch (error) {
 //       console.error('Error saving destination:', error);
 //       alert(error.response?.data?.message || 'Failed to save destination.');
@@ -316,8 +330,7 @@
 //     }
 //   };
 
-//   // ── Step titles ─────────────────────────────────────────────────────────
-//   const stepTitle = modalStep === 1 ? 'Basic Information' : 'Policies & Details';
+//   const stepTitle    = modalStep === 1 ? 'Basic Information' : 'Policies & Details';
 //   const stepSubtitle = modalStep === 1
 //     ? 'Enter the core details for this destination.'
 //     : 'Add policies, inclusions and exclusions.';
@@ -351,23 +364,52 @@
 //           </button>
 //         </div>
 
+//         {/* Filter Bar — dynamic country dropdown */}
 //         <div className="p-5 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between bg-slate-50/50">
 //           <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
 //             <div className="relative flex-1 min-w-[280px] max-w-sm group">
-//               <input type="text" placeholder="Search destinations..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 shadow-sm hover:border-blue-300" />
-//               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Search size={16} /></div>
+//               <input
+//                 type="text"
+//                 placeholder="Search destinations..."
+//                 value={searchTerm}
+//                 onChange={(e) => setSearchTerm(e.target.value)}
+//                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 shadow-sm hover:border-blue-300"
+//               />
+//               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+//                 <Search size={16} />
+//               </div>
 //             </div>
+
+//             {/* ── DYNAMIC Country Filter ── */}
 //             <div className="relative min-w-[200px] group">
-//               <select value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)} className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 appearance-none cursor-pointer transition-all shadow-sm hover:border-blue-300">
-//                 <option value="">All Countries</option><option value="India">India</option><option value="Nepal">Nepal</option><option value="Australia">Australia</option>
+//               <select
+//                 value={selectedCountry}
+//                 onChange={(e) => setSelectedCountry(e.target.value)}
+//                 className="w-full pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 appearance-none cursor-pointer transition-all shadow-sm hover:border-blue-300"
+//               >
+//                 <option value="">
+//                   {countriesLoading ? 'Loading countries…' : 'All Countries'}
+//                 </option>
+//                 {countries.map(c => (
+//                   <option key={c.id} value={c.name}>{c.name}</option>
+//                 ))}
 //               </select>
-//               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors"><Globe size={16} /></div>
-//               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={14} /></div>
+//               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+//                 {countriesLoading
+//                   ? <Loader2 size={16} className="animate-spin text-blue-400" />
+//                   : <Globe size={16} />}
+//               </div>
+//               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+//                 <ChevronDown size={14} />
+//               </div>
 //             </div>
 //           </div>
-//           <div className="text-sm font-medium text-slate-500">Showing <span className="text-slate-900 font-bold">{filteredDestinations.length}</span> destinations</div>
+//           <div className="text-sm font-medium text-slate-500">
+//             Showing <span className="text-slate-900 font-bold">{filteredDestinations.length}</span> destinations
+//           </div>
 //         </div>
 
+//         {/* Table */}
 //         <div className="overflow-x-auto custom-scrollbar">
 //           <table className="w-full min-w-[1000px] border-collapse text-sm whitespace-nowrap">
 //             <thead>
@@ -421,12 +463,9 @@
 //         </div>
 //       </div>
 
-//       {/* ================================================================= */}
-//       {/* 2-STEP ADD DESTINATION MODAL                                       */}
-//       {/* ================================================================= */}
+//       {/* MODAL */}
 //       {isModalOpen && (
 //         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 overflow-y-auto custom-scrollbar">
-//           {/* Backdrop — only closes on Step 1 */}
 //           <div
 //             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
 //             onClick={() => modalStep === 1 && closeModal()}
@@ -434,7 +473,7 @@
 
 //           <div className="relative bg-white w-full max-w-6xl shadow-2xl mt-4 sm:mt-8 mb-10 rounded-2xl overflow-hidden border border-slate-200/60 transform transition-all">
 
-//             {/* ── Modal Header ── */}
+//             {/* Modal Header */}
 //             <div className="bg-white px-8 py-5 flex justify-between items-center border-b border-slate-100">
 //               <div className="flex items-center gap-4">
 //                 <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Map size={22} strokeWidth={2.5} /></div>
@@ -446,42 +485,26 @@
 //                   <p className="text-slate-500 text-sm font-medium">{stepSubtitle}</p>
 //                 </div>
 //               </div>
-
 //               <div className="flex items-center gap-6">
-//                 {/* Step indicator */}
-//                 <div className="hidden sm:block">
-//                   <StepIndicator currentStep={modalStep} />
-//                 </div>
-//                 <button
-//                   type="button"
-//                   onClick={closeModal}
-//                   className="text-slate-400 hover:bg-slate-100 hover:text-slate-600 p-2.5 rounded-full transition-colors active:scale-95"
-//                 >
-//                   <X size={20} strokeWidth={2.5} />
-//                 </button>
+//                 <div className="hidden sm:block"><StepIndicator currentStep={modalStep} /></div>
+//                 <button type="button" onClick={closeModal} className="text-slate-400 hover:bg-slate-100 hover:text-slate-600 p-2.5 rounded-full transition-colors active:scale-95"><X size={20} strokeWidth={2.5} /></button>
 //               </div>
 //             </div>
 
-//             {/* ── Progress Bar ── */}
+//             {/* Progress Bar */}
 //             <div className="h-1 bg-slate-100">
-//               <div
-//                 className="h-full bg-blue-500 transition-all duration-500 ease-out"
-//                 style={{ width: modalStep === 1 ? '50%' : '100%' }}
-//               />
+//               <div className="h-full bg-blue-500 transition-all duration-500 ease-out" style={{ width: modalStep === 1 ? '50%' : '100%' }} />
 //             </div>
 
 //             <form onSubmit={handleSubmit}>
 
-//               {/* ============================================================ */}
-//               {/* STEP 1 — Basic Information                                   */}
-//               {/* ============================================================ */}
+//               {/* STEP 1 */}
 //               {modalStep === 1 && (
 //                 <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 bg-[#fcfdff]">
 
-//                   {/* LEFT — Country, Name, Type */}
 //                   <div className="space-y-7">
 
-//                     {/* Country */}
+//                     {/* ── DYNAMIC Country Dropdown ── */}
 //                     <div className="group">
 //                       <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
 //                         Country <span className="text-rose-500">*</span>
@@ -493,12 +516,18 @@
 //                           onChange={handleInputChange}
 //                           className={`w-full pl-4 pr-10 py-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 text-sm text-slate-700 appearance-none transition-all shadow-sm cursor-pointer ${step1Errors.country ? 'border-rose-400' : 'border-slate-200'}`}
 //                         >
-//                           <option value="" disabled>Select Country</option>
-//                           <option value="India">India</option>
-//                           <option value="Nepal">Nepal</option>
-//                           <option value="Australia">Australia</option>
+//                           <option value="" disabled>
+//                             {countriesLoading ? 'Loading countries…' : 'Select Country'}
+//                           </option>
+//                           {countries.map(c => (
+//                             <option key={c.id} value={c.name}>{c.name}</option>
+//                           ))}
 //                         </select>
-//                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400"><ChevronDown size={16} /></div>
+//                         <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+//                           {countriesLoading
+//                             ? <Loader2 size={16} className="animate-spin text-blue-400" />
+//                             : <ChevronDown size={16} />}
+//                         </div>
 //                       </div>
 //                       {step1Errors.country && <p className="mt-1.5 text-xs text-rose-600 font-semibold flex items-center gap-1"><AlertTriangle size={12} />{step1Errors.country}</p>}
 //                     </div>
@@ -541,7 +570,7 @@
 //                     </div>
 //                   </div>
 
-//                   {/* RIGHT — Image Upload */}
+//                   {/* RIGHT — Image Upload (unchanged) */}
 //                   <div className="space-y-7">
 //                     <div className="group">
 //                       <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
@@ -598,7 +627,6 @@
 //                       </div>
 //                     </div>
 
-//                     {/* Info card */}
 //                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
 //                       <p className="text-sm font-bold text-blue-800 mb-1">Step 1 of 2 — Core Details</p>
 //                       <p className="text-xs text-blue-600 leading-relaxed">Fill in the country, name, type and optionally upload a cover image. Click <strong>Next</strong> to add policies, inclusions and exclusions on the next step.</p>
@@ -607,13 +635,9 @@
 //                 </div>
 //               )}
 
-//               {/* ============================================================ */}
-//               {/* STEP 2 — Policies & Details                                  */}
-//               {/* ============================================================ */}
+//               {/* STEP 2 (unchanged) */}
 //               {modalStep === 2 && (
 //                 <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8 bg-[#fcfdff]">
-
-//                   {/* LEFT — Cancellation + Booking */}
 //                   <div className="space-y-7">
 //                     <div className="group">
 //                       <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Cancellation Policies</label>
@@ -628,8 +652,6 @@
 //                       <RichTextEditor key={`${resetKey}-pay`} name="paymentPolicies" initialValue={formData.paymentPolicies} onChange={handleInputChange} placeholder="Outline payment terms..." />
 //                     </div>
 //                   </div>
-
-//                   {/* RIGHT — Inclusions + Exclusions */}
 //                   <div className="space-y-7">
 //                     <div className="group">
 //                       <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Inclusions</label>
@@ -639,8 +661,6 @@
 //                       <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Exclusions</label>
 //                       <RichTextEditor key={`${resetKey}-exc`} name="exclusions" initialValue={formData.exclusions} onChange={handleInputChange} placeholder="Detail the exclusions here..." />
 //                     </div>
-
-//                     {/* Summary card */}
 //                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-2">
 //                       <p className="text-sm font-bold text-slate-700 mb-2">Step 1 Summary</p>
 //                       <div className="flex items-center gap-2 text-xs text-slate-600"><Globe size={13} className="text-blue-500" /><span className="font-semibold">Country:</span> {formData.country || '—'}</div>
@@ -656,50 +676,26 @@
 //                 </div>
 //               )}
 
-//               {/* ── Modal Footer ── */}
+//               {/* Modal Footer */}
 //               <div className="bg-slate-50 px-8 py-5 border-t border-slate-200 flex justify-between items-center rounded-b-2xl">
-
-//                 {/* Left side */}
 //                 <div>
 //                   {modalStep === 1 ? (
-//                     <button
-//                       type="button"
-//                       disabled={isLoading}
-//                       onClick={closeModal}
-//                       className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-//                     >
+//                     <button type="button" disabled={isLoading} onClick={closeModal} className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-sm active:scale-95 disabled:opacity-50">
 //                       Cancel
 //                     </button>
 //                   ) : (
-//                     <button
-//                       type="button"
-//                       disabled={isLoading}
-//                       onClick={handleBackStep}
-//                       className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
-//                     >
+//                     <button type="button" disabled={isLoading} onClick={handleBackStep} className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2">
 //                       <ArrowLeft size={16} strokeWidth={2.5} /> Back
 //                     </button>
 //                   )}
 //                 </div>
-
-//                 {/* Right side */}
 //                 <div>
 //                   {modalStep === 1 ? (
-//                     <button
-//                       type="button"
-//                       disabled={isUploading}
-//                       onClick={handleNextStep}
-//                       className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-//                     >
+//                     <button type="button" disabled={isUploading} onClick={handleNextStep} className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
 //                       Next <ArrowRight size={16} strokeWidth={2.5} />
 //                     </button>
 //                   ) : (
-//                     <button
-//                       type="submit"
-//                       disabled={isLoading || isUploading}
-//                       title={isUploading ? 'Wait for the image upload to finish' : undefined}
-//                       className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-//                     >
+//                     <button type="submit" disabled={isLoading || isUploading} className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
 //                       {isLoading
 //                         ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving…</>
 //                         : <><CheckCircle size={16} strokeWidth={2.5} /> Save Destination</>}
@@ -716,8 +712,6 @@
 // };
 
 // export default DestinationMaster;
-
-
 
 
 
@@ -875,7 +869,17 @@ const DestinationMaster = () => {
 
   // ── 2-step modal state ──────────────────────────────────────────────────
   const [modalStep, setModalStep] = useState(1);
+  const stepRef = useRef(1);  // turant-update ref (re-render wait nahi karta)
   const [step1Errors, setStep1Errors] = useState({});
+  const [submitError, setSubmitError] = useState('');  // save error (duplicate etc.)
+  const [editingDest, setEditingDest] = useState(null);  // null=create, object=edit
+
+  // View modal state
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewDest, setViewDest] = useState(null);
+
+  // modalStep + stepRef dono ek saath set karne ke liye
+  const goToStep = (step) => { stepRef.current = step; setModalStep(step); };
 
   const isSuperAdmin = isSuperAdminRole();
 
@@ -992,13 +996,15 @@ const DestinationMaster = () => {
 
   // ── Modal open/close ────────────────────────────────────────────────────
   const openModal = () => {
+    setEditingDest(null);  // create mode
     setFormData({ country: '', name: '', type: '', imagePath: '', inclusions: '', exclusions: '', paymentPolicies: '', cancellationPolicies: '', bookingTerms: '' });
     setImagePreview(null);
     setIsUploading(false);
     setUploadProgress(0);
     setUploadError('');
     setStep1Errors({});
-    setModalStep(1);
+    setSubmitError('');
+    goToStep(1);
     setResetKey(Date.now());
     setIsModalOpen(true);
   };
@@ -1006,6 +1012,38 @@ const DestinationMaster = () => {
   const closeModal = () => {
     if (isLoading || isUploading) return;
     setIsModalOpen(false);
+    setEditingDest(null);
+  };
+
+  // ── EDIT — form mein data bhar ke modal kholo ──
+  const openEditModal = (dest) => {
+    setEditingDest(dest);
+    setFormData({
+      country:              dest.country || '',
+      name:                 dest.name || '',
+      type:                 dest.type || '',
+      imagePath:            dest.imagePath || '',
+      inclusions:           dest.inclusions || '',
+      exclusions:           dest.exclusions || '',
+      paymentPolicies:      dest.paymentPolicies || '',
+      cancellationPolicies: dest.cancellationPolicies || '',
+      bookingTerms:         dest.bookingTerms || '',
+    });
+    setImagePreview(dest.imagePath || null);
+    setIsUploading(false);
+    setUploadProgress(0);
+    setUploadError('');
+    setStep1Errors({});
+    setSubmitError('');
+    goToStep(1);
+    setResetKey(Date.now());
+    setIsModalOpen(true);
+  };
+
+  // ── VIEW — read-only detail modal ──
+  const openViewModal = (dest) => {
+    setViewDest(dest);
+    setViewOpen(true);
   };
 
   // ── Step 1 validation → go to Step 2 ───────────────────────────────────
@@ -1022,25 +1060,64 @@ const DestinationMaster = () => {
       return;
     }
     setStep1Errors({});
-    setModalStep(2);
+    goToStep(2);
   };
 
-  const handleBackStep = () => setModalStep(1);
+  const handleBackStep = () => goToStep(1);
 
   // ── Submit (Step 2) ─────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🛑 stepRef use karo (modalStep state re-render ke baad update hota hai,
+    //    par stepRef TURANT update hota hai — mid-click button swap se bachata hai)
+    if (stepRef.current === 1) {
+      handleNextStep();
+      return;
+    }
+
     if (isUploading) { setUploadError('Please wait for the image upload to finish.'); return; }
     if (uploadError) return;
 
     setIsLoading(true);
+    setSubmitError('');
     try {
-      await destinationService.createDestination(formData);
+      if (editingDest) {
+        // EDIT mode — update existing
+        const destId = editingDest.id ?? editingDest.publicId;
+        await destinationService.updateDestination(destId, formData);
+      } else {
+        // CREATE mode — naya banao
+        await destinationService.createDestination(formData);
+      }
       await loadDestinations();
       closeModal();
     } catch (error) {
       console.error('Error saving destination:', error);
-      alert(error.response?.data?.message || 'Failed to save destination.');
+
+      // Backend ka message + status check karke clear error banao
+      const status  = error?.response?.status;
+      const rawMsg  = (error?.response?.data?.message || '').toLowerCase();
+      const isDuplicate =
+        status === 409 ||
+        rawMsg.includes('duplicate') ||
+        rawMsg.includes('already exists') ||
+        rawMsg.includes('uk_destination_tenant_name');
+
+      if (isDuplicate) {
+        // Step 1 pe wapas le jao (jahan name field hai) + clear message
+        goToStep(1);
+        setStep1Errors((prev) => ({
+          ...prev,
+          name: `"${formData.name}" already exists. Please use a different name.`,
+        }));
+        setSubmitError(`A destination named "${formData.name}" already exists in your organization.`);
+      } else {
+        setSubmitError(
+          error?.response?.data?.message ||
+          'Failed to save destination. Please try again.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1057,7 +1134,8 @@ const DestinationMaster = () => {
     }
   };
 
-  const stepTitle    = modalStep === 1 ? 'Basic Information' : 'Policies & Details';
+  const editPrefix   = editingDest ? 'Edit: ' : '';
+  const stepTitle    = (modalStep === 1 ? 'Basic Information' : 'Policies & Details');
   const stepSubtitle = modalStep === 1
     ? 'Enter the core details for this destination.'
     : 'Add policies, inclusions and exclusions.';
@@ -1177,8 +1255,8 @@ const DestinationMaster = () => {
                     <td className="px-6 py-4 text-slate-500 font-medium">{formatDate(dest.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 bg-teal-50 text-teal-600 hover:bg-teal-500 hover:text-white rounded-lg transition-colors shadow-sm" title="View"><Eye size={16} strokeWidth={2.5} /></button>
-                        <button disabled={!canModify} title={canModify ? 'Edit' : 'Global destinations are managed by platform admin'} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"><Edit size={16} strokeWidth={2.5} /></button>
+                        <button onClick={() => openViewModal(dest)} className="p-2 bg-teal-50 text-teal-600 hover:bg-teal-500 hover:text-white rounded-lg transition-colors shadow-sm" title="View"><Eye size={16} strokeWidth={2.5} /></button>
+                        <button onClick={() => canModify && openEditModal(dest)} disabled={!canModify} title={canModify ? 'Edit' : 'Global destinations are managed by platform admin'} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"><Edit size={16} strokeWidth={2.5} /></button>
                         <button onClick={() => canModify && handleDelete(dest)} disabled={!canModify} title={canModify ? 'Delete' : 'Global destinations are managed by platform admin'} className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg transition-colors shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"><Trash2 size={16} strokeWidth={2.5} /></button>
                       </div>
                     </td>
@@ -1206,7 +1284,7 @@ const DestinationMaster = () => {
                 <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Map size={22} strokeWidth={2.5} /></div>
                 <div>
                   <div className="flex items-center gap-3 mb-0.5">
-                    <h2 className="text-lg font-bold text-slate-900 tracking-tight">{stepTitle}</h2>
+                    <h2 className="text-lg font-bold text-slate-900 tracking-tight">{editPrefix}{stepTitle}</h2>
                     <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Step {modalStep} of 2</span>
                   </div>
                   <p className="text-slate-500 text-sm font-medium">{stepSubtitle}</p>
@@ -1403,6 +1481,14 @@ const DestinationMaster = () => {
                 </div>
               )}
 
+              {/* Save error banner (duplicate etc.) */}
+              {submitError && (
+                <div className="mx-8 mb-2 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700 font-semibold flex items-center gap-2">
+                  <AlertTriangle size={16} className="flex-shrink-0 text-rose-500" />
+                  {submitError}
+                </div>
+              )}
+
               {/* Modal Footer */}
               <div className="bg-slate-50 px-8 py-5 border-t border-slate-200 flex justify-between items-center rounded-b-2xl">
                 <div>
@@ -1418,19 +1504,82 @@ const DestinationMaster = () => {
                 </div>
                 <div>
                   {modalStep === 1 ? (
-                    <button type="button" disabled={isUploading} onClick={handleNextStep} className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <button type="button" disabled={isUploading}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNextStep(); }}
+                      className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                       Next <ArrowRight size={16} strokeWidth={2.5} />
                     </button>
                   ) : (
                     <button type="submit" disabled={isLoading || isUploading} className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                       {isLoading
                         ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving…</>
-                        : <><CheckCircle size={16} strokeWidth={2.5} /> Save Destination</>}
+                        : <><CheckCircle size={16} strokeWidth={2.5} /> {editingDest ? 'Update Destination' : 'Save Destination'}</>}
                     </button>
                   )}
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ VIEW DETAIL MODAL (read-only) ════════ */}
+      {viewOpen && viewDest && (
+        <div className="fixed inset-0 z-[60] flex items-start justify-center p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setViewOpen(false)} />
+
+          <div className="relative bg-white w-full max-w-3xl shadow-2xl mt-4 sm:mt-10 mb-10 rounded-3xl overflow-hidden border border-slate-200">
+
+            {/* Gradient header with cover image */}
+            <div className="relative h-44 overflow-hidden">
+              {viewDest.imagePath && /^https?:\/\//.test(viewDest.imagePath) ? (
+                <img src={viewDest.imagePath} alt={viewDest.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg,#2563eb 0%,#7c3aed 50%,#db2777 100%)' }} />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+              <button onClick={() => setViewOpen(false)} className="absolute top-4 right-4 text-white bg-black/20 hover:bg-black/40 p-2 rounded-full transition active:scale-95"><X size={20} /></button>
+              <div className="absolute bottom-4 left-6 right-6">
+                <h2 className="text-2xl font-extrabold text-white drop-shadow">{viewDest.name}</h2>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-bold"><Globe size={11} /> {viewDest.country}</span>
+                  {viewDest.type && <span className="inline-flex items-center gap-1 bg-emerald-500/80 text-white px-2.5 py-0.5 rounded-full text-xs font-bold">{viewDest.type}</span>}
+                  {viewDest.global
+                    ? <span className="inline-flex items-center gap-1 bg-indigo-500/80 text-white px-2.5 py-0.5 rounded-full text-xs font-bold"><Globe size={11} /> Global</span>
+                    : <span className="inline-flex items-center gap-1 bg-amber-500/80 text-white px-2.5 py-0.5 rounded-full text-xs font-bold"><MapPin size={11} /> Org</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Body — policies (read-only) */}
+            <div className="p-6 sm:p-8 space-y-5 max-h-[55vh] overflow-y-auto bg-gradient-to-b from-slate-50/50 to-white">
+              {[
+                { label: 'Inclusions',            value: viewDest.inclusions,           color: 'emerald' },
+                { label: 'Exclusions',            value: viewDest.exclusions,           color: 'rose' },
+                { label: 'Payment Policies',      value: viewDest.paymentPolicies,      color: 'blue' },
+                { label: 'Cancellation Policies', value: viewDest.cancellationPolicies, color: 'amber' },
+                { label: 'Booking Terms',         value: viewDest.bookingTerms,         color: 'violet' },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <h3 className={`text-xs font-bold uppercase tracking-wide mb-1.5 text-${color}-600`}>{label}</h3>
+                  {value && value.replace(/<[^>]*>/g, '').trim() ? (
+                    <div className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5" dangerouslySetInnerHTML={{ __html: value }} />
+                  ) : (
+                    <p className="text-sm text-slate-400 italic m-0">Not provided</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-white px-6 sm:px-8 py-4 border-t border-slate-200 flex justify-between items-center">
+              <button onClick={() => setViewOpen(false)} className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 transition text-sm active:scale-95">Close</button>
+              {(isSuperAdmin || !viewDest.global) && (
+                <button onClick={() => { setViewOpen(false); openEditModal(viewDest); }} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition text-sm active:scale-95 flex items-center gap-2">
+                  <Edit size={15} /> Edit
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
