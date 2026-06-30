@@ -1,7 +1,5 @@
 
 
-// // calculate price ========================================================================
-
 // import React, { useState, useCallback, useEffect, useMemo } from "react";
 // import { useSearchParams, useNavigate } from "react-router-dom";
 // import {
@@ -319,6 +317,13 @@
 //       ].filter(Boolean).join(", ")
 //     : "—";
 
+//   // ── Rooms count — multiple possible field names handle karo ──
+//   const rooms = leadData?.rooms
+//     || leadData?.noOfRooms
+//     || leadData?.roomCount
+//     || leadData?.numberOfRooms
+//     || null;
+
 //   const destination = leadData?.itinerary?.length
 //     ? leadData.itinerary.map(i => `${i.destination}${i.nights ? ` (${i.nights}N)` : ""}`).join(", ")
 //     : "—";
@@ -400,20 +405,30 @@
 //             )}
 //             {!leadLoading && leadData && (
 //               <>
+//                 {/* Client name */}
 //                 <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm whitespace-nowrap flex-shrink-0">
 //                   <User size={11} className="text-blue-500" /> {leadData.customerName || "—"}
 //                 </span>
+//                 {/* Travelers */}
 //                 <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap flex-shrink-0">
 //                   <Users size={11} className="text-violet-500" /> {travelers}
 //                 </span>
+//                 {/* Destination */}
 //                 {leadData.itinerary?.[0]?.destination && (
 //                   <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap flex-shrink-0">
 //                     <MapPin size={11} className="text-rose-500" /> {leadData.itinerary[0].destination}
 //                     {leadData.itinerary[0].nights && ` · ${leadData.itinerary[0].nights}N`}
 //                   </span>
 //                 )}
+//                 {/* ── ROOMS CHIP — naya add kiya ── */}
+//                 {rooms && (
+//                   <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 shadow-sm whitespace-nowrap flex-shrink-0">
+//                     <Hotel size={11} className="text-sky-500" /> {rooms} Room(s)
+//                   </span>
+//                 )}
 //               </>
 //             )}
+//             {/* Stage + version */}
 //             <span className="px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-700 whitespace-nowrap flex-shrink-0">
 //               {stage} · {version}
 //             </span>
@@ -471,7 +486,7 @@
 //                   </div>
 //                 </div>
 
-//                 {/* Travelers */}  
+//                 {/* Travelers */}
 //                 <div className="flex items-center gap-2 sm:gap-3 bg-violet-50 rounded-xl p-2.5 sm:p-3 border border-violet-100">
 //                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
 //                     <Users size={13} className="text-violet-600" />
@@ -1126,6 +1141,16 @@ export default function CreateQuotation() {
     || leadData?.numberOfRooms
     || null;
 
+  // ── Pax info — har tab ko bhejne ke liye (Flight=members, Hotel=rooms, Sightseeing=pax) ──
+  const adults   = Number(leadData?.adults)   || 0;
+  const children = Number(leadData?.children) || 0;
+  const infants  = Number(leadData?.infants)  || 0;
+  const totalPax = adults + children + infants;
+  const paxInfo  = {
+    adults, children, infants, totalPax,
+    rooms: rooms ? Number(rooms) : null,
+  };
+
   const destination = leadData?.itinerary?.length
     ? leadData.itinerary.map(i => `${i.destination}${i.nights ? ` (${i.nights}N)` : ""}`).join(", ")
     : "—";
@@ -1414,9 +1439,9 @@ export default function CreateQuotation() {
           {/* Tab content */}
           <div className="relative overflow-hidden">
             <div style={{ minHeight: 260 }}>
-              <div style={{ display: activeTab === "flight"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><FlightTab               onDataChange={setFlightData}      /></div>
-              <div style={{ display: activeTab === "hotel"       ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><HotelTab                onDataChange={setHotelData}       /></div>
-              <div style={{ display: activeTab === "sightseeing" ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><SightseeingTab          onDataChange={setSightseeingData} /></div>
+              <div style={{ display: activeTab === "flight"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><FlightTab               onDataChange={setFlightData}      paxInfo={paxInfo} /></div>
+              <div style={{ display: activeTab === "hotel"       ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><HotelTab                onDataChange={setHotelData}       paxInfo={paxInfo} /></div>
+              <div style={{ display: activeTab === "sightseeing" ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><SightseeingTab          onDataChange={setSightseeingData} paxInfo={paxInfo} /></div>
               <div style={{ display: activeTab === "cruise"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><CruiseTab               onDataChange={setCruiseData}      /></div>
               <div style={{ display: activeTab === "vehicle"     ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><VehicleTab              onDataChange={setVehicleData}     /></div>
               <div style={{ display: activeTab === "addons"      ? "block" : "none" }} className="p-3 sm:p-5 lg:p-6"><AddOnServicesTab        onDataChange={setAddonData}       /></div>

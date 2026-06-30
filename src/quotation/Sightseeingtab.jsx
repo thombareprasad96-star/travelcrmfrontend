@@ -210,6 +210,14 @@
 //     geographyService.getCountries().then(setCountries).catch(() => setCountries([]));
 
 //     if (editingItem) {
+//       // 🔍 DEBUG — kaunsa id field hai dekho
+//       console.log("=== EDIT MODAL editingItem ===", {
+//         id: editingItem.id,
+//         publicId: editingItem.publicId,
+//         sightseeingId: editingItem.sightseeingId,
+//         title: editingItem.title,
+//         fullObject: editingItem,
+//       });
 //       // Edit mode — existing values prefill
 //       setForm({
 //         ...ssEmptyForm,
@@ -293,11 +301,23 @@
 //       setError("Destination, City and Title are required.");
 //       return;
 //     }
+//     // Edit ke liye valid numeric id chahiye — kai field names try karo
+//     const editId = editingItem
+//       ? (editingItem.id ?? editingItem.sightseeingId ?? editingItem.publicId)
+//       : null;
+
+//     // Guard: edit mode mein id na mile to crash se bachao
+//     if (editingItem && (editId == null || editId === "undefined")) {
+//       setError("Cannot edit: this attraction has no valid ID. Try selecting it again from the dropdown.");
+//       console.error("Edit failed — editingItem has no id:", editingItem);
+//       return;
+//     }
+
 //     setSaving(true); setError("");
 //     try {
 //       let saved;
 //       if (editingItem && sightseeingService.updateSightseeing) {
-//         const res = await sightseeingService.updateSightseeing(editingItem.id, form);
+//         const res = await sightseeingService.updateSightseeing(editId, form);
 //         saved = res.data?.data ?? res.data;
 //       } else {
 //         const res = await sightseeingService.createSightseeing(form);
@@ -545,12 +565,28 @@
 
 //   // ── ✏️ Edit button → selected attraction ko master se dhundho, edit modal ──
 //   const openEditModal = (did, aid, act) => {
-//     // act ki attraction title se master item dhundho (ya _sightseeingId se)
-//     const found = allItems.find(s =>
-//       (act._sightseeingId && (s.id === act._sightseeingId || s.publicId === act._sightseeingId)) ||
-//       s.title === act.attraction
-//     );
-//     if (!found) return;
+//     // act ki attraction master se dhundho — id se ya title se (case-insensitive)
+//     const found = allItems.find(s => {
+//       const byId = act._sightseeingId &&
+//         (String(s.id) === String(act._sightseeingId) || String(s.publicId) === String(act._sightseeingId));
+//       const byTitle = s.title && act.attraction &&
+//         s.title.trim().toLowerCase() === act.attraction.trim().toLowerCase();
+//       return byId || byTitle;
+//     });
+
+//     // 🔍 DEBUG
+//     console.log("=== TAB OPEN EDIT ===", {
+//       attraction: act.attraction,
+//       _sightseeingId: act._sightseeingId,
+//       foundItem: found,
+//       totalMasterItems: allItems.length,
+//     });
+
+//     if (!found) {
+//       // Master mein nahi mila — user ko batao (silent fail nahi)
+//       alert("This attraction was not found in Sightseeing Master.\n\nPlease select an attraction from the dropdown first, then click Edit.");
+//       return;
+//     }
 //     setEditingItem(found);
 //     setModalTarget({ did, aid });
 //     setModalOpen(true);
@@ -759,7 +795,7 @@
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { Map, Sun, Coffee, Utensils, Moon, Plus, IndianRupee, Search, ChevronDown, MapPin, Star,
-  Pencil, X, Globe, Building2, Hash, Clock, UploadCloud, AlertTriangle } from "lucide-react";
+  Pencil, X, Globe, Building2, Hash, Clock, UploadCloud, AlertTriangle, Users } from "lucide-react";
 import { Label, Input, Select, Textarea, SectionCard, AddBtn, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./ui";
 import { ATTRACTIONS, MEALS_OPT, TRANSFER } from "../quotation/constants";
 import { sightseeingService } from "../services/SightseeingService";
@@ -1224,7 +1260,7 @@ function SightseeingFormModal({ isOpen, onClose, editingItem, onSaved }) {
 /* ════════════════════════════════════════════════════════
    MAIN SIGHTSEEING TAB
 ═══════════════════════════════════════════════════════ */
-export default function SightseeingTab({ onDataChange }) {
+export default function SightseeingTab({ onDataChange, paxInfo = {} }) {
   const [included, setIncluded] = useState(true);
   const [title,    setTitle]    = useState("Sightseeing");
   const [notes,    setNotes]    = useState("");
@@ -1270,6 +1306,19 @@ export default function SightseeingTab({ onDataChange }) {
   // ── Auto price ────────────────────────────────────────────
   const dayTotals       = days.map(d => Number(d.pricePerPax) * Number(d.pax) || 0);
   const sightseeingTotal = dayTotals.reduce((a, b) => a + b, 0);
+
+  // ── paxInfo aane par days ka pax auto-fill (default 1 ko hi replace karo) ──
+  useEffect(() => {
+    const total = paxInfo.totalPax || 0;
+    if (total > 0) {
+      setDays(prev => prev.map(d => (
+        (!d._paxTouched && (d.pax === 1 || d.pax === "1" || !d.pax))
+          ? { ...d, pax: total }
+          : d
+      )));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paxInfo.totalPax]);
 
   // ── Parent ko data do ─────────────────────────────────────
   useEffect(() => {
@@ -1407,7 +1456,7 @@ export default function SightseeingTab({ onDataChange }) {
               <div>
                 <Label>No. of Pax</Label>
                 <Input type="number" min={1} value={day.pax}
-                  onChange={e => updateDay(day.id, "pax", e.target.value)} placeholder="1" />
+                  onChange={e => setDays(p => p.map(d => d.id === day.id ? { ...d, pax: e.target.value, _paxTouched: true } : d))} placeholder="1" />
               </div>
               <div>
                 <Label>Day Total</Label>
