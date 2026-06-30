@@ -100,7 +100,7 @@ export default function CustomerInformation({ register, errors, watch, setValue 
   const handleSearch = async () => {
     if (!searchTel.trim()) return;
     setSearching(true);
-    // ── BACKEND: replace setTimeout with real API call ────────
+    // ── BACKEND: replace setTimeout with real API call ───────
     // const res = await customerService.searchByPhone(searchTel);
     // setValue("name", res.data.name); setValue("email", res.data.email); ...
     await new Promise(r => setTimeout(r, 900));

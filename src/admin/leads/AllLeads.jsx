@@ -1271,20 +1271,27 @@
 
 
 
-
-
-
-
-
-import React, { useState, useEffect, memo, useMemo } from 'react';
+import { useState, useEffect, memo, useMemo, useSyncExternalStore } from 'react';
 import { leadService } from '../../services/leadService';
+import { quotationService } from '../../services/quotationService';
+import { hasPermission, P } from '../../services/access';
+import AccessDenied from '../../components/AccessDenied';
+import { formatToWhatsAppLink } from '../../utils/whatsapp';
 import {
   Users, Trophy, PieChart, TrendingUp, Search,
   DownloadCloud, FileText, Plus,
   Inbox, User, Calendar, ChevronDown, ChevronRight,
-  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle
+  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle, Copy, BarChart3, ArrowRightLeft, MessageCircle, NotebookPen, Bell, AlertCircle
 } from 'lucide-react';
+import { FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import QuotationWebView from '../../quotation/QuotationWebView';
+import WeblinkAnalyticsModal from '../../quotation/WeblinkAnalyticsModal';
+import ConvertToBookingModal from './ConvertToBookingModal';
+import {
+  useReactTable, getCoreRowModel, getSortedRowModel,
+  getPaginationRowModel, getExpandedRowModel,
+} from '@tanstack/react-table';
 
 /* ─── COLOR HELPERS ───────────────────────────────────── */
 const AVATAR_GRADIENTS = [
@@ -1303,32 +1310,79 @@ function colorForIndex(idx) {
 }
 
 const STAGE_PILL = {
-  'New Lead':  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'New Lead': 'bg-emerald-100 text-emerald-700 border-emerald-200',
   'Contacted': 'bg-blue-100 text-blue-700 border-blue-200',
+  'Follow Up': 'bg-amber-100 text-amber-700 border-amber-200',
+  'Qualified': 'bg-violet-100 text-violet-700 border-violet-200',
+  'Proposal Sent': 'bg-indigo-100 text-indigo-700 border-indigo-200',
   'Converted': 'bg-green-100 text-green-700 border-green-200',
-  'Lost':      'bg-red-100 text-red-700 border-red-200',
+  'Lost': 'bg-red-100 text-red-700 border-red-200',
 };
 const stagePill = (stage) => STAGE_PILL[stage] || 'bg-orange-100 text-orange-700 border-orange-200';
 
+/* Stages selectable from the row dropdown. "Converted" is intentionally excluded — conversion
+   runs through the Convert-to-booking flow, not a manual pick — but if a lead is already in a
+   stage outside this list, the row still shows its real value (the option is prepended). */
+const STAGES = ['New Lead', 'Contacted', 'Follow Up', 'Qualified', 'Proposal Sent', 'Lost'];
+
 const TYPE_PILL = {
   'Fresh Lead': 'bg-blue-100 text-blue-700 border-blue-200',
-  'Hot Lead':   'bg-red-100 text-red-700 border-red-200',
-  'Warm Lead':  'bg-amber-100 text-amber-700 border-amber-200',
-  'Cold Lead':  'bg-teal-100 text-teal-700 border-teal-200',
+  'Hot Lead': 'bg-red-100 text-red-700 border-red-200',
+  'Warm Lead': 'bg-amber-100 text-amber-700 border-amber-200',
+  'Cold Lead': 'bg-teal-100 text-teal-700 border-teal-200',
+  'VIP': 'bg-amber-100 text-amber-800 border-amber-300',
+  'Corporate': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  'Repeat Customer': 'bg-teal-100 text-teal-700 border-teal-200',
 };
 const typePill = (type) => TYPE_PILL[type] || 'bg-slate-100 text-slate-700 border-slate-200';
 
+/* Lead types offered in the edit modal — the canonical set the pills above cover. A lead
+   already on a type outside this list keeps its real value (it's prepended in the modal). */
+const LEAD_TYPES = Object.keys(TYPE_PILL);
+
 // Exact pastel colors per service, matched to the design mockup
 const SERVICE_COLORS = {
-  Hotel:        { bg: '#E6F1FB', text: '#042C53' },
-  Flight:       { bg: '#EEEDFE', text: '#26215C' },
-  Cruise:       { bg: '#E1F5EE', text: '#04342C' },
-  Vehicle:      { bg: '#FAECE7', text: '#4A1B0C' },
-  Visa:         { bg: '#FBEAF0', text: '#4B1528' },
-  Passport:     { bg: '#F1EFE8', text: '#2C2C2A' },
-  Sightseeing:  { bg: '#FAEEDA', text: '#412402' },
+  Hotel: { bg: '#E6F1FB', text: '#042C53' },
+  Flight: { bg: '#EEEDFE', text: '#26215C' },
+  Cruise: { bg: '#E1F5EE', text: '#04342C' },
+  Vehicle: { bg: '#FAECE7', text: '#4A1B0C' },
+  Visa: { bg: '#FBEAF0', text: '#4B1528' },
+  Passport: { bg: '#F1EFE8', text: '#2C2C2A' },
+  Sightseeing: { bg: '#FAEEDA', text: '#412402' },
 };
 const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
+
+/* Single source of truth for every traveller/pax display.
+   long  → "2 Adults · 1 Child · 1 Infant"  (detail views: modal, expand panel)
+   short → "2A · 1C · 1I"                    (dense table cells)
+   Zero values are omitted; pluralisation is correct in long mode. */
+function formatTravellers(adults = 0, children = 0, infants = 0, { short = false } = {}) {
+  const long = { a: ['Adult', 'Adults'], c: ['Child', 'Children'], i: ['Infant', 'Infants'] };
+  const cell = (n, key, abbr) => short ? `${n}${abbr}` : `${n} ${long[key][n === 1 ? 0 : 1]}`;
+  const parts = [];
+  if (adults) parts.push(cell(adults, 'a', 'A'));
+  if (children) parts.push(cell(children, 'c', 'C'));
+  if (infants) parts.push(cell(infants, 'i', 'I'));
+  return parts.length ? parts.join(' · ') : (short ? '—' : 'No travellers');
+}
+
+/* One source of truth for the leads table column widths — the header, every row and the
+   loading skeleton all read this, so the columns can never drift out of alignment. */
+const LEAD_GRID_COLS = '28px 1.6fr 0.95fr 0.95fr 0.9fr 0.85fr 124px';
+
+/* True when the viewport is phone-width. Lets the expand panel swap its dense multi-column
+   grid for a stacked, readable layout. Uses useSyncExternalStore (no render-time window read,
+   SSR-safe) with a single resize subscription. */
+function useIsMobile(breakpoint = 768) {
+  return useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('resize', onChange);
+      return () => window.removeEventListener('resize', onChange);
+    },
+    () => window.innerWidth < breakpoint,
+    () => false,
+  );
+}
 
 /* ─── PAGINATION ─────────────────────────────────────── */
 function buildPageNumbers(totalPages, pageIndex) {
@@ -1359,11 +1413,10 @@ const PageButton = memo(function PageButton({ page, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
-        isActive
+      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${isActive
           ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white shadow-sm'
           : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-      }`}
+        }`}
     >
       {page + 1}
     </button>
@@ -1372,7 +1425,7 @@ const PageButton = memo(function PageButton({ page, isActive, onClick }) {
 
 function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goToPage, changePageSize }) {
   const from = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
-  const to   = Math.min((pageIndex + 1) * pageSize, totalElements);
+  const to = Math.min((pageIndex + 1) * pageSize, totalElements);
 
   const pageNumbers = useMemo(
     () => buildPageNumbers(totalPages, pageIndex),
@@ -1382,7 +1435,7 @@ function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goTo
   if (totalElements === 0) return null;
 
   const isFirst = pageIndex === 0;
-  const isLast  = pageIndex >= totalPages - 1;
+  const isLast = pageIndex >= totalPages - 1;
 
   return (
     <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -1390,7 +1443,7 @@ function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goTo
         Showing <span className="font-bold text-slate-600">{from}</span>{'\u2013'}<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
       </p>
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
-        <NavButton label="\u00ab" onClick={() => goToPage(0)}             disabled={isFirst} />
+        <NavButton label="\u00ab" onClick={() => goToPage(0)} disabled={isFirst} />
         <NavButton label="\u2039" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
         {pageNumbers.map((p, i) =>
           typeof p === 'string'
@@ -1450,9 +1503,9 @@ function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }
 /* ─── SKELETON ROW ───────────────────────────────────── */
 function SkeletonRow() {
   return (
-    <div className="grid items-center gap-2 px-5 py-4" style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}>
+    <div className="grid items-center gap-0 px-5 py-4" style={{ gridTemplateColumns: LEAD_GRID_COLS }}>
       {[...Array(7)].map((_, i) => (
-        <div key={i} className="h-4 rounded-lg bg-slate-200 animate-pulse" style={{ width: `${40 + Math.random() * 50}%` }} />
+        <div key={i} className="h-4 rounded-lg bg-slate-200 animate-pulse mx-1" style={{ width: `${40 + Math.random() * 50}%` }} />
       ))}
     </div>
   );
@@ -1475,7 +1528,7 @@ function Toast({ msg, type, onClose }) {
 }
 
 /* ─── VIEW LEAD MODAL ────────────────────────────────── */
-function ViewLeadModal({ lead, onClose, onEdit }) {
+function ViewLeadModal({ lead, onClose, onEdit, canEdit }) {
   if (!lead) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -1506,12 +1559,12 @@ function ViewLeadModal({ lead, onClose, onEdit }) {
         <div className="p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              [Phone,    'Phone',      lead.phone,   'bg-green-50 text-green-600'],
-              [Mail,     'Email',      lead.email,   'bg-blue-50 text-blue-600'],
-              [Users,    'Travelers',  `${lead.adults || 0} Adults, ${lead.children || 0} Child, ${lead.infants || 0} Infant`, 'bg-purple-50 text-purple-600'],
-              [User,     'Assigned To', lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || 'Unassigned', 'bg-orange-50 text-orange-600'],
-              [Calendar, 'Created',   lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014', 'bg-teal-50 text-teal-600'],
-              [Briefcase,'Lead Type',  lead.leadType, 'bg-indigo-50 text-indigo-600'],
+              [Phone, 'Phone', lead.phone, 'bg-green-50 text-green-600'],
+              [Mail, 'Email', lead.email, 'bg-blue-50 text-blue-600'],
+              [Users, 'Travelers', formatTravellers(lead.adults, lead.children, lead.infants), 'bg-purple-50 text-purple-600'],
+              [User, 'Assigned To', lead.assignedUser?.fullName || lead.assignedUser?.name || lead.assignedUser?.username || lead.assignedUserName || lead.assignTo || 'Unassigned', 'bg-orange-50 text-orange-600'],
+              [Calendar, 'Created', lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '\u2014', 'bg-teal-50 text-teal-600'],
+              [Briefcase, 'Lead Type', lead.leadType, 'bg-indigo-50 text-indigo-600'],
             ].map(([Icon, label, val, ic]) => (
               <div key={label} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${ic}`}><Icon size={14} /></div>
@@ -1545,9 +1598,11 @@ function ViewLeadModal({ lead, onClose, onEdit }) {
             </div>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
-              <Pencil size={14} /> Edit
-            </button>
+            {canEdit && (
+              <button onClick={() => onEdit(lead)} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all">
+                <Pencil size={14} /> Edit
+              </button>
+            )}
             <button onClick={onClose} className="flex-1 min-w-[100px] py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 transition-all border border-slate-200">
               Close
             </button>
@@ -1569,28 +1624,34 @@ function EditLeadModal({ lead, onClose, onSave }) {
 
   const [form, setForm] = useState({
     customerName: lead?.customerName || '',
-    email:        lead?.email        || '',
-    phone:        lead?.phone        || '',
-    adults:       lead?.adults       || 0,
-    children:     lead?.children     || 0,
-    infants:      lead?.infants      || 0,
-    assignTo:     initialAssignName,
-    leadType:     lead?.leadType     || '',
-    leadStage:    lead?.leadStage    || '',
+    email: lead?.email || '',
+    phone: lead?.phone || '',
+    adults: lead?.adults || 0,
+    children: lead?.children || 0,
+    infants: lead?.infants || 0,
+    assignTo: initialAssignName,
+    leadType: lead?.leadType || '',
+    leadStage: lead?.leadStage || '',
   });
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+  // Constrain Stage/Type to the same canonical sets the table uses (no free-text typos).
+  // If the lead is already on a value outside the set (e.g. a Converted stage), keep it
+  // selectable by prepending it so editing never silently drops the real value.
+  const typeOptions = (!form.leadType || LEAD_TYPES.includes(form.leadType)) ? LEAD_TYPES : [form.leadType, ...LEAD_TYPES];
+  const stageOptions = (!form.leadStage || STAGES.includes(form.leadStage)) ? STAGES : [form.leadStage, ...STAGES];
+
   const fields = [
-    { key: 'customerName', label: 'Customer Name', type: 'text',   placeholder: 'Enter customer name',  span: true },
-    { key: 'email',        label: 'Email Address', type: 'email',  placeholder: 'customer@email.com',   span: true },
-    { key: 'phone',        label: 'Phone Number',  type: 'tel',    placeholder: '+91 98765 43210' },
-    { key: 'assignTo',     label: 'Assigned To',   type: 'text',   placeholder: 'Agent name' },
-    { key: 'adults',       label: 'Adults',        type: 'number' },
-    { key: 'children',     label: 'Children',      type: 'number' },
-    { key: 'infants',      label: 'Infants',       type: 'number' },
-    { key: 'leadType',     label: 'Lead Type',     type: 'text',   placeholder: 'e.g. Hot / Cold' },
-    { key: 'leadStage',    label: 'Lead Stage',    type: 'text',   placeholder: 'e.g. New Lead' },
+    { key: 'customerName', label: 'Customer Name', type: 'text', placeholder: 'Enter customer name', span: true },
+    { key: 'email', label: 'Email Address', type: 'email', placeholder: 'customer@email.com', span: true },
+    { key: 'phone', label: 'Phone Number', type: 'tel', placeholder: '+91 98765 43210' },
+    { key: 'assignTo', label: 'Assigned To', type: 'text', placeholder: 'Agent name' },
+    { key: 'adults', label: 'Adults', type: 'number' },
+    { key: 'children', label: 'Children', type: 'number' },
+    { key: 'infants', label: 'Infants', type: 'number' },
+    { key: 'leadType', label: 'Lead Type', type: 'select', options: typeOptions },
+    { key: 'leadStage', label: 'Lead Stage', type: 'select', options: stageOptions },
   ];
 
   return (
@@ -1609,17 +1670,27 @@ function EditLeadModal({ lead, onClose, onSave }) {
             {fields.map(f => (
               <div key={f.key} className={f.span ? 'sm:col-span-2' : ''}>
                 <label className="block text-xs font-bold text-slate-500 mb-1.5">{f.label}</label>
-                <input
-                  type={f.type}
-                  value={form[f.key]}
-                  min={f.type === 'number' ? 0 : undefined}
-                  disabled={f.key === 'assignTo'}
-                  onChange={e => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
-                  placeholder={f.placeholder}
-                  className={`w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all ${
-                    f.key === 'assignTo' ? 'bg-slate-100 cursor-not-allowed opacity-80' : 'bg-white'
-                  }`}
-                />
+                {f.type === 'select' ? (
+                  <select
+                    value={form[f.key]}
+                    onChange={e => set(f.key, e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all cursor-pointer"
+                  >
+                    {!form[f.key] && <option value="">Select…</option>}
+                    {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type={f.type}
+                    value={form[f.key]}
+                    min={f.type === 'number' ? 0 : undefined}
+                    disabled={f.key === 'assignTo'}
+                    onChange={e => set(f.key, f.type === 'number' ? Number(e.target.value) : e.target.value)}
+                    placeholder={f.placeholder}
+                    className={`w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all ${f.key === 'assignTo' ? 'bg-slate-100 cursor-not-allowed opacity-80' : 'bg-white'
+                      }`}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -1645,7 +1716,7 @@ function DeleteConfirm({ lead, onClose, onConfirm }) {
           Are you sure you want to delete lead <span className="font-bold text-slate-700">#{lead?.id} ({lead?.customerName || 'N/A'})</span>? This action cannot be undone.
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose}   className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
           <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md shadow-red-200 transition-all">Yes, Delete</button>
         </div>
       </div>
@@ -1653,12 +1724,66 @@ function DeleteConfirm({ lead, onClose, onConfirm }) {
   );
 }
 
+/* One uniform cell for the expand panel — label on top, value below. Shared by both grid rows. */
+function Cell({ label, value, divider }) {
+  return (
+    <div style={{ minWidth: 0, ...(divider ? { borderLeft: '1px solid #eeda9255', paddingLeft: '10px' } : null) }}>
+      <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700,
+        textTransform: 'uppercase', letterSpacing: '.06em',
+        marginBottom: '2px', whiteSpace: 'nowrap' }}>{label}</p>
+      <p style={{ fontSize: '13px', fontWeight: 600, color: '#334155',
+        whiteSpace: 'nowrap', overflow: 'hidden',
+        textOverflow: 'ellipsis' }}>{value || '—'}</p>
+    </div>
+  );
+}
+
+/* Phone number rendered as a WhatsApp click-to-chat link (opens wa.me in a new tab).
+   Empty / unparseable phone → plain "—". stopPropagation so clicking the link inside a
+   table row never toggles that row's expand/collapse. */
+function PhoneLink({ phone, iconSize = 11, className = '' }) {
+  const href = formatToWhatsAppLink(phone);
+  if (!href) return <span className={className}>—</span>;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+      title="Chat on WhatsApp"
+      className={`inline-flex items-center gap-1 min-w-0 hover:text-amber-600 transition-colors cursor-pointer ${className}`}>
+      <MessageCircle size={iconSize} className="text-amber-500 flex-shrink-0" />
+      <span className="truncate">{phone}</span>
+    </a>
+  );
+}
+
+/* Email value with a small click-to-copy icon. Empty email → plain "—". */
+function CopyableEmail({ email }) {
+  const [copied, setCopied] = useState(false);
+  if (!email) return <p style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>—</p>;
+  const copy = (e) => {
+    e.stopPropagation();
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(email)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); })
+      .catch(() => {});
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+      <span title={email} style={{ fontSize: '13px', fontWeight: 600, color: '#334155',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{email}</span>
+      <button onClick={copy} title={copied ? 'Copied!' : 'Copy email'}
+        style={{ flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer',
+          padding: 0, display: 'inline-flex', color: copied ? '#16a34a' : '#94a3b8' }}>
+        {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
+      </button>
+    </div>
+  );
+}
+
 /* ─── EXPANDABLE LEAD ROW ─────────────────────────────── */
-function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onStageChange }) {
+function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onStageChange, onViewQuotations, onConvert, onAddLog, onViewLogs, canEdit, canDelete, canConvert, isMobile }) {
+  const isConverted = lead.leadStage === 'Converted' || !!lead.convertedBookingPublicId;
   const { avatar, accent } = colorForIndex(index);
   const name = lead.customerName || 'N/A';
   const initial = (name || 'U').charAt(0).toUpperCase();
-  const [showAllDest, setShowAllDest] = useState(false);  // "+N more" toggle
 
   const assigneeName =
     lead.assignedUser?.fullName ||
@@ -1668,9 +1793,38 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
     lead.assignTo ||
     null;
 
+  // Render every destination as a pill (matches the leads-list design); collapse to 2 with a
+  // "+N more" toggle so a long itinerary never blows out the row height.
+  const [showAllDest, setShowAllDest] = useState(false);
+  const [showAllServices, setShowAllServices] = useState(false);
   const destinations = Array.isArray(lead.itinerary) ? lead.itinerary.filter(d => d && d.destination) : [];
   const totalNights = destinations.reduce((sum, d) => sum + (Number(d.nights) || 0), 0);
-  const travelersShort = `${lead.adults || 0} Adults${lead.children ? `, ${lead.children} Child` : ''}`;
+  const services = Array.isArray(lead.services) ? lead.services : [];
+
+  const fmtDate = (d, withYear) =>
+    d ? new Date(d).toLocaleDateString('en-US', withYear
+      ? { day: 'numeric', month: 'short', year: '2-digit' }
+      : { day: 'numeric', month: 'short' }) : null;
+  const travelStr = fmtDate(lead.travelDate, true);
+  const createdStr = fmtDate(lead.createdAt, false);
+  // Lead age = whole days since it was created. "Today" for same-day, else "Nd".
+  const leadAgeDays = lead.createdAt
+    ? Math.max(0, Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86400000))
+    : null;
+  const ageStr = leadAgeDays == null ? null : (leadAgeDays === 0 ? 'Today' : `${leadAgeDays}d old`);
+  // Created date + age in one string for the Created cell, e.g. "Jun 30 · 12d old".
+  const createdWithAge = createdStr ? (ageStr ? `${createdStr} · ${ageStr}` : createdStr) : null;
+  // Deal value = grand total of the lead's LATEST quotation (sent from the backend on
+  // latestQuotation.grandTotal). No quotation yet → shown as "—".
+  const valueStr = lead.latestQuotation?.grandTotal != null
+    ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(lead.latestQuotation.grandTotal)
+    : null;
+  // Customer's stated budget (Lead.budget). No budget set → "—".
+  const budgetStr = lead.budget != null
+    ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(lead.budget)
+    : null;
+  // Always show the lead's real stage even if it's outside the manually-selectable set (e.g. Converted).
+  const stageOptions = STAGES.includes(lead.leadStage) ? STAGES : [lead.leadStage, ...STAGES].filter(Boolean);
 
   return (
     <div
@@ -1685,60 +1839,67 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
       {/* ── Desktop row ── */}
       <div
         onClick={() => onToggle(lead.id)}
-        className="hidden md:grid items-center gap-2 px-5 py-4 cursor-pointer transition-colors"
-        style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px', background: isOpen ? '#eeda9230' : 'transparent' }}
+        className="hidden md:grid items-stretch gap-0 px-5 py-3.5 cursor-pointer transition-colors"
+        style={{ gridTemplateColumns: LEAD_GRID_COLS, background: isOpen ? '#eeda9230' : 'transparent' }}
         onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = '#eeda9218'; }}
         onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent'; }}
       >
-        <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
-        <div className="flex items-center gap-3 min-w-0">
+        {/* expand */}
+        <div className="flex items-center justify-center">
+          <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
+        </div>
+
+        {/* Lead */}
+        <div className="flex items-center gap-3 min-w-0 pr-3">
           <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatar} flex items-center justify-center text-white text-sm font-extrabold shadow-sm flex-shrink-0`}>{initial}</div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
-            <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
+              {lead.leadType && (
+                <span className={`flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${typePill(lead.leadType)}`}>{lead.leadType}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-slate-400 min-w-0">
+              <PhoneLink phone={lead.phone} iconSize={11} className="flex-shrink-0 text-slate-400" />
+            </div>
           </div>
         </div>
-        <div className="min-w-0">
-          {destinations.length > 0 ? (
-            <>
-              <div className="flex flex-wrap gap-1">
-                {(showAllDest ? destinations : destinations.slice(0, 2)).map((d, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border" style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}>
-                    <MapPin size={10} /> {d.destination} <span className="opacity-70">({d.nights}N)</span>
-                  </span>
-                ))}
-                {/* +N more badge — sirf 2 se zyada hone par */}
-                {destinations.length > 2 && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowAllDest(v => !v); }}
-                    className="inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                    {showAllDest ? '− less' : `+${destinations.length - 2} more`}
-                  </button>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1">{totalNights}N total · {travelersShort}</p>
-            </>
-          ) : (
-            <span className="text-sm text-slate-400">N/A</span>
-          )}
+
+        {/* Travel date / added */}
+        <div className="flex flex-col justify-center items-center text-center min-w-0 border-l border-slate-200/70 pl-3">
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold truncate max-w-full ${travelStr ? 'text-slate-700' : 'text-slate-300'}`} title="Travel date">
+            <Calendar size={11} className="flex-shrink-0" /><span className="truncate">{travelStr || 'Not set'}</span>
+          </span>
+          <span className="text-[10px] text-slate-400 truncate max-w-full mt-0.5">Added {createdStr}</span>
         </div>
-        <div className="flex items-center gap-2 min-w-0">
+
+        {/* Assigned */}
+        <div className="flex items-center justify-center gap-2 min-w-0 border-l border-slate-200/70 pl-3">
           <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[10px] font-extrabold flex-shrink-0">
             {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
           </div>
           <span className="text-sm font-semibold text-slate-700 truncate">{assigneeName || 'Unassigned'}</span>
         </div>
-        <div onClick={e => e.stopPropagation()}>
-          <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)}
-            className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}>
-            <option value="New Lead">New Lead</option>
-            <option value="Contacted">Contacted</option>
+
+        {/* Stage */}
+        <div className="flex items-center justify-center border-l border-slate-200/70 pl-3" onClick={e => e.stopPropagation()}>
+          <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)} disabled={!canEdit}
+            className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none appearance-none text-center transition-all max-w-full truncate ${canEdit ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'} ${stagePill(lead.leadStage)}`}>
+            {stageOptions.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div className="text-right text-sm font-extrabold text-slate-800">N/A</div>
-        <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
+
+        {/* Estimated value */}
+        <div className="flex flex-col items-center justify-center text-center min-w-0 border-l border-slate-200/70 pl-3">
+          <span className={`text-sm font-extrabold truncate max-w-full ${valueStr ? 'text-slate-800' : 'text-slate-300'}`}>{valueStr || '—'}</span>
+          <span className="text-[9px] uppercase tracking-wide text-slate-400 font-bold">Latest quote</span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-center gap-1.5 border-l border-slate-200/70 pl-2" onClick={e => e.stopPropagation()}>
           <button onClick={() => onView(lead)} title="View" className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={14} /></button>
-          <button onClick={() => onEdit(lead)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={14} /></button>
+          {canEdit && <button onClick={() => onEdit(lead)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={14} /></button>}
+          {canDelete && <button onClick={() => onDelete(lead)} title="Delete" className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition-all"><Trash2 size={14} /></button>}
         </div>
       </div>
 
@@ -1756,34 +1917,17 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-slate-800 capitalize truncate">{name}</p>
-                <p className="text-xs text-slate-400 truncate">{lead.email || 'No email'}</p>
+                <div className="flex items-center gap-2.5 text-xs text-slate-400 min-w-0"><PhoneLink phone={lead.phone} iconSize={11} className="flex-shrink-0 text-slate-400" /></div>
               </div>
               <ChevronRight size={16} className="text-slate-400 transition-transform flex-shrink-0 mt-1" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }} />
             </div>
+            {/* Destination/itinerary intentionally omitted here — it lives in the expand panel's
+                Itinerary row, so the collapsed card stays clean (no duplicated data on mobile). */}
             <div className="flex items-center gap-2 flex-wrap mt-2">
-              {destinations.length > 0 ? (
-                <>
-                  {(showAllDest ? destinations : destinations.slice(0, 2)).map((d, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full border" style={{ background: `${accent}14`, color: accent, borderColor: `${accent}33` }}>
-                      <MapPin size={10} /> {d.destination} · {d.nights}N
-                    </span>
-                  ))}
-                  {destinations.length > 2 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setShowAllDest(v => !v); }}
-                      className="inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full border border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                      {showAllDest ? '− less' : `+${destinations.length - 2} more`}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <span className="text-xs text-slate-400">No destination</span>
-              )}
               <div onClick={e => e.stopPropagation()}>
-                <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)}
-                  className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none cursor-pointer appearance-none text-center transition-all ${stagePill(lead.leadStage)}`}>
-                  <option value="New Lead">New Lead</option>
-                  <option value="Contacted">Contacted</option>
+                <select value={lead.leadStage || 'New Lead'} onChange={e => onStageChange(lead, e.target.value)} disabled={!canEdit}
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full border outline-none appearance-none text-center transition-all ${canEdit ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'} ${stagePill(lead.leadStage)}`}>
+                  {stageOptions.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </div>
@@ -1796,7 +1940,8 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
               </div>
               <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                 <button onClick={() => onView(lead)} className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
-                <button onClick={() => onEdit(lead)} className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>
+                {canEdit && <button onClick={() => onEdit(lead)} className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>}
+                {canDelete && <button onClick={() => onDelete(lead)} className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition-all"><Trash2 size={13} /></button>}
               </div>
             </div>
           </div>
@@ -1813,64 +1958,111 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
           {/* Panel body — #eeda92 tint background */}
           <div style={{
             background: '#fffdf0',
-            padding: '10px 12px 12px 44px',
+            padding: isMobile ? '10px 12px' : '10px 12px 12px 44px',
             borderBottom: '2px solid #eeda92',
           }}>
 
-            {/* Row 1: Client + Services */}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingBottom: '8px', borderBottom: '1px dashed #eeda92' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eeda92', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a3e00', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
-                {initial}
-              </div>
-              <div style={{ flex: '0 0 auto' }}>
-                <p style={{ fontSize: '12px', fontWeight: 800, color: '#1E293B', marginBottom: '1px' }}>{lead.customerName || 'N/A'}</p>
-                <p style={{ fontSize: '10px', color: '#64748B' }}>{lead.email || '—'} · {lead.phone || '—'}</p>
-                <span style={{ display: 'inline-block', marginTop: '3px', background: '#eeda9230', color: '#7a5a00', padding: '1px 7px', borderRadius: '20px', fontSize: '9px', fontWeight: 700, border: '1px solid #eeda92' }}>
-                  {lead.adults || 0}A{lead.children > 0 ? ` ${lead.children}C` : ''}{lead.infants > 0 ? ` ${lead.infants}I` : ''}
-                </span>
-              </div>
-              <div style={{ width: '1px', background: '#eeda9255', margin: '2px 4px', flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: '140px' }}>
-                <p style={{ fontSize: '9px', color: '#a07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: '4px' }}>Services</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                  {lead.services && lead.services.length > 0
-                    ? lead.services.map((s, i) => {
-                        const c = serviceColor(s);
-                        return <span key={i} style={{ background: c.bg, color: c.text, padding: '2px 7px', borderRadius: '5px', fontSize: '9px', fontWeight: 600 }}>{s}</span>;
-                      })
-                    : <span style={{ fontSize: '10px', color: '#94A3B8' }}>None</span>
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* Single row — all 8 fields in one line */}
+            {/* Row 1 — uniform cells (6 across on desktop, 2 across / 3 sub-rows on mobile) */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(8, 1fr)',
-              gap: '6px',
+              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+              gap: isMobile ? '12px 10px' : '6px',
               padding: '8px 0',
               borderBottom: '1px dashed #eeda92',
-              overflowX: 'auto',
             }}>
-              {[
-                { label: 'Phone',     value: lead.phone || '—' },
-                { label: 'Created',   value: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A' },
-                { label: 'Margin',    value: '—' },
-                { label: 'Lead Type', value: lead.leadType || 'N/A' },
-                { label: 'Quotation', value: lead.quotationStatus || 'Not generated' },
-                { label: 'Booking',   value: lead.bookingStatus   || 'Not booked'    },
-                { label: 'Weblink',   value: lead.shareLink       || '—'             },
-                { label: 'Logging',   value: lead.lastActivity    || 'No activity'   },
-              ].map(({ label, value }) => (
-                <div key={label} style={{ minWidth: '70px' }}>
-                  <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '2px', whiteSpace: 'nowrap' }}>{label}</p>
-                  <p style={{ fontSize: '13px', fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</p>
-                </div>
-              ))}
+              {/* Travellers — spelled out in full, e.g. "2 Adults · 1 Child · 4N" */}
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '.06em',
+                  marginBottom: '2px', whiteSpace: 'nowrap' }}>Travellers</p>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#334155',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  title={`${formatTravellers(lead.adults, lead.children, lead.infants)}${totalNights > 0 ? ` · ${totalNights}N` : ''}`}>
+                  {formatTravellers(lead.adults, lead.children, lead.infants)}{totalNights > 0 ? ` · ${totalNights}N` : ''}
+                </p>
+              </div>
+              {/* Email — copyable, with a small copy icon */}
+              <div style={{ minWidth: 0, ...(!isMobile ? { borderLeft: '1px solid #eeda9255', paddingLeft: '10px' } : null) }}>
+                <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '.06em',
+                  marginBottom: '2px', whiteSpace: 'nowrap' }}>Email</p>
+                <CopyableEmail email={lead.email} />
+              </div>
+              <Cell label="Budget" value={budgetStr} divider={!isMobile} />
+              <Cell label="Departure City" value={lead.departCity} divider={!isMobile} />
+              <Cell label="Lead Source" value={lead.leadSource} divider={!isMobile} />
+              <Cell label="Created" value={createdWithAge} divider={!isMobile} />
             </div>
 
-            {/* Row 4: ID + Action buttons */}
+            {/* Row 2 — Itinerary (66%) + Services (33%) side by side; stacked on mobile */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '10px', padding: '8px 0', borderBottom: '1px dashed #eeda92' }}>
+              {/* Itinerary — gold day-wise chips; overflow collapses to a "+N" toggle, just like Services */}
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '.06em',
+                  marginBottom: '6px', whiteSpace: 'nowrap' }}>Itinerary</p>
+                {destinations.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' }}>
+                    {(showAllDest ? destinations : destinations.slice(0, 3)).map((d, i) => (
+                      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', flexShrink: 0,
+                        background: '#eeda9222', border: '1px solid #eeda92', borderRadius: '9px', padding: '4px 10px' }}>
+                        {/* day number disc */}
+                        <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#eeda92',
+                          color: '#3d2a00', fontSize: '9px', fontWeight: 800, flexShrink: 0,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          title={`Day ${d.dayNumber || i + 1}`}>
+                          {d.dayNumber || i + 1}
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap' }}>
+                          {d.destination}{d.city ? ` → ${d.city}` : ''}
+                        </span>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#7a5a00', background: '#eeda9240',
+                          borderRadius: '10px', padding: '1px 6px', whiteSpace: 'nowrap' }}>
+                          {d.nights}N
+                        </span>
+                      </span>
+                    ))}
+                    {destinations.length > 3 && (
+                      <button onClick={(e) => { e.stopPropagation(); setShowAllDest(v => !v); }}
+                        style={{ background: '#eeda92', color: '#3d2a00', padding: '4px 10px', borderRadius: '9px',
+                          fontSize: '10px', fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        {showAllDest ? '− less' : `+${destinations.length - 3}`}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '11px', color: '#94A3B8' }}>No itinerary added</span>
+                )}
+              </div>
+              {/* Services — colored chips in the remaining 33%; overflow collapses to a "+N" toggle.
+                  On mobile it stacks under Itinerary, so the divider moves from left edge to top. */}
+              <div style={{ minWidth: 0, ...(isMobile
+                ? { borderTop: '1px dashed #eeda9255', paddingTop: '8px', marginTop: '4px' }
+                : { borderLeft: '1px solid #eeda9255', paddingLeft: '10px' }) }}>
+                <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '.06em',
+                  marginBottom: '6px', whiteSpace: 'nowrap' }}>Services</p>
+                {services.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                    {(showAllServices ? services : services.slice(0, 3)).map((s, i) => {
+                      const c = serviceColor(s);
+                      return <span key={i} style={{ background: c.bg, color: c.text, padding: '3px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap' }}>{s}</span>;
+                    })}
+                    {services.length > 3 && (
+                      <button onClick={(e) => { e.stopPropagation(); setShowAllServices(v => !v); }}
+                        style={{ background: '#eeda92', color: '#3d2a00', padding: '3px 9px', borderRadius: '6px',
+                          fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        {showAllServices ? '− less' : `+${services.length - 3}`}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '10px', color: '#94A3B8' }}>None</span>
+                )}
+              </div>
+            </div>
+
+            {/* Row 3: ID + Action buttons */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', paddingTop: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#1E293B', borderRadius: '6px', padding: '4px 10px' }}>
                 <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#eeda92' }} />
@@ -1878,21 +2070,48 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
                 <span style={{ fontSize: '9px', fontFamily: 'monospace', color: '#eeda92', fontWeight: 700 }}>{String(lead.publicId || lead.id).slice(0, 14)}...</span>
               </div>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {lead.quotationId ? (
-                  <Link to={`/CreateQuotation?quotationId=${lead.quotationId}&leadId=${lead.publicId || lead.id}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', textDecoration: 'none' }}>
-                    <Eye size={11} /> View Quotation
-                  </Link>
+                {/* Add an activity log for this specific lead (LEAD_UPDATE-gated, like the backend) */}
+                {canEdit && (
+                  <button onClick={() => onAddLog(lead)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#1E293B', color: '#eeda92', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', cursor: 'pointer' }}>
+                    <NotebookPen size={11} /> Add Log
+                  </button>
+                )}
+                {/* View all activity logs for this lead (read — same popup pattern as View Quotations) */}
+                <button onClick={() => onViewLogs(lead)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', cursor: 'pointer' }}>
+                  <Eye size={11} /> View Logs
+                </button>
+                {lead.latestQuotation?.publicId ? (
+                  <>
+                    {/* Existing quotation(s) → open a popup listing all of them, latest first */}
+                    <button onClick={() => onViewQuotations(lead)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', cursor: 'pointer' }}>
+                      <Eye size={11} /> View Quotations
+                    </button>
+                    {/* …and still allow creating a fresh one */}
+                    <Link to={`/createquotation?leadId=${lead.publicId || lead.id}`}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda92', color: '#3d2a00', fontSize: '10px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px #eeda9266' }}>
+                      <FileText size={11} /> Create New Quotation ↗
+                    </Link>
+                  </>
                 ) : (
-                  <Link to={`/CreateQuotation?leadId=${lead.publicId || lead.id}`}
+                  <Link to={`/createquotation?leadId=${lead.publicId || lead.id}`}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda92', color: '#3d2a00', fontSize: '10px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px #eeda9266' }}>
-                    <FileText size={11} /> New Quotation ↗
+                    <FileText size={11} /> Create Quotation ↗
                   </Link>
                 )}
-                <button onClick={() => onDelete(lead)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '7px', background: '#FEF2F2', color: '#DC2626', fontSize: '10px', fontWeight: 700, border: '1px solid #FECACA', cursor: 'pointer' }}>
-                  <Trash2 size={11} /> Delete
-                </button>
+                {isConverted ? (
+                  <Link to="/Allbookings"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#DCFCE7', color: '#15803D', fontSize: '10px', fontWeight: 700, textDecoration: 'none', border: '1px solid #BBF7D0' }}>
+                    <CheckCircle size={11} /> Booked ↗
+                  </Link>
+                ) : canConvert && (
+                  <button onClick={() => onConvert(lead)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#2563EB', color: '#fff', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px #2563eb55' }}>
+                    <ArrowRightLeft size={11} /> Convert to Booking
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1904,27 +2123,496 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEdit, onDelete, onSt
 }
 
 
+/* ─── QUOTATIONS LIST MODAL ──────────────────────────── */
+const QUOTE_STAGE_PILL = {
+  Draft: 'bg-slate-100 text-slate-700 border-slate-200',
+  Sent: 'bg-blue-100 text-blue-700 border-blue-200',
+  Approved: 'bg-green-100 text-green-700 border-green-200',
+  Rejected: 'bg-red-100 text-red-700 border-red-200',
+};
+
+function QuotationsModal({ lead, onClose, onToast, canDelete }) {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [downloadingId, setDownloading] = useState(null);
+  const [emailingId, setEmailing] = useState(null);
+  const [webViewQ, setWebViewQ] = useState(null);   // quotation shown in the web view overlay
+  const [copied, setCopied] = useState(false);
+  const [analyticsQ, setAnalyticsQ] = useState(null);   // quotation shown in the weblink-analytics modal
+  const [deletingId, setDeletingId] = useState(null);   // quotation being deleted
+
+  const removeQuotation = async (q) => {
+    if (!window.confirm(`Delete quotation ${q.version || ''}? This cannot be undone.`)) return;
+    try {
+      setDeletingId(q.publicId);
+      await quotationService.deleteQuotation(q.publicId);
+      setList(prev => prev.filter(x => x.publicId !== q.publicId));
+      onToast?.('Quotation deleted.', 'success');
+    } catch (e) {
+      console.error('Delete quotation failed:', e);
+      onToast?.(e?.response?.data?.message || 'Failed to delete quotation.', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const leadId = lead.publicId || lead.id;
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await quotationService.getQuotationsByLead(leadId);
+        const body = res.data;
+        const data = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        // Defensive client-side sort: latest → oldest (backend already orders by createdAt desc)
+        data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        if (active) setList(data);
+      } catch (e) {
+        console.error('Failed to load quotations:', e);
+        if (active) setError('Could not load quotations. Please try again.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [leadId]);
+
+  const downloadPdf = async (q) => {
+    try {
+      setDownloading(q.publicId);
+      const res = await quotationService.generatePdf(q.publicId);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quotation-${q.version || q.publicId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('PDF download failed:', e);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  // The shareable WEB link (customer-facing web view): {origin}/q/{publicId}.
+  const webLink = (q) => `${window.location.origin}/q/${q.publicId}`;
+
+  // Copy the web link so the agent can paste it anywhere to share with the client.
+  const copyLink = async (q) => {
+    try {
+      await navigator.clipboard.writeText(webLink(q));
+      setCopied(true);
+      onToast?.('Link copied to clipboard', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      onToast?.('Could not copy the link.', 'error');
+    }
+  };
+
+  // Share on WhatsApp — opens wa.me with a prefilled message + the web-view link.
+  const shareWhatsApp = (q) => {
+    const url = webLink(q);
+    const msg = `Hi ${lead.customerName || ''}, here is your travel quotation ${q.version || ''}: ${url}`.trim();
+    const phone = (lead.phone || '').replace(/\D/g, '');
+    const wa = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(wa, '_blank', 'noopener,noreferrer');
+  };
+
+  // Email — sends the PDF to the lead's email via the backend, with the web link in the body.
+  // Confirmed first (outward action).
+  const shareEmail = async (q) => {
+    if (!lead.email) { onToast?.('This lead has no email address.', 'error'); return; }
+    if (!window.confirm(`Send quotation ${q.version || ''} to ${lead.email}?`)) return;
+    const url = webLink(q);
+    try {
+      setEmailing(q.publicId);
+      await quotationService.sendEmail(q.publicId, {
+        toEmail: lead.email,
+        subject: `Travel Quotation ${q.version || ''}`.trim(),
+        message: `Dear ${lead.customerName || 'Customer'},\n\nView your travel quotation online: ${url}\n\n(A PDF copy is attached.)\n\nRegards,\nTeam`,
+      });
+      onToast?.(`Quotation emailed to ${lead.email}`, 'success');
+    } catch (e) {
+      console.error('Email share failed:', e);
+      onToast?.('Failed to send the email.', 'error');
+    } finally {
+      setEmailing(null);
+    }
+  };
+
+  const fmtMoney = (v) => v == null ? '—' : `₹${Number(v).toLocaleString('en-IN')}`;
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col z-10">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white flex-shrink-0"><FileText size={18} /></div>
+            <div className="min-w-0">
+              <h2 className="text-white font-extrabold text-base truncate">Quotations{!loading && ` (${list.length})`}</h2>
+              <p className="text-slate-300 text-xs truncate">{lead.customerName || 'Lead'} {'·'} latest first</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center flex-shrink-0"><X size={16} /></button>
+        </div>
+
+        <div className="p-5 overflow-y-auto">
+          {loading ? (
+            <div className="py-10 text-center text-slate-400 text-sm">Loading quotations{'…'}</div>
+          ) : error ? (
+            <div className="py-10 text-center text-red-500 text-sm">{error}</div>
+          ) : list.length === 0 ? (
+            <div className="py-10 text-center text-slate-400 text-sm">No quotations yet for this lead.</div>
+          ) : (
+            <div className="space-y-3">
+              {list.map((q, idx) => (
+                <div key={q.publicId} className={`border rounded-xl p-4 transition-all ${idx === 0 ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200 hover:border-blue-300'}`}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-extrabold text-slate-900">{q.version || 'v1.0'}</span>
+                        <p className="text-sm font-semibold text-slate-600 truncate">{q.title || 'Quotation'}</p>
+                        {idx === 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">Latest</span>}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${QUOTE_STAGE_PILL[q.quotationStage] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>{q.quotationStage || '—'}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 truncate">
+                        {q.destination ? `${q.destination} · ` : ''}{fmtDate(q.createdAt)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-extrabold text-slate-800 whitespace-nowrap">{fmtMoney(q.grandTotal)}</p>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <button onClick={() => setWebViewQ(q)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all">
+                      <Eye size={13} /> Weblink
+                    </button>
+                    <button onClick={() => downloadPdf(q)} disabled={downloadingId === q.publicId}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all disabled:opacity-50">
+                      <DownloadCloud size={13} /> {downloadingId === q.publicId ? 'Downloading…' : 'PDF'}
+                    </button>
+                    {/* Share — icon only */}
+                    <button onClick={() => shareWhatsApp(q)} title="Share on WhatsApp"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 transition-all">
+                      <FaWhatsapp size={15} />
+                    </button>
+                    <button onClick={() => shareEmail(q)} disabled={emailingId === q.publicId} title="Email to customer"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all disabled:opacity-50">
+                      <Mail size={14} />
+                    </button>
+                    <button onClick={() => setAnalyticsQ(q)} title="Weblink views"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all">
+                      <BarChart3 size={14} />
+                    </button>
+                    {canDelete && (
+                      <button onClick={() => removeQuotation(q)} disabled={deletingId === q.publicId} title="Delete quotation"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-500 transition-all disabled:opacity-50 ml-auto">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Web-format view of a selected quotation, shown over the list, with Share controls */}
+      {webViewQ && (
+        <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
+          <div className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
+            <button onClick={() => setWebViewQ(null)}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-blue-600 flex-shrink-0">
+              <X size={16} /> Back
+            </button>
+            {/* Share this quotation with the client */}
+            <div className="flex items-center gap-2">
+              <button onClick={() => copyLink(webViewQ)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
+                <Copy size={13} /> {copied ? 'Copied!' : 'Copy link'}
+              </button>
+              <button onClick={() => shareWhatsApp(webViewQ)} title="Share on WhatsApp"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 transition-all">
+                <FaWhatsapp size={15} />
+              </button>
+              <button onClick={() => shareEmail(webViewQ)} disabled={emailingId === webViewQ.publicId} title="Email to customer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all disabled:opacity-50">
+                <Mail size={14} />
+              </button>
+            </div>
+          </div>
+          <QuotationWebView publicId={webViewQ.publicId} />
+        </div>
+      )}
+
+      {analyticsQ && <WeblinkAnalyticsModal quotation={analyticsQ} onClose={() => setAnalyticsQ(null)} />}
+    </div>
+  );
+}
+
+/* ─── ADD LOG MODAL ──────────────────────────────────── */
+/* Popup version of the old AddLeadLog page: read-only current stage + hint, inline field
+   validation, and an amber follow-up box that auto-creates a reminder assigned to you. */
+function AddLogModal({ lead, onClose, onToast }) {
+  const [comment, setComment] = useState('');
+  const [createReminder, setCreateReminder] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [errs, setErrs] = useState({});
+  const [saving, setSaving] = useState(false);
+  const leadId = lead.publicId || lead.id;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const validate = () => {
+    const e = {};
+    if (!comment.trim()) e.comment = 'Log comment is required';
+    else if (comment.trim().length < 5) e.comment = 'Comment must be at least 5 characters';
+    if (createReminder && !followUpDate) e.followUpDate = 'Please select a follow-up date for the reminder';
+    return e;
+  };
+
+  const submit = async () => {
+    const e = validate();
+    if (Object.keys(e).length) { setErrs(e); onToast?.('Please fix the errors below.', 'error'); return; }
+    try {
+      setSaving(true);
+      await leadService.addLog(leadId, { comment, createReminder, followUpDate, stage: lead.leadStage });
+      onToast?.('Log saved successfully!', 'success');
+      onClose();
+    } catch (err) {
+      console.error('Add log failed:', err);
+      onToast?.(err?.response?.data?.message || 'Failed to save log. Please try again.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto z-10">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-5 rounded-t-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-amber-300 flex-shrink-0"><NotebookPen size={18} /></div>
+            <div className="min-w-0">
+              <h2 className="text-white font-extrabold text-base truncate">Add Log for {lead.customerName || 'Lead'}</h2>
+              {lead.phone && (
+                <p className="text-slate-300 text-xs mt-0.5 inline-flex items-center gap-1"><Phone size={11} /> {lead.phone}</p>
+              )}
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center flex-shrink-0"><X size={16} /></button>
+        </div>
+        <div className="p-6 space-y-5">
+
+          {/* Current Stage — read-only (snapshotted onto the log server-side) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1.5">Current Stage</label>
+            <input type="text" value={lead.leadStage || '—'} readOnly
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600 font-medium cursor-not-allowed" />
+            <p className="mt-1 text-[11px] text-slate-400">Stage is read-only here — change it from the stage dropdown in the leads list.</p>
+          </div>
+
+          {/* Log comment — required, inline validation */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1.5">Log Comment <span className="text-red-500">*</span></label>
+            <textarea rows={5} value={comment} autoFocus
+              onChange={e => { setComment(e.target.value); setErrs(p => ({ ...p, comment: '' })); }}
+              placeholder="Enter notes, follow-up details, call summary, or any important info about this lead…"
+              className={`w-full px-3 py-2.5 rounded-xl border text-sm text-slate-700 placeholder-slate-400 outline-none transition-all resize-none ${errs.comment ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-50' : 'border-slate-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-50'}`} />
+            {errs.comment
+              ? <p className="mt-1 text-[11px] text-red-500 flex items-center gap-1"><AlertCircle size={12} className="flex-shrink-0" />{errs.comment}</p>
+              : <p className="mt-1 text-[11px] text-slate-400">Minimum 5 characters.</p>}
+          </div>
+
+          {/* Create reminder + follow-up date */}
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <input id="createReminder" type="checkbox" checked={createReminder}
+                onChange={e => { setCreateReminder(e.target.checked); if (!e.target.checked) { setFollowUpDate(''); setErrs(p => ({ ...p, followUpDate: '' })); } }}
+                className="w-4 h-4 mt-0.5 rounded border-slate-300 text-amber-600 focus:ring-amber-400 cursor-pointer" />
+              <div className="flex-1">
+                <label htmlFor="createReminder" className="text-sm font-bold text-slate-700 cursor-pointer select-none">Create reminder for follow-up</label>
+                <p className="text-[11px] text-slate-400 mt-0.5">Check this to also create a follow-up reminder.</p>
+              </div>
+              <Bell size={16} className={`mt-0.5 flex-shrink-0 transition-colors ${createReminder ? 'text-amber-500' : 'text-slate-300'}`} />
+            </div>
+
+            {createReminder && (
+              <div className="ml-7 p-4 bg-amber-50 border border-amber-200 rounded-xl fade-up">
+                <label className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Calendar size={13} /> Follow-up Date <span className="text-red-500">*</span>
+                </label>
+                <input type="date" value={followUpDate} min={today}
+                  onChange={e => { setFollowUpDate(e.target.value); setErrs(p => ({ ...p, followUpDate: '' })); }}
+                  className={`w-full px-3 py-2.5 rounded-xl border text-sm text-slate-700 bg-white outline-none transition-all ${errs.followUpDate ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-50' : 'border-amber-300 focus:border-amber-400 focus:ring-2 focus:ring-amber-50'}`} />
+                {errs.followUpDate && (
+                  <p className="mt-1 text-[11px] text-red-500 flex items-center gap-1"><AlertCircle size={12} className="flex-shrink-0" />{errs.followUpDate}</p>
+                )}
+                <p className="mt-2 text-[11px] text-amber-600">A reminder will be automatically created and assigned to you.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button onClick={onClose} disabled={saving} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-600 font-bold text-sm transition-all bg-white hover:bg-slate-50 disabled:opacity-50">Cancel</button>
+            <button onClick={submit} disabled={saving} className="flex-1 py-2.5 rounded-xl text-white font-bold text-sm transition-all shadow-md bg-slate-800 hover:bg-slate-900 disabled:opacity-50 inline-flex items-center justify-center gap-2">
+              {saving && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+              {saving ? 'Saving…' : 'Save Log'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── LOGS LIST MODAL (all activity logs for one lead) ─── */
+function LogsModal({ lead, onClose, onToast, canDelete }) {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const leadId = lead.publicId || lead.id;
+
+  const remove = async (logEntry) => {
+    if (!window.confirm('Delete this log entry? This cannot be undone.')) return;
+    try {
+      setDeletingId(logEntry.id);
+      await leadService.deleteLog(leadId, logEntry.id);
+      setList(prev => prev.filter(l => l.id !== logEntry.id));
+      onToast?.('Log deleted.', 'success');
+    } catch (e) {
+      console.error('Delete log failed:', e);
+      onToast?.(e?.response?.data?.message || 'Failed to delete log.', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await leadService.getLeadLogs(leadId);
+        const body = res.data;
+        const data = Array.isArray(body?.data) ? body.data : Array.isArray(body) ? body : [];
+        // Newest first (backend already orders desc; defensive re-sort).
+        data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        if (active) setList(data);
+      } catch (e) {
+        console.error('Failed to load logs:', e);
+        if (active) setError('Could not load logs. Please try again.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [leadId]);
+
+  const fmtDateTime = (d) => d
+    ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '—';
+  const fmtDate = (d) => d
+    ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col z-10">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-amber-300 flex-shrink-0"><NotebookPen size={18} /></div>
+            <div className="min-w-0">
+              <h2 className="text-white font-extrabold text-base truncate">Activity Logs{!loading && !error ? ` (${list.length})` : ''}</h2>
+              <p className="text-slate-300 text-xs truncate">{lead.customerName || 'Lead'} {'·'} newest first</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center flex-shrink-0"><X size={16} /></button>
+        </div>
+
+        <div className="p-5 overflow-y-auto">
+          {loading ? (
+            <div className="py-10 text-center text-slate-400 text-sm">Loading logs{'…'}</div>
+          ) : error ? (
+            <div className="py-10 text-center text-red-500 text-sm">{error}</div>
+          ) : list.length === 0 ? (
+            <div className="py-10 text-center text-slate-400 text-sm">No logs yet for this lead.</div>
+          ) : (
+            <div className="space-y-3">
+              {list.map((log, idx) => (
+                <div key={log.id || idx} className={`border rounded-xl p-4 transition-all ${idx === 0 ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200'}`}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {idx === 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">Latest</span>}
+                      {log.stage && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-200">{log.stage}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <p className="text-xs text-slate-400 whitespace-nowrap inline-flex items-center gap-1"><Calendar size={11} /> {fmtDateTime(log.createdAt)}</p>
+                      {canDelete && (
+                        <button onClick={() => remove(log)} disabled={deletingId === log.id} title="Delete log"
+                          className="w-6 h-6 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition-all disabled:opacity-50 flex-shrink-0">
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-700 leading-relaxed mt-2 whitespace-pre-wrap">{log.comment}</p>
+                  <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-[9px] font-extrabold">{(log.addedBy || 'S').charAt(0).toUpperCase()}</span>
+                      {log.addedBy || 'System'}
+                    </span>
+                    {fmtDate(log.followUpDate) && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600"><Bell size={11} /> Follow-up: {fmtDate(log.followUpDate)}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN COMPONENT ─────────────────────────────────── */
 const Leads = () => {
-  const [leads,   setLeads]   = useState([]);
+  const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize,  setPageSize]  = useState(10);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [activeTab, setActiveTab] = useState('All');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder,  setSortOrder]  = useState('desc');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [dateFilter, setDateFilter] = useState('all');
-  const [startDate,  setStartDate]  = useState('');
-  const [endDate,    setEndDate]    = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  const [openRowId, setOpenRowId] = useState(null);
+  const [expanded, setExpanded] = useState({});   // TanStack expansion (kept single-open below)
 
-  const [viewLead,     setViewLead]     = useState(null);
-  const [editLead,     setEditLead]     = useState(null);
+  const [viewLead, setViewLead] = useState(null);
+  const [editLead, setEditLead] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [toast,        setToast]        = useState(null);
+  const [quotationsLead, setQuotationsLead] = useState(null);
+  const [convertLead, setConvertLead] = useState(null);
+  const [logLead, setLogLead] = useState(null);
+  const [logsViewLead, setLogsViewLead] = useState(null);
+  const [toast, setToast] = useState(null);
+  const isMobile = useIsMobile();
+  const [denied, setDenied] = useState(false);
 
   const showToast = (msg, type = 'success') => setToast({ msg, type });
 
@@ -1936,14 +2624,17 @@ const Leads = () => {
       const response = await leadService.getAllLeads();
       let data = [];
       if (response.data) {
-        if      (Array.isArray(response.data.data))                            data = response.data.data;
+        if (Array.isArray(response.data.data)) data = response.data.data;
         else if (response.data.data && Array.isArray(response.data.data.content)) data = response.data.data.content;
-        else if (Array.isArray(response.data.content))                         data = response.data.content;
-        else if (Array.isArray(response.data))                                 data = response.data;
+        else if (Array.isArray(response.data.content)) data = response.data.content;
+        else if (Array.isArray(response.data)) data = response.data;
       }
       setLeads(data);
     } catch (err) {
       console.error('Error fetching leads:', err);
+      // A 403 here means the page was opened without LEAD_READ (e.g. by URL) —
+      // show the friendly access-denied page instead of a blank list.
+      if (err.response?.status === 403) setDenied(true);
       setLeads([]);
     } finally {
       setLoading(false);
@@ -1967,7 +2658,7 @@ const Leads = () => {
       await leadService.updateLead(
         editLead.publicId || editLead.id,
         completePayload,
-        editLead.services  || [],
+        editLead.services || [],
         editLead.itinerary || []
       );
 
@@ -1976,7 +2667,7 @@ const Leads = () => {
       setEditLead(null);
     } catch (err) {
       console.error('Failed to update lead:', err);
-      showToast('Error updating lead. Please try again.', 'error');
+      showToast(err.response?.data?.message || 'Error updating lead. Please try again.', 'error');
     }
   };
 
@@ -1997,7 +2688,7 @@ const Leads = () => {
       await leadService.updateLead(
         leadToUpdate.publicId || leadToUpdate.id,
         completePayload,
-        leadToUpdate.services  || [],
+        leadToUpdate.services || [],
         leadToUpdate.itinerary || []
       );
 
@@ -2005,7 +2696,7 @@ const Leads = () => {
       showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
     } catch (err) {
       console.error('Failed to update stage:', err);
-      showToast('Error updating lead stage. Please try again.', 'error');
+      showToast(err.response?.data?.message || 'Error updating lead stage. Please try again.', 'error');
     }
   };
 
@@ -2019,14 +2710,39 @@ const Leads = () => {
       setDeleteTarget(null);
     } catch (err) {
       console.error('Error deleting lead:', err);
-      showToast('Failed to delete lead. Please try again.', 'error');
+      showToast(err.response?.data?.message || 'Failed to delete lead. Please try again.', 'error');
     }
   };
 
-  const toggleRow = (id) => setOpenRowId(prev => prev === id ? null : id);
+  // Reflect a successful conversion in the list: flip the lead to Converted and link the booking,
+  // so the row's action relabels to "Booked ↗" and a second conversion can't be started.
+  const handleConverted = (convertedLead, booking) => {
+    setLeads(prev => prev.map(l => l.id === convertedLead.id
+      ? { ...l, leadStage: 'Converted', convertedBookingPublicId: booking?.publicId }
+      : l));
+  };
 
-  const safeLeads = Array.isArray(leads) ? leads : [];
+  // Single-open expansion — preserves the original one-row-at-a-time behaviour.
+  const toggleRow = (id) => setExpanded(prev => (prev[id] ? {} : { [id]: true }));
 
+  const safeLeads = useMemo(() => (Array.isArray(leads) ? leads : []), [leads]);
+
+  // Lead-funnel stats for the cards, derived from the loaded set. A lead counts as a
+  // "booking" once it's Converted or linked to a booking (same rule the row uses).
+  // Conversion = won / all leads; Win rate = won / closed (won + lost) only.
+  const stats = useMemo(() => {
+    const total = safeLeads.length;
+    const bookings = safeLeads.filter(l => l.leadStage === 'Converted' || l.convertedBookingPublicId).length;
+    const lost = safeLeads.filter(l => l.leadStage === 'Lost').length;
+    const closed = bookings + lost;
+    return {
+      bookings,
+      conversion: total ? Math.round((bookings / total) * 100) : 0,
+      winRate: closed ? Math.round((bookings / closed) * 100) : 0,
+    };
+  }, [safeLeads]);
+
+  // Bespoke search / date / tab filtering stays here; the result is the table's data source.
   const filteredLeads = useMemo(() => {
     return safeLeads.filter(lead => {
       const q = searchTerm.trim().toLowerCase();
@@ -2034,21 +2750,22 @@ const Leads = () => {
         lead.customerName?.toLowerCase().includes(q) ||
         lead.email?.toLowerCase().includes(q) ||
         lead.phone?.includes(q) ||
-        lead.id?.toString().includes(q);
+        lead.id?.toString().includes(q) ||
+        lead.publicId?.toLowerCase().includes(q);
 
       let matchesDate = true;
       if (dateFilter !== 'all' && lead.createdAt) {
-        const ld    = new Date(lead.createdAt); ld.setHours(0,0,0,0);
-        const today = new Date();               today.setHours(0,0,0,0);
-        const yest  = new Date(today);          yest.setDate(today.getDate() - 1);
-        const week  = new Date(today);          week.setDate(today.getDate() - 7);
+        const ld = new Date(lead.createdAt); ld.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const yest = new Date(today); yest.setDate(today.getDate() - 1);
+        const week = new Date(today); week.setDate(today.getDate() - 7);
 
-        if      (dateFilter === 'today')     matchesDate = ld.getTime() === today.getTime();
+        if (dateFilter === 'today') matchesDate = ld.getTime() === today.getTime();
         else if (dateFilter === 'yesterday') matchesDate = ld.getTime() === yest.getTime();
         else if (dateFilter === 'last_7_days') matchesDate = ld >= week && ld <= today;
         else if (dateFilter === 'custom' && startDate && endDate) {
           const s = new Date(startDate);
-          const e = new Date(endDate); e.setHours(23,59,59,999);
+          const e = new Date(endDate); e.setHours(23, 59, 59, 999);
           matchesDate = ld >= s && ld <= e;
         }
       }
@@ -2064,37 +2781,55 @@ const Leads = () => {
     });
   }, [safeLeads, searchTerm, dateFilter, startDate, endDate, activeTab]);
 
-  const sortedLeads = useMemo(() => {
-    return [...filteredLeads].sort((a, b) => {
-      if (!a.createdAt || !b.createdAt) return 0;
-      return sortOrder === 'asc'
-        ? new Date(a.createdAt) - new Date(b.createdAt)
-        : new Date(b.createdAt) - new Date(a.createdAt);
-    });
-  }, [filteredLeads, sortOrder]);
+  // ── TanStack Table: drives sorting, pagination and row-expansion (headless — the
+  //    existing markup below renders row.original, so the layout is unchanged). ──
+  // Sort is controlled by the existing "newest/oldest" toggle (sortOrder) on createdAt.
+  const sorting = useMemo(() => [{ id: 'createdAt', desc: sortOrder !== 'asc' }], [sortOrder]);
 
-  const totalElements = sortedLeads.length;
-  const totalPages    = Math.max(1, Math.ceil(totalElements / pageSize));
+  const columns = useMemo(() => [
+    {
+      id: 'createdAt',
+      accessorFn: (row) => (row.createdAt ? new Date(row.createdAt) : new Date(0)),
+      sortingFn: 'datetime',
+    },
+  ], []);
 
+  const table = useReactTable({
+    data: filteredLeads,
+    columns,
+    state: { sorting, pagination, expanded },
+    onPaginationChange: setPagination,
+    onExpandedChange: setExpanded,
+    getRowId: (row) => String(row.id),
+    autoResetPageIndex: false,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+  });
+
+  const pageRows = table.getRowModel().rows;
+  const totalElements = filteredLeads.length;
+  const totalPages = Math.max(1, table.getPageCount());
+  const { pageIndex: safePageIndex, pageSize } = table.getState().pagination;
+
+  // Reset to first page when a filter changes (matches the prior behaviour; row edits don't reset).
   useEffect(() => {
-    setPageIndex(0);
-  }, [searchTerm, dateFilter, startDate, endDate, pageSize, activeTab]);
+    setPagination(p => ({ ...p, pageIndex: 0 }));
+  }, [searchTerm, dateFilter, startDate, endDate, activeTab]);
 
-  const safePageIndex = Math.min(pageIndex, totalPages - 1);
+  // Keep the page index in range if the row count shrinks (e.g. after a delete).
+  useEffect(() => {
+    if (safePageIndex > totalPages - 1) {
+      setPagination(p => ({ ...p, pageIndex: Math.max(0, totalPages - 1) }));
+    }
+  }, [totalPages, safePageIndex]);
 
-  const currentLeads = useMemo(() => {
-    const start = safePageIndex * pageSize;
-    return sortedLeads.slice(start, start + pageSize);
-  }, [sortedLeads, safePageIndex, pageSize]);
+  const goToPage = (page) => table.setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
+  const changePageSize = (size) => setPagination({ pageIndex: 0, pageSize: size });
 
-  const goToPage = (page) => {
-    setPageIndex(Math.max(0, Math.min(page, totalPages - 1)));
-  };
-
-  const changePageSize = (size) => {
-    setPageSize(size);
-    setPageIndex(0);
-  };
+  // Blocked page (no LEAD_READ, or the list load was forbidden) → friendly full-page block.
+  if (denied || !hasPermission(P.LEAD_READ)) return <AccessDenied />;
 
   return (
     <div
@@ -2109,10 +2844,14 @@ const Leads = () => {
         .fade-up { animation: fadeUp .4s ease both; }
       `}</style>
 
-      {toast        && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-      {viewLead     && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); setEditLead(l); }} />}
-      {editLead     && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {viewLead && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); setEditLead(l); }} canEdit={hasPermission(P.LEAD_UPDATE)} />}
+      {editLead && <EditLeadModal lead={editLead} onClose={() => setEditLead(null)} onSave={handleUpdateSubmit} />}
       {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
+      {quotationsLead && <QuotationsModal lead={quotationsLead} onClose={() => setQuotationsLead(null)} onToast={showToast} canDelete={hasPermission(P.QUOTATION_DELETE)} />}
+      {convertLead && <ConvertToBookingModal lead={convertLead} onClose={() => setConvertLead(null)} onConverted={handleConverted} onToast={showToast} />}
+      {logLead && <AddLogModal lead={logLead} onClose={() => setLogLead(null)} onToast={showToast} />}
+      {logsViewLead && <LogsModal lead={logsViewLead} onClose={() => setLogsViewLead(null)} onToast={showToast} canDelete={hasPermission(P.LEAD_UPDATE)} />}
 
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
@@ -2137,12 +2876,14 @@ const Leads = () => {
               <button onClick={fetchLeads} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
                 <DownloadCloud size={15} /> Refresh Data
               </button>
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
+              <Link to="/AllLeadLogs" className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
                 <FileText size={15} /> Logs
-              </button>
-              <Link to="/CreateLead" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition-all">
-                <Plus size={16} strokeWidth={2.5} /> Create Lead
               </Link>
+              {hasPermission(P.LEAD_CREATE) && (
+                <Link to="/CreateLead" className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition-all">
+                  <Plus size={16} strokeWidth={2.5} /> Create Lead
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -2151,10 +2892,10 @@ const Leads = () => {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard icon={Users}      label="Total Leads" value={safeLeads.length} gradient="from-blue-500 via-blue-600 to-indigo-700"  delay={0}   />
-          <StatCard icon={Trophy}     label="Bookings"    value={0}                gradient="from-teal-400 via-emerald-500 to-emerald-700" delay={60}  />
-          <StatCard icon={PieChart}   label="Conversion"  value={0} suffix="%"     gradient="from-amber-400 via-amber-500 to-orange-600"  delay={120} />
-          <StatCard icon={TrendingUp} label="Win Rate"    value={0} suffix="%"     gradient="from-pink-400 via-fuchsia-500 to-purple-700" delay={180} />
+          <StatCard icon={Users} label="Total Leads" value={safeLeads.length} gradient="from-blue-500 via-blue-600 to-indigo-700" delay={0} />
+          <StatCard icon={Trophy} label="Bookings" value={stats.bookings} gradient="from-teal-400 via-emerald-500 to-emerald-700" delay={60} />
+          <StatCard icon={PieChart} label="Conversion" value={stats.conversion} suffix="%" gradient="from-amber-400 via-amber-500 to-orange-600" delay={120} />
+          <StatCard icon={TrendingUp} label="Win Rate" value={stats.winRate} suffix="%" gradient="from-pink-400 via-fuchsia-500 to-purple-700" delay={180} />
         </div>
 
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
@@ -2209,15 +2950,13 @@ const Leads = () => {
               const newLeadCount = safeLeads.filter(l => l.leadStage === 'New Lead').length;
               const contactedCount = safeLeads.filter(l => l.leadStage === 'Contacted').length;
 
-              const btnClass = (tabName) => `px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-all border ${
-                activeTab === tabName
+              const btnClass = (tabName) => `px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm transition-all border ${activeTab === tabName
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent shadow-blue-200'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600'
-              }`;
+                }`;
 
-              const badgeClass = (tabName) => `px-2 py-0.5 rounded-md text-xs font-black ${
-                activeTab === tabName ? 'bg-white/20' : 'bg-slate-100 text-slate-700'
-              }`;
+              const badgeClass = (tabName) => `px-2 py-0.5 rounded-md text-xs font-black ${activeTab === tabName ? 'bg-white/20' : 'bg-slate-100 text-slate-700'
+                }`;
 
               return (
                 <div className="flex gap-2 min-w-max">
@@ -2240,22 +2979,22 @@ const Leads = () => {
           </div>
 
           <div
-            className="hidden md:grid items-center gap-2 px-5 py-3 bg-slate-50/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider"
-            style={{ gridTemplateColumns: '28px 1.7fr 1fr 0.9fr 0.85fr 0.75fr 76px' }}
+            className="hidden md:grid items-stretch gap-0 px-5 py-3 bg-slate-50/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider"
+            style={{ gridTemplateColumns: LEAD_GRID_COLS }}
           >
             <div></div>
-            <div>Lead info</div>
-            <div>Destination</div>
-            <div>Assigned to</div>
-            <div>Stage</div>
-            <div className="text-right">Amount</div>
-            <div className="text-center">Actions</div>
+            <div className="flex items-center pr-3">Lead</div>
+            <div className="flex items-center justify-center border-l border-slate-200/70 pl-3">Travel Date</div>
+            <div className="flex items-center justify-center border-l border-slate-200/70 pl-3">Assigned</div>
+            <div className="flex items-center justify-center border-l border-slate-200/70 pl-3">Stage</div>
+            <div className="flex items-center justify-center border-l border-slate-200/70 pl-3">Quote Value</div>
+            <div className="flex items-center justify-center border-l border-slate-200/70 pl-3">Actions</div>
           </div>
 
           <div>
             {loading ? (
               [...Array(Math.min(pageSize, 5))].map((_, i) => <SkeletonRow key={i} />)
-            ) : currentLeads.length === 0 ? (
+            ) : pageRows.length === 0 ? (
               <div className="text-center py-24 px-5">
                 <div className="flex flex-col items-center justify-center">
                   <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm transform -rotate-3">
@@ -2267,19 +3006,30 @@ const Leads = () => {
                 </div>
               </div>
             ) : (
-              currentLeads.map((lead, idx) => (
-                <LeadRow
-                  key={lead.id}
-                  lead={lead}
-                  index={idx}
-                  isOpen={openRowId === lead.id}
-                  onToggle={toggleRow}
-                  onView={setViewLead}
-                  onEdit={setEditLead}
-                  onDelete={setDeleteTarget}
-                  onStageChange={handleStageChange}
-                />
-              ))
+              pageRows.map((row, idx) => {
+                const lead = row.original;
+                return (
+                  <LeadRow
+                    key={lead.id}
+                    lead={lead}
+                    index={idx}
+                    isOpen={row.getIsExpanded()}
+                    onToggle={toggleRow}
+                    onView={setViewLead}
+                    onEdit={setEditLead}
+                    onDelete={setDeleteTarget}
+                    onStageChange={handleStageChange}
+                    onViewQuotations={setQuotationsLead}
+                    onConvert={setConvertLead}
+                    onAddLog={setLogLead}
+                    onViewLogs={setLogsViewLead}
+                    canEdit={hasPermission(P.LEAD_UPDATE)}
+                    canDelete={hasPermission(P.LEAD_DELETE)}
+                    canConvert={hasPermission(P.BOOKING_CREATE)}
+                    isMobile={isMobile}
+                  />
+                );
+              })
             )}
           </div>
 
