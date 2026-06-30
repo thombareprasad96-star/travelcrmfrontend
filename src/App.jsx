@@ -250,6 +250,8 @@ import EmailConfiguration from "./settings/EmailConfiguration";
 import WhatsAppConfiguration from "./settings/WhatsAppConfiguration";
 import SubscriptionInfo from "./subscription/SubscriptionInfo";
 import Dashboard from "./dashboard/Dashboard";
+import TrashPage from "./trash/TrashPage";
+import EditVendor from "./vendors/EditVendor";
 
 import { isSuperAdmin, hasPermission, P } from "./services/access";
 
@@ -348,6 +350,8 @@ const App = () => {
           <Route path="WhatsAppConfiguration" element={<WhatsAppConfiguration/>}/>
           <Route path="SubscriptionInfo" element={<SubscriptionInfo/>}/>
           <Route path="Dashboard" element={<Dashboard/>}/>
+          <Route path="trash" element={<Guard allow={hasPermission(P.TRASH_VIEW)}><TrashPage/></Guard>}/>
+          <Route path="/EditVendor/:id" element={<EditVendor />}/>
         </Route>
  
       </Routes>

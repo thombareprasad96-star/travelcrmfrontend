@@ -1200,10 +1200,11 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import { 
   LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText,
-  CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, 
-  User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock
+  CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser,
+  User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock, Trash2
 } from 'lucide-react';
 import { isSuperAdmin, hasPermission, P } from '../services/access';
 
@@ -1694,6 +1695,23 @@ const Sidebar = ({ isExpanded }) => {
             >
               <BarChart3 size={20} strokeWidth={activeTab === 'Reports' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Reports' ? 'text-white' : 'text-indigo-400'}`} />
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Reports</span>}
+            </Link>
+          </li>
+          )}
+
+
+          {/* --- Trash (Recycle Bin) --- */}
+          {hasPermission(P.TRASH_VIEW) && (
+          <li>
+            <Link
+              to="/trash"
+              onClick={() => handleLinkClick('Trash')}
+              className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
+                activeTab === 'Trash' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <Trash2 size={20} strokeWidth={activeTab === 'Trash' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Trash' ? 'text-white' : 'text-red-400'}`} />
+              {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Trash</span>}
             </Link>
           </li>
           )}
