@@ -1,3 +1,4 @@
+
 // import { useEffect, useState } from "react";
 // import { useParams } from "react-router-dom";
 
@@ -6,34 +7,96 @@
 // const inr = (v) => (v == null ? "—" : `₹${Number(v).toLocaleString("en-IN")}`);
 // const fmtDate = (d) => {
 //   if (!d) return "—";
-//   try { return new Date(d).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }); }
+//   try { return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); }
+//   catch { return d; }
+// };
+// const fmtDateFull = (d) => {
+//   if (!d) return "";
+//   try { return new Date(d).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
 //   catch { return d; }
 // };
 
-// /**
-//  * Read-only, customer-facing WEB rendering of a quotation. Fetches the PUBLIC endpoint
-//  * (no auth) by publicId, so it works both inside the app (agent) and on the public
-//  * /q/{publicId} share page (customer). Self-contained (background + Download PDF button).
-//  */
+// // ── Image resolvers ──
+// const hotelImg = (h) => h.imageUrl || h.imagePath || h.image || h.photo || h.coverImage || h.hotelImage || h.img || (Array.isArray(h.images) && h.images[0]) || null;
+// const actImg   = (a) => a.imagePath || a.imageUrl || a.image || a.photo || a.img || null;
+// const vehImg   = (v) => v.imagePath || v.imageUrl || v.image || v.photo || v.img || null;
+
+// /* ━━━ LOADING / ERROR ━━━ */
+// function Centered({ children }) {
+//   return <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#f8fafc,#eef2ff)", padding:24 }}>{children}</div>;
+// }
+// function Spinner() {
+//   return (
+//     <div style={{ textAlign:"center" }}>
+//       <div style={{ width:44, height:44, border:"3px solid #e0e7ff", borderTopColor:"#6366f1", borderRadius:"50%", animation:"qspin .8s linear infinite", margin:"0 auto 16px" }} />
+//       <p style={{ fontSize:14, color:"#94a3b8", margin:0, fontWeight:600 }}>Loading your journey…</p>
+//     </div>
+//   );
+// }
+// function ErrBox({ msg }) {
+//   return (
+//     <div style={{ background:"#fff", border:"1px solid #fecaca", borderRadius:20, padding:"36px 40px", textAlign:"center", maxWidth:400, boxShadow:"0 20px 60px rgba(0,0,0,0.08)" }}>
+//       <p style={{ fontSize:40, margin:"0 0 14px" }}>⚠️</p>
+//       <p style={{ fontSize:15, color:"#991b1b", fontWeight:700, margin:0 }}>{msg}</p>
+//     </div>
+//   );
+// }
+
+// /* ━━━ SECTION HEADING ━━━ */
+// function SectionTitle({ children, sub, light }) {
+//   return (
+//     <div style={{ textAlign:"center", marginBottom:36 }}>
+//       <div style={{ display:"inline-flex", alignItems:"center", gap:10, marginBottom:14 }}>
+//         <span style={{ width:28, height:2, background:"linear-gradient(90deg,transparent,#6366f1)", borderRadius:100 }} />
+//         <span style={{ width:6, height:6, borderRadius:"50%", background:"#6366f1" }} />
+//         <span style={{ width:28, height:2, background:"linear-gradient(90deg,#6366f1,transparent)", borderRadius:100 }} />
+//       </div>
+//       <h2 style={{ fontSize:"clamp(26px,4vw,36px)", fontWeight:800, color: light?"#fff":"#0f172a", margin:"0 0 8px", letterSpacing:"-0.8px" }}>{children}</h2>
+//       {sub && <p style={{ fontSize:14, color: light?"rgba(255,255,255,0.6)":"#94a3b8", margin:0, fontWeight:500 }}>{sub}</p>}
+//     </div>
+//   );
+// }
+
+// /* ━━━ POLICY BLOCK ━━━ */
+// function PolicyBlock({ title, items, accent, bg }) {
+//   if (!items || items.length === 0) return null;
+//   return (
+//     <div style={{ marginBottom:24 }}>
+//       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+//         <span style={{ width:34, height:34, borderRadius:9, background:bg||"#eef2ff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+//           <span style={{ width:8, height:8, borderRadius:"50%", background:accent }} />
+//         </span>
+//         <h3 style={{ fontSize:16, fontWeight:700, color:"#0f172a", margin:0 }}>{title}</h3>
+//       </div>
+//       <div style={{ paddingLeft:44 }}>
+//         {items.map((it, i) => (
+//           <div key={i} style={{ display:"flex", gap:10, marginBottom:9, alignItems:"flex-start" }}>
+//             <span style={{ fontSize:11, fontWeight:800, color:accent, minWidth:20, marginTop:1 }}>{String(i+1).padStart(2,"0")}</span>
+//             <span style={{ fontSize:13.5, color:"#475569", lineHeight:1.7 }}>{it}</span>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* ━━━ MAIN ━━━ */
 // export default function QuotationWebView({ publicId }) {
-//   const [q, setQ] = useState(null);
+//   const [q, setQ]           = useState(null);
 //   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
+//   const [error, setError]   = useState(null);
 
 //   useEffect(() => {
 //     let active = true;
 //     (async () => {
 //       try {
-//         setLoading(true);
-//         setError(null);
+//         setLoading(true); setError(null);
 //         const res = await fetch(`${API}/public/quotations/${publicId}`);
-//         if (!res.ok) {
-//           throw new Error(res.status === 404
-//             ? "This quotation link is invalid or no longer available."
-//             : "Failed to load the quotation.");
-//         }
+//         if (!res.ok) throw new Error(res.status === 404 ? "This quotation link is invalid or no longer available." : "Failed to load the quotation.");
 //         const body = await res.json();
-//         if (active) setQ(body?.data || body);
+//         const data = body?.data || body;
+//         console.log("=== QUOTATION DATA ===", data);
+//         if (active) setQ(data);
 //       } catch (e) {
 //         if (active) setError(e.message || "Failed to load the quotation.");
 //       } finally {
@@ -43,243 +106,500 @@
 //     return () => { active = false; };
 //   }, [publicId]);
 
-//   if (loading) return <Centered>Loading quotation…</Centered>;
-//   if (error)   return <Centered><span className="text-red-600">{error}</span></Centered>;
+//   if (loading) return <Centered><Spinner /></Centered>;
+//   if (error)   return <Centered><ErrBox msg={error} /></Centered>;
 //   if (!q)      return <Centered>Quotation not found.</Centered>;
 
 //   const c = q.customer || {};
+//   const company = q.company || q.organization || {};
+//   const totals = q.totals || {};
 //   const pdfUrl = `${API}/public/quotations/${publicId}/pdf`;
 
-//   return (
-//     <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
-//          style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-//       <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
+//   const destStr = c.destination || (Array.isArray(q.destinations) ? q.destinations.join(" → ") : "") || "";
+//   const preparedBy = q.preparedBy || q.createdByName || company.contactPerson || "";
+//   const companyPhone = company.phone || company.contactNumber || q.companyPhone || "";
+//   const companyEmail = company.email || q.companyEmail || "";
 
-//         {/* Title + Download PDF */}
-//         <div className="flex items-center justify-between gap-3">
-//           <div className="min-w-0">
-//             <h1 className="text-lg font-extrabold text-slate-900 truncate">{q.title || "Travel Quotation"}</h1>
-//             <p className="text-xs text-slate-500">
-//               {q.version || ""}{q.quoteNo ? ` · Quote #${q.quoteNo}` : ""}{q.quotationStage ? ` · ${q.quotationStage}` : ""}
+//   const services = [
+//     { label:"Flights",     icon:"✈️", on: !!(q.flight?.included && q.flight?.segments?.length) },
+//     { label:"Hotels",      icon:"🏨", on: !!(q.hotel?.included && q.hotel?.hotels?.length) },
+//     { label:"Sightseeing", icon:"🗺️", on: !!(q.sightseeing?.included && q.sightseeing?.days?.length) },
+//     { label:"Transport",   icon:"🚗", on: !!(q.vehicle?.included && q.vehicle?.vehicles?.length) },
+//     { label:"Cruise",      icon:"🚢", on: !!(q.cruise?.included && q.cruise?.cruises?.length) },
+//     { label:"Add-ons",     icon:"✨", on: !!(q.addons?.included && q.addons?.items?.length) },
+//   ];
+
+//   const testimonials = Array.isArray(q.testimonials) ? q.testimonials
+//     : Array.isArray(q.reviews) ? q.reviews : [];
+
+//   const grand = totals.grandTotal ?? q.grandTotal;
+//   const perAdult = totals.perAdult ?? (grand && c.adults ? Math.round(grand / c.adults) : null);
+
+//   return (
+//     <div style={{ fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif", minHeight:"100%", background:"#f8fafc", color:"#0f172a", overflowX:"hidden", maxWidth:"100vw" }}>
+//       <style>{`
+//         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+//         @keyframes qspin{to{transform:rotate(360deg)}}
+//         @keyframes qfade{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+//         @keyframes qfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+//         @keyframes qshine{0%{background-position:-200% center}100%{background-position:200% center}}
+//         @keyframes qpulse{0%,100%{opacity:1}50%{opacity:.5}}
+//         .qfade{animation:qfade .6s ease both}
+//         .qcard{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
+//         .qcard:hover{transform:translateY(-6px)}
+//         .qimg{transition:transform .5s ease}
+//         .qimg-wrap:hover .qimg{transform:scale(1.06)}
+//         .qbtn{transition:transform .2s ease,box-shadow .2s ease}
+//         .qbtn:hover{transform:translateY(-2px)}
+//         .qsvc{transition:transform .3s ease,box-shadow .3s ease}
+//         .qsvc:hover{transform:translateY(-4px) scale(1.02)}
+//         * { box-sizing:border-box; }
+
+//         /* ─── OVERFLOW FIX — no horizontal scroll on mobile ─── */
+//         html, body { overflow-x: hidden !important; max-width: 100%; margin: 0; padding: 0; }
+//         img { max-width: 100%; }
+//         p, h1, h2, h3, span { overflow-wrap: break-word; word-break: break-word; }
+
+//         /* ─── RESPONSIVE (mobile / tablet) ─── */
+//         @media (max-width: 640px) {
+//           /* Activity row: image upar, text neeche (stack) */
+//           .qact-row { flex-direction: column !important; gap: 12px !important; }
+//           .qact-img { width: 100% !important; }
+//           .qact-img img { width: 100% !important; height: 200px !important; }
+//           /* Section vertical padding kam */
+//           .qsection { padding-top: 40px !important; padding-bottom: 0 !important; }
+//           .qsection-last { padding-top: 40px !important; padding-bottom: 40px !important; }
+//           /* Cards ka andar ka padding thoda kam */
+//           .qpad { padding: 20px !important; }
+//         }
+//         @media (max-width: 420px) {
+//           .qact-img img { height: 170px !important; }
+//         }
+//       `}</style>
+
+//       {/* ━━━━━ HERO ━━━━━ */}
+//       <div style={{ background:"linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#312e81 100%)", color:"#fff", position:"relative", overflow:"hidden" }}>
+//         {/* Decorative orbs */}
+//         <div style={{ position:"absolute", top:-100, right:-80, width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,rgba(99,102,241,0.35),transparent 70%)", animation:"qfloat 8s ease infinite" }} />
+//         <div style={{ position:"absolute", bottom:-120, left:-100, width:320, height:320, borderRadius:"50%", background:"radial-gradient(circle,rgba(139,92,246,0.3),transparent 70%)", animation:"qfloat 10s ease infinite" }} />
+//         <div style={{ position:"absolute", top:40, left:"30%", width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(59,130,246,0.2),transparent 70%)" }} />
+//         {q.coverImageUrl && (
+//           <img src={q.coverImageUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", opacity:.12 }} />
+//         )}
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"56px 24px 48px", position:"relative", zIndex:1 }}>
+//           {/* Badge */}
+//           <div className="qfade" style={{ textAlign:"center", marginBottom:20 }}>
+//             <span style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:100, padding:"7px 18px", backdropFilter:"blur(10px)" }}>
+//               <span style={{ width:7, height:7, borderRadius:"50%", background:"#4ade80", animation:"qpulse 2s ease infinite" }} />
+//               <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.85)", letterSpacing:".15em", textTransform:"uppercase" }}>Curated Travel Experience</span>
+//             </span>
+//           </div>
+//           {/* Destination */}
+//           <div className="qfade" style={{ textAlign:"center", marginBottom:10 }}>
+//             <h1 style={{ fontSize:"clamp(40px,9vw,72px)", fontWeight:900, margin:0, letterSpacing:"-2px", lineHeight:1, background:"linear-gradient(90deg,#fff,#c7d2fe,#fff)", backgroundSize:"200% auto", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", animation:"qshine 6s linear infinite" }}>
+//               {destStr.split("→")[0]?.trim() || q.title || "Your Trip"}
+//             </h1>
+//             <p style={{ fontSize:16, color:"rgba(255,255,255,0.65)", margin:"14px 0 0", fontWeight:600, letterSpacing:".05em" }}>
+//               {q.nights ?? "—"} Nights · {q.days ?? "—"} Days
 //             </p>
 //           </div>
-//           <a href={pdfUrl} target="_blank" rel="noreferrer"
-//              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold whitespace-nowrap">
-//             Download PDF
-//           </a>
+//           <p className="qfade" style={{ textAlign:"center", fontSize:"clamp(17px,3vw,24px)", fontWeight:700, color:"rgba(255,255,255,0.92)", margin:"0 0 40px" }}>{q.title || "Travel Package"}</p>
+
+//           {/* Info grid — glassmorphism cards */}
+//           <div className="qfade" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap:12 }}>
+//             {[
+//               ["Traveler", c.name || "—", "👤"],
+//               ["Travel Date", fmtDate(c.travelDate), "📅"],
+//               ["Duration", `${q.nights ?? "—"}N / ${q.days ?? "—"}D`, "⏱️"],
+//               ["Travelers", `${c.adults||0}A${c.children?` · ${c.children}C`:""}${c.infants?` · ${c.infants}I`:""}`, "👥"],
+//               ["Rooms", q.rooms ? `${q.rooms}` : (c.rooms ? `${c.rooms}` : "—"), "🛏️"],
+//               ["Quote ID", q.quoteNo ? `#${q.quoteNo}` : "—", "🎫"],
+//               ["Destinations", destStr || "—", "📍"],
+//               ["Prepared By", preparedBy || "—", "✍️"],
+//             ].map(([label, val, icon], i) => (
+//               <div key={i} style={{ background:"rgba(255,255,255,0.07)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:14, padding:"16px 16px" }}>
+//                 <div style={{ fontSize:16, marginBottom:8, opacity:.9 }}>{icon}</div>
+//                 <p style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 4px" }}>{label}</p>
+//                 <p style={{ fontSize:13, fontWeight:700, color:"#fff", margin:0, lineHeight:1.3, wordBreak:"break-word" }}>{val}</p>
+//               </div>
+//             ))}
+//           </div>
+
+//           {/* Price card — premium */}
+//           <div className="qfade" style={{ marginTop:32, background:"linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", borderRadius:24, padding:"36px 28px", textAlign:"center", position:"relative", overflow:"hidden", boxShadow:"0 20px 60px rgba(99,102,241,0.4)" }}>
+//             <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.1)" }} />
+//             <div style={{ position:"absolute", bottom:-50, left:-30, width:140, height:140, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.08)" }} />
+//             <p style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:".18em", margin:"0 0 10px", position:"relative" }}>Total Package Price</p>
+//             <p style={{ fontSize:"clamp(42px,9vw,64px)", fontWeight:900, margin:"0 0 6px", letterSpacing:"-2px", lineHeight:1, position:"relative", textShadow:"0 4px 20px rgba(0,0,0,0.2)" }}>{inr(grand)}</p>
+//             <p style={{ fontSize:12, color:"rgba(255,255,255,0.8)", margin:"0 0 6px", position:"relative" }}>✓ Inclusive of all taxes</p>
+//             {perAdult && c.adults ? (
+//               <p style={{ fontSize:14, fontWeight:600, color:"rgba(255,255,255,0.9)", margin:"0 0 24px", position:"relative" }}>{c.adults} Adults × {inr(perAdult)}</p>
+//             ) : <div style={{ height:24 }} />}
+//             {companyPhone && (
+//               <a href={`tel:${companyPhone}`} className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"#fff", color:"#6366f1", fontSize:15, fontWeight:800, padding:"14px 36px", borderRadius:100, textDecoration:"none", boxShadow:"0 8px 24px rgba(0,0,0,0.15)", position:"relative" }}>
+//                 📞 Contact Now
+//               </a>
+//             )}
+//           </div>
 //         </div>
+//       </div>
 
-//         {q.coverImageUrl && (
-//           <img src={q.coverImageUrl} alt="" className="w-full h-48 sm:h-64 object-cover rounded-2xl border border-slate-200" />
-//         )}
+//       {/* ━━━━━ SERVICES ━━━━━ */}
+//       <div style={{ maxWidth:1040, margin:"0 auto", padding:"56px 24px 0" }}>
+//         <SectionTitle sub="Everything included in your package">What's Included</SectionTitle>
+//         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap:14 }}>
+//           {services.map((s, i) => (
+//             <div key={i} className="qsvc" style={{ background:"#fff", border:`2px solid ${s.on?"#c7d2fe":"#f1f5f9"}`, borderRadius:18, padding:"22px 14px", textAlign:"center", boxShadow: s.on?"0 8px 24px rgba(99,102,241,0.08)":"0 2px 8px rgba(0,0,0,0.03)", opacity: s.on?1:0.6 }}>
+//               <div style={{ fontSize:30, marginBottom:10, filter: s.on?"none":"grayscale(1)" }}>{s.icon}</div>
+//               <p style={{ fontSize:14, fontWeight:700, color:s.on?"#0f172a":"#94a3b8", margin:"0 0 8px" }}>{s.label}</p>
+//               <div style={{ width:26, height:26, borderRadius:"50%", background:s.on?"linear-gradient(135deg,#22c55e,#16a34a)":"#e2e8f0", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto", fontSize:14, color:"#fff", fontWeight:900 }}>
+//                 {s.on ? "✓" : "✕"}
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+//       </div>
 
-//         {/* Customer / trip */}
-//         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-//           <h2 className="text-base font-extrabold text-slate-900">{c.name || "Guest"}</h2>
-//           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
-//             <Info label="Destination" value={c.destination} />
-//             <Info label="Travel Date" value={fmtDate(c.travelDate)} />
-//             <Info label="Travellers" value={`${c.adults || 0} Adt${c.children ? `, ${c.children} Chd` : ""}${c.infants ? `, ${c.infants} Inf` : ""}`} />
-//             <Info label="Nights / Days" value={`${q.nights ?? "—"} / ${q.days ?? "—"}`} />
+//       {/* ━━━━━ ITINERARY ━━━━━ */}
+//       {q.sightseeing?.included && q.sightseeing?.days?.length > 0 && (
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+//           <SectionTitle sub="Your day-by-day journey unfolds">Your Itinerary</SectionTitle>
+//           <div style={{ position:"relative" }}>
+//             {/* Timeline line */}
+//             <div style={{ position:"absolute", left:26, top:20, bottom:20, width:2, background:"linear-gradient(180deg,#c7d2fe,#e0e7ff,transparent)", display:"none" }} className="qtimeline" />
+//             <div style={{ display:"flex", flexDirection:"column", gap:32 }}>
+//               {q.sightseeing.days.map((d, i) => {
+//                 const firstAct = (d.activities || [])[0] || {};
+//                 return (
+//                   <div key={i} className="qfade qcard" style={{ background:"#fff", borderRadius:24, overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.07)", border:"1px solid #eef2ff" }}>
+//                     <div style={{ padding:"28px 30px" }}>
+//                       {/* Day header */}
+//                       <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:18 }}>
+//                         <div style={{ width:52, height:52, borderRadius:16, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 8px 20px rgba(99,102,241,0.3)" }}>
+//                           <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", lineHeight:1 }}>Day</span>
+//                           <span style={{ fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{d.day}</span>
+//                         </div>
+//                         <div style={{ minWidth:0 }}>
+//                           <h3 style={{ fontSize:22, fontWeight:800, color:"#0f172a", margin:"0 0 3px", letterSpacing:"-0.5px" }}>
+//                             {firstAct.attraction || d.title || `Day ${d.day}`}
+//                           </h3>
+//                           <p style={{ fontSize:13, color:"#94a3b8", margin:0, fontWeight:600, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+//                             {(d.location || firstAct.city) && <span>📍 {d.location || firstAct.city}</span>}
+//                             {d.date && <span style={{ color:"#cbd5e1" }}>·</span>}
+//                             {d.date && <span>{fmtDateFull(d.date)}</span>}
+//                           </p>
+//                         </div>
+//                       </div>
+
+//                       {/* Activities */}
+//                       <div style={{ background:"linear-gradient(135deg,#f8fafc,#f1f5f9)", borderRadius:16, padding:"20px 22px" }}>
+//                         <p style={{ fontSize:11, fontWeight:800, color:"#6366f1", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 16px" }}>✦ Activities & Highlights</p>
+//                         {(d.activities || []).map((a, j) => {
+//                           const meals = Array.isArray(a.meals) ? a.meals.filter(Boolean) : [];
+//                           const aImg = actImg(a);
+//                           const rawDesc = (a.description || "").trim();
+//                           let descPoints = [];
+//                           if (rawDesc) {
+//                             if (/\n|\r/.test(rawDesc)) descPoints = rawDesc.split(/\n|\r/);
+//                             else descPoints = rawDesc.split(/\.(?:\s+|$)/);
+//                             descPoints = descPoints.map(s => s.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
+//                           }
+//                           return (
+//                             <div key={j} className="qact-row" style={{ display:"flex", gap:16, marginBottom: j<(d.activities.length-1) ? 20 : 0, paddingBottom: j<(d.activities.length-1) ? 20 : 0, borderBottom: j<(d.activities.length-1) ? "1px dashed #e2e8f0" : "none" }}>
+//                               {aImg && (
+//                                 <div className="qimg-wrap qact-img" style={{ flexShrink:0, borderRadius:16, overflow:"hidden", boxShadow:"0 8px 20px rgba(0,0,0,0.1)" }}>
+//                                   <img src={aImg} alt={a.attraction} className="qimg"
+//                                     style={{ width:200, height:160, objectFit:"cover", display:"block" }}
+//                                     onError={(e) => { e.target.style.display = "none"; }} />
+//                                 </div>
+//                               )}
+//                               <div style={{ minWidth:0, flex:1 }}>
+//                                 <p style={{ fontSize:16, fontWeight:800, color:"#0f172a", margin:"0 0 10px", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+//                                   {a.attraction}
+//                                   {a.startTime && <span style={{ fontSize:11, fontWeight:700, color:"#6366f1", background:"#eef2ff", padding:"3px 10px", borderRadius:100 }}>{a.startTime}</span>}
+//                                 </p>
+//                                 {descPoints.length > 0 && (
+//                                   <div style={{ margin:"0 0 12px" }}>
+//                                     {descPoints.map((line, li) => (
+//                                       <div key={li} style={{ display:"flex", gap:8, marginBottom:7, alignItems:"flex-start" }}>
+//                                         <span style={{ width:6, height:6, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", flexShrink:0, marginTop:6 }} />
+//                                         <span style={{ fontSize:13.5, color:"#475569", lineHeight:1.65 }}>{line}</span>
+//                                       </div>
+//                                     ))}
+//                                   </div>
+//                                 )}
+//                                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+//                                   {a.transfer && (
+//                                     <span style={{ fontSize:11, fontWeight:700, color:"#6366f1", background:"#eef2ff", border:"1px solid #c7d2fe", borderRadius:100, padding:"5px 13px" }}>🚐 {a.transfer}</span>
+//                                   )}
+//                                   {meals.length > 0 && (
+//                                     <span style={{ fontSize:11, fontWeight:700, color:"#ea580c", background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:100, padding:"5px 13px" }}>🍽 {meals.join(", ")}</span>
+//                                   )}
+//                                 </div>
+//                               </div>
+//                             </div>
+//                           );
+//                         })}
+//                       </div>
+
+//                       {d.overnightStay && (
+//                         <div style={{ marginTop:16, display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#ecfdf5,#f0fdf4)", border:"1px solid #a7f3d0", borderRadius:12, padding:"10px 16px" }}>
+//                           <span style={{ fontSize:16 }}>🌙</span>
+//                           <span style={{ fontSize:13, fontWeight:700, color:"#059669" }}>Overnight Stay: {d.overnightStay}</span>
+//                         </div>
+//                       )}
+//                     </div>
+//                   </div>
+//                 );
+//               })}
+//             </div>
 //           </div>
-//         </section>
+//         </div>
+//       )}
 
-//         {/* Flights */}
-//         {q.flight?.included && q.flight?.segments?.length > 0 && (
-//           <Section title={q.flight.title || "Flights"} amount={q.flight.amount}>
-//             <div className="space-y-2">
-//               {q.flight.segments.map((s, i) => (
-//                 <div key={i} className="flex items-center justify-between gap-3 text-sm border border-slate-100 rounded-xl p-3">
-//                   <div className="min-w-0">
-//                     <p className="font-bold text-slate-800">{s.from} → {s.to}</p>
-//                     <p className="text-xs text-slate-500">{s.airline} {s.flightNo}{s.class ? ` · ${s.class}` : ""}</p>
-//                   </div>
-//                   <div className="text-right text-xs text-slate-500 whitespace-nowrap">
-//                     <p>{fmtDate(s.depDate)} {s.depTime || ""}</p>
-//                     {s.duration && <p>{s.duration}</p>}
+//       {/* ━━━━━ HOTELS ━━━━━ */}
+//       {q.hotel?.included && q.hotel?.hotels?.length > 0 && (
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+//           <SectionTitle sub="Handpicked stays for your comfort">Where You'll Stay</SectionTitle>
+//           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 300px),1fr))", gap:24 }}>
+//             {q.hotel.hotels.map((h, i) => {
+//               const img = hotelImg(h);
+//               return (
+//                 <div key={i} className="qfade qcard" style={{ background:"#fff", borderRadius:22, overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
+//                   {img && (
+//                     <div className="qimg-wrap" style={{ width:"100%", height:200, overflow:"hidden", position:"relative" }}>
+//                       <img src={img} alt={h.name} className="qimg" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+//                         onError={(e) => { e.target.parentElement.style.display = "none"; }} />
+//                       <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 60%,rgba(0,0,0,0.4))" }} />
+//                       {h.stars > 0 && (
+//                         <span style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.95)", color:"#f59e0b", fontSize:12, fontWeight:800, padding:"5px 12px", borderRadius:100, boxShadow:"0 4px 12px rgba(0,0,0,0.15)" }}>
+//                           {"★".repeat(h.stars)}
+//                         </span>
+//                       )}
+//                       <h3 style={{ position:"absolute", bottom:14, left:16, right:16, fontSize:20, fontWeight:800, color:"#fff", margin:0, textShadow:"0 2px 8px rgba(0,0,0,0.5)" }}>{h.name}</h3>
+//                     </div>
+//                   )}
+//                   <div style={{ padding:"20px 22px" }}>
+//                     {!img && <h3 style={{ fontSize:20, fontWeight:800, color:"#0f172a", margin:"0 0 3px" }}>{h.name}</h3>}
+//                     <p style={{ fontSize:13, color:"#94a3b8", margin:"0 0 16px", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>📍 {[h.city, h.country].filter(Boolean).join(", ")}</p>
+//                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+//                       {h.roomType && <MiniDetail icon="🛏️" label="Room" val={h.roomType} />}
+//                       {h.mealPlan && <MiniDetail icon="🍴" label="Meals" val={h.mealPlan} />}
+//                       {h.rooms ? <MiniDetail icon="🔑" label="Rooms" val={h.rooms} /> : null}
+//                     </div>
+//                     <div style={{ display:"flex", gap:10, borderTop:"1px solid #f1f5f9", paddingTop:16 }}>
+//                       <div style={{ flex:1, background:"#ecfdf5", borderRadius:12, padding:"10px 12px" }}>
+//                         <p style={{ fontSize:9, fontWeight:700, color:"#059669", textTransform:"uppercase", letterSpacing:".05em", margin:"0 0 3px" }}>Check-in</p>
+//                         <p style={{ fontSize:12, fontWeight:700, color:"#0f172a", margin:0 }}>{fmtDate(h.checkIn)}</p>
+//                       </div>
+//                       <div style={{ flex:1, background:"#fef2f2", borderRadius:12, padding:"10px 12px" }}>
+//                         <p style={{ fontSize:9, fontWeight:700, color:"#dc2626", textTransform:"uppercase", letterSpacing:".05em", margin:"0 0 3px" }}>Check-out</p>
+//                         <p style={{ fontSize:12, fontWeight:700, color:"#0f172a", margin:0 }}>{fmtDate(h.checkOut)}</p>
+//                       </div>
+//                     </div>
 //                   </div>
 //                 </div>
-//               ))}
-//             </div>
-//           </Section>
-//         )}
-
-//         {/* Hotels */}
-//         {q.hotel?.included && q.hotel?.hotels?.length > 0 && (
-//           <Section title={q.hotel.title || "Hotels"} amount={q.hotel.amount}>
-//             <div className="space-y-2">
-//               {q.hotel.hotels.map((h, i) => (
-//                 <div key={i} className="flex gap-3 text-sm border border-slate-100 rounded-xl p-3">
-//                   {h.imageUrl && <img src={h.imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />}
-//                   <div className="min-w-0">
-//                     <p className="font-bold text-slate-800">{h.name}{h.stars ? ` · ${h.stars}★` : ""}</p>
-//                     <p className="text-xs text-slate-500">{[h.city, h.roomType, h.mealPlan].filter(Boolean).join(" · ")}</p>
-//                     <p className="text-xs text-slate-500">{fmtDate(h.checkIn)} → {fmtDate(h.checkOut)}{h.rooms ? ` · ${h.rooms} room(s)` : ""}</p>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-//           </Section>
-//         )}
-
-//         {/* Sightseeing */}
-//         {q.sightseeing?.included && q.sightseeing?.days?.length > 0 && (
-//           <Section title={q.sightseeing.title || "Sightseeing"} amount={q.sightseeing.amount}>
-//             <div className="space-y-2">
-//               {q.sightseeing.days.map((d, i) => (
-//                 <div key={i} className="border border-slate-100 rounded-xl p-3">
-//                   <p className="text-xs font-bold text-blue-700 mb-1">Day {d.day}{d.date ? ` · ${fmtDate(d.date)}` : ""}</p>
-//                   <ul className="text-sm text-slate-700 list-disc list-inside space-y-0.5">
-//                     {(d.activities || []).map((a, j) => (
-//                       <li key={j}>{a.attraction}{a.startTime ? ` (${a.startTime})` : ""}</li>
-//                     ))}
-//                   </ul>
-//                 </div>
-//               ))}
-//             </div>
-//           </Section>
-//         )}
-
-//         {/* Cruise */}
-//         {q.cruise?.included && q.cruise?.cruises?.length > 0 && (
-//           <Section title={q.cruise.title || "Cruise"} amount={q.cruise.amount}>
-//             {q.cruise.cruises.map((cr, i) => (
-//               <div key={i} className="text-sm border border-slate-100 rounded-xl p-3 mb-2 last:mb-0">
-//                 <p className="font-bold text-slate-800">{cr.name}{cr.type ? ` · ${cr.type}` : ""}</p>
-//                 <p className="text-xs text-slate-500">{cr.depPort} → {cr.arrPort} · {fmtDate(cr.depDate)}{cr.nights ? ` · ${cr.nights} nights` : ""}{cr.cabin ? ` · ${cr.cabin}` : ""}</p>
-//               </div>
-//             ))}
-//           </Section>
-//         )}
-
-//         {/* Vehicles */}
-//         {q.vehicle?.included && q.vehicle?.vehicles?.length > 0 && (
-//           <Section title={q.vehicle.title || "Transport"} amount={q.vehicle.amount}>
-//             {q.vehicle.vehicles.map((v, i) => (
-//               <div key={i} className="text-sm border border-slate-100 rounded-xl p-3 mb-2 last:mb-0">
-//                 <p className="font-bold text-slate-800">{v.type}</p>
-//                 <p className="text-xs text-slate-500">{[v.pickup, v.drop].filter(Boolean).join(" → ")}{v.startDate ? ` · ${fmtDate(v.startDate)}` : ""}{v.qty ? ` · Qty ${v.qty}` : ""}</p>
-//               </div>
-//             ))}
-//           </Section>
-//         )}
-
-//         {/* Add-ons */}
-//         {q.addons?.included && q.addons?.items?.length > 0 && (
-//           <Section title={q.addons.title || "Add-on Services"} amount={q.addons.amount}>
-//             <ul className="text-sm text-slate-700 space-y-1">
-//               {q.addons.items.map((a, i) => (
-//                 <li key={i} className="flex justify-between gap-3">
-//                   <span>{a.serviceType}{a.quantity ? ` × ${a.quantity}` : ""}</span>
-//                   <span className="whitespace-nowrap">{inr(a.pricePerUnit)}</span>
-//                 </li>
-//               ))}
-//             </ul>
-//           </Section>
-//         )}
-
-//         {/* Inclusions / Exclusions */}
-//         {(q.inclusions?.length > 0 || q.exclusions?.length > 0) && (
-//           <div className="grid sm:grid-cols-2 gap-5">
-//             {q.inclusions?.length > 0 && <ListCard title="Inclusions" items={q.inclusions} tone="green" />}
-//             {q.exclusions?.length > 0 && <ListCard title="Exclusions" items={q.exclusions} tone="red" />}
+//               );
+//             })}
 //           </div>
-//         )}
+//         </div>
+//       )}
 
-//         {/* Pricing */}
-//         {q.totals && (
-//           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-//             <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide mb-3">Price Summary</h2>
-//             <div className="space-y-1.5 text-sm">
-//               <Row label="Subtotal" value={inr(q.totals.subtotal)} />
-//               {q.totals.discountAmount > 0 && <Row label="Discount" value={`- ${inr(q.totals.discountAmount)}`} />}
-//               {q.totals.markup > 0 && <Row label="Markup" value={inr(q.totals.markup)} />}
-//               {q.totals.taxAmount > 0 && <Row label={`Tax (${q.totals.taxPercent || 0}%)`} value={inr(q.totals.taxAmount)} />}
-//               <div className="border-t border-slate-200 mt-2 pt-2 flex justify-between text-base font-extrabold text-slate-900">
-//                 <span>Grand Total</span><span className="text-blue-700">{inr(q.totals.grandTotal)}</span>
-//               </div>
-//               {q.totals.perAdult != null && (
-//                 <p className="text-xs text-slate-500 text-right">{inr(q.totals.perAdult)} per adult</p>
+//       {/* ━━━━━ TRANSPORT ━━━━━ */}
+//       {q.vehicle?.included && q.vehicle?.vehicles?.length > 0 && (
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+//           <SectionTitle sub="Travel in comfort and style">Your Transport</SectionTitle>
+//           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 300px),1fr))", gap:24 }}>
+//             {q.vehicle.vehicles.map((v, i) => {
+//               const img = vehImg(v);
+//               return (
+//                 <div key={i} className="qfade qcard" style={{ background:"#fff", borderRadius:22, overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
+//                   {img && (
+//                     <div className="qimg-wrap" style={{ width:"100%", height:200, overflow:"hidden", position:"relative" }}>
+//                       <img src={img} alt={v.model || v.type} className="qimg" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+//                         onError={(e) => { e.target.parentElement.style.display = "none"; }} />
+//                       <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 60%,rgba(0,0,0,0.4))" }} />
+//                       <h3 style={{ position:"absolute", bottom:14, left:16, right:16, fontSize:20, fontWeight:800, color:"#fff", margin:0, textShadow:"0 2px 8px rgba(0,0,0,0.5)" }}>{v.model || v.type}</h3>
+//                     </div>
+//                   )}
+//                   <div style={{ padding:"20px 22px" }}>
+//                     {!img && <h3 style={{ fontSize:20, fontWeight:800, color:"#0f172a", margin:"0 0 12px" }}>{v.model || v.type}</h3>}
+//                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+//                       {v.type && <MiniDetail icon="🚗" label="Type" val={v.type} />}
+//                       {v.capacity ? <MiniDetail icon="👥" label="Seats" val={v.capacity} /> : null}
+//                       {(v.pickup || v.drop) && <MiniDetail icon="📍" label="Route" val={[v.pickup, v.drop].filter(Boolean).join(" → ")} />}
+//                       {(v.startDate || v.endDate) && <MiniDetail icon="📅" label="Dates" val={`${fmtDate(v.startDate)}${v.endDate?` → ${fmtDate(v.endDate)}`:""}`} />}
+//                       {v.qty ? <MiniDetail icon="#️⃣" label="Qty" val={v.qty} /> : null}
+//                     </div>
+//                     {v.notes && <p style={{ fontSize:12.5, color:"#64748b", margin:"14px 0 0", fontStyle:"italic", lineHeight:1.6, background:"#f8fafc", borderRadius:10, padding:"10px 14px" }}>💬 {v.notes}</p>}
+//                   </div>
+//                 </div>
+//               );
+//             })}
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ━━━━━ TESTIMONIALS ━━━━━ */}
+//       {testimonials.length > 0 && (
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+//           <SectionTitle sub="Stories from fellow travelers">Loved by Travelers</SectionTitle>
+//           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 280px),1fr))", gap:24 }}>
+//             {testimonials.map((t, i) => {
+//               const name = t.name || t.customerName || "Guest";
+//               return (
+//                 <div key={i} className="qcard" style={{ background:"#fff", borderRadius:22, padding:"26px 28px", boxShadow:"0 10px 40px rgba(0,0,0,0.07)", border:"1px solid #eef2ff", position:"relative" }}>
+//                   <span style={{ position:"absolute", top:18, right:24, fontSize:56, color:"#eef2ff", fontWeight:900, lineHeight:1, fontFamily:"Georgia,serif" }}>"</span>
+//                   <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16, position:"relative" }}>
+//                     <div style={{ width:52, height:52, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:800, flexShrink:0, boxShadow:"0 6px 16px rgba(99,102,241,0.3)" }}>
+//                       {name.charAt(0).toUpperCase()}
+//                     </div>
+//                     <div>
+//                       <p style={{ fontSize:16, fontWeight:800, color:"#0f172a", margin:0 }}>{name}</p>
+//                       {t.trip && <p style={{ fontSize:12, color:"#94a3b8", margin:0, fontStyle:"italic" }}>{t.trip}</p>}
+//                     </div>
+//                   </div>
+//                   {(t.rating || t.stars) ? (
+//                     <p style={{ color:"#f59e0b", fontSize:16, margin:"0 0 10px", letterSpacing:2 }}>{"★".repeat(Number(t.rating || t.stars) || 5)}</p>
+//                   ) : null}
+//                   <p style={{ fontSize:14, color:"#475569", lineHeight:1.75, margin:0 }}>{t.review || t.text || t.comment || ""}</p>
+//                 </div>
+//               );
+//             })}
+//           </div>
+//         </div>
+//       )}
+
+//       {/* ━━━━━ PRICE BREAKDOWN ━━━━━ */}
+//       {(totals.subtotal != null || grand != null) && (
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+//           <SectionTitle sub="Transparent, no hidden costs">Price Breakdown</SectionTitle>
+//           <div style={{ maxWidth:540, margin:"0 auto", background:"#fff", borderRadius:24, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
+//             <div style={{ padding:"28px 30px" }}>
+//               {totals.flightAmount      > 0 && <PLine label="✈️ Flights"     val={inr(totals.flightAmount)} />}
+//               {totals.hotelAmount       > 0 && <PLine label="🏨 Hotels"      val={inr(totals.hotelAmount)} />}
+//               {totals.sightseeingAmount > 0 && <PLine label="🗺️ Sightseeing" val={inr(totals.sightseeingAmount)} />}
+//               {totals.cruiseAmount      > 0 && <PLine label="🚢 Cruise"      val={inr(totals.cruiseAmount)} />}
+//               {totals.vehicleAmount     > 0 && <PLine label="🚗 Transport"   val={inr(totals.vehicleAmount)} />}
+//               {totals.addonAmount       > 0 && <PLine label="✨ Add-ons"     val={inr(totals.addonAmount)} />}
+//               {totals.subtotal != null && (
+//                 <>
+//                   <div style={{ height:1, background:"linear-gradient(90deg,transparent,#e2e8f0,transparent)", margin:"16px 0" }} />
+//                   <PLine label="Subtotal" val={inr(totals.subtotal)} bold />
+//                 </>
 //               )}
+//               {totals.discountAmount > 0 && <PLine label="🎉 Discount" val={`− ${inr(totals.discountAmount)}`} green />}
+//               {totals.markup         > 0 && <PLine label="Service Charge" val={inr(totals.markup)} />}
+//               {totals.taxAmount      > 0 && <PLine label={`Tax (${totals.taxPercent||0}%)`} val={inr(totals.taxAmount)} />}
 //             </div>
-//           </section>
-//         )}
+//             <div style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", padding:"22px 30px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", overflow:"hidden" }}>
+//               <div style={{ position:"absolute", top:-30, right:-20, width:120, height:120, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.1)" }} />
+//               <span style={{ fontSize:15, fontWeight:700, color:"rgba(255,255,255,0.9)", position:"relative" }}>Grand Total</span>
+//               <span style={{ fontSize:30, fontWeight:900, color:"#fff", position:"relative", textShadow:"0 2px 12px rgba(0,0,0,0.2)" }}>{inr(grand)}</span>
+//             </div>
+//           </div>
+//         </div>
+//       )}
 
-//         {/* Policies / Terms */}
-//         {q.paymentPolicies?.length > 0 && <ListCard title="Payment Policy" items={q.paymentPolicies} />}
-//         {q.cancellationPolicies?.length > 0 && <ListCard title="Cancellation Policy" items={q.cancellationPolicies} />}
-//         {q.bookingTerms?.length > 0 && <ListCard title="Booking Terms" items={q.bookingTerms} />}
+//       {/* ━━━━━ POLICIES ━━━━━ */}
+//       {(q.inclusions?.length || q.exclusions?.length || q.paymentPolicies?.length || q.cancellationPolicies?.length || q.bookingTerms?.length) ? (
+//         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+//           <SectionTitle sub="Everything you need to know">Terms & Policies</SectionTitle>
+//           <div style={{ background:"#fff", borderRadius:24, padding:"32px 32px 12px", boxShadow:"0 10px 40px rgba(0,0,0,0.07)", border:"1px solid #eef2ff" }}>
+//             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 260px),1fr))", gap:28 }}>
+//               <PolicyBlock title="Inclusions" items={q.inclusions} accent="#16a34a" bg="#ecfdf5" />
+//               <PolicyBlock title="Exclusions" items={q.exclusions} accent="#dc2626" bg="#fef2f2" />
+//             </div>
+//             <PolicyBlock title="Payment Policies" items={q.paymentPolicies} accent="#6366f1" bg="#eef2ff" />
+//             <PolicyBlock title="Cancellation Policies" items={q.cancellationPolicies} accent="#ea580c" bg="#fff7ed" />
+//             <PolicyBlock title="Booking Terms" items={q.bookingTerms} accent="#8b5cf6" bg="#f5f3ff" />
+//           </div>
+//         </div>
+//       ) : null}
 
-//         {q.notes && (
-//           <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-//             <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide mb-2">Notes</h2>
-//             <p className="text-sm text-slate-700 whitespace-pre-line">{q.notes}</p>
-//           </section>
-//         )}
+//       {/* ━━━━━ CONTACT ━━━━━ */}
+//       <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 56px" }}>
+//         <div style={{ background:"linear-gradient(135deg,#0f172a,#1e1b4b,#312e81)", borderRadius:28, padding:"48px 32px", color:"#fff", textAlign:"center", position:"relative", overflow:"hidden", boxShadow:"0 20px 60px rgba(15,23,42,0.3)" }}>
+//           <div style={{ position:"absolute", top:-60, right:-40, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(99,102,241,0.3),transparent 70%)" }} />
+//           <div style={{ position:"absolute", bottom:-70, left:-50, width:220, height:220, borderRadius:"50%", background:"radial-gradient(circle,rgba(139,92,246,0.25),transparent 70%)" }} />
+//           <div style={{ position:"relative" }}>
+//             <h2 style={{ fontSize:30, fontWeight:800, margin:"0 0 10px", letterSpacing:"-0.5px" }}>Ready for This Journey?</h2>
+//             <p style={{ fontSize:15, color:"rgba(255,255,255,0.65)", margin:"0 0 32px", maxWidth:500, marginLeft:"auto", marginRight:"auto", lineHeight:1.7 }}>
+//               Get in touch to book or ask any questions. We're here to make your trip unforgettable.
+//             </p>
 
-//         <p className="text-center text-xs text-slate-400 py-2">Generated on {fmtDate(q.createdAt)}</p>
+//             {(company.logo || company.logoUrl) && (
+//               <img src={company.logo || company.logoUrl} alt={company.name} style={{ maxHeight:70, borderRadius:12, marginBottom:20 }} />
+//             )}
+//             {company.name && <p style={{ fontSize:22, fontWeight:800, margin:"0 0 6px" }}>{company.name}</p>}
+//             {preparedBy && <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", margin:"0 0 8px" }}>Your Travel Expert: {preparedBy}</p>}
+//             {companyPhone && <p style={{ fontSize:15, color:"rgba(255,255,255,0.9)", margin:"0 0 2px", fontWeight:600 }}>{companyPhone}</p>}
+//             {companyEmail && <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", margin:"0 0 8px" }}>{companyEmail}</p>}
+//             {company.address && <p style={{ fontSize:13, color:"rgba(255,255,255,0.5)", margin:"0 0 28px", lineHeight:1.6, whiteSpace:"pre-line" }}>{company.address}</p>}
+
+//             <div style={{ display:"flex", flexWrap:"wrap", gap:12, justifyContent:"center", marginBottom:20 }}>
+//               {companyPhone && (
+//                 <a href={`tel:${companyPhone}`} className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", boxShadow:"0 8px 24px rgba(99,102,241,0.4)" }}>
+//                   📞 Call Now
+//                 </a>
+//               )}
+//               {companyPhone && (
+//                 <a href={`https://wa.me/${companyPhone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hello, I'm interested in the travel quotation (${q.title || ""})`)}`} target="_blank" rel="noreferrer" className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", boxShadow:"0 8px 24px rgba(34,197,94,0.4)" }}>
+//                   💬 WhatsApp
+//                 </a>
+//               )}
+//               {companyEmail && (
+//                 <a href={`mailto:${companyEmail}?subject=${encodeURIComponent(`Quotation Inquiry (${q.title || ""})`)}`} className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.12)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", border:"1px solid rgba(255,255,255,0.2)", backdropFilter:"blur(10px)" }}>
+//                   ✉️ Email
+//                 </a>
+//               )}
+//               <a href={pdfUrl} target="_blank" rel="noreferrer" className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.12)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", border:"1px solid rgba(255,255,255,0.2)", backdropFilter:"blur(10px)" }}>
+//                 ⬇️ Download PDF
+//               </a>
+//             </div>
+
+//             <div style={{ height:1, background:"rgba(255,255,255,0.1)", margin:"28px 0 18px" }} />
+//             <p style={{ fontSize:12, color:"rgba(255,255,255,0.4)", margin:"0 0 5px" }}>
+//               © {new Date().getFullYear()} {company.name || "Travel Company"}. All rights reserved.
+//             </p>
+//             <p style={{ fontSize:11, color:"rgba(255,255,255,0.3)", margin:0 }}>
+//               {[company.since && `Since ${company.since}`, company.reviewsCount && `${company.reviewsCount} Reviews`, company.gst && `GST: ${company.gst}`].filter(Boolean).join(" · ")}
+//             </p>
+//             <p style={{ fontSize:11, color:"rgba(255,255,255,0.3)", margin:"6px 0 0" }}>
+//               Quote {q.quoteNo ? `#${q.quoteNo}` : "—"} · Generated {fmtDate(q.createdAt)}
+//             </p>
+//           </div>
+//         </div>
 //       </div>
 //     </div>
 //   );
 // }
 
-// /** Route wrapper for the public share page: /q/:publicId */
-// export function PublicQuotationPage() {
-//   const { publicId } = useParams();
-//   return (
-//     <div className="min-h-screen">
-//       <QuotationWebView publicId={publicId} />
-//     </div>
-//   );
-// }
-
-// /* ── small presentational helpers ── */
-// function Centered({ children }) {
-//   return (
-//     <div className="min-h-[60vh] flex items-center justify-center bg-slate-50 text-slate-500 text-sm p-6 text-center">
-//       {children}
-//     </div>
-//   );
-// }
-// function Info({ label, value }) {
+// /* ━━━ HELPERS ━━━ */
+// function MiniDetail({ icon, label, val }) {
 //   return (
 //     <div>
-//       <p className="text-[11px] uppercase tracking-wide text-slate-400 font-bold">{label}</p>
-//       <p className="text-slate-800 font-semibold break-words">{value || "—"}</p>
+//       <p style={{ fontSize:9, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".05em", margin:"0 0 3px" }}>{icon} {label}</p>
+//       <p style={{ fontSize:13, fontWeight:700, color:"#0f172a", margin:0, wordBreak:"break-word", overflowWrap:"anywhere" }}>{val}</p>
 //     </div>
 //   );
 // }
-// function Row({ label, value }) {
+// function PLine({ label, val, green, bold }) {
 //   return (
-//     <div className="flex justify-between text-slate-600">
-//       <span>{label}</span><span className="font-semibold text-slate-800">{value}</span>
+//     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+//       <span style={{ fontSize:14, color: bold?"#0f172a":"#64748b", fontWeight: bold?700:500 }}>{label}</span>
+//       <span style={{ fontSize:14, fontWeight:700, color: green ? "#16a34a" : "#0f172a" }}>{val}</span>
 //     </div>
 //   );
 // }
-// function Section({ title, amount, children }) {
-//   return (
-//     <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-//       <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-//         <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">{title}</h2>
-//         {amount != null && <span className="text-sm font-bold text-blue-700">{inr(amount)}</span>}
-//       </div>
-//       <div className="p-5">{children}</div>
-//     </section>
-//   );
+
+// /* ━━━ PUBLIC ROUTE ━━━ */
+// export function PublicQuotationPage() {
+//   const { publicId } = useParams();
+//   return <div className="min-h-screen"><QuotationWebView publicId={publicId} /></div>;
 // }
-// function ListCard({ title, items, tone }) {
-//   const dot = tone === "green" ? "bg-green-500" : tone === "red" ? "bg-red-500" : "bg-blue-500";
-//   return (
-//     <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-//       <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wide mb-3">{title}</h2>
-//       <ul className="space-y-1.5 text-sm text-slate-700">
-//         {items.map((it, i) => (
-//           <li key={i} className="flex gap-2"><span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dot}`} />{it}</li>
-//         ))}
-//       </ul>
-//     </section>
-//   );
-// }
+
+
 
 
 
@@ -293,120 +613,80 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 const inr = (v) => (v == null ? "—" : `₹${Number(v).toLocaleString("en-IN")}`);
 const fmtDate = (d) => {
   if (!d) return "—";
-  try { return new Date(d).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }); }
+  try { return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); }
+  catch { return d; }
+};
+const fmtDateFull = (d) => {
+  if (!d) return "";
+  try { return new Date(d).toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
   catch { return d; }
 };
 
-// ── Hotel image — multiple field names try karo ──
-const hotelImg = (h) =>
-  h.imageUrl || h.imagePath || h.image || h.photo || h.coverImage
-  || h.hotelImage || h.imageURL || h.img
-  || (Array.isArray(h.images) && h.images[0]) || null;
+// ── Image resolvers ──
+const hotelImg = (h) => h.imageUrl || h.imagePath || h.image || h.photo || h.coverImage || h.hotelImage || h.img || (Array.isArray(h.images) && h.images[0]) || null;
+const actImg   = (a) => a.imagePath || a.imageUrl || a.image || a.photo || a.img || null;
+const vehImg   = (v) => v.imagePath || v.imageUrl || v.image || v.photo || v.img || null;
 
-/* ━━━ SECTION CARD — colored gradient header ━━━ */
-function GCard({ title, sub, amount, icon, grad, lightBg, lightBorder, children }) {
-  return (
-    <div style={{ borderRadius:18, overflow:"hidden", border:"none" }}>
-      {/* Gradient header */}
-      <div style={{ background:grad, padding:"14px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:18 }}>
-            {icon}
-          </div>
-          <div>
-            <p style={{ fontSize:13, fontWeight:700, color:"#fff", margin:0 }}>{title}</p>
-            {sub && <p style={{ fontSize:10, color:"rgba(255,255,255,0.6)", margin:0 }}>{sub}</p>}
-          </div>
-        </div>
-        {amount != null && (
-          <span style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, padding:"4px 10px", fontSize:11, fontWeight:700, color:"#fff" }}>
-            {inr(amount)}
-          </span>
-        )}
-      </div>
-      {/* White body */}
-      <div style={{ background:"rgba(255,255,255,0.95)", padding:"12px 14px" }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* ━━━ ROW ITEM inside section ━━━ */
-function RItem({ bg, border, children }) {
-  return (
-    <div style={{ background:bg||"#fafafa", border:`1px solid ${border||"#e2e8f0"}`, borderRadius:11, padding:"10px 12px", marginBottom:8 }}>
-      {children}
-    </div>
-  );
-}
-
-/* ━━━ POLICY CARD — tinted ━━━ */
-function PolCard({ title, items, bg, border, titleColor, numColor, txtColor }) {
-  return (
-    <div style={{ background:bg, border:`1px solid ${border}`, borderRadius:14, padding:"14px 16px" }}>
-      <p style={{ fontSize:9, fontWeight:700, color:titleColor, textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 10px" }}>{title}</p>
-      {items.map((it, i) => (
-        <div key={i} style={{ display:"flex", gap:8, marginBottom:6 }}>
-          <span style={{ fontSize:9, fontWeight:700, color:numColor, minWidth:16 }}>{String(i+1).padStart(2,"0")}.</span>
-          <span style={{ fontSize:10, color:txtColor, lineHeight:1.6 }}>{it}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ━━━ LIST BOX — inc/exc ━━━ */
-function ListBox({ title, items, tone }) {
-  const g = tone === "green";
-  const styles = g
-    ? { bg:"linear-gradient(135deg,#e8f5e9,#f1f8e9)", border:"#a5d6a7", title:"#1b5e20", dot:"#43a047", txt:"#2e7d32" }
-    : { bg:"linear-gradient(135deg,#fce4ec,#ffeef4)", border:"#f48fb1", title:"#880e4f", dot:"#e91e63", txt:"#ad1457" };
-  return (
-    <div style={{ background:styles.bg, border:`1px solid ${styles.border}`, borderRadius:14, padding:"12px 14px" }}>
-      <p style={{ fontSize:9, fontWeight:700, color:styles.title, textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 10px" }}>{title}</p>
-      {items.map((it, i) => (
-        <div key={i} style={{ display:"flex", gap:6, alignItems:"flex-start", marginBottom:6 }}>
-          <span style={{ width:4, height:4, borderRadius:"50%", background:styles.dot, flexShrink:0, marginTop:5 }} />
-          <span style={{ fontSize:10, color:styles.txt, lineHeight:1.5 }}>{it}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ━━━ PRICE ROW ━━━ */
-function PRow({ label, val, green }) {
-  return (
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-      <span style={{ fontSize:11, color:"rgba(255,255,255,0.45)" }}>{label}</span>
-      <span style={{ fontSize:11, fontWeight:700, color:green?"#00e676":"rgba(255,255,255,0.85)" }}>{val}</span>
-    </div>
-  );
-}
-
-/* ━━━ CENTERED ━━━ */
+/* ━━━ LOADING / ERROR ━━━ */
 function Centered({ children }) {
-  return <div style={{ minHeight:"60vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#f1f5f9", padding:24 }}>{children}</div>;
+  return <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#f8fafc,#eef2ff)", padding:24 }}>{children}</div>;
 }
 function Spinner() {
   return (
     <div style={{ textAlign:"center" }}>
-      <div style={{ width:38, height:38, border:"3px solid #e2e8f0", borderTopColor:"#1565c0", borderRadius:"50%", animation:"qspin .75s linear infinite", margin:"0 auto 12px" }} />
-      <p style={{ fontSize:13, color:"#94a3b8", margin:0 }}>Loading quotation…</p>
+      <div style={{ width:44, height:44, border:"3px solid #e0e7ff", borderTopColor:"#6366f1", borderRadius:"50%", animation:"qspin .8s linear infinite", margin:"0 auto 16px" }} />
+      <p style={{ fontSize:14, color:"#94a3b8", margin:0, fontWeight:600 }}>Loading your journey…</p>
     </div>
   );
 }
 function ErrBox({ msg }) {
   return (
-    <div style={{ background:"#fce4ec", border:"1px solid #f48fb1", borderRadius:18, padding:"28px 32px", textAlign:"center", maxWidth:380 }}>
-      <p style={{ fontSize:32, margin:"0 0 12px" }}>⚠️</p>
-      <p style={{ fontSize:14, color:"#880e4f", fontWeight:700, margin:0 }}>{msg}</p>
+    <div style={{ background:"#fff", border:"1px solid #fecaca", borderRadius:20, padding:"36px 40px", textAlign:"center", maxWidth:400, boxShadow:"0 20px 60px rgba(0,0,0,0.08)" }}>
+      <p style={{ fontSize:40, margin:"0 0 14px" }}>⚠️</p>
+      <p style={{ fontSize:15, color:"#991b1b", fontWeight:700, margin:0 }}>{msg}</p>
     </div>
   );
 }
 
-/* ━━━ MAIN COMPONENT ━━━ */
+/* ━━━ SECTION HEADING ━━━ */
+function SectionTitle({ children, sub, light }) {
+  return (
+    <div style={{ textAlign:"center", marginBottom:36 }}>
+      <div style={{ display:"inline-flex", alignItems:"center", gap:10, marginBottom:14 }}>
+        <span style={{ width:28, height:2, background:"linear-gradient(90deg,transparent,#6366f1)", borderRadius:100 }} />
+        <span style={{ width:6, height:6, borderRadius:"50%", background:"#6366f1" }} />
+        <span style={{ width:28, height:2, background:"linear-gradient(90deg,#6366f1,transparent)", borderRadius:100 }} />
+      </div>
+      <h2 style={{ fontSize:"clamp(26px,4vw,36px)", fontWeight:800, color: light?"#fff":"#0f172a", margin:"0 0 8px", letterSpacing:"-0.8px" }}>{children}</h2>
+      {sub && <p style={{ fontSize:14, color: light?"rgba(255,255,255,0.6)":"#94a3b8", margin:0, fontWeight:500 }}>{sub}</p>}
+    </div>
+  );
+}
+
+/* ━━━ POLICY BLOCK ━━━ */
+function PolicyBlock({ title, items, accent, bg }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div style={{ marginBottom:24 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+        <span style={{ width:34, height:34, borderRadius:9, background:bg||"#eef2ff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <span style={{ width:8, height:8, borderRadius:"50%", background:accent }} />
+        </span>
+        <h3 style={{ fontSize:16, fontWeight:700, color:"#0f172a", margin:0 }}>{title}</h3>
+      </div>
+      <div style={{ paddingLeft:44 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display:"flex", gap:10, marginBottom:9, alignItems:"flex-start" }}>
+            <span style={{ fontSize:11, fontWeight:800, color:accent, minWidth:20, marginTop:1 }}>{String(i+1).padStart(2,"0")}</span>
+            <span style={{ fontSize:13.5, color:"#475569", lineHeight:1.7 }}>{it}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ━━━ MAIN ━━━ */
 export default function QuotationWebView({ publicId }) {
   const [q, setQ]           = useState(null);
   const [loading, setLoading] = useState(true);
@@ -421,12 +701,7 @@ export default function QuotationWebView({ publicId }) {
         if (!res.ok) throw new Error(res.status === 404 ? "This quotation link is invalid or no longer available." : "Failed to load the quotation.");
         const body = await res.json();
         const data = body?.data || body;
-        // DEBUG — hotels ka data console mein dekho
         console.log("=== QUOTATION DATA ===", data);
-        if (data?.hotel?.hotels?.[0]) {
-          console.log("First hotel in weblink:", data.hotel.hotels[0]);
-          console.log("Hotel image field:", hotelImg(data.hotel.hotels[0]));
-        }
         if (active) setQ(data);
       } catch (e) {
         if (active) setError(e.message || "Failed to load the quotation.");
@@ -442,314 +717,486 @@ export default function QuotationWebView({ publicId }) {
   if (!q)      return <Centered>Quotation not found.</Centered>;
 
   const c = q.customer || {};
+  const company = q.company || q.organization || {};
+  const totals = q.totals || {};
   const pdfUrl = `${API}/public/quotations/${publicId}/pdf`;
 
+  const destStr = c.destination || (Array.isArray(q.destinations) ? q.destinations.join(" → ") : "") || "";
+  const preparedBy = q.preparedBy || q.createdByName || company.contactPerson || "";
+  const companyPhone = company.phone || company.contactNumber || q.companyPhone || "";
+  const companyEmail = company.email || q.companyEmail || "";
+
+  const services = [
+    { label:"Flights",     icon:"✈️", on: !!(q.flight?.included && q.flight?.segments?.length) },
+    { label:"Hotels",      icon:"🏨", on: !!(q.hotel?.included && q.hotel?.hotels?.length) },
+    { label:"Sightseeing", icon:"🗺️", on: !!(q.sightseeing?.included && q.sightseeing?.days?.length) },
+    { label:"Transport",   icon:"🚗", on: !!(q.vehicle?.included && q.vehicle?.vehicles?.length) },
+    { label:"Cruise",      icon:"🚢", on: !!(q.cruise?.included && q.cruise?.cruises?.length) },
+    { label:"Add-ons",     icon:"✨", on: !!(q.addons?.included && q.addons?.items?.length) },
+  ];
+
+  const testimonials = Array.isArray(q.testimonials) ? q.testimonials
+    : Array.isArray(q.reviews) ? q.reviews : [];
+
+  const grand = totals.grandTotal ?? q.grandTotal;
+  const perAdult = totals.perAdult ?? (grand && c.adults ? Math.round(grand / c.adults) : null);
+
   return (
-    <div style={{ fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif", minHeight:"100%", background:"#f1f5f9" }}>
+    <div style={{ fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif", minHeight:"100%", background:"#f8fafc", color:"#0f172a", overflowX:"hidden", maxWidth:"100vw" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-        @keyframes qfadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes qspin{to{transform:rotate(360deg)}}
-        @keyframes qdot{0%,100%{opacity:1}50%{opacity:.4}}
-        .qu0{animation:qfadeUp .5s ease both}
-        .qu1{animation:qfadeUp .5s .08s ease both}
-        .qu2{animation:qfadeUp .5s .16s ease both}
-        .qu3{animation:qfadeUp .5s .24s ease both}
-        .qu4{animation:qfadeUp .5s .32s ease both}
-        .qu5{animation:qfadeUp .5s .40s ease both}
-        .qu6{animation:qfadeUp .5s .48s ease both}
-        .qu7{animation:qfadeUp .5s .56s ease both}
-        .qu8{animation:qfadeUp .5s .64s ease both}
+        @keyframes qfade{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes qfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes qshine{0%{background-position:-200% center}100%{background-position:200% center}}
+        @keyframes qpulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .qfade{animation:qfade .6s ease both}
+        .qcard{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
+        .qcard:hover{transform:translateY(-6px)}
+        .qimg{transition:transform .5s ease}
+        .qimg-wrap:hover .qimg{transform:scale(1.06)}
+        .qbtn{transition:transform .2s ease,box-shadow .2s ease}
+        .qbtn:hover{transform:translateY(-2px)}
+        .qsvc{transition:transform .3s ease,box-shadow .3s ease}
+        .qsvc:hover{transform:translateY(-4px) scale(1.02)}
+        * { box-sizing:border-box; }
+
+        /* ─── OVERFLOW FIX — no horizontal scroll on mobile ─── */
+        html, body { overflow-x: hidden !important; max-width: 100%; margin: 0; padding: 0; }
+        img { max-width: 100%; }
+        p, h1, h2, h3, span { overflow-wrap: break-word; word-break: break-word; }
+
+        /* ─── RESPONSIVE (mobile / tablet) ─── */
+        @media (max-width: 640px) {
+          /* Hotel/Vehicle 2-col grid → 1 col on mobile */
+          .qgrid2 { grid-template-columns: 1fr !important; }
+          /* Activity row: image upar, text neeche (stack) */
+          .qact-row { flex-direction: column !important; gap: 12px !important; }
+          .qact-img { width: 100% !important; }
+          .qact-img img { width: 100% !important; height: 200px !important; }
+          /* Section vertical padding kam */
+          .qsection { padding-top: 40px !important; padding-bottom: 0 !important; }
+          .qsection-last { padding-top: 40px !important; padding-bottom: 40px !important; }
+          /* Cards ka andar ka padding thoda kam */
+          .qpad { padding: 20px !important; }
+        }
+        @media (max-width: 420px) {
+          .qact-img img { height: 170px !important; }
+        }
       `}</style>
 
-      {/* ━━━ HERO ━━━ */}
-      <div style={{ background:"linear-gradient(135deg,#0a0f2e,#1a237e,#4a148c)", position:"relative", overflow:"hidden" }}>
-        {/* Glow orbs */}
-        <div style={{ position:"absolute", top:-60, right:-60, width:220, height:220, borderRadius:"50%", background:"radial-gradient(circle,rgba(103,58,183,0.5),transparent 70%)" }} />
-        <div style={{ position:"absolute", bottom:-40, left:-40, width:180, height:180, borderRadius:"50%", background:"radial-gradient(circle,rgba(33,150,243,0.4),transparent 70%)" }} />
-        {/* Rings */}
-        <div style={{ position:"absolute", top:-80, right:-80, width:280, height:280, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.05)" }} />
-        <div style={{ position:"absolute", top:-50, right:-50, width:200, height:200, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.04)" }} />
+      {/* ━━━━━ HERO ━━━━━ */}
+      <div style={{ background:"linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#312e81 100%)", color:"#fff", position:"relative", overflow:"hidden" }}>
+        {/* Decorative orbs */}
+        <div style={{ position:"absolute", top:-100, right:-80, width:340, height:340, borderRadius:"50%", background:"radial-gradient(circle,rgba(99,102,241,0.35),transparent 70%)", animation:"qfloat 8s ease infinite" }} />
+        <div style={{ position:"absolute", bottom:-120, left:-100, width:320, height:320, borderRadius:"50%", background:"radial-gradient(circle,rgba(139,92,246,0.3),transparent 70%)", animation:"qfloat 10s ease infinite" }} />
+        <div style={{ position:"absolute", top:40, left:"30%", width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(59,130,246,0.2),transparent 70%)" }} />
         {q.coverImageUrl && (
-          <img src={q.coverImageUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", opacity:.08, pointerEvents:"none" }} />
+          <img src={q.coverImageUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", opacity:.12 }} />
         )}
-        <div style={{ maxWidth:880, margin:"0 auto", padding:"40px 20px 0", position:"relative", zIndex:1 }}>
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"56px 24px 48px", position:"relative", zIndex:1 }}>
           {/* Badge */}
-          <div className="qu0" style={{ marginBottom:14 }}>
-            <span style={{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:100, padding:"5px 14px", backdropFilter:"blur(8px)" }}>
-              <span style={{ width:6, height:6, borderRadius:"50%", background:"#00e676", animation:"qdot 2s ease infinite" }} />
-              <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.8)", letterSpacing:".12em", textTransform:"uppercase" }}>Travelcrm · Travel Quotation</span>
+          <div className="qfade" style={{ textAlign:"center", marginBottom:20 }}>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:100, padding:"7px 18px", backdropFilter:"blur(10px)" }}>
+              <span style={{ width:7, height:7, borderRadius:"50%", background:"#4ade80", animation:"qpulse 2s ease infinite" }} />
+              <span style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.85)", letterSpacing:".15em", textTransform:"uppercase" }}>Curated Travel Experience</span>
             </span>
           </div>
-          {/* Title */}
-          <h1 className="qu0" style={{ fontSize:"clamp(22px,5vw,36px)", fontWeight:900, color:"#fff", margin:"0 0 6px", lineHeight:1.1, letterSpacing:"-0.5px" }}>
-            {q.title || "Your Travel Package"}
-          </h1>
-          <p className="qu0" style={{ fontSize:12, color:"rgba(255,255,255,0.38)", margin:"0 0 16px" }}>
-            Crafted exclusively for {c.name || "you"}
-          </p>
-          {/* Chips */}
-          <div className="qu1" style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:24 }}>
-            {q.quoteNo && <span style={{ background:"rgba(255,255,255,0.12)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:100, padding:"3px 11px", fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.7)" }}>#{q.quoteNo}</span>}
-            {q.version && <span style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.15)", borderRadius:100, padding:"3px 11px", fontSize:9, fontWeight:600, color:"rgba(255,255,255,0.55)" }}>{q.version}</span>}
-            {q.quotationStage && <span style={{ background:"rgba(0,230,118,0.15)", border:"1px solid rgba(0,230,118,0.35)", borderRadius:100, padding:"3px 11px", fontSize:9, fontWeight:700, color:"#00e676" }}>{q.quotationStage}</span>}
+          {/* Destination */}
+          <div className="qfade" style={{ textAlign:"center", marginBottom:10 }}>
+            <h1 style={{ fontSize:"clamp(40px,9vw,72px)", fontWeight:900, margin:0, letterSpacing:"-2px", lineHeight:1, background:"linear-gradient(90deg,#fff,#c7d2fe,#fff)", backgroundSize:"200% auto", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", animation:"qshine 6s linear infinite" }}>
+              {destStr.split("→")[0]?.trim() || q.title || "Your Trip"}
+            </h1>
+            <p style={{ fontSize:16, color:"rgba(255,255,255,0.65)", margin:"14px 0 0", fontWeight:600, letterSpacing:".05em" }}>
+              {q.nights ?? "—"} Nights · {q.days ?? "—"} Days
+            </p>
           </div>
-          {/* Stats strip */}
-          <div className="qu2" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))", background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", borderBottom:"none", borderRadius:"14px 14px 0 0", overflow:"hidden" }}>
+          <p className="qfade" style={{ textAlign:"center", fontSize:"clamp(17px,3vw,24px)", fontWeight:700, color:"rgba(255,255,255,0.92)", margin:"0 0 40px" }}>{q.title || "Travel Package"}</p>
+
+          {/* Info grid — glassmorphism cards */}
+          <div className="qfade" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap:12 }}>
             {[
-              { label:"Client",      val: c.name||"—" },
-              { label:"Destination", val: c.destination||"—" },
-              { label:"Travel Date", val: fmtDate(c.travelDate) },
-              { label:"Travellers",  val:`${c.adults||0}A${c.children?` · ${c.children}C`:""}${c.infants?` · ${c.infants}I`:""}` },
-              { label:"Duration",    val:`${q.nights??"—"}N / ${q.days??"—"}D` },
-            ].map((s, i, arr) => (
-              <div key={i} style={{ padding:"12px 14px", borderRight:i<arr.length-1?"1px solid rgba(255,255,255,0.07)":"none" }}>
-                <p style={{ fontSize:7, fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 3px" }}>{s.label}</p>
-                <p style={{ fontSize:11, fontWeight:600, color:"#fff", margin:0, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.val}</p>
+              ["Traveler", c.name || "—", "👤"],
+              ["Travel Date", fmtDate(c.travelDate), "📅"],
+              ["Duration", `${q.nights ?? "—"}N / ${q.days ?? "—"}D`, "⏱️"],
+              ["Travelers", `${c.adults||0}A${c.children?` · ${c.children}C`:""}${c.infants?` · ${c.infants}I`:""}`, "👥"],
+              ["Rooms", q.rooms ? `${q.rooms}` : (c.rooms ? `${c.rooms}` : "—"), "🛏️"],
+              ["Quote ID", q.quoteNo ? `#${q.quoteNo}` : "—", "🎫"],
+              ["Destinations", destStr || "—", "📍"],
+              ["Prepared By", preparedBy || "—", "✍️"],
+            ].map(([label, val, icon], i) => (
+              <div key={i} style={{ background:"rgba(255,255,255,0.07)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:14, padding:"16px 16px" }}>
+                <div style={{ fontSize:16, marginBottom:8, opacity:.9 }}>{icon}</div>
+                <p style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 4px" }}>{label}</p>
+                <p style={{ fontSize:13, fontWeight:700, color:"#fff", margin:0, lineHeight:1.3, wordBreak:"break-word" }}>{val}</p>
               </div>
             ))}
           </div>
+
+          {/* Price card — premium */}
+          <div className="qfade" style={{ marginTop:32, background:"linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", borderRadius:24, padding:"36px 28px", textAlign:"center", position:"relative", overflow:"hidden", boxShadow:"0 20px 60px rgba(99,102,241,0.4)" }}>
+            <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.1)" }} />
+            <div style={{ position:"absolute", bottom:-50, left:-30, width:140, height:140, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.08)" }} />
+            <p style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:".18em", margin:"0 0 10px", position:"relative" }}>Total Package Price</p>
+            <p style={{ fontSize:"clamp(42px,9vw,64px)", fontWeight:900, margin:"0 0 6px", letterSpacing:"-2px", lineHeight:1, position:"relative", textShadow:"0 4px 20px rgba(0,0,0,0.2)" }}>{inr(grand)}</p>
+            <p style={{ fontSize:12, color:"rgba(255,255,255,0.8)", margin:"0 0 6px", position:"relative" }}>✓ Inclusive of all taxes</p>
+            {perAdult && c.adults ? (
+              <p style={{ fontSize:14, fontWeight:600, color:"rgba(255,255,255,0.9)", margin:"0 0 24px", position:"relative" }}>{c.adults} Adults × {inr(perAdult)}</p>
+            ) : <div style={{ height:24 }} />}
+            {companyPhone && (
+              <a href={`tel:${companyPhone}`} className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"#fff", color:"#6366f1", fontSize:15, fontWeight:800, padding:"14px 36px", borderRadius:100, textDecoration:"none", boxShadow:"0 8px 24px rgba(0,0,0,0.15)", position:"relative" }}>
+                📞 Contact Now
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ━━━ ACTION BAR ━━━ */}
-      <div style={{ maxWidth:880, margin:"0 auto", padding:"0 20px" }}>
-        <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderTop:"none", borderRadius:"0 0 16px 16px", padding:"11px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <span style={{ width:6, height:6, borderRadius:"50%", background:"#22c55e" }} />
-            <span style={{ fontSize:10, color:"#64748b", fontWeight:500 }}>Valid quotation · Generated {fmtDate(q.createdAt)}</span>
-          </div>
-          <a href={pdfUrl} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"7px 16px", borderRadius:9, background:"linear-gradient(135deg,#1a237e,#4a148c)", color:"#fff", fontSize:11, fontWeight:700, textDecoration:"none" }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download PDF
-          </a>
+      {/* ━━━━━ SERVICES ━━━━━ */}
+      <div style={{ maxWidth:1040, margin:"0 auto", padding:"56px 24px 0" }}>
+        <SectionTitle sub="Everything included in your package">What's Included</SectionTitle>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap:14 }}>
+          {services.map((s, i) => (
+            <div key={i} className="qsvc" style={{ background:"#fff", border:`2px solid ${s.on?"#c7d2fe":"#f1f5f9"}`, borderRadius:18, padding:"22px 14px", textAlign:"center", boxShadow: s.on?"0 8px 24px rgba(99,102,241,0.08)":"0 2px 8px rgba(0,0,0,0.03)", opacity: s.on?1:0.6 }}>
+              <div style={{ fontSize:30, marginBottom:10, filter: s.on?"none":"grayscale(1)" }}>{s.icon}</div>
+              <p style={{ fontSize:14, fontWeight:700, color:s.on?"#0f172a":"#94a3b8", margin:"0 0 8px" }}>{s.label}</p>
+              <div style={{ width:26, height:26, borderRadius:"50%", background:s.on?"linear-gradient(135deg,#22c55e,#16a34a)":"#e2e8f0", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto", fontSize:14, color:"#fff", fontWeight:900 }}>
+                {s.on ? "✓" : "✕"}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ━━━ SECTIONS ━━━ */}
-      <div style={{ maxWidth:880, margin:"0 auto", padding:"16px 20px 48px", display:"flex", flexDirection:"column", gap:14 }}>
-
-        {/* FLIGHTS — Blue */}
-        {q.flight?.included && q.flight?.segments?.length > 0 && (
-          <div className="qu1">
-            <GCard title={q.flight.title||"Flights"} sub={`${q.flight.segments.length} segment(s)`} amount={q.flight.amount} icon="✈" grad="linear-gradient(135deg,#1565c0,#1e88e5,#29b6f6)">
-              {q.flight.segments.map((s, i) => (
-                <RItem key={i} bg="#e3f2fd" border="#90caf9">
-                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-                    <div>
-                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-                        <span style={{ fontSize:15, fontWeight:800, color:"#0d47a1" }}>{s.from}</span>
-                        <svg width="28" height="10" viewBox="0 0 36 10"><path d="M1 5h34M25 1l7 4-7 4" stroke="#42a5f5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        <span style={{ fontSize:15, fontWeight:800, color:"#0d47a1" }}>{s.to}</span>
-                      </div>
-                      <p style={{ fontSize:10, color:"#546e7a", margin:0 }}>{s.airline}{s.flightNo?` ${s.flightNo}`:""}{s.class?` · ${s.class}`:""}</p>
-                    </div>
-                    <div style={{ textAlign:"right", flexShrink:0 }}>
-                      <p style={{ fontSize:11, fontWeight:700, color:"#1565c0", margin:"0 0 2px" }}>{fmtDate(s.depDate)}</p>
-                      <p style={{ fontSize:10, color:"#90a4ae", margin:0 }}>{s.depTime||""}{s.duration?` · ${s.duration}`:""}</p>
-                    </div>
-                  </div>
-                </RItem>
-              ))}
-            </GCard>
-          </div>
-        )}
-
-        {/* ━━━ HOTELS — Purple (IMAGE ke saath) ━━━ */}
-        {q.hotel?.included && q.hotel?.hotels?.length > 0 && (
-          <div className="qu2">
-            <GCard title={q.hotel.title||"Hotels"} sub={`${q.hotel.hotels.length} property(s)`} amount={q.hotel.amount} icon="🏨" grad="linear-gradient(135deg,#4a148c,#7b1fa2,#ab47bc)">
-              {q.hotel.hotels.map((h, i) => {
-                const img = hotelImg(h);
+      {/* ━━━━━ ITINERARY ━━━━━ */}
+      {q.sightseeing?.included && q.sightseeing?.days?.length > 0 && (
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+          <SectionTitle sub="Your day-by-day journey unfolds">Your Itinerary</SectionTitle>
+          <div style={{ position:"relative" }}>
+            {/* Timeline line */}
+            <div style={{ position:"absolute", left:26, top:20, bottom:20, width:2, background:"linear-gradient(180deg,#c7d2fe,#e0e7ff,transparent)", display:"none" }} className="qtimeline" />
+            <div style={{ display:"flex", flexDirection:"column", gap:32 }}>
+              {q.sightseeing.days.map((d, i) => {
+                const firstAct = (d.activities || [])[0] || {};
                 return (
-                  <div key={i} style={{ background:"#fff", border:"1px solid #ce93d8", borderRadius:13, overflow:"hidden", marginBottom:10 }}>
-                    {/* Bada hotel image banner (agar hai) */}
-                    {img && (
-                      <div style={{ width:"100%", height:140, overflow:"hidden", position:"relative" }}>
-                        <img
-                          src={img}
-                          alt={h.name}
-                          style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
-                          onError={(e) => { e.target.parentElement.style.display = "none"; }}
-                        />
-                        {/* Stars badge upar image pe */}
-                        {h.stars > 0 && (
-                          <span style={{ position:"absolute", top:8, right:8, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(4px)", borderRadius:100, padding:"3px 10px", fontSize:11, color:"#fbbf24", fontWeight:700 }}>
-                            {"★".repeat(h.stars)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {/* Hotel details */}
-                    <div style={{ padding:"10px 12px", background:"#f3e5f5" }}>
-                      <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                        {/* Agar image upar nahi hai, toh chhota thumbnail/emoji */}
-                        {!img && (
-                          <div style={{ width:48, height:48, borderRadius:9, background:"linear-gradient(135deg,#e1bee7,#ce93d8)", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🏨</div>
-                        )}
-                        <div style={{ minWidth:0, flex:1 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", marginBottom:3 }}>
-                            <span style={{ fontSize:14, fontWeight:800, color:"#4a148c" }}>{h.name}</span>
-                            {!img && h.stars > 0 && <span style={{ fontSize:11, color:"#f59e0b" }}>{"★".repeat(h.stars)}</span>}
-                          </div>
-                          <p style={{ fontSize:11, color:"#7b1fa2", fontWeight:600, margin:"0 0 2px" }}>
-                            {[h.city, h.roomType, h.mealPlan].filter(Boolean).join(" · ")}
-                          </p>
-                          <p style={{ fontSize:10, color:"#78909c", margin:0 }}>
-                            {fmtDate(h.checkIn)} → {fmtDate(h.checkOut)}{h.rooms ? ` · ${h.rooms} room(s)` : ""}
-                            {h.refundable === false ? " · Non-Refundable" : ""}
+                  <div key={i} className="qfade qcard" style={{ background:"#fff", borderRadius:24, overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.07)", border:"1px solid #eef2ff" }}>
+                    <div style={{ padding:"28px 30px" }}>
+                      {/* Day header */}
+                      <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:18 }}>
+                        <div style={{ width:52, height:52, borderRadius:16, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:"0 8px 20px rgba(99,102,241,0.3)" }}>
+                          <span style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", lineHeight:1 }}>Day</span>
+                          <span style={{ fontSize:22, fontWeight:900, color:"#fff", lineHeight:1 }}>{d.day}</span>
+                        </div>
+                        <div style={{ minWidth:0 }}>
+                          <h3 style={{ fontSize:22, fontWeight:800, color:"#0f172a", margin:"0 0 3px", letterSpacing:"-0.5px" }}>
+                            {firstAct.attraction || d.title || `Day ${d.day}`}
+                          </h3>
+                          <p style={{ fontSize:13, color:"#94a3b8", margin:0, fontWeight:600, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                            {(d.location || firstAct.city) && <span>📍 {d.location || firstAct.city}</span>}
+                            {d.date && <span style={{ color:"#cbd5e1" }}>·</span>}
+                            {d.date && <span>{fmtDateFull(d.date)}</span>}
                           </p>
                         </div>
                       </div>
+
+                      {/* Activities */}
+                      <div style={{ background:"linear-gradient(135deg,#f8fafc,#f1f5f9)", borderRadius:16, padding:"20px 22px" }}>
+                        <p style={{ fontSize:11, fontWeight:800, color:"#6366f1", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 16px" }}>✦ Activities & Highlights</p>
+                        {(d.activities || []).map((a, j) => {
+                          const meals = Array.isArray(a.meals) ? a.meals.filter(Boolean) : [];
+                          const aImg = actImg(a);
+                          const rawDesc = (a.description || "").trim();
+                          let descPoints = [];
+                          if (rawDesc) {
+                            if (/\n|\r/.test(rawDesc)) descPoints = rawDesc.split(/\n|\r/);
+                            else descPoints = rawDesc.split(/\.(?:\s+|$)/);
+                            descPoints = descPoints.map(s => s.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
+                          }
+                          return (
+                            <div key={j} className="qact-row" style={{ display:"flex", gap:16, marginBottom: j<(d.activities.length-1) ? 20 : 0, paddingBottom: j<(d.activities.length-1) ? 20 : 0, borderBottom: j<(d.activities.length-1) ? "1px dashed #e2e8f0" : "none" }}>
+                              {aImg && (
+                                <div className="qimg-wrap qact-img" style={{ flexShrink:0, borderRadius:16, overflow:"hidden", boxShadow:"0 8px 20px rgba(0,0,0,0.1)" }}>
+                                  <img src={aImg} alt={a.attraction} className="qimg"
+                                    style={{ width:200, height:160, objectFit:"cover", display:"block" }}
+                                    onError={(e) => { e.target.style.display = "none"; }} />
+                                </div>
+                              )}
+                              <div style={{ minWidth:0, flex:1 }}>
+                                <p style={{ fontSize:16, fontWeight:800, color:"#0f172a", margin:"0 0 10px", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                                  {a.attraction}
+                                  {a.startTime && <span style={{ fontSize:11, fontWeight:700, color:"#6366f1", background:"#eef2ff", padding:"3px 10px", borderRadius:100 }}>{a.startTime}</span>}
+                                </p>
+                                {descPoints.length > 0 && (
+                                  <div style={{ margin:"0 0 12px" }}>
+                                    {descPoints.map((line, li) => (
+                                      <div key={li} style={{ display:"flex", gap:8, marginBottom:7, alignItems:"flex-start" }}>
+                                        <span style={{ width:6, height:6, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", flexShrink:0, marginTop:6 }} />
+                                        <span style={{ fontSize:13.5, color:"#475569", lineHeight:1.65 }}>{line}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                                  {a.transfer && (
+                                    <span style={{ fontSize:11, fontWeight:700, color:"#6366f1", background:"#eef2ff", border:"1px solid #c7d2fe", borderRadius:100, padding:"5px 13px" }}>🚐 {a.transfer}</span>
+                                  )}
+                                  {meals.length > 0 && (
+                                    <span style={{ fontSize:11, fontWeight:700, color:"#ea580c", background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:100, padding:"5px 13px" }}>🍽 {meals.join(", ")}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {d.overnightStay && (
+                        <div style={{ marginTop:16, display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#ecfdf5,#f0fdf4)", border:"1px solid #a7f3d0", borderRadius:12, padding:"10px 16px" }}>
+                          <span style={{ fontSize:16 }}>🌙</span>
+                          <span style={{ fontSize:13, fontWeight:700, color:"#059669" }}>Overnight Stay: {d.overnightStay}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
-            </GCard>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* SIGHTSEEING — Green */}
-        {q.sightseeing?.included && q.sightseeing?.days?.length > 0 && (
-          <div className="qu3">
-            <GCard title={q.sightseeing.title||"Sightseeing"} sub={`${q.sightseeing.days.length} day(s)`} amount={q.sightseeing.amount} icon="🗺️" grad="linear-gradient(135deg,#1b5e20,#2e7d32,#43a047)">
-              {q.sightseeing.days.map((d, i) => (
-                <RItem key={i} bg="#e8f5e9" border="#a5d6a7">
-                  <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:8 }}>
-                    <div style={{ width:22, height:22, borderRadius:6, background:"#2e7d32", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:"#fff", flexShrink:0 }}>{d.day}</div>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#1b5e20" }}>Day {d.day}{d.date?` · ${fmtDate(d.date)}`:""}</span>
-                  </div>
-                  {(d.activities||[]).map((a, j) => (
-                    <div key={j} style={{ display:"flex", gap:6, alignItems:"flex-start", marginBottom:4 }}>
-                      <span style={{ width:4, height:4, borderRadius:"50%", background:"#43a047", flexShrink:0, marginTop:5 }} />
-                      <span style={{ fontSize:10, color:"#1b5e20", lineHeight:1.5 }}>{a.attraction}{a.startTime?` · ${a.startTime}`:""}</span>
+      {/* ━━━━━ HOTELS ━━━━━ */}
+      {q.hotel?.included && q.hotel?.hotels?.length > 0 && (
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+          <SectionTitle sub="Handpicked stays for your comfort">Where You'll Stay</SectionTitle>
+          <div className="qgrid2" style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:24 }}>
+            {q.hotel.hotels.map((h, i) => {
+              const img = hotelImg(h);
+              return (
+                <div key={i} className="qfade qcard" style={{ background:"#fff", borderRadius:22, overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
+                  {img && (
+                    <div className="qimg-wrap" style={{ width:"100%", height:200, overflow:"hidden", position:"relative" }}>
+                      <img src={img} alt={h.name} className="qimg" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+                        onError={(e) => { e.target.parentElement.style.display = "none"; }} />
+                      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 60%,rgba(0,0,0,0.4))" }} />
+                      {h.stars > 0 && (
+                        <span style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.95)", color:"#f59e0b", fontSize:12, fontWeight:800, padding:"5px 12px", borderRadius:100, boxShadow:"0 4px 12px rgba(0,0,0,0.15)" }}>
+                          {"★".repeat(h.stars)}
+                        </span>
+                      )}
+                      <h3 style={{ position:"absolute", bottom:14, left:16, right:16, fontSize:20, fontWeight:800, color:"#fff", margin:0, textShadow:"0 2px 8px rgba(0,0,0,0.5)" }}>{h.name}</h3>
                     </div>
-                  ))}
-                </RItem>
-              ))}
-            </GCard>
-          </div>
-        )}
-
-        {/* CRUISE — Cyan */}
-        {q.cruise?.included && q.cruise?.cruises?.length > 0 && (
-          <div className="qu4">
-            <GCard title={q.cruise.title||"Cruise"} sub={`${q.cruise.cruises.length} cruise(s)`} amount={q.cruise.amount} icon="🚢" grad="linear-gradient(135deg,#006064,#00838f,#26c6da)">
-              {q.cruise.cruises.map((cr, i) => (
-                <RItem key={i} bg="#e0f7fa" border="#80deea">
-                  <p style={{ fontSize:12, fontWeight:800, color:"#006064", margin:"0 0 3px" }}>{cr.name}{cr.type?` · ${cr.type}`:""}</p>
-                  <p style={{ fontSize:10, color:"#00838f", margin:0 }}>{cr.depPort} → {cr.arrPort} · {fmtDate(cr.depDate)}{cr.nights?` · ${cr.nights}N`:""}{cr.cabin?` · ${cr.cabin}`:""}</p>
-                </RItem>
-              ))}
-            </GCard>
-          </div>
-        )}
-
-        {/* TRANSPORT — Orange */}
-        {q.vehicle?.included && q.vehicle?.vehicles?.length > 0 && (
-          <div className="qu4">
-            <GCard title={q.vehicle.title||"Transport"} sub={`${q.vehicle.vehicles.length} vehicle(s)`} amount={q.vehicle.amount} icon="🚗" grad="linear-gradient(135deg,#e65100,#f57c00,#ffa726)">
-              {q.vehicle.vehicles.map((v, i) => (
-                <RItem key={i} bg="#fff3e0" border="#ffcc80">
-                  <p style={{ fontSize:12, fontWeight:800, color:"#e65100", margin:"0 0 3px" }}>{v.type}</p>
-                  <p style={{ fontSize:10, color:"#f57c00", margin:0 }}>{[v.pickup,v.drop].filter(Boolean).join(" → ")}{v.startDate?` · ${fmtDate(v.startDate)}`:""}{v.qty?` · Qty ${v.qty}`:""}</p>
-                </RItem>
-              ))}
-            </GCard>
-          </div>
-        )}
-
-        {/* ADD-ONS — Pink */}
-        {q.addons?.included && q.addons?.items?.length > 0 && (
-          <div className="qu5">
-            <GCard title={q.addons.title||"Add-on Services"} sub={`${q.addons.items.length} service(s)`} amount={q.addons.amount} icon="✨" grad="linear-gradient(135deg,#880e4f,#c2185b,#ec407a)">
-              {q.addons.items.map((a, i) => (
-                <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:i<q.addons.items.length-1?"1px solid rgba(0,0,0,0.05)":"none" }}>
-                  <span style={{ fontSize:11, color:"#475569" }}>{a.serviceType}{a.quantity?` × ${a.quantity}`:""}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:"#880e4f" }}>{inr(a.pricePerUnit)}</span>
+                  )}
+                  <div style={{ padding:"20px 22px" }}>
+                    {!img && <h3 style={{ fontSize:20, fontWeight:800, color:"#0f172a", margin:"0 0 3px" }}>{h.name}</h3>}
+                    <p style={{ fontSize:13, color:"#94a3b8", margin:"0 0 16px", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>📍 {[h.city, h.country].filter(Boolean).join(", ")}</p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                      {h.roomType && <MiniDetail icon="🛏️" label="Room" val={h.roomType} />}
+                      {h.mealPlan && <MiniDetail icon="🍴" label="Meals" val={h.mealPlan} />}
+                      {h.rooms ? <MiniDetail icon="🔑" label="Rooms" val={h.rooms} /> : null}
+                    </div>
+                    <div style={{ display:"flex", gap:10, borderTop:"1px solid #f1f5f9", paddingTop:16 }}>
+                      <div style={{ flex:1, background:"#ecfdf5", borderRadius:12, padding:"10px 12px" }}>
+                        <p style={{ fontSize:9, fontWeight:700, color:"#059669", textTransform:"uppercase", letterSpacing:".05em", margin:"0 0 3px" }}>Check-in</p>
+                        <p style={{ fontSize:12, fontWeight:700, color:"#0f172a", margin:0 }}>{fmtDate(h.checkIn)}</p>
+                      </div>
+                      <div style={{ flex:1, background:"#fef2f2", borderRadius:12, padding:"10px 12px" }}>
+                        <p style={{ fontSize:9, fontWeight:700, color:"#dc2626", textTransform:"uppercase", letterSpacing:".05em", margin:"0 0 3px" }}>Check-out</p>
+                        <p style={{ fontSize:12, fontWeight:700, color:"#0f172a", margin:0 }}>{fmtDate(h.checkOut)}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </GCard>
+              );
+            })}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* INCLUSIONS / EXCLUSIONS */}
-        {(q.inclusions?.length > 0 || q.exclusions?.length > 0) && (
-          <div className="qu5" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:12 }}>
-            {q.inclusions?.length > 0 && <ListBox title="Inclusions" items={q.inclusions} tone="green" />}
-            {q.exclusions?.length > 0 && <ListBox title="Exclusions" items={q.exclusions} tone="red" />}
-          </div>
-        )}
-
-        {/* PRICE SUMMARY */}
-        {q.totals && (
-          <div className="qu6" style={{ borderRadius:18, overflow:"hidden" }}>
-            {/* Dark gradient header */}
-            <div style={{ background:"linear-gradient(135deg,#0a0f2e,#1a237e,#4a148c)", padding:"20px 20px 16px", position:"relative", overflow:"hidden" }}>
-              <div style={{ position:"absolute", top:-50, right:-50, width:160, height:160, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.05)" }} />
-              <p style={{ fontSize:8, fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:".14em", margin:"0 0 12px" }}>Price Breakdown</p>
-              <PRow label="Flights"     val={inr(q.totals.flightAmount)}      />
-              <PRow label="Hotels"      val={inr(q.totals.hotelAmount)}       />
-              <PRow label="Sightseeing" val={inr(q.totals.sightseeingAmount)} />
-              {q.totals.cruiseAmount  > 0 && <PRow label="Cruise"    val={inr(q.totals.cruiseAmount)}    />}
-              {q.totals.vehicleAmount > 0 && <PRow label="Transport" val={inr(q.totals.vehicleAmount)}   />}
-              {q.totals.addonAmount   > 0 && <PRow label="Add-ons"   val={inr(q.totals.addonAmount)}    />}
-              <div style={{ height:1, background:"rgba(255,255,255,0.1)", margin:"8px 0" }} />
-              <PRow label="Subtotal" val={inr(q.totals.subtotal)} />
-              {q.totals.discountAmount > 0 && <PRow label="Discount" val={`− ${inr(q.totals.discountAmount)}`} green />}
-              {q.totals.markup        > 0 && <PRow label="Markup"   val={inr(q.totals.markup)} />}
-              {q.totals.taxAmount     > 0 && <PRow label={`Tax (${q.totals.taxPercent||0}%)`} val={inr(q.totals.taxAmount)} />}
-            </div>
-            {/* White footer */}
-            <div style={{ background:"#fff", padding:"16px 20px" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                <div>
-                  <p style={{ fontSize:10, color:"#64748b", margin:"0 0 2px", fontWeight:600 }}>Grand Total</p>
-                  {q.totals.perAdult != null && <p style={{ fontSize:9, color:"#94a3b8", margin:0 }}>{inr(q.totals.perAdult)} per adult</p>}
+      {/* ━━━━━ TRANSPORT ━━━━━ */}
+      {q.vehicle?.included && q.vehicle?.vehicles?.length > 0 && (
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+          <SectionTitle sub="Travel in comfort and style">Your Transport</SectionTitle>
+          <div className="qgrid2" style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:24 }}>
+            {q.vehicle.vehicles.map((v, i) => {
+              const img = vehImg(v);
+              return (
+                <div key={i} className="qfade qcard" style={{ background:"#fff", borderRadius:22, overflow:"hidden", boxShadow:"0 10px 40px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
+                  {img && (
+                    <div className="qimg-wrap" style={{ width:"100%", height:200, overflow:"hidden", position:"relative" }}>
+                      <img src={img} alt={v.model || v.type} className="qimg" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+                        onError={(e) => { e.target.parentElement.style.display = "none"; }} />
+                      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg,transparent 60%,rgba(0,0,0,0.4))" }} />
+                      <h3 style={{ position:"absolute", bottom:14, left:16, right:16, fontSize:20, fontWeight:800, color:"#fff", margin:0, textShadow:"0 2px 8px rgba(0,0,0,0.5)" }}>{v.model || v.type}</h3>
+                    </div>
+                  )}
+                  <div style={{ padding:"20px 22px" }}>
+                    {!img && <h3 style={{ fontSize:20, fontWeight:800, color:"#0f172a", margin:"0 0 12px" }}>{v.model || v.type}</h3>}
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                      {v.type && <MiniDetail icon="🚗" label="Type" val={v.type} />}
+                      {v.capacity ? <MiniDetail icon="👥" label="Seats" val={v.capacity} /> : null}
+                      {(v.pickup || v.drop) && <MiniDetail icon="📍" label="Route" val={[v.pickup, v.drop].filter(Boolean).join(" → ")} />}
+                      {(v.startDate || v.endDate) && <MiniDetail icon="📅" label="Dates" val={`${fmtDate(v.startDate)}${v.endDate?` → ${fmtDate(v.endDate)}`:""}`} />}
+                      {v.qty ? <MiniDetail icon="#️⃣" label="Qty" val={v.qty} /> : null}
+                    </div>
+                    {v.notes && <p style={{ fontSize:12.5, color:"#64748b", margin:"14px 0 0", fontStyle:"italic", lineHeight:1.6, background:"#f8fafc", borderRadius:10, padding:"10px 14px" }}>💬 {v.notes}</p>}
+                  </div>
                 </div>
-                <span style={{ fontSize:"clamp(24px,4vw,34px)", fontWeight:900, color:"#0a0f2e", letterSpacing:"-1px" }}>{inr(q.totals.grandTotal)}</span>
-              </div>
-              {/* Rainbow bar */}
-              <div style={{ height:4, borderRadius:100, background:"linear-gradient(90deg,#1565c0,#7b1fa2,#c2185b,#f57c00,#43a047)", marginTop:14, opacity:.9 }} />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ━━━━━ TESTIMONIALS ━━━━━ */}
+      {testimonials.length > 0 && (
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+          <SectionTitle sub="Stories from fellow travelers">Loved by Travelers</SectionTitle>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 280px),1fr))", gap:24 }}>
+            {testimonials.map((t, i) => {
+              const name = t.name || t.customerName || "Guest";
+              return (
+                <div key={i} className="qcard" style={{ background:"#fff", borderRadius:22, padding:"26px 28px", boxShadow:"0 10px 40px rgba(0,0,0,0.07)", border:"1px solid #eef2ff", position:"relative" }}>
+                  <span style={{ position:"absolute", top:18, right:24, fontSize:56, color:"#eef2ff", fontWeight:900, lineHeight:1, fontFamily:"Georgia,serif" }}>"</span>
+                  <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16, position:"relative" }}>
+                    <div style={{ width:52, height:52, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:800, flexShrink:0, boxShadow:"0 6px 16px rgba(99,102,241,0.3)" }}>
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p style={{ fontSize:16, fontWeight:800, color:"#0f172a", margin:0 }}>{name}</p>
+                      {t.trip && <p style={{ fontSize:12, color:"#94a3b8", margin:0, fontStyle:"italic" }}>{t.trip}</p>}
+                    </div>
+                  </div>
+                  {(t.rating || t.stars) ? (
+                    <p style={{ color:"#f59e0b", fontSize:16, margin:"0 0 10px", letterSpacing:2 }}>{"★".repeat(Number(t.rating || t.stars) || 5)}</p>
+                  ) : null}
+                  <p style={{ fontSize:14, color:"#475569", lineHeight:1.75, margin:0 }}>{t.review || t.text || t.comment || ""}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ━━━━━ PRICE BREAKDOWN ━━━━━ */}
+      {(totals.subtotal != null || grand != null) && (
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+          <SectionTitle sub="Transparent, no hidden costs">Price Breakdown</SectionTitle>
+          <div style={{ maxWidth:540, margin:"0 auto", background:"#fff", borderRadius:24, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
+            <div style={{ padding:"28px 30px" }}>
+              {totals.flightAmount      > 0 && <PLine label="✈️ Flights"     val={inr(totals.flightAmount)} />}
+              {totals.hotelAmount       > 0 && <PLine label="🏨 Hotels"      val={inr(totals.hotelAmount)} />}
+              {totals.sightseeingAmount > 0 && <PLine label="🗺️ Sightseeing" val={inr(totals.sightseeingAmount)} />}
+              {totals.cruiseAmount      > 0 && <PLine label="🚢 Cruise"      val={inr(totals.cruiseAmount)} />}
+              {totals.vehicleAmount     > 0 && <PLine label="🚗 Transport"   val={inr(totals.vehicleAmount)} />}
+              {totals.addonAmount       > 0 && <PLine label="✨ Add-ons"     val={inr(totals.addonAmount)} />}
+              {totals.subtotal != null && (
+                <>
+                  <div style={{ height:1, background:"linear-gradient(90deg,transparent,#e2e8f0,transparent)", margin:"16px 0" }} />
+                  <PLine label="Subtotal" val={inr(totals.subtotal)} bold />
+                </>
+              )}
+              {totals.discountAmount > 0 && <PLine label="🎉 Discount" val={`− ${inr(totals.discountAmount)}`} green />}
+              {totals.markup         > 0 && <PLine label="Service Charge" val={inr(totals.markup)} />}
+              {totals.taxAmount      > 0 && <PLine label={`Tax (${totals.taxPercent||0}%)`} val={inr(totals.taxAmount)} />}
+            </div>
+            <div style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", padding:"22px 30px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", overflow:"hidden" }}>
+              <div style={{ position:"absolute", top:-30, right:-20, width:120, height:120, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.1)" }} />
+              <span style={{ fontSize:15, fontWeight:700, color:"rgba(255,255,255,0.9)", position:"relative" }}>Grand Total</span>
+              <span style={{ fontSize:30, fontWeight:900, color:"#fff", position:"relative", textShadow:"0 2px 12px rgba(0,0,0,0.2)" }}>{inr(grand)}</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* PAYMENT POLICY — Blue tint */}
-        {q.paymentPolicies?.length > 0 && (
-          <div className="qu7">
-            <PolCard title="Payment Policy" items={q.paymentPolicies} bg="linear-gradient(135deg,#e3f2fd,#ede7f6)" border="#90caf9" titleColor="#1565c0" numColor="#1e88e5" txtColor="#1a237e" />
+      {/* ━━━━━ POLICIES ━━━━━ */}
+      {(q.inclusions?.length || q.exclusions?.length || q.paymentPolicies?.length || q.cancellationPolicies?.length || q.bookingTerms?.length) ? (
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
+          <SectionTitle sub="Everything you need to know">Terms & Policies</SectionTitle>
+          <div style={{ background:"#fff", borderRadius:24, padding:"32px 32px 12px", boxShadow:"0 10px 40px rgba(0,0,0,0.07)", border:"1px solid #eef2ff" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 260px),1fr))", gap:28 }}>
+              <PolicyBlock title="Inclusions" items={q.inclusions} accent="#16a34a" bg="#ecfdf5" />
+              <PolicyBlock title="Exclusions" items={q.exclusions} accent="#dc2626" bg="#fef2f2" />
+            </div>
+            <PolicyBlock title="Payment Policies" items={q.paymentPolicies} accent="#6366f1" bg="#eef2ff" />
+            <PolicyBlock title="Cancellation Policies" items={q.cancellationPolicies} accent="#ea580c" bg="#fff7ed" />
+            <PolicyBlock title="Booking Terms" items={q.bookingTerms} accent="#8b5cf6" bg="#f5f3ff" />
           </div>
-        )}
+        </div>
+      ) : null}
 
-        {/* CANCELLATION POLICY — Amber tint */}
-        {q.cancellationPolicies?.length > 0 && (
-          <div className="qu7">
-            <PolCard title="Cancellation Policy" items={q.cancellationPolicies} bg="linear-gradient(135deg,#fff8e1,#fff3e0)" border="#ffcc80" titleColor="#e65100" numColor="#f57c00" txtColor="#bf360c" />
+      {/* ━━━━━ CONTACT ━━━━━ */}
+      <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 56px" }}>
+        <div style={{ background:"linear-gradient(135deg,#0f172a,#1e1b4b,#312e81)", borderRadius:28, padding:"48px 32px", color:"#fff", textAlign:"center", position:"relative", overflow:"hidden", boxShadow:"0 20px 60px rgba(15,23,42,0.3)" }}>
+          <div style={{ position:"absolute", top:-60, right:-40, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(99,102,241,0.3),transparent 70%)" }} />
+          <div style={{ position:"absolute", bottom:-70, left:-50, width:220, height:220, borderRadius:"50%", background:"radial-gradient(circle,rgba(139,92,246,0.25),transparent 70%)" }} />
+          <div style={{ position:"relative" }}>
+            <h2 style={{ fontSize:30, fontWeight:800, margin:"0 0 10px", letterSpacing:"-0.5px" }}>Ready for This Journey?</h2>
+            <p style={{ fontSize:15, color:"rgba(255,255,255,0.65)", margin:"0 0 32px", maxWidth:500, marginLeft:"auto", marginRight:"auto", lineHeight:1.7 }}>
+              Get in touch to book or ask any questions. We're here to make your trip unforgettable.
+            </p>
+
+            {(company.logo || company.logoUrl) && (
+              <img src={company.logo || company.logoUrl} alt={company.name} style={{ maxHeight:70, borderRadius:12, marginBottom:20 }} />
+            )}
+            {company.name && <p style={{ fontSize:22, fontWeight:800, margin:"0 0 6px" }}>{company.name}</p>}
+            {preparedBy && <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", margin:"0 0 8px" }}>Your Travel Expert: {preparedBy}</p>}
+            {companyPhone && <p style={{ fontSize:15, color:"rgba(255,255,255,0.9)", margin:"0 0 2px", fontWeight:600 }}>{companyPhone}</p>}
+            {companyEmail && <p style={{ fontSize:14, color:"rgba(255,255,255,0.7)", margin:"0 0 8px" }}>{companyEmail}</p>}
+            {company.address && <p style={{ fontSize:13, color:"rgba(255,255,255,0.5)", margin:"0 0 28px", lineHeight:1.6, whiteSpace:"pre-line" }}>{company.address}</p>}
+
+            <div style={{ display:"flex", flexWrap:"wrap", gap:12, justifyContent:"center", marginBottom:20 }}>
+              {companyPhone && (
+                <a href={`tel:${companyPhone}`} className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", boxShadow:"0 8px 24px rgba(99,102,241,0.4)" }}>
+                  📞 Call Now
+                </a>
+              )}
+              {companyPhone && (
+                <a href={`https://wa.me/${companyPhone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hello, I'm interested in the travel quotation (${q.title || ""})`)}`} target="_blank" rel="noreferrer" className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", boxShadow:"0 8px 24px rgba(34,197,94,0.4)" }}>
+                  💬 WhatsApp
+                </a>
+              )}
+              {companyEmail && (
+                <a href={`mailto:${companyEmail}?subject=${encodeURIComponent(`Quotation Inquiry (${q.title || ""})`)}`} className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.12)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", border:"1px solid rgba(255,255,255,0.2)", backdropFilter:"blur(10px)" }}>
+                  ✉️ Email
+                </a>
+              )}
+              <a href={pdfUrl} target="_blank" rel="noreferrer" className="qbtn" style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.12)", color:"#fff", fontSize:14, fontWeight:700, padding:"13px 26px", borderRadius:100, textDecoration:"none", border:"1px solid rgba(255,255,255,0.2)", backdropFilter:"blur(10px)" }}>
+                ⬇️ Download PDF
+              </a>
+            </div>
+
+            <div style={{ height:1, background:"rgba(255,255,255,0.1)", margin:"28px 0 18px" }} />
+            <p style={{ fontSize:12, color:"rgba(255,255,255,0.4)", margin:"0 0 5px" }}>
+              © {new Date().getFullYear()} {company.name || "Travel Company"}. All rights reserved.
+            </p>
+            <p style={{ fontSize:11, color:"rgba(255,255,255,0.3)", margin:0 }}>
+              {[company.since && `Since ${company.since}`, company.reviewsCount && `${company.reviewsCount} Reviews`, company.gst && `GST: ${company.gst}`].filter(Boolean).join(" · ")}
+            </p>
+            <p style={{ fontSize:11, color:"rgba(255,255,255,0.3)", margin:"6px 0 0" }}>
+              Quote {q.quoteNo ? `#${q.quoteNo}` : "—"} · Generated {fmtDate(q.createdAt)}
+            </p>
           </div>
-        )}
-
-        {/* BOOKING TERMS — Green tint */}
-        {q.bookingTerms?.length > 0 && (
-          <div className="qu8">
-            <PolCard title="Booking Terms" items={q.bookingTerms} bg="linear-gradient(135deg,#e8f5e9,#f3e5f5)" border="#a5d6a7" titleColor="#1b5e20" numColor="#43a047" txtColor="#2e7d32" />
-          </div>
-        )}
-
-        {/* NOTES */}
-        {q.notes && (
-          <div className="qu8" style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:16, padding:"16px 18px" }}>
-            <p style={{ fontSize:9, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 10px" }}>Notes</p>
-            <p style={{ fontSize:13, color:"#334155", lineHeight:1.8, margin:0, whiteSpace:"pre-line" }}>{q.notes}</p>
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, paddingTop:8 }}>
-          <div style={{ height:1, width:32, background:"#e2e8f0", borderRadius:1 }} />
-          <p style={{ fontSize:10, color:"#94a3b8", margin:0 }}>Copyright © Travelcrm. All rights reserved.</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ━━━ HELPERS ━━━ */
+function MiniDetail({ icon, label, val }) {
+  return (
+    <div>
+      <p style={{ fontSize:9, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".05em", margin:"0 0 3px" }}>{icon} {label}</p>
+      <p style={{ fontSize:13, fontWeight:700, color:"#0f172a", margin:0, wordBreak:"break-word", overflowWrap:"anywhere" }}>{val}</p>
+    </div>
+  );
+}
+function PLine({ label, val, green, bold }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+      <span style={{ fontSize:14, color: bold?"#0f172a":"#64748b", fontWeight: bold?700:500 }}>{label}</span>
+      <span style={{ fontSize:14, fontWeight:700, color: green ? "#16a34a" : "#0f172a" }}>{val}</span>
     </div>
   );
 }
@@ -758,27 +1205,4 @@ export default function QuotationWebView({ publicId }) {
 export function PublicQuotationPage() {
   const { publicId } = useParams();
   return <div className="min-h-screen"><QuotationWebView publicId={publicId} /></div>;
-}
-
-/* ━━━ LEGACY ALIASES — backward compatibility ━━━ */
-function Info({ label, value }) {
-  return (
-    <div>
-      <p style={{ fontSize:8, color:"rgba(255,255,255,0.35)", fontWeight:700, textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 2px" }}>{label}</p>
-      <p style={{ fontSize:12, fontWeight:700, color:"#fff", margin:0 }}>{value||"—"}</p>
-    </div>
-  );
-}
-function Row({ label, value }) { return <PRow label={label} val={value} />; }
-function Section({ title, amount, children }) {
-  return (
-    <GCard title={title} amount={amount} icon="•" grad="linear-gradient(135deg,#1565c0,#1e88e5)">
-      {children}
-    </GCard>
-  );
-}
-function ListCard({ title, items, tone }) {
-  return tone
-    ? <ListBox title={title} items={items} tone={tone} />
-    : <PolCard title={title} items={items} bg="#f8fafc" border="#e2e8f0" titleColor="#64748b" numColor="#94a3b8" txtColor="#475569" />;
 }
