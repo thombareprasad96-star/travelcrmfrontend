@@ -1,3 +1,4 @@
+
 // // src/components/Reports/BookingRevenueAnalysis.jsx
 // // ─────────────────────────────────────────────────────────────
 // // Booking Revenue Analysis Page — Travel CRM
@@ -34,28 +35,8 @@
 // } from "react-icons/fa";
 // import { MdOutlineBarChart, MdOutlineReceiptLong } from "react-icons/md";
 
-// // ── Uncomment when backend ready ─────────────────────────────
-// // import bookingRevenueService from "../services/bookingRevenueService";
-
-// /* ─── MOCK DATA ──────────────────────────────────────────────── */
-// const MOCK_BOOKINGS = [
-//   {
-//     id:1, code:"B000003",
-//     customer:"Naresh", customerDetail:"Naresh - Nepal Package for Nar...", customerPhone:"+91 96196 94784",
-//     customerAmount:108001.00, tcs:0.00, totalPayable:108001.00,
-//     paid:0.00, due:108001.00,
-//     vendorCost:0.00, netProfit:108001.00, netMargin:100.0,
-//     type:"Domestic", status:"Pending", travelDate:"Jun 12, 2026", createdDate:"Jun 26, 14",
-//   },
-//   {
-//     id:2, code:"B000002",
-//     customer:"Madhu Singh", customerDetail:"Madhu Singh - Nepal Package fo...", customerPhone:"9143223086",
-//     customerAmount:89000.10, tcs:0.00, totalPayable:89000.10,
-//     paid:0.00, due:89000.10,
-//     vendorCost:56000.00, netProfit:33000.10, netMargin:37.1,
-//     type:"Domestic", status:"Pending", travelDate:"Jun 09, 2026", createdDate:"Jun 14",
-//   },
-// ];
+// import bookingRevenueService from "../services/bookingRevenueService";
+// import { DEFAULT_START, DEFAULT_END } from "./dateDefaults";
 
 // const DATE_TYPES      = ["Booking Date","Travel Date","Created Date"];
 // const STATUS_OPTS     = ["All Statuses","Confirmed","Pending","Cancelled","Completed"];
@@ -147,8 +128,8 @@
 //   const navigate = useNavigate();
 
 //   /* filter state */
-//   const [startDate,    setStartDate]    = useState("2026-05-23");
-//   const [endDate,      setEndDate]      = useState("2026-06-22");
+//   const [startDate,    setStartDate]    = useState(DEFAULT_START);
+//   const [endDate,      setEndDate]      = useState(DEFAULT_END);
 //   const [dateType,     setDateType]     = useState("Booking Date");
 //   const [status,       setStatus]       = useState("All Statuses");
 //   const [paymentStatus,setPaymentStatus]= useState("All Payment Statuses");
@@ -159,7 +140,7 @@
 //   const [showEntries,  setShowEntries]  = useState("25");
 //   const [page,         setPage]         = useState(1);
 //   const [applied,      setApplied]      = useState({
-//     startDate:"2026-05-23", endDate:"2026-06-22",
+//     startDate:DEFAULT_START, endDate:DEFAULT_END,
 //     dateType:"Booking Date", status:"All Statuses",
 //     paymentStatus:"All Payment Statuses", minAmount:"", maxAmount:"",
 //   });
@@ -172,10 +153,25 @@
 //   const showToast = useCallback((msg,type="success")=>setToast({msg,type}),[]);
 
 //   useEffect(()=>{
+//     let alive = true;
 //     setLoading(true);
-//     // BACKEND: bookingRevenueService.getData(applied)
-//     setTimeout(()=>{ setBookings(MOCK_BOOKINGS); setLoading(false); },700);
-//   },[applied]);
+//     // Fetch all rows in range; search / status / amount filtering + totals + pagination stay client-side.
+//     bookingRevenueService.getBookings({
+//       startDate:     applied.startDate,
+//       endDate:       applied.endDate,
+//       dateType:      applied.dateType,
+//       status:        applied.status,
+//       paymentStatus: applied.paymentStatus,
+//       minAmount:     applied.minAmount,
+//       maxAmount:     applied.maxAmount,
+//       perPage:       1000,
+//       page:          1,
+//     })
+//       .then((res)=>{ if(alive) setBookings(res.data?.bookings || []); })
+//       .catch(()=>{ if(alive){ setBookings([]); showToast("Failed to load revenue data.", "error"); } })
+//       .finally(()=>{ if(alive) setLoading(false); });
+//     return ()=>{ alive = false; };
+//   },[applied, showToast]);
 
 //   /* apply / reset */
 //   const handleApply = () => {
@@ -183,30 +179,40 @@
 //     setPage(1); showToast("Filters applied.");
 //   };
 //   const handleReset = () => {
-//     setStartDate("2026-05-23"); setEndDate("2026-06-22");
+//     setStartDate(DEFAULT_START); setEndDate(DEFAULT_END);
 //     setDateType("Booking Date"); setStatus("All Statuses");
 //     setPaymentStatus("All Payment Statuses");
 //     setMinAmount(""); setMaxAmount("");
-//     setApplied({ startDate:"2026-05-23", endDate:"2026-06-22", dateType:"Booking Date",
+//     setApplied({ startDate:DEFAULT_START, endDate:DEFAULT_END, dateType:"Booking Date",
 //       status:"All Statuses", paymentStatus:"All Payment Statuses", minAmount:"", maxAmount:"" });
 //     setSearch(""); setPage(1); showToast("Filters reset.");
 //   };
 
-//   /* export CSV */
-//   const handleExportCSV = () => {
-//     const headers = ["Booking Code","Customer","Customer Amount","TCS","Total Payable","Paid","Due","Vendor Cost","Net Profit","Net Margin %","Type","Status","Travel Date"];
-//     const rows = filtered.map(b=>[
-//       b.code, b.customer, b.customerAmount, b.tcs, b.totalPayable,
-//       b.paid, b.due, b.vendorCost, b.netProfit, `${b.netMargin}%`,
-//       b.type, b.status, b.travelDate,
-//     ]);
-//     const csv = [headers,...rows].map(r=>r.join(",")).join("\n");
-//     const blob = new Blob([csv],{type:"text/csv"});
-//     const url  = URL.createObjectURL(blob);
-//     const a    = document.createElement("a"); a.href=url;
-//     a.download = `booking-revenue-${applied.startDate}-to-${applied.endDate}.csv`;
-//     a.click(); URL.revokeObjectURL(url);
-//     showToast("CSV exported successfully.");
+//   /* export CSV — server-side, honours the applied filters + search */
+//   const handleExportCSV = async () => {
+//     try {
+//       const res = await bookingRevenueService.exportCsv({
+//         startDate:     applied.startDate,
+//         endDate:       applied.endDate,
+//         dateType:      applied.dateType,
+//         status:        applied.status,
+//         paymentStatus: applied.paymentStatus,
+//         minAmount:     applied.minAmount,
+//         maxAmount:     applied.maxAmount,
+//         search,
+//       });
+//       const url = window.URL.createObjectURL(new Blob([res.data]));
+//       const a   = document.createElement("a");
+//       a.href    = url;
+//       a.download = `booking-revenue-${applied.startDate}-to-${applied.endDate}.csv`;
+//       document.body.appendChild(a);
+//       a.click();
+//       a.remove();
+//       window.URL.revokeObjectURL(url);
+//       showToast("CSV exported successfully.");
+//     } catch {
+//       showToast("Export failed. Try again.", "error");
+//     }
 //   };
 
 //   /* filtered */
@@ -557,7 +563,7 @@
 //                         const tc = TYPE_CFG[b.type]     || TYPE_CFG.Domestic;
 //                         const sc = STATUS_CFG[b.status] || STATUS_CFG.Pending;
 //                         return (
-//                           <tr key={b.id}
+//                           <tr key={b.publicId}
 //                             className="group hover:bg-blue-50/30 hover:shadow-[inset_3px_0_0_#16a34a] transition-all duration-150"
 //                             style={{animation:"fadeUp .35s ease both", animationDelay:`${idx*30}ms`}}>
 //                             {/* Booking Code */}
@@ -683,7 +689,7 @@
 //                 const tc = TYPE_CFG[b.type]     || TYPE_CFG.Domestic;
 //                 const sc = STATUS_CFG[b.status] || STATUS_CFG.Pending;
 //                 return (
-//                   <div key={b.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3 fade-up"
+//                   <div key={b.publicId} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3 fade-up"
 //                     style={{animationDelay:`${idx*40}ms`}}>
 //                     {/* Header */}
 //                     <div className="flex items-start justify-between">
@@ -783,6 +789,9 @@
 //   );
 // }
 
+
+
+
 // src/components/Reports/BookingRevenueAnalysis.jsx
 // ─────────────────────────────────────────────────────────────
 // Booking Revenue Analysis Page — Travel CRM
@@ -809,7 +818,7 @@ import {
   FiFilter, FiRefreshCw, FiDownload, FiArrowLeft,
   FiChevronDown, FiChevronUp, FiSearch,
   FiChevronLeft, FiChevronRight, FiEye, FiEdit2,
-  FiTrendingUp, FiAlertTriangle,
+  FiTrendingUp, FiAlertTriangle, FiX, FiPrinter,
 } from "react-icons/fi";
 import {
   FaRupeeSign, FaChartLine, FaPercentage,
@@ -819,8 +828,69 @@ import {
 } from "react-icons/fa";
 import { MdOutlineBarChart, MdOutlineReceiptLong } from "react-icons/md";
 
-import bookingRevenueService from "../services/bookingRevenueService";
-import { DEFAULT_START, DEFAULT_END } from "./dateDefaults";
+import bookingService from "../services/bookingService";
+
+/* ─── MOCK DATA ──────────────────────────────────────────────── */
+/* ─── DATA NORMALISATION ─────────────────────────────────────
+   Maps raw backend booking fields → the shape this page uses.
+   Matches BookingsPage.jsx normalizeBooking exactly.           */
+const titleCase = s => s ? s.charAt(0).toUpperCase()+s.slice(1).toLowerCase() : s;
+
+function normalizeBooking(b = {}) {
+  const customerAmount = Number(b.customerAmount) || 0;
+  const vendorCost     = Number(b.vendorCost)     || 0;
+  const tcs            = Number(b.tcs)            || 0;
+  const gst            = Number(b.gst)            || 0;
+  const totalPayable   = Number(b.totalPayable)   || 0;
+  const paid           = Number(b.paidAmount)     || 0;
+  const due            = Math.max(0, totalPayable - paid);
+  const netProfit      = Number(b.netProfit) || (customerAmount - vendorCost);
+  const netMargin      = customerAmount > 0
+    ? parseFloat(((netProfit / customerAmount) * 100).toFixed(1))
+    : 0;
+
+  /* Destination used as travel-type heuristic:
+     mark International if destination includes common intl prefixes.
+     Backend may return a travelType field — use that first.         */
+  const destination = b.destinationSnapshot || b.destination || "";
+  const intlKeywords = ["Nepal","Bhutan","Thailand","Dubai","Singapore",
+                        "Maldives","Sri Lanka","Vietnam","Bali","Europe",
+                        "Australia","USA","UK","Europe","International"];
+  const isIntl = b.travelType === "INTERNATIONAL" ||
+    intlKeywords.some(k => destination.toLowerCase().includes(k.toLowerCase()));
+
+  const status    = titleCase(b.status);
+  const payStatus = titleCase(b.paymentStatus);
+
+  // Format dates for display (backend sends ISO strings)
+  const fmtD = d => d ? new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "—";
+
+  return {
+    id:             b.publicId || String(b.id || ""),
+    numericId:      b.id,
+    code:           b.bookingCode || b.code || "—",
+    customer:       b.customerNameSnapshot || b.customerName || "—",
+    customerDetail: `${b.customerNameSnapshot || b.customerName || "—"} - ${destination}`,
+    customerPhone:  b.customerPhone || b.phone || "",
+    destination,
+    services:       Array.isArray(b.services) ? b.services : [],
+    bookingDate:    b.bookingDate,
+    travelDate:     b.travelDate,
+    createdDate:    fmtD(b.createdAt || b.bookingDate),
+    customerAmount,
+    vendorCost,
+    gst,
+    tcs,
+    totalPayable,
+    paid,
+    due,
+    netProfit,
+    netMargin,
+    type:           isIntl ? "International" : "Domestic",
+    status,
+    payStatus,
+  };
+}
 
 const DATE_TYPES      = ["Booking Date","Travel Date","Created Date"];
 const STATUS_OPTS     = ["All Statuses","Confirmed","Pending","Cancelled","Completed"];
@@ -908,12 +978,162 @@ const selectCls = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-wh
 const inputCls  = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 font-medium placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all hover:border-slate-300";
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
+
+/* ─── BOOKING VIEW MODAL ─────────────────────────────────────
+   Same look/feel as BookingsPage BookingModal.
+   Triggered by the 👁 View button on each row.
+   Edit button inside → navigate to /EditBooking/:id         */
+const STATUS_STYLE_M = {
+  Confirmed: "bg-green-100 text-green-700 border-green-200",
+  Pending:   "bg-amber-100 text-amber-700 border-amber-200",
+  Cancelled: "bg-red-100   text-red-600   border-red-200",
+  Completed: "bg-blue-100  text-blue-700  border-blue-200",
+  Refunded:  "bg-purple-100 text-purple-700 border-purple-200",
+};
+const STATUS_DOT_M = {
+  Confirmed: "bg-green-500", Pending:  "bg-amber-500",
+  Cancelled: "bg-red-500",   Completed:"bg-blue-500", Refunded:"bg-purple-500",
+};
+const PAY_STYLE_M = {
+  Paid:    "bg-emerald-100 text-emerald-700",
+  Partial: "bg-orange-100 text-orange-700",
+  Unpaid:  "bg-rose-100   text-rose-700",
+  Refunded:"bg-slate-100  text-slate-600",
+};
+
+function BookingViewModal({ booking, onClose, onEdit }) {
+  if (!booking) return null;
+  const payPct = booking.totalPayable > 0
+    ? Math.round((booking.paid / booking.totalPayable) * 100)
+    : 0;
+  const profit    = booking.netProfit ?? (booking.customerAmount - booking.vendorCost);
+  const payStatus = booking.payStatus || (payPct === 100 ? "Paid" : payPct > 0 ? "Partial" : "Unpaid");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}/>
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto z-10"
+        style={{animation:"popIn .25s ease both"}}>
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-500 px-6 py-5 rounded-t-3xl flex items-start justify-between">
+          <div>
+            <p className="text-blue-200 text-[10px] font-extrabold uppercase tracking-widest mb-1">Booking Detail</p>
+            <h2 className="text-white text-xl font-extrabold tracking-tight">{booking.code}</h2>
+            <p className="text-blue-100 text-sm mt-0.5 capitalize">{booking.customer}</p>
+            {booking.customerPhone && (
+              <p className="text-blue-200 text-xs mt-0.5">📞 {booking.customerPhone}</p>
+            )}
+          </div>
+          <button onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all flex-shrink-0">
+            <FiX className="w-4 h-4"/>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Status badges */}
+          <div className="flex flex-wrap gap-2">
+            <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border
+              ${STATUS_STYLE_M[booking.status] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_M[booking.status] || "bg-slate-400"}`}/>
+              {booking.status}
+            </span>
+            <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold
+              ${PAY_STYLE_M[payStatus] || "bg-slate-100 text-slate-600"}`}>
+              💳 {payStatus}
+            </span>
+            <span className={`px-2.5 py-1.5 rounded-full text-xs font-bold
+              ${booking.type === "International" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+              {booking.type === "International" ? "🌍" : "🏠"} {booking.type}
+            </span>
+          </div>
+
+          {/* Detail grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[
+              ["📅", "Travel Date",    booking.travelDate],
+              ["🗓️", "Created Date",   booking.createdDate],
+              ["👤", "Customer",       booking.customer],
+              ["💰", "Customer Amt",   fmt(booking.customerAmount)],
+              ["🏷️", "Vendor Cost",    fmt(booking.vendorCost)],
+              ["🧾", "TCS",            fmt(booking.tcs)],
+              ["💳", "Total Payable",  fmt(booking.totalPayable)],
+              ["✅", "Paid",           fmt(booking.paid)],
+              ["⏳", "Due",            fmt(booking.due)],
+            ].map(([icon, label, val]) => (
+              <div key={label} className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mb-1">{icon} {label}</p>
+                <p className="text-sm font-extrabold text-slate-700">{val || "—"}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Payment progress */}
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-extrabold text-slate-600">Payment Progress</p>
+              <p className={`text-sm font-extrabold ${payPct === 100 ? "text-green-600" : "text-blue-600"}`}>{payPct}%</p>
+            </div>
+            <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-700
+                ${payPct === 100
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                  : payPct > 0 ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                  : "bg-slate-300"}`}
+                style={{width:`${payPct}%`}}/>
+            </div>
+            <div className="flex justify-between text-xs font-medium text-slate-400">
+              <span>Paid: {fmt(booking.paid)}</span>
+              <span>Due: {fmt(booking.due)}</span>
+            </div>
+          </div>
+
+          {/* Net profit */}
+          <div className={`rounded-2xl p-4 border flex items-center gap-4
+            ${profit >= 0 ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl
+              ${profit >= 0 ? "bg-green-100" : "bg-red-100"}`}>
+              {profit >= 0 ? "📈" : "📉"}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-500">Net Profit / Margin</p>
+              <p className={`text-xl font-extrabold ${profit >= 0 ? "text-green-700" : "text-red-600"}`}>
+                {fmt(profit)}
+              </p>
+              {booking.netMargin != null && (
+                <p className="text-xs text-slate-400 mt-0.5">Margin: {booking.netMargin}%</p>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2.5 pt-1">
+            <button onClick={() => { onClose(); onEdit(booking); }}
+              className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-2xl
+                bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-700 hover:to-indigo-600
+                text-white text-sm font-bold shadow-md shadow-blue-200 transition-all">
+              <FiEdit2 className="w-4 h-4"/> Edit Booking
+            </button>
+            <button onClick={onClose}
+              className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-2xl
+                bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-bold transition-all">
+              <FiPrinter className="w-4 h-4"/> Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BookingRevenueAnalysis() {
   const navigate = useNavigate();
 
   /* filter state */
-  const [startDate,    setStartDate]    = useState(DEFAULT_START);
-  const [endDate,      setEndDate]      = useState(DEFAULT_END);
+  const [startDate,    setStartDate]    = useState("2026-05-23");
+  const [endDate,      setEndDate]      = useState("2026-06-22");
   const [dateType,     setDateType]     = useState("Booking Date");
   const [status,       setStatus]       = useState("All Statuses");
   const [paymentStatus,setPaymentStatus]= useState("All Payment Statuses");
@@ -924,7 +1144,7 @@ export default function BookingRevenueAnalysis() {
   const [showEntries,  setShowEntries]  = useState("25");
   const [page,         setPage]         = useState(1);
   const [applied,      setApplied]      = useState({
-    startDate:DEFAULT_START, endDate:DEFAULT_END,
+    startDate:"2026-05-23", endDate:"2026-06-22",
     dateType:"Booking Date", status:"All Statuses",
     paymentStatus:"All Payment Statuses", minAmount:"", maxAmount:"",
   });
@@ -933,29 +1153,33 @@ export default function BookingRevenueAnalysis() {
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
+  const [viewBooking, setViewBooking] = useState(null); // booking shown in View modal
 
   const showToast = useCallback((msg,type="success")=>setToast({msg,type}),[]);
 
-  useEffect(()=>{
-    let alive = true;
+  /* ── FETCH REAL DATA ──────────────────────────────────────── */
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
-    // Fetch all rows in range; search / status / amount filtering + totals + pagination stay client-side.
-    bookingRevenueService.getBookings({
-      startDate:     applied.startDate,
-      endDate:       applied.endDate,
-      dateType:      applied.dateType,
-      status:        applied.status,
-      paymentStatus: applied.paymentStatus,
-      minAmount:     applied.minAmount,
-      maxAmount:     applied.maxAmount,
-      perPage:       1000,
-      page:          1,
-    })
-      .then((res)=>{ if(alive) setBookings(res.data?.bookings || []); })
-      .catch(()=>{ if(alive){ setBookings([]); showToast("Failed to load revenue data.", "error"); } })
-      .finally(()=>{ if(alive) setLoading(false); });
-    return ()=>{ alive = false; };
-  },[applied, showToast]);
+    try {
+      const res  = await bookingService.getAll(0, 1000);
+      const body = res.data;
+      let raw = [];
+      if      (Array.isArray(body?.data))          raw = body.data;
+      else if (Array.isArray(body?.data?.content)) raw = body.data.content;
+      else if (Array.isArray(body?.content))       raw = body.content;
+      else if (Array.isArray(body))                raw = body;
+
+      setBookings(raw.map(normalizeBooking));
+    } catch (err) {
+      console.error("BookingRevenueAnalysis fetch error:", err);
+      showToast("Failed to load bookings. Please try again.", "error");
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
   /* apply / reset */
   const handleApply = () => {
@@ -963,40 +1187,30 @@ export default function BookingRevenueAnalysis() {
     setPage(1); showToast("Filters applied.");
   };
   const handleReset = () => {
-    setStartDate(DEFAULT_START); setEndDate(DEFAULT_END);
+    setStartDate("2026-05-23"); setEndDate("2026-06-22");
     setDateType("Booking Date"); setStatus("All Statuses");
     setPaymentStatus("All Payment Statuses");
     setMinAmount(""); setMaxAmount("");
-    setApplied({ startDate:DEFAULT_START, endDate:DEFAULT_END, dateType:"Booking Date",
+    setApplied({ startDate:"2026-05-23", endDate:"2026-06-22", dateType:"Booking Date",
       status:"All Statuses", paymentStatus:"All Payment Statuses", minAmount:"", maxAmount:"" });
     setSearch(""); setPage(1); showToast("Filters reset.");
   };
 
-  /* export CSV — server-side, honours the applied filters + search */
-  const handleExportCSV = async () => {
-    try {
-      const res = await bookingRevenueService.exportCsv({
-        startDate:     applied.startDate,
-        endDate:       applied.endDate,
-        dateType:      applied.dateType,
-        status:        applied.status,
-        paymentStatus: applied.paymentStatus,
-        minAmount:     applied.minAmount,
-        maxAmount:     applied.maxAmount,
-        search,
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const a   = document.createElement("a");
-      a.href    = url;
-      a.download = `booking-revenue-${applied.startDate}-to-${applied.endDate}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      showToast("CSV exported successfully.");
-    } catch {
-      showToast("Export failed. Try again.", "error");
-    }
+  /* export CSV */
+  const handleExportCSV = () => {
+    const headers = ["Booking Code","Customer","Customer Amount","TCS","Total Payable","Paid","Due","Vendor Cost","Net Profit","Net Margin %","Type","Status","Travel Date"];
+    const rows = filtered.map(b=>[
+      b.code, b.customer, b.customerAmount, b.tcs, b.totalPayable,
+      b.paid, b.due, b.vendorCost, b.netProfit, `${b.netMargin}%`,
+      b.type, b.status, b.travelDate,
+    ]);
+    const csv = [headers,...rows].map(r=>r.join(",")).join("\n");
+    const blob = new Blob([csv],{type:"text/csv"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a"); a.href=url;
+    a.download = `booking-revenue-${applied.startDate}-to-${applied.endDate}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast("CSV exported successfully.");
   };
 
   /* filtered */
@@ -1053,6 +1267,7 @@ export default function BookingRevenueAnalysis() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+        @keyframes popIn   { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         .fade-up { animation: fadeUp .4s ease both; }
         select { -webkit-appearance:none; appearance:none; }
@@ -1063,6 +1278,13 @@ export default function BookingRevenueAnalysis() {
       `}</style>
 
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+      {viewBooking && (
+        <BookingViewModal
+          booking={viewBooking}
+          onClose={()=>setViewBooking(null)}
+          onEdit={b=>navigate(`/EditBooking/${b.id}`)}
+        />
+      )}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -1080,14 +1302,14 @@ export default function BookingRevenueAnalysis() {
                   <span className="hidden sm:inline ml-3 text-xs">
                     <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={()=>navigate("/")}>Home</span>
                     <span className="mx-1 text-slate-300">/</span>
-                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={()=>navigate("/ReportsDashboard")}>Reports</span>
+                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={()=>navigate("/Reports")}>Reports</span>
                     <span className="mx-1 text-slate-300">/</span>
                     <span className="text-blue-600 font-bold">Revenue Analysis</span>
                   </span>
                 </p>
               </div>
             </div>
-            <button onClick={()=>navigate("/ReportsDashboard")}
+            <button onClick={fetchBookings}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200
                 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600
                 text-sm font-bold transition-all shadow-sm">
@@ -1347,7 +1569,7 @@ export default function BookingRevenueAnalysis() {
                         const tc = TYPE_CFG[b.type]     || TYPE_CFG.Domestic;
                         const sc = STATUS_CFG[b.status] || STATUS_CFG.Pending;
                         return (
-                          <tr key={b.publicId}
+                          <tr key={b.id}
                             className="group hover:bg-blue-50/30 hover:shadow-[inset_3px_0_0_#16a34a] transition-all duration-150"
                             style={{animation:"fadeUp .35s ease both", animationDelay:`${idx*30}ms`}}>
                             {/* Booking Code */}
@@ -1414,12 +1636,12 @@ export default function BookingRevenueAnalysis() {
                             {/* Actions */}
                             <td className="px-3 py-3.5">
                               <div className="flex flex-col gap-1.5">
-                                <button title="View Booking"
+                                <button onClick={()=>setViewBooking(b)} title="View Booking"
                                   className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600
                                     flex items-center justify-center transition-all">
                                   <FiEye className="w-3.5 h-3.5"/>
                                 </button>
-                                <button title="Edit Booking"
+                                <button onClick={()=>navigate(`/EditBooking/${b.id}`)} title="Edit Booking"
                                   className="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-600
                                     flex items-center justify-center transition-all">
                                   <FiEdit2 className="w-3.5 h-3.5"/>
@@ -1473,7 +1695,7 @@ export default function BookingRevenueAnalysis() {
                 const tc = TYPE_CFG[b.type]     || TYPE_CFG.Domestic;
                 const sc = STATUS_CFG[b.status] || STATUS_CFG.Pending;
                 return (
-                  <div key={b.publicId} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3 fade-up"
+                  <div key={b.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3 fade-up"
                     style={{animationDelay:`${idx*40}ms`}}>
                     {/* Header */}
                     <div className="flex items-start justify-between">
@@ -1514,10 +1736,12 @@ export default function BookingRevenueAnalysis() {
                         <p className="text-[11px] text-slate-400">Cr: {b.createdDate}</p>
                       </div>
                       <div className="flex gap-1.5">
-                        <button className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center">
+                        <button onClick={()=>setViewBooking(b)} title="View Booking"
+                          className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-600 flex items-center justify-center transition-all">
                           <FiEye className="w-3 h-3"/>
                         </button>
-                        <button className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
+                        <button onClick={()=>navigate(`/EditBooking/${b.id}`)} title="Edit Booking"
+                          className="w-7 h-7 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-600 flex items-center justify-center transition-all">
                           <FiEdit2 className="w-3 h-3"/>
                         </button>
                       </div>
