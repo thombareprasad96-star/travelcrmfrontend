@@ -1,31 +1,30 @@
-// import { useState } from "react";
+
+
+// import { useState, useEffect } from "react";
 // import {
 //   FiUser, FiPhone, FiMail, FiSearch, FiChevronDown,
-//   FiCalendar, FiUsers, FiTag, FiLayers, FiUserCheck
+//   FiCalendar, FiTag, FiLayers, FiUserCheck
 // } from "react-icons/fi";
+// import { leadService } from "../../../services/leadService";
 
 // const LEAD_SOURCES = [
 //   "Social Media", "Website", "Google Ads", "Facebook",
 //   "Instagram", "WhatsApp", "Referral", "Direct Call",
 // ];
-// const LEAD_TYPES = ["Fresh Lead", "Repeat Customer", "Corporate", "VIP"];
+// const LEAD_TYPES  = ["Fresh Lead", "Repeat Customer", "Corporate", "VIP"];
 // const LEAD_STAGES = [
 //   "New Lead", "Contacted", "Follow Up",
 //   "Qualified", "Proposal Sent", "Converted", "Lost",
 // ];
-// const ASSIGN_TO = [
-//   "Rajesh Kumar", "Priya Sharma", "Amit Patel",
-//   "Sunita Verma", "Vikram Singh",
-// ];
 
 // const stageColors = {
-//   "New Lead": "bg-blue-100 text-blue-700",
-//   "Contacted": "bg-yellow-100 text-yellow-700",
-//   "Follow Up": "bg-orange-100 text-orange-700",
-//   "Qualified": "bg-purple-100 text-purple-700",
+//   "New Lead":      "bg-blue-100   text-blue-700",
+//   "Contacted":     "bg-yellow-100 text-yellow-700",
+//   "Follow Up":     "bg-orange-100 text-orange-700",
+//   "Qualified":     "bg-purple-100 text-purple-700",
 //   "Proposal Sent": "bg-indigo-100 text-indigo-700",
-//   "Converted": "bg-green-100 text-green-700",
-//   "Lost": "bg-red-100 text-red-700",
+//   "Converted":     "bg-green-100  text-green-700",
+//   "Lost":          "bg-red-100    text-red-700",
 // };
 
 // function FieldWrapper({ label, required, icon: Icon, error, children }) {
@@ -47,17 +46,15 @@
 //   );
 // }
 
-// function InputField({ placeholder, type = "text", icon: Icon, error, ...props }) {
+// function InputField({ icon: Icon, error, ...props }) {
 //   return (
 //     <div className="relative">
 //       {Icon && (
-//         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+//         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
 //           <Icon className="w-4 h-4" />
 //         </div>
 //       )}
 //       <input
-//         type={type}
-//         placeholder={placeholder}
 //         className={`w-full ${Icon ? "pl-9" : "pl-3"} pr-3 py-2.5 rounded-xl border text-sm transition-all outline-none
 //           ${error
 //             ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
@@ -69,44 +66,44 @@
 //   );
 // }
 
-// function SelectField({ options, placeholder, icon: Icon, colorMap, ...props }) {
-//   return (
-//     <div className="relative">
-//       {Icon && (
-//         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-//           <Icon className="w-4 h-4" />
-//         </div>
-//       )}
-//       <select
-//         className={`w-full ${Icon ? "pl-9" : "pl-3"} pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700
-//           focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none transition-all cursor-pointer`}
-//         {...props}
-//       >
-//         <option value="">{placeholder}</option>
-//         {options.map((opt) => (
-//           <option key={opt} value={opt}>{opt}</option>
-//         ))}
-//       </select>
-//       <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-//     </div>
-//   );
-// }
-
 // export default function LeadInformation({
 //   register,
 //   errors,
 //   watch,
 //   setValue,
 //   onPhoneSearch,
-//   searching
+//   searching,
 // }) {
-//   const [searchPhone, setSearchPhone] = useState("");
+//   const [searchPhone,  setSearchPhone]  = useState("");
+//   const [users,        setUsers]        = useState([]);
+//   const [usersLoading, setUsersLoading] = useState(false);
+//   const [usersError,   setUsersError]   = useState(false);
+
+//   // ── Fetch users from backend for Assign To dropdown ──────
+//   useEffect(() => {
+//     const fetchUsers = async () => {
+//       setUsersLoading(true);
+//       setUsersError(false);
+//       try {
+//         const res  = await leadService.getUsers();
+//         const list = Array.isArray(res.data)
+//           ? res.data
+//           : Array.isArray(res.data?.data) ? res.data.data : [];
+//         setUsers(list);
+//       } catch {
+//         setUsersError(true);
+//         setUsers([]);
+//       } finally {
+//         setUsersLoading(false);
+//       }
+//     };
+//     fetchUsers();
+//   }, []);
 
 //   const handleSearch = async () => {
-//   if (!searchPhone.trim()) return;
-
-//   await onPhoneSearch(searchPhone);
-// };
+//     if (!searchPhone.trim()) return;
+//     await onPhoneSearch(searchPhone);
+//   };
 
 //   const selectedStage = watch("leadStage");
 
@@ -124,7 +121,8 @@
 //       </div>
 
 //       <div className="p-6 space-y-5">
-//         {/* Search */}
+
+//         {/* Phone Search */}
 //         <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
 //           <p className="text-xs font-semibold text-blue-700 mb-2.5 flex items-center gap-1.5">
 //             <FiSearch className="w-3.5 h-3.5" /> Search Existing Lead by Phone
@@ -133,23 +131,18 @@
 //             <input
 //               type="tel"
 //               value={searchPhone}
-//               onChange={(e) => setSearchPhone(e.target.value)}
+//               onChange={e => setSearchPhone(e.target.value)}
+//               onKeyDown={e => e.key === "Enter" && handleSearch()}
 //               placeholder="Enter phone number to search..."
-//               className="flex-1 px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-sm text-slate-700 placeholder-slate-400
-//                 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+//               className="flex-1 px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-sm text-slate-700
+//                 placeholder-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
 //             />
-//             <button
-//               type="button"
-//               onClick={handleSearch}
-//               disabled={searching}
+//             <button type="button" onClick={handleSearch} disabled={searching}
 //               className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold
-//                 transition-all flex items-center gap-2 disabled:opacity-60 shadow-sm"
-//             >
-//               {searching ? (
-//                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-//               ) : (
-//                 <FiSearch className="w-4 h-4" />
-//               )}
+//                 transition-all flex items-center gap-2 disabled:opacity-60 shadow-sm active:scale-95">
+//               {searching
+//                 ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+//                 : <FiSearch className="w-4 h-4" />}
 //               {searching ? "Searching..." : "Search"}
 //             </button>
 //           </div>
@@ -159,17 +152,17 @@
 //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //           <FieldWrapper label="Customer Name" required icon={FiUser} error={errors.customerName?.message}>
 //             <InputField
-//               placeholder="Enter customer name"
 //               icon={FiUser}
+//               placeholder="Enter customer name"
 //               error={errors.customerName}
 //               {...register("customerName", { required: "Customer name is required" })}
 //             />
 //           </FieldWrapper>
-//           <FieldWrapper label="Email Address" icon={FiMail}>
+//           <FieldWrapper label="Email Address" icon={FiMail} error={errors.email?.message}>
 //             <InputField
 //               type="email"
-//               placeholder="Enter email address"
 //               icon={FiMail}
+//               placeholder="Enter email address"
 //               {...register("email")}
 //             />
 //           </FieldWrapper>
@@ -179,8 +172,8 @@
 //         <FieldWrapper label="Phone Number" required icon={FiPhone} error={errors.phone?.message}>
 //           <InputField
 //             type="tel"
-//             placeholder="+91 98765 43210"
 //             icon={FiPhone}
+//             placeholder="+91 98765 43210"
 //             error={errors.phone}
 //             {...register("phone", {
 //               required: "Phone number is required",
@@ -189,34 +182,47 @@
 //           />
 //         </FieldWrapper>
 
-//         {/* Source + Type */}
+//         {/* Lead Source + Lead Type */}
 //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //           <FieldWrapper label="Lead Source" icon={FiTag}>
-//             <SelectField
-//               options={LEAD_SOURCES}
-//               placeholder="Select lead source"
-//               icon={FiTag}
-//               {...register("leadSource")}
-//             />
+//             <div className="relative">
+//               <FiTag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+//               <select
+//                 className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700
+//                   focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all"
+//                 {...register("leadSource")}
+//               >
+//                 <option value="">Select lead source</option>
+//                 {LEAD_SOURCES.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+//               </select>
+//               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+//             </div>
 //           </FieldWrapper>
+
 //           <FieldWrapper label="Lead Type" icon={FiLayers}>
-//             <SelectField
-//               options={LEAD_TYPES}
-//               placeholder="Select lead type"
-//               icon={FiLayers}
-//               {...register("leadType")}
-//             />
+//             <div className="relative">
+//               <FiLayers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+//               <select
+//                 className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700
+//                   focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all"
+//                 {...register("leadType")}
+//               >
+//                 <option value="">Select lead type</option>
+//                 {LEAD_TYPES.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+//               </select>
+//               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+//             </div>
 //           </FieldWrapper>
 //         </div>
 
-//         {/* Stage */}
+//         {/* Lead Stage — pill buttons */}
 //         <FieldWrapper label="Lead Stage" icon={FiLayers}>
 //           <div className="flex flex-wrap gap-2">
-//             {LEAD_STAGES.map((stage) => (
+//             {LEAD_STAGES.map(stage => (
 //               <button
 //                 key={stage}
 //                 type="button"
-//                 onClick={() => setValue("leadStage", stage)}
+//                 onClick={() => setValue("leadStage", stage, { shouldValidate: true })}
 //                 className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
 //                   ${selectedStage === stage
 //                     ? `${stageColors[stage]} border-current shadow-sm scale-105`
@@ -232,14 +238,52 @@
 
 //         {/* Assign To + Birth Date */}
 //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//           <FieldWrapper label="Assign To" icon={FiUserCheck}>
-//             <SelectField
-//               options={ASSIGN_TO}
-//               placeholder="Select team member"
-//               icon={FiUserCheck}
-//               {...register("assignTo")}
-//             />
+
+//           <FieldWrapper
+//             label="Assign To"
+//             required
+//             icon={FiUserCheck}
+//             error={errors.assignedUserId?.message}
+//           >
+//             <div className="relative">
+//               <FiUserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+//               <select
+//                 className={`w-full pl-9 pr-8 py-2.5 rounded-xl border bg-white text-sm text-slate-700
+//                   focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all
+//                   ${errors.assignedUserId ? "border-red-300 bg-red-50" : "border-slate-200"}
+//                   ${usersLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+//                 disabled={usersLoading}
+//                 {...register("assignedUserId", {
+//                   required: "Assigned user is required",
+//                 })}
+//               >
+//                 <option value="">
+//                   {usersLoading
+//                     ? "Loading users..."
+//                     : usersError
+//                     ? "Failed to load — retry"
+//                     : "Select team member"}
+//                 </option>
+//                 {users.map(user => (
+//                   <option
+//                     key={user.publicId || user.id}
+//                     value={user.publicId || user.id}
+//                   >
+//                     {user.fullName || user.name || user.username}
+//                   </option>
+//                 ))}
+//               </select>
+//               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+//             </div>
+//             {/* Error state retry hint */}
+//             {usersError && (
+//               <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+//                 <span className="w-1 h-1 rounded-full bg-amber-500 inline-block" />
+//                 Could not load team members. Check your connection.
+//               </p>
+//             )}
 //           </FieldWrapper>
+
 //           <FieldWrapper label="Birth Date" icon={FiCalendar}>
 //             <InputField
 //               type="date"
@@ -248,6 +292,7 @@
 //             />
 //           </FieldWrapper>
 //         </div>
+
 //       </div>
 //     </div>
 //   );
@@ -255,13 +300,10 @@
 
 
 
-
-
-
 import { useState, useEffect } from "react";
 import {
   FiUser, FiPhone, FiMail, FiSearch, FiChevronDown,
-  FiCalendar, FiTag, FiLayers, FiUserCheck
+  FiCalendar, FiTag, FiLayers, FiUserCheck, FiDollarSign
 } from "react-icons/fi";
 import { leadService } from "../../../services/leadService";
 
@@ -426,19 +468,37 @@ export default function LeadInformation({
           </FieldWrapper>
         </div>
 
-        {/* Phone */}
-        <FieldWrapper label="Phone Number" required icon={FiPhone} error={errors.phone?.message}>
-          <InputField
-            type="tel"
-            icon={FiPhone}
-            placeholder="+91 98765 43210"
-            error={errors.phone}
-            {...register("phone", {
-              required: "Phone number is required",
-              pattern: { value: /^[+\d\s\-()]{7,15}$/, message: "Enter a valid phone number" },
-            })}
-          />
-        </FieldWrapper>
+        {/* Phone + Budget */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FieldWrapper label="Phone Number" required icon={FiPhone} error={errors.phone?.message}>
+            <InputField
+              type="tel"
+              icon={FiPhone}
+              placeholder="+91 98765 43210"
+              error={errors.phone}
+              {...register("phone", {
+                required: "Phone number is required",
+                pattern: { value: /^[+\d\s\-()]{7,15}$/, message: "Enter a valid phone number" },
+              })}
+            />
+          </FieldWrapper>
+
+          {/* ── NEW: Budget field ── */}
+          <FieldWrapper label="Budget (₹)" icon={FiDollarSign} error={errors.budget?.message}>
+            <InputField
+              type="number"
+              min={0}
+              step="1000"
+              icon={FiDollarSign}
+              placeholder="e.g. 150000"
+              error={errors.budget}
+              {...register("budget", {
+                min: { value: 0, message: "Budget cannot be negative" },
+                valueAsNumber: true,
+              })}
+            />
+          </FieldWrapper>
+        </div>
 
         {/* Lead Source + Lead Type */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
