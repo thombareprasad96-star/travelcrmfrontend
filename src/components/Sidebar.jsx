@@ -1261,7 +1261,7 @@ const Sidebar = ({ isExpanded }) => {
           
           <li>
             <Link 
-              to="/" 
+              to="/Dashboard" 
               onClick={() => handleLinkClick('Dashboard')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Dashboard' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'

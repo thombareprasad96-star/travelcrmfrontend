@@ -255,6 +255,7 @@ import EditVendor from "./vendors/EditVendor";
 import EditCustomer from "./customers/EditCustomer";
 import EditLead from "./admin/leads/EditLead";
 import EditBooking from "./bookings/EditBooking";
+import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
 
 import { isSuperAdmin, hasPermission, P } from "./services/access";
 
@@ -358,6 +359,7 @@ const App = () => {
           <Route path="/EditCustomer/:id" element={<EditCustomer />}/>
           <Route path="/EditLead/:id" element={<EditLead />}/>
           <Route path="/EditBooking/:id" element={<EditBooking />}/>
+          <Route path="/WhatsAppPanel" element={<WhatsAppPanel/>}/>
         </Route>
  
       </Routes>
