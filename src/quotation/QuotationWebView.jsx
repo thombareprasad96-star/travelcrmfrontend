@@ -1,4 +1,10 @@
 
+
+
+
+
+
+
 // import { useEffect, useState } from "react";
 // import { useParams } from "react-router-dom";
 
@@ -162,6 +168,8 @@
 
 //         /* ─── RESPONSIVE (mobile / tablet) ─── */
 //         @media (max-width: 640px) {
+//           /* Hotel/Vehicle 2-col grid → 1 col on mobile */
+//           .qgrid2 { grid-template-columns: 1fr !important; }
 //           /* Activity row: image upar, text neeche (stack) */
 //           .qact-row { flex-direction: column !important; gap: 12px !important; }
 //           .qact-img { width: 100% !important; }
@@ -361,7 +369,7 @@
 //       {q.hotel?.included && q.hotel?.hotels?.length > 0 && (
 //         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
 //           <SectionTitle sub="Handpicked stays for your comfort">Where You'll Stay</SectionTitle>
-//           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 300px),1fr))", gap:24 }}>
+//           <div className="qgrid2" style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:24 }}>
 //             {q.hotel.hotels.map((h, i) => {
 //               const img = hotelImg(h);
 //               return (
@@ -409,7 +417,7 @@
 //       {q.vehicle?.included && q.vehicle?.vehicles?.length > 0 && (
 //         <div style={{ maxWidth:1040, margin:"0 auto", padding:"64px 24px 0" }}>
 //           <SectionTitle sub="Travel in comfort and style">Your Transport</SectionTitle>
-//           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 300px),1fr))", gap:24 }}>
+//           <div className="qgrid2" style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:24 }}>
 //             {q.vehicle.vehicles.map((v, i) => {
 //               const img = vehImg(v);
 //               return (
@@ -747,18 +755,45 @@ export default function QuotationWebView({ publicId }) {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes qspin{to{transform:rotate(360deg)}}
         @keyframes qfade{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes qfadeUp{from{opacity:0;transform:translateY(40px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes qfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes qfloat2{0%,100%{transform:translate(0,0)}33%{transform:translate(10px,-12px)}66%{transform:translate(-8px,8px)}}
         @keyframes qshine{0%{background-position:-200% center}100%{background-position:200% center}}
-        @keyframes qpulse{0%,100%{opacity:1}50%{opacity:.5}}
-        .qfade{animation:qfade .6s ease both}
-        .qcard{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease}
-        .qcard:hover{transform:translateY(-6px)}
-        .qimg{transition:transform .5s ease}
-        .qimg-wrap:hover .qimg{transform:scale(1.06)}
-        .qbtn{transition:transform .2s ease,box-shadow .2s ease}
-        .qbtn:hover{transform:translateY(-2px)}
-        .qsvc{transition:transform .3s ease,box-shadow .3s ease}
-        .qsvc:hover{transform:translateY(-4px) scale(1.02)}
+        @keyframes qpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.15)}}
+        @keyframes qdrive{0%{left:-100px}100%{left:calc(100% + 20px)}}
+        @keyframes qspinwheel{to{transform:rotate(360deg)}}
+        @keyframes qroadmove{0%{transform:translateX(0)}100%{transform:translateX(-52px)}}
+        .qcar{animation:qdrive 9s linear infinite}
+        .qwheel{transform-box:fill-box;transform-origin:center;animation:qspinwheel .6s linear infinite}
+        .qroad{animation:qroadmove 1.2s linear infinite}
+        @media (prefers-reduced-motion:reduce){
+          .qcar{animation-duration:0s;left:20px}
+          .qwheel,.qroad{animation:none}
+        }
+        @keyframes qshimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+        @keyframes qglow{0%,100%{box-shadow:0 20px 60px rgba(99,102,241,0.4)}50%{box-shadow:0 24px 72px rgba(139,92,246,0.55)}}
+        @keyframes qborder{0%,100%{border-color:rgba(99,102,241,0.3)}50%{border-color:rgba(139,92,246,0.6)}}
+        @keyframes qrise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+        .qfade{animation:qfadeUp .7s cubic-bezier(.16,1,.3,1) both}
+        .qcard{transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s ease,border-color .3s ease;will-change:transform;position:relative}
+        .qcard:hover{transform:translateY(-8px)}
+        .qcard::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:0 30px 60px rgba(99,102,241,0);transition:box-shadow .4s ease;pointer-events:none}
+        .qcard:hover::after{box-shadow:0 30px 70px rgba(99,102,241,0.18)}
+        .qimg{transition:transform .6s cubic-bezier(.16,1,.3,1)}
+        .qimg-wrap{position:relative}
+        .qimg-wrap:hover .qimg{transform:scale(1.08)}
+        .qbtn{transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s ease;position:relative;overflow:hidden}
+        .qbtn:hover{transform:translateY(-3px)}
+        .qbtn:active{transform:translateY(-1px) scale(.98)}
+        .qbtn::before{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent);transform:translateX(-150%);transition:none}
+        .qbtn:hover::before{animation:qshimmer .8s ease}
+        .qsvc{transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s ease,border-color .3s ease}
+        .qsvc:hover{transform:translateY(-6px) scale(1.03)}
+        .qglass{backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%)}
+        .qglow{animation:qglow 4s ease-in-out infinite}
+        .qmini{transition:transform .25s ease}
+        .qmini:hover{transform:translateX(2px)}
         * { box-sizing:border-box; }
 
         /* ─── OVERFLOW FIX — no horizontal scroll on mobile ─── */
@@ -767,7 +802,13 @@ export default function QuotationWebView({ publicId }) {
         p, h1, h2, h3, span { overflow-wrap: break-word; word-break: break-word; }
 
         /* ─── RESPONSIVE (mobile / tablet) ─── */
+        @media (max-width: 900px) {
+          /* Hero cards: 4 → 2 per row on tablet */
+          .qherogrid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
         @media (max-width: 640px) {
+          /* Hero cards: 2 per row on mobile */
+          .qherogrid { grid-template-columns: repeat(2, 1fr) !important; }
           /* Hotel/Vehicle 2-col grid → 1 col on mobile */
           .qgrid2 { grid-template-columns: 1fr !important; }
           /* Activity row: image upar, text neeche (stack) */
@@ -780,7 +821,9 @@ export default function QuotationWebView({ publicId }) {
           /* Cards ka andar ka padding thoda kam */
           .qpad { padding: 20px !important; }
         }
-        @media (max-width: 420px) {
+        @media (max-width: 440px) {
+          /* Hero cards: 1 per row on small mobile */
+          .qherogrid { grid-template-columns: 1fr !important; }
           .qact-img img { height: 170px !important; }
         }
       `}</style>
@@ -794,6 +837,69 @@ export default function QuotationWebView({ publicId }) {
         {q.coverImageUrl && (
           <img src={q.coverImageUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", opacity:.12 }} />
         )}
+
+        {/* ── Airplane orbit — tilted ellipse (45°): upar jaate waqt dikhe, wapas "under" se invisible ── */}
+        <div style={{ position:"absolute", inset:0, overflow:"hidden", pointerEvents:"none", zIndex:0 }}>
+          <svg width="100%" height="100%" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice" style={{ position:"absolute", inset:0 }}>
+            <defs>
+              {/* contrail gradient — plane ke peeche fading trail */}
+              <linearGradient id="qtrail" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#fff" stopOpacity="0"/>
+                <stop offset="1" stopColor="#fff" stopOpacity="0.55"/>
+              </linearGradient>
+            </defs>
+            {/* The airplane — tilted-ellipse orbit, auto-rotates with path */}
+            <g className="qplaneG">
+              {/* contrail (rotate=auto ke saath hamesha plane ke peeche rahega) */}
+              <rect x="-98" y="-2.5" width="74" height="4" rx="2" fill="url(#qtrail)"/>
+              <rect x="-78" y="5" width="52" height="2.5" rx="1.5" fill="url(#qtrail)" opacity="0.6"/>
+              <g transform="translate(-26,-26)">
+                <svg width="52" height="52" viewBox="0 0 92 92" fill="none">
+                  <path d="M78 46 C78 46 70 42 60 41 L48 20 C46.5 17 44 17 43 20 L45 39 L26 37 L18 26 C16.5 24 14 24 14 27 L17 40 C13 42 9 45 9 46 C9 47 13 50 17 52 L14 65 C14 68 16.5 68 18 66 L26 55 L45 53 L43 72 C44 75 46.5 75 48 72 L60 51 C70 50 78 46 78 46 Z" fill="#fff" opacity="0.97"/>
+                  <path d="M48 20 C46.5 17 44 17 43 20 L45 39 L54 40 L48 20 Z" fill="#dbe4ff"/>
+                  <path d="M43 72 C44 75 46.5 75 48 72 L54 53 L45 53 L43 72 Z" fill="#dbe4ff"/>
+                  <circle cx="58" cy="45" r="1.6" fill="#93a4d4"/>
+                  <circle cx="63" cy="45" r="1.6" fill="#93a4d4"/>
+                  <circle cx="68" cy="45.5" r="1.6" fill="#93a4d4"/>
+                  <circle cx="74" cy="46" r="2.4" fill="#fbbf24"/>
+                  <path d="M17 40 L14 27 C14 24 16.5 24 18 26 L23 34 Z" fill="#ef4444" opacity="0.9"/>
+                </svg>
+              </g>
+              {/* Tilted ellipse path: bottom-left (140,360) → top-right (1060,60) → wapas */}
+              <animateMotion dur="22s" repeatCount="indefinite" rotate="auto"
+                path="M 140 360 A 490 60 -18 0 1 1060 60 A 490 60 -18 0 1 140 360" />
+              {/* Forward (bottom→top): visible · Return (under side): invisible */}
+              <animate attributeName="opacity" dur="22s" repeatCount="indefinite"
+                values="1;1;0;0;1" keyTimes="0;0.46;0.53;0.93;1" />
+            </g>
+          </svg>
+        </div>
+
+        {/* ── Animated car driving across (TravelCRM signature) ── */}
+        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:70, overflow:"hidden", pointerEvents:"none", zIndex:0 }}>
+          {/* Road line with moving dashes */}
+          <div style={{ position:"absolute", bottom:18, left:0, right:0, height:2, background:"rgba(255,255,255,0.12)" }} />
+          <div className="qroad" style={{ position:"absolute", bottom:17, left:0, width:"200%", height:3, backgroundImage:"repeating-linear-gradient(90deg,rgba(251,191,36,0.5) 0 24px,transparent 24px 52px)" }} />
+          {/* The car */}
+          <div className="qcar" style={{ position:"absolute", bottom:14 }}>
+            <svg width="88" height="40" viewBox="0 0 88 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              {/* headlight glow */}
+              <ellipse cx="84" cy="22" rx="10" ry="4" fill="rgba(255,240,180,0.35)" />
+              {/* body */}
+              <path d="M6 26 L12 26 C13 20 16 15 24 14 L40 13 C46 13 50 15 55 19 L72 21 C78 22 82 24 82 27 L82 30 C82 31 81 32 80 32 L8 32 C7 32 6 31 6 30 Z" fill="#6366f1"/>
+              <path d="M24 14 L40 13 C46 13 50 15 55 19 L44 19 L38 15 L26 15 Z" fill="#818cf8"/>
+              {/* windows */}
+              <path d="M27 15 L37 15 L42 19 L27 19 Z" fill="#c7d2fe" opacity="0.9"/>
+              {/* headlight */}
+              <circle cx="81" cy="24" r="2" fill="#fde68a"/>
+              {/* wheels */}
+              <circle className="qwheel" cx="24" cy="32" r="6" fill="#1e293b" stroke="#475569" strokeWidth="1.5"/>
+              <circle cx="24" cy="32" r="2" fill="#94a3b8"/>
+              <circle className="qwheel" cx="64" cy="32" r="6" fill="#1e293b" stroke="#475569" strokeWidth="1.5"/>
+              <circle cx="64" cy="32" r="2" fill="#94a3b8"/>
+            </svg>
+          </div>
+        </div>
         <div style={{ maxWidth:1040, margin:"0 auto", padding:"56px 24px 48px", position:"relative", zIndex:1 }}>
           {/* Badge */}
           <div className="qfade" style={{ textAlign:"center", marginBottom:20 }}>
@@ -814,7 +920,7 @@ export default function QuotationWebView({ publicId }) {
           <p className="qfade" style={{ textAlign:"center", fontSize:"clamp(17px,3vw,24px)", fontWeight:700, color:"rgba(255,255,255,0.92)", margin:"0 0 40px" }}>{q.title || "Travel Package"}</p>
 
           {/* Info grid — glassmorphism cards */}
-          <div className="qfade" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap:12 }}>
+          <div className="qfade qherogrid" style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:12 }}>
             {[
               ["Traveler", c.name || "—", "👤"],
               ["Travel Date", fmtDate(c.travelDate), "📅"],
@@ -825,7 +931,7 @@ export default function QuotationWebView({ publicId }) {
               ["Destinations", destStr || "—", "📍"],
               ["Prepared By", preparedBy || "—", "✍️"],
             ].map(([label, val, icon], i) => (
-              <div key={i} style={{ background:"rgba(255,255,255,0.07)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:14, padding:"16px 16px" }}>
+              <div key={i} className="qglass qmini" style={{ background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.14)", borderRadius:14, padding:"16px 16px", transition:"background .3s ease,border-color .3s ease" }}>
                 <div style={{ fontSize:16, marginBottom:8, opacity:.9 }}>{icon}</div>
                 <p style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.45)", textTransform:"uppercase", letterSpacing:".1em", margin:"0 0 4px" }}>{label}</p>
                 <p style={{ fontSize:13, fontWeight:700, color:"#fff", margin:0, lineHeight:1.3, wordBreak:"break-word" }}>{val}</p>
@@ -834,7 +940,8 @@ export default function QuotationWebView({ publicId }) {
           </div>
 
           {/* Price card — premium */}
-          <div className="qfade" style={{ marginTop:32, background:"linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", borderRadius:24, padding:"36px 28px", textAlign:"center", position:"relative", overflow:"hidden", boxShadow:"0 20px 60px rgba(99,102,241,0.4)" }}>
+          <div className="qfade qglow" style={{ marginTop:32, background:"linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)", borderRadius:24, padding:"36px 28px", textAlign:"center", position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", top:0, left:0, width:"60%", height:"100%", background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent)", animation:"qshimmer 5s ease infinite", pointerEvents:"none" }} />
             <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.1)" }} />
             <div style={{ position:"absolute", bottom:-50, left:-30, width:140, height:140, borderRadius:"50%", border:"2px solid rgba(255,255,255,0.08)" }} />
             <p style={{ fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.8)", textTransform:"uppercase", letterSpacing:".18em", margin:"0 0 10px", position:"relative" }}>Total Package Price</p>
