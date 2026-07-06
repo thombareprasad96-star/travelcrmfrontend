@@ -452,11 +452,11 @@ function daysAgo(d)  { const dt = new Date(); dt.setDate(dt.getDate() - d); retu
 
 
 const CATEGORY_CFG = {
-  Reminder_alert: { label:"Reminder Alert", icon:<FiClock className="w-4 h-4"/>,             bg:"bg-blue-100",   text:"text-blue-700",   iconBg:"bg-blue-500"   },
-  Escalation:     { label:"Escalation",     icon:<FaExclamationCircle className="w-4 h-4"/>, bg:"bg-red-100",    text:"text-red-700",    iconBg:"bg-red-500"    },
-  Payment:        { label:"Payment",        icon:<FaMoneyBillWave className="w-4 h-4"/>,     bg:"bg-green-100",  text:"text-green-700",  iconBg:"bg-green-500"  },
-  Document:       { label:"Document",       icon:<FaPassport className="w-4 h-4"/>,          bg:"bg-amber-100",  text:"text-amber-700",  iconBg:"bg-amber-500"  },
-  System:         { label:"System",         icon:<FiBell className="w-4 h-4"/>,              bg:"bg-slate-100",  text:"text-slate-600",  iconBg:"bg-slate-500"  },
+  Reminder_alert: { label:"Reminder Alert", icon:<FiClock className="w-4 h-4"/>,             bg:"bg-blue-100",   text:"text-blue-700",   iconBg:"bg-blue-500",   grad:"from-blue-500 to-indigo-500",     accent:"bg-blue-500",   glow:"shadow-blue-200/60"   },
+  Escalation:     { label:"Escalation",     icon:<FaExclamationCircle className="w-4 h-4"/>, bg:"bg-red-100",    text:"text-red-700",    iconBg:"bg-red-500",    grad:"from-red-500 to-rose-500",        accent:"bg-red-500",    glow:"shadow-red-200/60"    },
+  Payment:        { label:"Payment",        icon:<FaMoneyBillWave className="w-4 h-4"/>,     bg:"bg-green-100",  text:"text-green-700",  iconBg:"bg-green-500",  grad:"from-emerald-500 to-green-500",   accent:"bg-emerald-500",glow:"shadow-emerald-200/60"},
+  Document:       { label:"Document",       icon:<FaPassport className="w-4 h-4"/>,          bg:"bg-amber-100",  text:"text-amber-700",  iconBg:"bg-amber-500",  grad:"from-amber-500 to-orange-500",    accent:"bg-amber-500",  glow:"shadow-amber-200/60"  },
+  System:         { label:"System",         icon:<FiBell className="w-4 h-4"/>,              bg:"bg-slate-100",  text:"text-slate-600",  iconBg:"bg-slate-500",  grad:"from-slate-500 to-slate-600",     accent:"bg-slate-400",  glow:"shadow-slate-200/60"  },
 };
 
 const FILTERS = ["All Notifications", "Unread", "Reminder Alerts", "Escalations"];
@@ -579,12 +579,90 @@ function NotificationRow({ item, onMarkRead, onDelete, onNavigate, idx }) {
   );
 }
 
+/* ─── NOTIFICATION CARD (grid view) ──────────────────────────── */
+function NotificationCard({ item, onMarkRead, onDelete, onNavigate, idx }) {
+  const cfg = CATEGORY_CFG[item.category] || CATEGORY_CFG.System;
+
+  return (
+    <div
+      className={`group relative flex flex-col rounded-2xl border bg-white overflow-hidden cursor-pointer
+        transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-xl ${cfg.glow}
+        ${!item.isRead ? "border-slate-200 ring-1 ring-blue-100" : "border-slate-200/70 hover:border-slate-300"}`}
+      style={{ animation: "fadeUp .35s ease both", animationDelay: `${idx * 40}ms` }}
+      onClick={() => onNavigate(item)}
+    >
+      {/* Left category accent bar */}
+      <span className={`absolute left-0 top-0 bottom-0 w-1 ${cfg.accent}`} />
+
+      {/* Soft decorative blob */}
+      <div className={`absolute -right-8 -top-8 w-28 h-28 rounded-full bg-gradient-to-br ${cfg.grad} opacity-[0.07] group-hover:opacity-[0.12] group-hover:scale-110 transition-all duration-500`} />
+
+      <div className="relative p-5 pl-6 flex flex-col flex-1">
+        {/* Top row: gradient icon + time / unread */}
+        <div className="flex items-start justify-between gap-2 mb-3.5">
+          <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${cfg.grad} flex items-center justify-center text-white flex-shrink-0 shadow-md ${cfg.glow} group-hover:scale-105 transition-transform duration-300`}>
+            {cfg.icon}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {!item.isRead && (
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500" />
+              </span>
+            )}
+            <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap">{timeAgo(item.createdAt)}</span>
+          </div>
+        </div>
+
+        {/* Title + message */}
+        <h3 className={`text-[15px] leading-snug tracking-tight ${!item.isRead ? "font-extrabold text-slate-800" : "font-bold text-slate-600"}`}>
+          {item.title}
+        </h3>
+        <p className="text-[13px] text-slate-500 mt-1.5 leading-relaxed line-clamp-3 flex-1">{item.message}</p>
+
+        {/* Badges */}
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
+          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
+            {cfg.icon} {cfg.label}
+          </span>
+          {item.isEscalated && (
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-700 flex items-center gap-1">
+              <FiAlertTriangle className="w-3 h-3" /> Escalated
+            </span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-2 mt-4 pt-3.5 border-t border-slate-100"
+          onClick={(e) => e.stopPropagation()}>
+          <span className={`text-[11px] font-bold ${!item.isRead ? "text-blue-600" : "text-slate-300"}`}>
+            {!item.isRead ? "● Unread" : "Read"}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {!item.isRead && (
+              <button onClick={() => onMarkRead(item.id)} title="Mark as read"
+                className="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-500 text-green-600 hover:text-white flex items-center justify-center text-sm transition-all duration-200 hover:shadow-md hover:shadow-green-200">
+                <FiCheck />
+              </button>
+            )}
+            <button onClick={() => onDelete(item)} title="Delete"
+              className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-500 text-red-400 hover:text-white flex items-center justify-center text-sm transition-all duration-200 hover:shadow-md hover:shadow-red-200">
+              <FiTrash2 />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function Notifications() {
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState([]);
   const [filter,   setFilter]   = useState("All Notifications");
+  const [view,     setView]     = useState("list");   // "grid" | "list"
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
   const [delItem,  setDelItem]  = useState(null);
@@ -793,6 +871,17 @@ export default function Notifications() {
                 className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-600 font-semibold transition-colors px-2">
                 <FiRefreshCw className="w-3.5 h-3.5" />
               </button>
+
+              {/* Grid / List view toggle */}
+              <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1">
+                {["grid", "list"].map(v => (
+                  <button key={v} onClick={() => setView(v)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                      ${view === v ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                    {v === "grid" ? "⊞ Grid" : "☰ List"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -827,11 +916,25 @@ export default function Notifications() {
             </div>
           )}
 
-          {/* ── LIST ── */}
-          {!loading && filtered.length > 0 && (
+          {/* ── LIST VIEW ── */}
+          {!loading && filtered.length > 0 && view === "list" && (
             <div className="divide-y divide-slate-50">
               {filtered.map((item, idx) => (
                 <NotificationRow
+                  key={item.id} item={item} idx={idx}
+                  onMarkRead={handleMarkRead}
+                  onDelete={setDelItem}
+                  onNavigate={handleNavigate}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ── GRID VIEW ── */}
+          {!loading && filtered.length > 0 && view === "grid" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 p-4 sm:p-5">
+              {filtered.map((item, idx) => (
+                <NotificationCard
                   key={item.id} item={item} idx={idx}
                   onMarkRead={handleMarkRead}
                   onDelete={setDelItem}

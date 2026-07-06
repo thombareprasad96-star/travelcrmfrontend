@@ -162,9 +162,8 @@
 
 
 import {
-  FiUser, FiCalendar, FiUsers, FiMapPin, FiGrid, FiCheckCircle
+  FiUser, FiCalendar, FiUsers, FiMapPin, FiGrid, FiCheckCircle, FiDollarSign
 } from "react-icons/fi";
-import { FaRupeeSign } from "react-icons/fa";
 import { MdHotel, MdFlight, MdDirectionsBoat, MdLocationOn, MdDirectionsCar, MdSecurity, MdCardTravel, MdVisibility } from "react-icons/md";
 
 const SERVICE_ICONS = {
@@ -180,7 +179,7 @@ const SERVICE_LABELS = {
 };
 
 const fmtINR = (n) =>
-  n == null || n === "" || Number.isNaN(Number(n)) ? null : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+  n == null || n === "" ? null : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
 function SummaryRow({ icon: Icon, label, value, accent = false }) {
   if (!value) return null;
@@ -288,7 +287,7 @@ export default function LeadSummary({ watch, selectedServices, itinerary }) {
               <SummaryRow icon={FiCalendar} label="Travel Date" value={travelDate || "—"} />
               <SummaryRow icon={FiUsers} label="Travellers" value={travellers || `${rooms} Room(s)`} />
               {/* ── NEW: Budget row in live preview ── */}
-              <SummaryRow icon={FaRupeeSign} label="Budget" value={fmtINR(budget)} accent />
+              <SummaryRow icon={FiDollarSign} label="Budget" value={fmtINR(budget)} accent />
               {completedDestinations > 0 && (
                 <SummaryRow
                   icon={FiMapPin}

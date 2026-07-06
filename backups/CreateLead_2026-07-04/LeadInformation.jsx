@@ -303,9 +303,8 @@
 import { useState, useEffect } from "react";
 import {
   FiUser, FiPhone, FiMail, FiSearch, FiChevronDown,
-  FiCalendar, FiTag, FiLayers, FiUserCheck
+  FiCalendar, FiTag, FiLayers, FiUserCheck, FiDollarSign
 } from "react-icons/fi";
-import { FaRupeeSign } from "react-icons/fa";
 import { leadService } from "../../../services/leadService";
 
 const LEAD_SOURCES = [
@@ -485,12 +484,12 @@ export default function LeadInformation({
           </FieldWrapper>
 
           {/* ── NEW: Budget field ── */}
-          <FieldWrapper label="Budget (₹)" icon={FaRupeeSign} error={errors.budget?.message}>
+          <FieldWrapper label="Budget (₹)" icon={FiDollarSign} error={errors.budget?.message}>
             <InputField
               type="number"
               min={0}
               step="1000"
-              icon={FaRupeeSign}
+              icon={FiDollarSign}
               placeholder="e.g. 150000"
               error={errors.budget}
               {...register("budget", {
