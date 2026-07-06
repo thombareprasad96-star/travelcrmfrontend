@@ -3,7 +3,7 @@
 // import React, { useState, useEffect, useRef } from 'react';
 // import { Search, Plus, Eye, Edit, Trash2, Car, UploadCloud, Image as ImageIcon, X, AlertTriangle } from 'lucide-react';
 // import { Link } from 'react-router-dom';
-// import { vehicleService, normalizeVehicleList, transformVehicleResponse } from '../services/VehicleService';
+// import { vehicleService, normalizeVehicleList, transformVehicleResponse, uploadImageToCloudinary } from '../services/VehicleService';
 
 // /* ─────────────────────────────────────────────
 //    🌟 CUSTOM TAILWIND TOAST SYSTEM
@@ -37,9 +37,9 @@
 
 // // ── Fallback seed data (used when API is unavailable) ──────
 // const SEED_DATA = [
-//   { publicId: 'seed-1', name: 'Toyota Innova Crysta', type: 'SUV',    capacity: 7,  image: null, description: 'Premium 7-seater SUV for long tours.',            createdAt: '2026-06-01' },
-//   { publicId: 'seed-2', name: 'Volvo 9400 Sleeper',   type: 'Bus',    capacity: 40, image: null, description: 'Luxury sleeper bus for intercity travel.',         createdAt: '2026-06-05' },
-//   { publicId: 'seed-3', name: 'Mercedes S-Class',     type: 'Sedan',  capacity: 4,  image: null, description: 'Ultra-luxury sedan for VIP clients.',             createdAt: '2026-06-08' },
+//   { id: 1, name: 'Toyota Innova Crysta', type: 'SUV',    capacity: 7,  image: null, description: 'Premium 7-seater SUV for long tours.',            createdAt: '2026-06-01' },
+//   { id: 2, name: 'Volvo 9400 Sleeper',   type: 'Bus',    capacity: 40, image: null, description: 'Luxury sleeper bus for intercity travel.',         createdAt: '2026-06-05' },
+//   { id: 3, name: 'Mercedes S-Class',     type: 'Sedan',  capacity: 4,  image: null, description: 'Ultra-luxury sedan for VIP clients.',             createdAt: '2026-06-08' },
 // ];
 
 // const EMPTY_FORM = { name: '', type: '', capacity: '', image: null, imagePreview: null, imagePath: null, description: '' };
@@ -83,7 +83,9 @@
 //     try {
 //       const response = await vehicleService.getAllVehicles();
 //       // normalizeVehicleList handles both array and wrapped { data: [] } responses
-//       const list = normalizeVehicleList(response.data);
+//       // Backend: { success, data: [...] } ya { success, data: { content: [...] } }
+//       const raw  = response.data?.data ?? response.data;
+//       const list = normalizeVehicleList(raw);
 //       setVehicles(list.length > 0 ? list : SEED_DATA);
 //     } catch (error) {
 //       console.warn("API unavailable, using seed data.", error);
@@ -108,7 +110,7 @@
 //     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
 //   };
 
-//   // ── 2. Image upload — calls backend immediately on file select ──
+//   // ── 2. Image upload — direct browser → Cloudinary ──────────
 //   const handleImageUpload = async (e) => {
 //     const file = e.target.files[0];
 //     if (!file) return;
@@ -118,29 +120,33 @@
 //       return;
 //     }
 
-//     // Show local preview instantly
+//     // Local preview turant dikho
 //     const reader = new FileReader();
 //     reader.onload = (ev) => {
 //       setFormData(prev => ({ ...prev, imagePreview: ev.target.result }));
 //     };
 //     reader.readAsDataURL(file);
 
-//     // Upload to backend
+//     // Cloudinary pe upload karo — backend pe nahi
 //     setImageUploading(true);
 //     try {
-//       const res = await vehicleService.uploadVehicleImage(file);
-//       // Backend returns { imagePath: "https://..." } — store it for save
-//       const imagePath = res.data?.imagePath || res.data?.url || res.data?.path || null;
+//       const secureUrl = await uploadImageToCloudinary(file, (percent) => {
+//         // Optional: progress track kar sakte ho
+//         console.log(`Upload progress: ${percent}%`);
+//       });
+
+//       // secureUrl = "https://res.cloudinary.com/..."
 //       setFormData(prev => ({
 //         ...prev,
-//         image:     imagePath || file.name,
-//         imagePath: imagePath,
+//         image:        secureUrl,
+//         imagePreview: secureUrl,
+//         imagePath:    secureUrl, // yahi backend ko jayega
 //       }));
 //       setErrors(prev => ({ ...prev, image: null }));
 //     } catch (err) {
-//       // Upload failed — keep local preview but show warning
-//       setFormData(prev => ({ ...prev, image: file.name, imagePath: null }));
-//       setErrors(prev => ({ ...prev, image: 'Image upload failed. File saved locally only.' }));
+//       console.error("Cloudinary upload failed:", err);
+//       setFormData(prev => ({ ...prev, image: null, imagePath: null }));
+//       setErrors(prev => ({ ...prev, image: err.message || 'Image upload failed. Try again.' }));
 //     } finally {
 //       setImageUploading(false);
 //     }
@@ -179,16 +185,18 @@
 
 //     try {
 //       if (editingVehicle) {
-//         // UPDATE — backend identifies the vehicle by publicId (UUID)
-//         const res = await vehicleService.updateVehicle(editingVehicle.publicId, formData);
-//         // ApiResponse wraps the DTO under .data
-//         const updated = res.data?.data ?? { ...editingVehicle, ...formData };
-//         setVehicles(prev => prev.map(v => v.publicId === editingVehicle.publicId ? { ...v, ...updated } : v));
+//         // UPDATE — publicId use karo (UUID), id nahi
+//         const pid = editingVehicle.publicId || editingVehicle.id;
+//         const res = await vehicleService.updateVehicle(pid, formData);
+//         const updated = res.data?.data ?? res.data ?? { ...editingVehicle, ...formData };
+//         setVehicles(prev => prev.map(v =>
+//           (v.publicId || v.id) === pid ? { ...v, ...updated } : v
+//         ));
 //         toast.success("Vehicle updated successfully!");
 //       } else {
 //         // CREATE
 //         const res = await vehicleService.createVehicle(formData);
-//         const created = res.data?.data ?? { ...formData, createdAt: new Date().toISOString().slice(0, 10) };
+//         const created = res.data?.data ?? res.data ?? { ...formData, publicId: Date.now().toString(), createdAt: new Date().toISOString().slice(0, 10) };
 //         setVehicles(prev => [created, ...prev]);
 //         toast.success("Vehicle created successfully!");
 //       }
@@ -207,8 +215,9 @@
 //     if (!deletingVehicle) return;
 //     setActionLoading(true);
 //     try {
-//       await vehicleService.deleteVehicle(deletingVehicle.publicId);
-//       setVehicles(prev => prev.filter(v => v.publicId !== deletingVehicle.publicId));
+//       const dpid = deletingVehicle.publicId || deletingVehicle.id;
+//       await vehicleService.deleteVehicle(dpid);
+//       setVehicles(prev => prev.filter(v => (v.publicId || v.id) !== dpid));
 //       toast.success("Vehicle deleted successfully!");
 //       setShowDeleteModal(false);
 //     } catch (error) {
@@ -318,9 +327,9 @@
 //                   </td>
 //                 </tr>
 //               ) : (
-//                 filteredVehicles.map((vehicle, idx) => (
-//                   <tr key={vehicle.publicId} className="hover:bg-slate-50/70 transition-colors group">
-//                     <td className="px-6 py-4 font-semibold text-slate-500">#{idx + 1}</td>
+//                 filteredVehicles.map(vehicle => (
+//                   <tr key={vehicle.publicId || vehicle.id} className="hover:bg-slate-50/70 transition-colors group">
+//                     <td className="px-6 py-4 font-semibold text-slate-500">#{vehicle.id}</td>
 //                     <td className="px-6 py-4">
 //                       {vehicle.imagePreview || vehicle.image || vehicle.imagePath ? (
 //                         <img
@@ -547,15 +556,8 @@
 
 
 
-
-
-
-
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Eye, Edit, Trash2, Car, UploadCloud, Image as ImageIcon, X, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Eye, Edit, Trash2, Car, UploadCloud, Image as ImageIcon, X, AlertTriangle, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { vehicleService, normalizeVehicleList, transformVehicleResponse, uploadImageToCloudinary } from '../services/VehicleService';
 
@@ -787,196 +789,283 @@ export default function VehicleMaster() {
   // RENDER
   // =========================================================================
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans p-4 sm:p-6 lg:p-8">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 p-4 sm:p-6 lg:p-8"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+      `}</style>
 
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-sm">
-            <Car size={24} strokeWidth={2.5} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight m-0">Vehicle Master</h1>
-            <p className="text-sm text-slate-500 mt-0.5 m-0 font-medium">Manage your transport fleet</p>
-          </div>
-        </div>
-        <div className="text-sm font-medium flex items-center gap-2">
-          <Link to="/" className="text-blue-600 hover:text-blue-800 transition-colors">Home</Link>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-500">Masters</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded-md shadow-sm">Vehicle</span>
-        </div>
-      </div>
+      <div className="max-w-screen-2xl mx-auto">
 
-      {/* MAIN CARD */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-
-        {/* Filters & Actions */}
-        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            <div className="relative min-w-[280px]">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Search size={16} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search vehicles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 shadow-sm"
-              />
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-blue-600 to-blue-400 text-white rounded-2xl shadow-lg shadow-blue-500/25">
+              <Car size={24} strokeWidth={2.5} />
             </div>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full sm:w-[200px] px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 shadow-sm cursor-pointer"
-            >
-              <option value="">All Vehicle Types</option>
-              <option value="Sedan">Sedan</option>
-              <option value="SUV">SUV</option>
-              <option value="Bus">Bus</option>
-              <option value="Tempo Traveller">Tempo Traveller</option>
-            </select>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight m-0">Vehicle Master</h1>
+              <p className="text-sm text-slate-500 mt-0.5 m-0 font-medium">Manage your transport fleet</p>
+            </div>
           </div>
-          <button
-            onClick={() => openModal()}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/20 active:scale-95 whitespace-nowrap w-full sm:w-auto"
-          >
-            <Plus size={18} strokeWidth={2.5} /> Add New Vehicle
-          </button>
+          <div className="text-sm font-medium flex items-center gap-2 flex-wrap">
+            <Link to="/" className="text-blue-600 hover:text-blue-800 transition-colors">Home</Link>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-500">Masters</span>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-700 bg-white/80 backdrop-blur border border-slate-200 px-3 py-1 rounded-lg shadow-sm">Vehicle</span>
+          </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left border-collapse text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-4 font-bold text-slate-700">ID</th>
-                <th className="px-6 py-4 font-bold text-slate-700">Image</th>
-                <th className="px-6 py-4 font-bold text-slate-700">Vehicle Name</th>
-                <th className="px-6 py-4 font-bold text-slate-700">Vehicle Type</th>
-                <th className="px-6 py-4 font-bold text-slate-700">Capacity</th>
-                <th className="px-6 py-4 font-bold text-slate-700">Created At</th>
-                <th className="px-6 py-4 font-bold text-slate-700 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                // Loading skeleton rows
-                [1,2,3].map(i => (
-                  <tr key={i}>
-                    {[1,2,3,4,5,6,7].map(j => (
-                      <td key={j} className="px-6 py-4">
-                        <div className="h-4 bg-slate-100 rounded animate-pulse" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : filteredVehicles.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="text-center py-12 text-slate-400">
-                    <Car size={48} className="mx-auto mb-3 opacity-20" />
-                    <p className="text-base font-medium">No vehicles found.</p>
-                  </td>
+        {/* MAIN CARD */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+          {/* Filters & Actions */}
+          <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 w-full lg:w-auto">
+              <div className="relative w-full sm:flex-1 sm:min-w-[260px] sm:max-w-sm">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Search size={16} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search vehicles..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 shadow-sm hover:border-blue-300"
+                />
+              </div>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full sm:w-[200px] px-4 py-2.5 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 shadow-sm cursor-pointer hover:border-blue-300"
+              >
+                <option value="">All Vehicle Types</option>
+                <option value="Sedan">Sedan</option>
+                <option value="SUV">SUV</option>
+                <option value="Bus">Bus</option>
+                <option value="Tempo Traveller">Tempo Traveller</option>
+              </select>
+            </div>
+            <button
+              onClick={() => openModal()}
+              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/25 hover:shadow-lg active:scale-95 whitespace-nowrap w-full lg:w-auto"
+            >
+              <Plus size={18} strokeWidth={2.5} /> Add New Vehicle
+            </button>
+          </div>
+
+          {/* ─────────── DESKTOP TABLE (md and up) ─────────── */}
+          <div className="hidden md:block overflow-x-auto custom-scrollbar">
+            <table className="w-full min-w-[900px] text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-[12px] uppercase tracking-wider font-bold border-b border-slate-200">
+                  <th className="px-6 py-4 text-left">ID</th>
+                  <th className="px-6 py-4 text-left">Image</th>
+                  <th className="px-6 py-4 text-left">Vehicle Name</th>
+                  <th className="px-6 py-4 text-left">Vehicle Type</th>
+                  <th className="px-6 py-4 text-left">Capacity</th>
+                  <th className="px-6 py-4 text-left">Created At</th>
+                  <th className="px-6 py-4 text-center">Actions</th>
                 </tr>
-              ) : (
-                filteredVehicles.map(vehicle => (
-                  <tr key={vehicle.publicId || vehicle.id} className="hover:bg-slate-50/70 transition-colors group">
-                    <td className="px-6 py-4 font-semibold text-slate-500">#{vehicle.id}</td>
-                    <td className="px-6 py-4">
-                      {vehicle.imagePreview || vehicle.image || vehicle.imagePath ? (
-                        <img
-                          src={vehicle.imagePreview || vehicle.imagePath || vehicle.image}
-                          alt={vehicle.name}
-                          className="w-16 h-10 object-cover rounded-lg border border-slate-200 shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-16 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 text-slate-400">
-                          <ImageIcon size={18} />
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white/60">
+                {loading ? (
+                  // Loading skeleton rows
+                  [1,2,3].map(i => (
+                    <tr key={i}>
+                      {[1,2,3,4,5,6,7].map(j => (
+                        <td key={j} className="px-6 py-4">
+                          <div className="h-4 bg-slate-100 rounded animate-pulse" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : filteredVehicles.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="text-center py-16">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                          <Car size={28} className="text-slate-300" />
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-900">{vehicle.name}</td>
-                    <td className="px-6 py-4">
-                      <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-md text-[11px] font-extrabold uppercase tracking-wider">{vehicle.type}</span>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-slate-700">
-                      {vehicle.capacity ? `${vehicle.capacity} Persons` : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 font-medium">{vehicle.createdAt}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => { setViewingVehicle(vehicle); setShowViewModal(true); }}
-                          className="p-2 bg-teal-50 text-teal-600 hover:bg-teal-500 hover:text-white rounded-lg transition-colors"
-                        ><Eye size={16} /></button>
-                        <button
-                          onClick={() => openModal(vehicle)}
-                          className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors"
-                        ><Edit size={16} /></button>
-                        <button
-                          onClick={() => { setDeletingVehicle(vehicle); setShowDeleteModal(true); }}
-                          className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg transition-colors"
-                        ><Trash2 size={16} /></button>
+                        <p className="text-slate-500 font-semibold">No vehicles found</p>
+                        <p className="text-slate-400 text-sm mt-0.5">Try a different search, or add a new vehicle.</p>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredVehicles.map(vehicle => (
+                    <tr key={vehicle.publicId || vehicle.id} className="hover:bg-blue-50/40 transition-colors group">
+                      <td className="px-6 py-4 font-semibold text-slate-500">#{vehicle.id}</td>
+                      <td className="px-6 py-4">
+                        {vehicle.imagePreview || vehicle.image || vehicle.imagePath ? (
+                          <img
+                            src={vehicle.imagePreview || vehicle.imagePath || vehicle.image}
+                            alt={vehicle.name}
+                            className="w-16 h-10 object-cover rounded-lg border border-slate-200 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-16 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 text-slate-400">
+                            <ImageIcon size={18} />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-900">{vehicle.name}</td>
+                      <td className="px-6 py-4">
+                        <span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-md text-[11px] font-extrabold uppercase tracking-wider border border-sky-200">{vehicle.type}</span>
+                      </td>
+                      <td className="px-6 py-4 font-medium text-slate-700">
+                        {vehicle.capacity ? `${vehicle.capacity} Persons` : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 font-medium">{vehicle.createdAt}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => { setViewingVehicle(vehicle); setShowViewModal(true); }}
+                            className="p-2 bg-teal-50 text-teal-600 hover:bg-teal-500 hover:text-white rounded-lg transition-colors shadow-sm"
+                          ><Eye size={16} /></button>
+                          <button
+                            onClick={() => openModal(vehicle)}
+                            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors shadow-sm"
+                          ><Edit size={16} /></button>
+                          <button
+                            onClick={() => { setDeletingVehicle(vehicle); setShowDeleteModal(true); }}
+                            className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg transition-colors shadow-sm"
+                          ><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ─────────── MOBILE CARDS (below md) ─────────── */}
+          <div className="md:hidden">
+            {loading ? (
+              <div className="divide-y divide-slate-100">
+                {[1,2,3].map(i => (
+                  <div key={i} className="p-4 flex items-start gap-3">
+                    <div className="w-20 h-16 rounded-xl bg-slate-100 animate-pulse flex-shrink-0" />
+                    <div className="flex-1 space-y-2 pt-1">
+                      <div className="h-4 bg-slate-100 rounded animate-pulse w-2/3" />
+                      <div className="h-3 bg-slate-100 rounded animate-pulse w-1/2" />
+                      <div className="h-3 bg-slate-100 rounded animate-pulse w-1/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredVehicles.length === 0 ? (
+              <div className="px-4 py-16 text-center flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                  <Car size={28} className="text-slate-300" />
+                </div>
+                <p className="text-slate-500 font-semibold">No vehicles found</p>
+                <p className="text-slate-400 text-sm mt-0.5">Try a different search, or add a new vehicle.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {filteredVehicles.map(vehicle => {
+                  const img = vehicle.imagePreview || vehicle.imagePath || vehicle.image;
+                  return (
+                    <div key={vehicle.publicId || vehicle.id} className="p-4 hover:bg-blue-50/30 transition-colors animate-in fade-in duration-300">
+                      <div className="flex items-start gap-3">
+                        <div className="w-20 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-sm">
+                          {img ? <img src={img} alt={vehicle.name} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-slate-300" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-bold text-slate-900 truncate leading-tight">{vehicle.name}</h3>
+                            <span className="flex-shrink-0 bg-sky-100 text-sky-700 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide border border-sky-200">{vehicle.type}</span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2 flex-wrap">
+                            {vehicle.capacity ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-medium"><Users size={12} className="text-slate-400" /> {vehicle.capacity} Persons</span>
+                            ) : null}
+                            <span className="text-[11px] text-slate-400 font-medium">{vehicle.createdAt}</span>
+                            <span className="text-[10px] font-mono text-slate-300">#{vehicle.id}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100">
+                        <button
+                          onClick={() => { setViewingVehicle(vehicle); setShowViewModal(true); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-500 hover:text-white text-xs font-bold transition-colors active:scale-95"
+                        ><Eye size={14} /> View</button>
+                        <button
+                          onClick={() => openModal(vehicle)}
+                          className="flex items-center justify-center w-11 py-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors active:scale-95"
+                        ><Edit size={14} /></button>
+                        <button
+                          onClick={() => { setDeletingVehicle(vehicle); setShowDeleteModal(true); }}
+                          className="flex items-center justify-center w-11 py-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition-colors active:scale-95"
+                        ><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ── CREATE / EDIT MODAL ─────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 overflow-y-auto custom-scrollbar">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => !actionLoading && setShowModal(false)} />
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onClick={() => !actionLoading && setShowModal(false)} />
 
-          <div className="relative bg-white w-full max-w-6xl shadow-2xl mt-4 sm:mt-10 mb-10 rounded-2xl overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white w-full max-w-4xl shadow-2xl mt-4 sm:mt-10 mb-10 rounded-2xl overflow-hidden border border-slate-200/60 animate-in zoom-in-95 duration-200">
 
-            <div className="bg-blue-600 px-8 py-5 flex justify-between items-center text-white">
-              <h2 className="text-lg font-bold flex items-center gap-2.5 m-0">
-                <Car size={22} /> {editingVehicle ? 'Edit Vehicle Details' : 'Create New Vehicle'}
-              </h2>
-              <button onClick={() => !actionLoading && setShowModal(false)} className="text-white hover:bg-white/20 p-2 rounded-full transition-colors"><X size={20} /></button>
+            {/* Modal Header — clean white with icon chip */}
+            <div className="bg-white px-5 sm:px-8 py-5 flex justify-between items-center border-b border-slate-100 gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl flex-shrink-0"><Car size={22} strokeWidth={2.5} /></div>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight truncate m-0">{editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}</h2>
+                  <p className="text-slate-500 text-xs sm:text-sm font-medium truncate m-0">Enter the details for this vehicle.</p>
+                </div>
+              </div>
+              <button onClick={() => !actionLoading && setShowModal(false)} className="text-slate-400 hover:bg-slate-100 hover:text-slate-600 p-2.5 rounded-full transition-colors active:scale-95 flex-shrink-0"><X size={20} strokeWidth={2.5} /></button>
             </div>
 
             <form onSubmit={handleSave}>
-              <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-10 bg-slate-50/50">
+              <div className="p-5 sm:p-8 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 bg-[#fcfdff]">
 
                 {/* Left Column */}
                 <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Vehicle Name <span className="text-rose-500">*</span></label>
+                  <div className="group">
+                    <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Vehicle Name <span className="text-rose-500">*</span></label>
                     <input type="text" name="name" placeholder="e.g. Toyota Innova" value={formData.name} onChange={handleInputChange}
-                      className={`w-full px-4 py-3 rounded-xl border ${errors.name ? 'border-rose-500 focus:ring-rose-500/20' : 'border-slate-200 focus:ring-blue-500/20'} bg-white text-sm focus:outline-none focus:ring-4 focus:border-blue-500 transition-all`}
+                      className={`w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm ${errors.name ? 'border-rose-400' : 'border-slate-200'}`}
                     />
-                    {errors.name && <p className="text-rose-500 text-xs mt-1.5 font-medium">{errors.name}</p>}
+                    {errors.name && <p className="text-rose-600 text-xs mt-1.5 font-semibold flex items-center gap-1"><AlertTriangle size={12} />{errors.name}</p>}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Vehicle Type <span className="text-rose-500">*</span></label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="group">
+                      <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Vehicle Type <span className="text-rose-500">*</span></label>
                       <input type="text" name="type" placeholder="e.g. SUV, Bus" value={formData.type} onChange={handleInputChange}
-                        className={`w-full px-4 py-3 rounded-xl border ${errors.type ? 'border-rose-500 focus:ring-rose-500/20' : 'border-slate-200 focus:ring-blue-500/20'} bg-white text-sm focus:outline-none focus:ring-4 focus:border-blue-500 transition-all`}
+                        className={`w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm ${errors.type ? 'border-rose-400' : 'border-slate-200'}`}
                       />
-                      {errors.type && <p className="text-rose-500 text-xs mt-1.5 font-medium">{errors.type}</p>}
+                      {errors.type && <p className="text-rose-600 text-xs mt-1.5 font-semibold flex items-center gap-1"><AlertTriangle size={12} />{errors.type}</p>}
                     </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2">Capacity (Persons)</label>
+                    <div className="group">
+                      <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Capacity (Persons)</label>
                       <input type="number" name="capacity" placeholder="e.g. 7" min="1" value={formData.capacity} onChange={handleInputChange}
-                        className={`w-full px-4 py-3 rounded-xl border ${errors.capacity ? 'border-rose-500 focus:ring-rose-500/20' : 'border-slate-200 focus:ring-blue-500/20'} bg-white text-sm focus:outline-none focus:ring-4 focus:border-blue-500 transition-all`}
+                        className={`w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm ${errors.capacity ? 'border-rose-400' : 'border-slate-200'}`}
                       />
-                      {errors.capacity && <p className="text-rose-500 text-xs mt-1.5 font-medium">{errors.capacity}</p>}
+                      {errors.capacity && <p className="text-rose-600 text-xs mt-1.5 font-semibold flex items-center gap-1"><AlertTriangle size={12} />{errors.capacity}</p>}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+                  <div className="group">
+                    <label className="block text-sm font-bold text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">Description</label>
                     <textarea name="description" rows="5" placeholder="Brief description about the vehicle's features..." value={formData.description} onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
+                      className="w-full px-4 py-3 bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none shadow-sm"
                     />
                   </div>
                 </div>
@@ -988,7 +1077,7 @@ export default function VehicleMaster() {
                     {imageUploading && <span className="ml-2 text-blue-500 font-normal text-xs animate-pulse">Uploading...</span>}
                   </label>
                   <div
-                    className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all ${errors.image ? 'border-rose-400 bg-rose-50' : imageUploading ? 'border-blue-300 bg-blue-50' : 'border-slate-300 bg-white hover:bg-slate-50 cursor-pointer'}`}
+                    className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all ${errors.image ? 'border-rose-400 bg-rose-50' : imageUploading ? 'border-blue-300 bg-blue-50' : 'border-slate-300 bg-slate-50/50 hover:bg-slate-100/60 cursor-pointer'}`}
                     onClick={() => !imageUploading && fileInputRef.current?.click()}
                   >
                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -999,7 +1088,7 @@ export default function VehicleMaster() {
                         <p className="text-sm text-blue-600 font-medium">Uploading image...</p>
                       </div>
                     ) : !formData.imagePreview && !formData.image ? (
-                      <div className="py-10">
+                      <div className="py-8 sm:py-10">
                         <UploadCloud size={48} className="mx-auto text-blue-500 mb-4" />
                         <h4 className="text-base font-bold text-slate-800 mb-1">Click to upload image</h4>
                         <p className="text-sm text-slate-500 font-medium m-0">PNG, JPG up to 5MB</p>
@@ -1015,17 +1104,17 @@ export default function VehicleMaster() {
                       </div>
                     )}
                   </div>
-                  {errors.image && <p className="text-rose-500 text-xs mt-2 font-medium text-center">{errors.image}</p>}
+                  {errors.image && <p className="text-rose-600 text-xs mt-2 font-semibold text-center flex items-center justify-center gap-1"><AlertTriangle size={12} />{errors.image}</p>}
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div className="bg-white px-8 py-5 border-t border-slate-200 flex justify-end gap-3 rounded-b-2xl">
+              <div className="bg-slate-50 px-5 sm:px-8 py-4 sm:py-5 border-t border-slate-200 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onClick={() => setShowModal(false)} disabled={actionLoading}
-                  className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
+                  className="px-5 sm:px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-all shadow-sm active:scale-95 disabled:opacity-50"
                 >Cancel</button>
                 <button type="submit" disabled={actionLoading || imageUploading}
-                  className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/20"
+                  className="px-6 sm:px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 active:scale-95 disabled:cursor-not-allowed"
                 >
                   {actionLoading ? 'Saving...' : editingVehicle ? 'Update Vehicle' : 'Save Vehicle'}
                 </button>
@@ -1039,10 +1128,10 @@ export default function VehicleMaster() {
       {showViewModal && viewingVehicle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
-          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto custom-scrollbar">
 
             {viewingVehicle.imagePreview || viewingVehicle.imagePath || viewingVehicle.image ? (
-              <div className="w-full h-64 bg-slate-900 relative">
+              <div className="w-full h-56 sm:h-64 bg-slate-900 relative">
                 <img
                   src={viewingVehicle.imagePreview || viewingVehicle.imagePath || viewingVehicle.image}
                   alt={viewingVehicle.name}
@@ -1057,19 +1146,19 @@ export default function VehicleMaster() {
               </div>
             )}
 
-            <div className="p-8">
+            <div className="p-6 sm:p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-4">{viewingVehicle.name}</h2>
-              <div className="flex gap-3 mb-6">
-                <span className="bg-sky-100 text-sky-700 px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider">{viewingVehicle.type}</span>
-                {viewingVehicle.capacity && <span className="bg-slate-100 text-slate-700 px-4 py-1.5 rounded-lg text-sm font-bold">{viewingVehicle.capacity} Persons</span>}
+              <div className="flex gap-3 mb-6 flex-wrap">
+                <span className="bg-sky-100 text-sky-700 px-4 py-1.5 rounded-lg text-sm font-bold uppercase tracking-wider border border-sky-200">{viewingVehicle.type}</span>
+                {viewingVehicle.capacity && <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 px-4 py-1.5 rounded-lg text-sm font-bold"><Users size={14} /> {viewingVehicle.capacity} Persons</span>}
               </div>
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</h4>
                 <p className="text-slate-700 bg-slate-50 p-4 rounded-xl text-sm leading-relaxed border border-slate-100 m-0">{viewingVehicle.description || 'No description provided.'}</p>
               </div>
             </div>
-            <div className="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setShowViewModal(false)} className="px-6 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-100">Close</button>
+            <div className="px-6 sm:px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowViewModal(false)} className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all active:scale-95">Close</button>
             </div>
           </div>
         </div>
@@ -1079,7 +1168,7 @@ export default function VehicleMaster() {
       {showDeleteModal && deletingVehicle && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !actionLoading && setShowDeleteModal(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 text-center animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 text-center animate-in zoom-in-95 duration-200">
             <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5">
               <AlertTriangle size={32} className="text-rose-600" />
             </div>
@@ -1089,10 +1178,10 @@ export default function VehicleMaster() {
             </p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setShowDeleteModal(false)} disabled={actionLoading}
-                className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all w-full"
+                className="px-6 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all active:scale-95 w-full disabled:opacity-50"
               >Cancel</button>
               <button onClick={handleDelete} disabled={actionLoading}
-                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-rose-500/20 w-full"
+                className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-rose-500/30 active:scale-95 w-full disabled:opacity-50"
               >
                 {actionLoading ? 'Deleting...' : 'Yes, Delete'}
               </button>

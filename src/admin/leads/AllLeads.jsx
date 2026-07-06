@@ -3469,7 +3469,6 @@
 
 
 
-
 import { useState, useEffect, memo, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { leadService } from '../../services/leadService';
@@ -3646,15 +3645,15 @@ function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goTo
         Showing <span className="font-bold text-slate-600">{from}</span>{'\u2013'}<span className="font-bold text-slate-600">{to}</span> of <span className="font-bold text-slate-600">{totalElements}</span>
       </p>
       <div className="flex items-center gap-1.5 flex-wrap justify-center">
-        <NavButton label="\u00ab" onClick={() => goToPage(0)} disabled={isFirst} />
-        <NavButton label="\u2039" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
+        <NavButton label="«" onClick={() => goToPage(0)} disabled={isFirst} />
+        <NavButton label="‹" onClick={() => goToPage(pageIndex - 1)} disabled={isFirst} />
         {pageNumbers.map((p, i) =>
           typeof p === 'string'
             ? <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">{'\u2026'}</span>
             : <PageButton key={p} page={p} isActive={pageIndex === p} onClick={() => goToPage(p)} />
         )}
-        <NavButton label="\u203a" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
-        <NavButton label="\u00bb" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
+        <NavButton label="›" onClick={() => goToPage(pageIndex + 1)} disabled={isLast} />
+        <NavButton label="»" onClick={() => goToPage(totalPages - 1)} disabled={isLast} />
         <select
           value={pageSize}
           onChange={e => changePageSize(Number(e.target.value))}
@@ -4059,14 +4058,14 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDele
                 </select>
               </div>
             </div>
-            <div className="flex items-center justify-between mt-2.5">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between mt-2.5 gap-2">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white flex items-center justify-center text-[9px] font-extrabold flex-shrink-0">
                   {assigneeName ? assigneeName.charAt(0).toUpperCase() : 'U'}
                 </div>
                 <span className="text-xs font-semibold text-slate-600 truncate">{assigneeName || 'Unassigned'}</span>
               </div>
-              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                 <button onClick={() => onView(lead)} className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all"><Eye size={13} /></button>
                 {canEdit && <button onClick={() => onEditNavigate(lead)} className="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all"><Pencil size={13} /></button>}
                 {canDelete && <button onClick={() => onDelete(lead)} className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition-all"><Trash2 size={13} /></button>}
@@ -4093,7 +4092,7 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDele
             {/* Row 1 — uniform cells (6 across on desktop, 2 across / 3 sub-rows on mobile) */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)',
+              gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(6, minmax(0, 1fr))',
               gap: isMobile ? '12px 10px' : '6px',
               padding: '8px 0',
               borderBottom: '1px dashed #eeda92',
@@ -4123,7 +4122,7 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDele
             </div>
 
             {/* Row 2 — Itinerary (66%) + Services (33%) side by side; stacked on mobile */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '10px', padding: '8px 0', borderBottom: '1px dashed #eeda92' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 2fr) minmax(0, 1fr)', gap: '10px', padding: '8px 0', borderBottom: '1px dashed #eeda92' }}>
               {/* Itinerary — gold day-wise chips; overflow collapses to a "+N" toggle, just like Services */}
               <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: '10px', color: '#a07830', fontWeight: 700,
@@ -4418,7 +4417,7 @@ function QuotationsModal({ lead, onClose, onToast, canDelete }) {
                     </div>
                     <p className="text-sm font-extrabold text-slate-800 whitespace-nowrap">{fmtMoney(q.grandTotal)}</p>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
                     <button onClick={() => setWebViewQ(q)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all">
                       <Eye size={13} /> Weblink
@@ -4463,7 +4462,7 @@ function QuotationsModal({ lead, onClose, onToast, canDelete }) {
               <X size={16} /> Back
             </button>
             {/* Share this quotation with the client */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <button onClick={() => copyLink(webViewQ)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
                 <Copy size={13} /> {copied ? 'Copied!' : 'Copy link'}
@@ -4978,7 +4977,7 @@ const Leads = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button onClick={fetchLeads} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-sm font-bold transition-all shadow-sm">
                 <DownloadCloud size={15} /> Refresh Data
               </button>
@@ -4997,7 +4996,7 @@ const Leads = () => {
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Total Leads" value={safeLeads.length} gradient="from-blue-500 via-blue-600 to-indigo-700" delay={0} />
           <StatCard icon={Trophy} label="Bookings" value={stats.bookings} gradient="from-teal-400 via-emerald-500 to-emerald-700" delay={60} />
           <StatCard icon={PieChart} label="Conversion" value={stats.conversion} suffix="%" gradient="from-amber-400 via-amber-500 to-orange-600" delay={120} />
@@ -5041,7 +5040,7 @@ const Leads = () => {
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400"><ChevronDown size={13} /></div>
               </div>
               {dateFilter === 'custom' && (
-                <div className="flex items-center gap-2 fade-up">
+                <div className="flex items-center gap-2 fade-up flex-wrap">
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
                   <span className="text-slate-400 text-sm font-medium">to</span>
                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all" />
