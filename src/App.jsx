@@ -248,7 +248,7 @@ import AllLeadLogs from "./admin/leads/AllLeadLogs";
 import CompanySettings from "./settings/CompanySettings";
 import EmailConfiguration from "./settings/EmailConfiguration";
 import WhatsAppConfiguration from "./settings/WhatsAppConfiguration";
-import SubscriptionInfo from "./subscription/SubscriptionInfo";
+import { SubscriptionInfo } from "@features/subscription";
 import Dashboard from "./dashboard/Dashboard";
 import { TrashPage } from "@features/trash";
 import EditVendor from "./vendors/EditVendor";
