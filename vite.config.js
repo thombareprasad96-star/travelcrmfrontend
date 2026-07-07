@@ -1,10 +1,4 @@
-// import { defineConfig } from 'vite'
-// import react from '@vitejs/plugin-react'
-// import tailwindcss from '@tailwindcss/vite'
-// // https://vite.dev/config/
-// export default defineConfig({
-//   plugins: [react(), tailwindcss()],
-// })
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -14,6 +8,15 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+
+  resolve: {
+    alias: {
+      '@': path.resolve(import.meta.dirname,'src'),
+      '@app': path.resolve(import.meta.dirname,'src/app'),
+      '@features': path.resolve(import.meta.dirname,'src/features'),
+      '@shared': path.resolve(import.meta.dirname,'src/shared'),
+    }
+  },
 
   server: {
     proxy: {
