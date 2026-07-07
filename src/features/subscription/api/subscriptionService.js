@@ -1,4 +1,4 @@
-// src/services/subscriptionService.js
+// src/features/subscription/api/subscriptionService.js
 // ─────────────────────────────────────────────────────────────
 // Subscription Information Page — API Service
 // Page: SubscriptionInfo.jsx
@@ -13,42 +13,10 @@
 //   - Contact support request
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance: baseURL ".../api", attaches the JWT from
+// localStorage "token" (this service previously read "authToken" — a key
+// nothing sets — so every call went out unauthenticated), handles 401.
+import api from "@shared/api/http";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -111,7 +79,7 @@ const subscriptionService = {
   //   ]
   // }
   getInfo: () => {
-    return api.get("/api/subscription/info");
+    return api.get("/subscription/info");
   },
 
   // ── GET PLAN DETAILS ONLY (for quick refresh) ──────────────
@@ -124,7 +92,7 @@ const subscriptionService = {
   //
   // Response: same as info.plan object above
   getPlan: () => {
-    return api.get("/api/subscription/plan");
+    return api.get("/subscription/plan");
   },
 
   // ── REQUEST RENEWAL ────────────────────────────────────────
@@ -159,7 +127,7 @@ const subscriptionService = {
   //   422 — { message: "Subscription is already active for 3 more days" }
   //   500 — { message: "Failed to process renewal request" }
   requestRenewal: (planId = "dolphin-monthly", duration = "monthly") => {
-    return api.post("/api/subscription/renew", { planId, duration });
+    return api.post("/subscription/renew", { planId, duration });
   },
 
   // ── REQUEST UPGRADE ────────────────────────────────────────
@@ -185,7 +153,7 @@ const subscriptionService = {
   //   salesEmail:  "sales@tripotomize.com"
   // }
   requestUpgrade: (currentPlanId, targetPlanId = null, duration = "annual") => {
-    return api.post("/api/subscription/upgrade", {
+    return api.post("/subscription/upgrade", {
       currentPlanId,
       targetPlanId,
       duration,
@@ -213,7 +181,7 @@ const subscriptionService = {
   //   ticketId: "TKT-20260625-001"
   // }
   contactSupport: (type = "support", message = "") => {
-    return api.post("/api/subscription/support", { type, message });
+    return api.post("/subscription/support", { type, message });
   },
 };
 
