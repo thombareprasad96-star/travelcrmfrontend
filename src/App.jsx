@@ -250,7 +250,7 @@ import EmailConfiguration from "./settings/EmailConfiguration";
 import WhatsAppConfiguration from "./settings/WhatsAppConfiguration";
 import SubscriptionInfo from "./subscription/SubscriptionInfo";
 import Dashboard from "./dashboard/Dashboard";
-import TrashPage from "./trash/TrashPage";
+import { TrashPage } from "@features/trash";
 import EditVendor from "./vendors/EditVendor";
 import EditCustomer from "./customers/EditCustomer";
 import EditLead from "./admin/leads/EditLead";
