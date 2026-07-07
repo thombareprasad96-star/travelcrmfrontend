@@ -5,7 +5,7 @@ import {
   Globe, Phone, MapPin, Calendar, Hash, Mail, User
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { organizationService } from "../services/OrganizationService"; // Adjust path if needed
+import { organizationService } from "../api/OrganizationService"; // Adjust path if needed
 
 // =========================================================================
 // 🌟 TOAST SYSTEM
