@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { leadService }   from "../services/leadService";
-import bookingService     from "../services/bookingService";
-import userService        from "../services/profileUserService";
-import { companyService } from "../services/companyService";
-import activityReportsService from "../services/activityReportsService";
+import { leadService }   from "@/services/leadService";
+import bookingService     from "@/services/bookingService";
+import userService        from "@/services/profileUserService";
+import { companyService } from "@/services/companyService";
+import activityReportsService from "@/services/activityReportsService";
 import { useNavigate } from "react-router-dom";
 import {
   FiUsers, FiTrendingUp, FiRefreshCw, FiTarget,

@@ -249,7 +249,7 @@ import CompanySettings from "./settings/CompanySettings";
 import EmailConfiguration from "./settings/EmailConfiguration";
 import WhatsAppConfiguration from "./settings/WhatsAppConfiguration";
 import { SubscriptionInfo } from "@features/subscription";
-import Dashboard from "./dashboard/Dashboard";
+import { Dashboard } from "@features/dashboard";
 import { TrashPage } from "@features/trash";
 import EditVendor from "./vendors/EditVendor";
 import EditCustomer from "./customers/EditCustomer";
