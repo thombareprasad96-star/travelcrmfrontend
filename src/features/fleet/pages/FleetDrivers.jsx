@@ -8,9 +8,9 @@ import {
   CheckCircle2, UserX,
 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
-import CommonPagination from "../components/CommanPegination";
+import CommonPagination from "@/components/CommanPegination";
 import {
   Button, Input, Select, Label, Badge,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -18,7 +18,7 @@ import {
   PageShell, PageHeader, GlassCard, LoadingState, EmptyState, ConfirmDialog,
   StatStrip, ChipBar, statusChips, CardGrid, ViewToggle, useViewMode, cn,
   useToast, errMsg, StatusBadge, DRIVER_STATUS, expiryInfo,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 /** First-letters avatar for a driver name. */
 function initials(name = "") {

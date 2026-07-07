@@ -7,13 +7,13 @@ import {
   Car, IdCard, Gauge, MapPin, Receipt, Clock, IndianRupee, MapPinned,
 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
 import {
   Button,
   PageShell, GlassCard, LoadingState, EmptyState, ConfirmDialog, useToast, errMsg,
   StatusBadge, TRIP_STATUS, fmtDateTime, fmtNumber, fmtMoney, StatStrip, FormSection,
-} from "./fleetUi";
+} from "../components/fleetUi";
 import { StartTripDialog, CloseTripDialog } from "./FleetTrips";
 
 function Info({ label, value, icon: Icon }) {

@@ -5,12 +5,12 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { IdCard, Save } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import {
   Button, Input, Textarea,
   PageShell, LoadingState, FormHeader, FormSection, Field, FormActions,
   useToast, errMsg, toDateInput,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 const BLANK = { name: "", phone: "", licenseNumber: "", licenseExpiry: "", notes: "" };
 

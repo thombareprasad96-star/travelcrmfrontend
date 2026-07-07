@@ -8,14 +8,14 @@ import {
   CalendarClock,
 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
 import {
   Button, Badge, cn,
   PageShell, PageHeader, GlassCard, LoadingState, EmptyState, useToast, errMsg,
   StatusBadge, TRIP_STATUS, expiryInfo, fmtDate, fmtDateTime, fmtNumber, fmtMoney,
   usePaged, Pager,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 function StatCard({ gradient, icon: Icon, label, value }) {
   return (

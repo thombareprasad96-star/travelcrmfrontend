@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Fuel, Wrench, Plus, Pencil, Trash2 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
-import CommonPagination from "../components/CommanPegination";
+import fleetService from "../api/fleetService";
+import CommonPagination from "@/components/CommanPegination";
 import {
   Button, Input, Textarea, Label,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,

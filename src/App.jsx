@@ -259,15 +259,17 @@ import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
 import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
 
 // Fleet / Vehicle Diary
-import FleetDashboard from "./fleet/FleetDashboard";
-import FleetVehicles from "./fleet/FleetVehicles";
-import FleetVehicleForm from "./fleet/FleetVehicleForm";
-import FleetVehicleDetail from "./fleet/FleetVehicleDetail";
-import FleetDrivers from "./fleet/FleetDrivers";
-import FleetDriverForm from "./fleet/FleetDriverForm";
-import FleetTrips from "./fleet/FleetTrips";
-import FleetTripForm from "./fleet/FleetTripForm";
-import FleetTripDetail from "./fleet/FleetTripDetail";
+import {
+  FleetDashboard,
+  FleetVehicles,
+  FleetVehicleForm,
+  FleetVehicleDetail,
+  FleetDrivers,
+  FleetDriverForm,
+  FleetTrips,
+  FleetTripForm,
+  FleetTripDetail,
+} from "@features/fleet";
 
 import BookingDetails from "./bookings/BookingDetails";
 

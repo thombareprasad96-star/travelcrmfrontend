@@ -8,9 +8,9 @@ import {
   CheckCircle2, Route as RouteIcon, Wrench, XCircle,
 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
-import CommonPagination from "../components/CommanPegination";
+import CommonPagination from "@/components/CommanPegination";
 import {
   Button, Input, Select, Label, Badge,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -18,7 +18,7 @@ import {
   PageShell, PageHeader, GlassCard, LoadingState, EmptyState, ConfirmDialog,
   StatStrip, ChipBar, statusChips, CardGrid, ViewToggle, useViewMode, cn,
   useToast, errMsg, StatusBadge, VEHICLE_STATUS, OWNER_TYPE, expiryInfo, fmtNumber,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 /** Status gradients — same depth/tones as the dashboard StatCards. */
 const VEHICLE_GRADIENT = {
