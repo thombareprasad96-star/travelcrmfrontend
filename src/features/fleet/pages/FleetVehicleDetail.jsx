@@ -7,17 +7,17 @@ import {
   Users, ShieldCheck,
 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
-import CommonPagination from "../components/CommanPegination";
+import CommonPagination from "@/components/CommanPegination";
 import {
   Button, Badge,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
   PageShell, GlassCard, LoadingState, EmptyState, ConfirmDialog, useToast, errMsg,
   StatusBadge, VEHICLE_STATUS, OWNER_TYPE, TRIP_STATUS, expiryInfo, fmtDate, fmtDateTime,
   fmtNumber, fmtMoney, StatStrip, FormSection,
-} from "./fleetUi";
-import { FuelLogsPanel, MaintenanceLogsPanel } from "./vehicleLogs";
+} from "../components/fleetUi";
+import { FuelLogsPanel, MaintenanceLogsPanel } from "../components/vehicleLogs";
 import { VehicleStatusDialog } from "./FleetVehicles";
 
 function Info({ label, value, icon: Icon }) {

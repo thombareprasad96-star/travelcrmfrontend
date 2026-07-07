@@ -9,9 +9,9 @@ import {
   CheckCircle2, Gauge, CalendarClock,
 } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
-import CommonPagination from "../components/CommanPegination";
+import CommonPagination from "@/components/CommanPegination";
 import {
   Button, Input, Select, Textarea, Label,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -20,7 +20,7 @@ import {
   StatStrip, ChipBar, statusChips, CardGrid, ViewToggle, useViewMode,
   useToast, errMsg, StatusBadge, TRIP_STATUS, fmtDateTime, fmtNumber, fmtMoney,
   nowDateTimeInput,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
 

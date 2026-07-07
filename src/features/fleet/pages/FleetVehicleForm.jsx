@@ -5,12 +5,12 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { Car, Save, IdCard, ShieldCheck, FileText, UserCog } from "lucide-react";
 
-import fleetService from "../services/fleetService";
+import fleetService from "../api/fleetService";
 import {
   Button, Input, Select, Textarea,
   PageShell, LoadingState, FormHeader, FormSection, Field, FormActions,
   useToast, errMsg, OWNER_TYPE, toDateInput,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
 

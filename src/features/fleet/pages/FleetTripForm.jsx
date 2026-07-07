@@ -6,14 +6,14 @@ import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { Route as RouteIcon, Save, Users, CalendarClock, Receipt } from "lucide-react";
 
-import fleetService from "../services/fleetService";
-import bookingService from "../services/bookingService";
+import fleetService from "../api/fleetService";
+import bookingService from "@/services/bookingService";
 import {
   Button, Input, Select, Textarea,
   PageShell, LoadingState, FormHeader, FormSection, Field, FormActions,
   useToast, errMsg, StatusBadge, TRIP_STATUS,
   toDateTimeInput, nowDateTimeInput,
-} from "./fleetUi";
+} from "../components/fleetUi";
 
 const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
 
