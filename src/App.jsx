@@ -256,8 +256,20 @@ import EditCustomer from "./customers/EditCustomer";
 import EditLead from "./admin/leads/EditLead";
 import EditBooking from "./bookings/EditBooking";
 import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
-
 import { isSuperAdmin, hasPermission, P } from "./services/access";
+
+// Fleet / Vehicle Diary
+import FleetDashboard from "./fleet/FleetDashboard";
+import FleetVehicles from "./fleet/FleetVehicles";
+import FleetVehicleForm from "./fleet/FleetVehicleForm";
+import FleetVehicleDetail from "./fleet/FleetVehicleDetail";
+import FleetDrivers from "./fleet/FleetDrivers";
+import FleetDriverForm from "./fleet/FleetDriverForm";
+import FleetTrips from "./fleet/FleetTrips";
+import FleetTripForm from "./fleet/FleetTripForm";
+import FleetTripDetail from "./fleet/FleetTripDetail";
+
+import BookingDetails from "./bookings/BookingDetails";
 
 // Route-level guard (defense-in-depth; backend is the real gate, menus already hide these).
 function Guard({ allow, children }) {
@@ -360,6 +372,23 @@ const App = () => {
           <Route path="/EditLead/:id" element={<EditLead />}/>
           <Route path="/EditBooking/:id" element={<EditBooking />}/>
           <Route path="/WhatsAppPanel" element={<WhatsAppPanel/>}/>
+
+          {/* ── Fleet / Vehicle Diary (guarded by FLEET_* permissions) ── */}
+          <Route path="fleet" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetDashboard/></Guard>}/>
+          <Route path="fleet/vehicles" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetVehicles/></Guard>}/>
+          <Route path="fleet/vehicles/new" element={<Guard allow={hasPermission(P.FLEET_CREATE)}><FleetVehicleForm/></Guard>}/>
+          <Route path="fleet/vehicles/:publicId" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetVehicleDetail/></Guard>}/>
+          <Route path="fleet/vehicles/:publicId/edit" element={<Guard allow={hasPermission(P.FLEET_UPDATE)}><FleetVehicleForm/></Guard>}/>
+          <Route path="fleet/drivers" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetDrivers/></Guard>}/>
+          <Route path="fleet/drivers/new" element={<Guard allow={hasPermission(P.FLEET_CREATE)}><FleetDriverForm/></Guard>}/>
+          <Route path="fleet/drivers/:publicId/edit" element={<Guard allow={hasPermission(P.FLEET_UPDATE)}><FleetDriverForm/></Guard>}/>
+          <Route path="fleet/trips" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetTrips/></Guard>}/>
+          <Route path="fleet/trips/new" element={<Guard allow={hasPermission(P.FLEET_CREATE)}><FleetTripForm/></Guard>}/>
+          <Route path="fleet/trips/:publicId" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetTripDetail/></Guard>}/>
+          <Route path="fleet/trips/:publicId/edit" element={<Guard allow={hasPermission(P.FLEET_UPDATE)}><FleetTripForm/></Guard>}/>
+
+          <Route path="BookingDetails/:id" element={<BookingDetails/>}/>
+
         </Route>
  
       </Routes>

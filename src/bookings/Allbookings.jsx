@@ -1803,7 +1803,8 @@ export default function BookingsPage({
                         {/* actions (fade in on hover) */}
                         <td className="px-3 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-50 group-hover:opacity-100 transition-opacity duration-150">
-                            <button onClick={()=>setModal(b)} title="View"
+                            {/* // onClick={()=>setModal(b)}  */}
+                            <button onClick={()=>navigate(`/BookingDetails/${b.id}`)} title="View"
                               className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all border border-blue-100">
                               <FiEye className="w-3.5 h-3.5"/>
                             </button>
@@ -1848,8 +1849,9 @@ export default function BookingsPage({
                   {anyFilter&&<button onClick={resetFilters} className="mt-2 text-sm text-blue-600 hover:underline font-bold">Clear filters</button>}
                 </div>
               )
+              // onView={setModal}
               : pageData.map(b=>(
-                  <MobileBookingCard key={b.id} b={b} onView={setModal} onEdit={openEdit} onCancel={openCancel} onDelete={handleDelete}/>
+                  <MobileBookingCard key={b.id} b={b} onView={b=>navigate(`/BookingDetails/${b.id}`)} onEdit={openEdit} onCancel={openCancel} onDelete={handleDelete}/>
                 ))
             }
           </div>
