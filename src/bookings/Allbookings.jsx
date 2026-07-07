@@ -12,7 +12,7 @@
 // import bookingService from "../services/bookingService";
 // import EditBookingModal from "./EditBookingModal";
 // import CancelBookingModal from "./CancelBookingModal";
-// import { hasPermission, P } from "../services/access";
+// import { hasPermission, P } from "@shared/lib/access";
 // import {
 //   FiSearch, FiRefreshCw, FiFilter,
 //   FiChevronDown, FiEye, FiEdit2, FiTrash2,
@@ -971,7 +971,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import bookingService                from "../services/bookingService";
 import CancelBookingModal            from "./CancelBookingModal";
-import { hasPermission, P }          from "../services/access";
+import { hasPermission, P }          from "@shared/lib/access";
 import {
   FiSearch, FiRefreshCw, FiFilter, FiDownload,
   FiChevronDown, FiChevronUp, FiEye, FiEdit2,

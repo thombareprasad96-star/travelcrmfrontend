@@ -2,7 +2,7 @@
 
 
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ── Transformer: React form → Backend DTO ────────────────
 // function transformFormData(formData, services = [], itinerary = []) {
@@ -475,7 +475,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ── Transformer: React form → Backend DTO ────────────────
 function transformFormData(formData, services = [], itinerary = []) {

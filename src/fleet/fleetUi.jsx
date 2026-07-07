@@ -1,4 +1,4 @@
-// src/fleet/fleetUi.jsx
+// src/fleet/fleetUi.jsx (cn now lives in @shared/lib/cn)
 // ─────────────────────────────────────────────────────────────
 // Self-contained UI kit for the Fleet / Vehicle Diary module.
 // Plain Tailwind only — NO shadcn / cva / @/components/ui dependency.
@@ -13,14 +13,10 @@
 import * as React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
 import { Loader2, Inbox, X, ChevronDown, ArrowLeft, LayoutGrid, List } from "lucide-react";
 
-/** Merge conditional class lists and de-dupe Tailwind conflicts (generic helper, not shadcn). */
-export function cn(...inputs) {
-  return twMerge(clsx(inputs));
-}
+export { cn } from "@shared/lib/cn";
+import { cn } from "@shared/lib/cn";
 
 /* ═════════════════════════════════════════════════════════════
    FORM PRIMITIVES (plain Tailwind — replace shadcn ui)

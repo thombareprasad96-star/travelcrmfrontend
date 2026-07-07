@@ -6,7 +6,7 @@ import {
   CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser,
   User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock, Trash2, Truck
 } from 'lucide-react';
-import { isSuperAdmin, hasPermission, P } from '../services/access';
+import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
 
 const Sidebar = ({ isExpanded }) => {
   const [openDropdown, setOpenDropdown] = useState('');

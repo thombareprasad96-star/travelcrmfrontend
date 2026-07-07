@@ -1,6 +1,6 @@
 // // src/services/CountryService.js
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // export const countryService = {
 //   /**
@@ -24,7 +24,7 @@
 
 // src/services/countryService.js
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ── Transform → Java DTO ──────────────────────────────────
 // function transformCountryData(name, code) {
@@ -61,7 +61,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ── Transform → Java DTO ──────────────────────────────────
 function transformCountryData(name, code) {

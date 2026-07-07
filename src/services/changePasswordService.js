@@ -4,7 +4,7 @@
 // Backend: Java Spring Boot + PostgreSQL
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ═════════════════════════════════════════════════════════════
 // AUTH SERVICE

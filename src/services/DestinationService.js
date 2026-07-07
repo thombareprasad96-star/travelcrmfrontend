@@ -21,7 +21,7 @@
 // // the authenticated principal (SuperAdmin → global, tenant admin → own tenant).
 // // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // const BASE = "/destinations";
 
@@ -163,7 +163,7 @@
 // the authenticated principal (SuperAdmin → global, tenant admin → own tenant).
 // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // const BASE = "/destinations";
 
@@ -303,7 +303,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 const BASE = "/destinations";
 

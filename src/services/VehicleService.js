@@ -1,4 +1,4 @@
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ============================================================
 // // RESPONSE NORMALIZER
@@ -151,7 +151,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ============================================================
 // CLOUDINARY CONFIG — .env se aata hai

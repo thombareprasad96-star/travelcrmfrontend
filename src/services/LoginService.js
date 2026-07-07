@@ -72,7 +72,7 @@
 
 
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // function transformLoginData(email, password) {
 //   return {
@@ -118,7 +118,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 function transformLoginData(email, password) {
   return {

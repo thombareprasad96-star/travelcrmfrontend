@@ -1,4 +1,4 @@
-// src/services/access.js
+// src/shared/lib/access.js
 // ─────────────────────────────────────────────────────────────
 // Frontend access control — the single source of truth for UI gating.
 //
@@ -11,7 +11,7 @@
 // mapped to the same default permission keys the backend grants that role.
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "../api/http";
 
 export const ROLES = {
   SUPERADMIN:   "SUPERADMIN",     // platform owner — manages organizations (tenants) only

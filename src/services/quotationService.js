@@ -1,6 +1,6 @@
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ═════════════════════════════════════════════════════════════
 // PAYLOAD BUILDER

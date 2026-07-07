@@ -5,7 +5,7 @@
 // Backend: /api/settings/whatsapp/**  (returns ApiResponse<T> → read res.data.data)
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 const whatsAppConfigService = {
   // GET current config → res.data.data = WhatsAppConfigDTO

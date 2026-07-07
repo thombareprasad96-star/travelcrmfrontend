@@ -21,7 +21,7 @@ import {
 
 
 import trashService from "../services/trashService";
-import { hasPermission, P } from "../services/access";
+import { hasPermission, P } from "@shared/lib/access";
 
 
 /* ─────────────────────────────────────────

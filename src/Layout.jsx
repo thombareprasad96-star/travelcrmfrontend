@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom'; // 1. Ye naya import add karna hai
-import Sidebar from './components/Sidebar';
-import Navbar from './components/Navbar';
-import AppFooter from './components/AppFooter';
+import Sidebar from '@app/chrome/Sidebar';
+import Navbar from '@app/chrome/Navbar';
+import AppFooter from '@app/chrome/AppFooter';
 
 const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
   // Default state ko ab false rakha hai taaki mobile par pehle se open na mile

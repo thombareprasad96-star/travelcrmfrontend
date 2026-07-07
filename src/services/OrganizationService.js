@@ -3,7 +3,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ==========================================================
 // 🌟 DATA TRANSFORMER: Frontend to Backend Format

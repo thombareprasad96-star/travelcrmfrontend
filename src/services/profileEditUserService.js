@@ -6,7 +6,7 @@
 // // Covers: Get User | Update User | Reset Password | Permissions
 // // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 
 // // ═════════════════════════════════════════════════════════════
@@ -556,7 +556,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 import { LABEL_TO_ROLE, mapUserFromApi, unwrap } from "./userMappers";
 
 export const editUserService = {

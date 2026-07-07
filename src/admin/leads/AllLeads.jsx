@@ -4,7 +4,7 @@
 // import { useNavigate } from 'react-router-dom';
 // import { leadService } from '../../services/leadService';
 // import { quotationService } from '../../services/quotationService';
-// import { hasPermission, P } from '../../services/access';
+// import { hasPermission, P } from "@shared/lib/access";
 // import AccessDenied from '../../components/AccessDenied';
 // import { formatToWhatsAppLink } from '../../utils/whatsapp';
 // import WhatsAppPanel from '../leads/WhatsAppPanel';
@@ -1724,7 +1724,7 @@
 // import { useNavigate } from 'react-router-dom';
 // import { leadService } from '../../services/leadService';
 // import { quotationService } from '../../services/quotationService';
-// import { hasPermission, P } from '../../services/access';
+// import { hasPermission, P } from "@shared/lib/access";
 // import AccessDenied from '../../components/AccessDenied';
 // import { formatToWhatsAppLink } from '../../utils/whatsapp';
 // import WhatsAppPanel from '../leads/WhatsAppPanel';
@@ -3452,7 +3452,7 @@ import { useState, useEffect, memo, useMemo, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { leadService } from '../../services/leadService';
 import { quotationService } from '../../services/quotationService';
-import { hasPermission, P } from '../../services/access';
+import { hasPermission, P } from "@shared/lib/access";
 import AccessDenied from '../../components/AccessDenied';
 import { formatToWhatsAppLink } from '../../utils/whatsapp';
 import WhatsAppPanel from '../leads/WhatsAppPanel';

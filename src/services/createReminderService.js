@@ -5,7 +5,7 @@
 // Covers: Reminders + Leads dropdown + Users dropdown
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 
 // ═════════════════════════════════════════════════════════════

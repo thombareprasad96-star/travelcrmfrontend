@@ -8,7 +8,7 @@
 // //   2. permissionTemplateService — get/create/apply templates
 // // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 
 // // ═════════════════════════════════════════════════════════════
@@ -698,7 +698,7 @@
 // reusable templates. Talks to the real backend via axiosInstance.
 // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 // import { unwrap } from "./userMappers";
 
 // // ── USER PERMISSIONS ─────────────────────────────────────────
@@ -774,7 +774,7 @@
 // reusable templates. Talks to the real backend via axiosInstance.
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 import { unwrap } from "./userMappers";
 
 // ── USER PERMISSIONS ─────────────────────────────────────────

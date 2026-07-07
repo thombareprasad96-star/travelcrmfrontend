@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import bookingService from "../services/bookingService";
-import { hasPermission, P } from "../services/access";
+import { hasPermission, P } from "@shared/lib/access";
 
 /* res.data?.data ?? res.data */
 const unwrap = (res) => res?.data?.data ?? res?.data;

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import fleetService from "../services/fleetService";
-import { hasPermission, P } from "../services/access";
+import { hasPermission, P } from "@shared/lib/access";
 import CommonPagination from "../components/CommanPegination";
 import {
   Button, Badge,

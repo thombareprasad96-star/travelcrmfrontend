@@ -256,7 +256,7 @@ import EditCustomer from "./customers/EditCustomer";
 import EditLead from "./admin/leads/EditLead";
 import EditBooking from "./bookings/EditBooking";
 import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
-import { isSuperAdmin, hasPermission, P } from "./services/access";
+import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
 
 // Fleet / Vehicle Diary
 import FleetDashboard from "./fleet/FleetDashboard";

@@ -5,7 +5,7 @@
 // Backend: /api/settings/email/**  (returns ApiResponse<T> → read res.data.data)
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 const emailConfigurationService = {
   // GET current SMTP config → res.data.data = EmailConfigDTO
