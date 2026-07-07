@@ -30,7 +30,7 @@ import {
 import { MdOutlineSubscriptions } from "react-icons/md";
 
 // ── Uncomment when backend ready ─────────────────────────────
-// import subscriptionService from "../services/subscriptionService";
+// import subscriptionService from "../api/subscriptionService";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
 const MOCK_PLAN = {

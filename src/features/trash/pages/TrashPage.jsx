@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 
-import trashService from "../services/trashService";
+import trashService from "../api/trashService";
 import { hasPermission, P } from "@shared/lib/access";
 
 
