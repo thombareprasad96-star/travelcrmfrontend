@@ -2304,7 +2304,7 @@ import {
 } from "react-icons/fa";
 
 import userService from "../services/profileUserService";
-import { hasPermission, P } from "../services/access";
+import { hasPermission, P } from "@shared/lib/access";
 
 /* Users are loaded from the API — see profileUserService.getAll(). */
 

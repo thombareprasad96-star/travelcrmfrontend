@@ -5,7 +5,7 @@
 // // Database: PostgreSQL
 // // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 
 // // ═════════════════════════════════════════════════════════════
@@ -700,7 +700,7 @@
 // adapting responses to the page model via userMappers.
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 import { mapUserFromApi, unwrap } from "./userMappers";
 
 const userService = {

@@ -5,7 +5,7 @@
 
 // src/services/cityService.js
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // Transform React form data → Java DTO shape for City
 // function transformCityData(country, name, code) {
@@ -41,7 +41,7 @@
 
 // src/services/cityService.js
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ── Transform → Java DTO ──────────────────────────────────
 // function transformCityData(countryId, destinationId, name, code) {
@@ -95,7 +95,7 @@
 // country pageservice
 
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ── Transform → Java DTO ──────────────────────────────────
 // function transformCountryData(name, code) {
@@ -132,7 +132,7 @@
 
 // src/services/cityService.js
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // Transform React form data → Java DTO shape for City
 // function transformCityData(country, name, code) {
@@ -168,7 +168,7 @@
 
 // src/services/cityService.js
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ── Transform → Java DTO ──────────────────────────────────
 function transformCityData(countryId, destinationId, name, code) {

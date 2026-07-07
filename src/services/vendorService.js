@@ -5,7 +5,7 @@
 // Uses shared axiosInstance (JWT + error interceptors)
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 /* ─────────────────────────────────────────────────────────────
    VENDOR SERVICE

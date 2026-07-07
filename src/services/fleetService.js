@@ -12,7 +12,7 @@
 // Backend base: /api/fleet/**  (envelope: ApiResponse<T> / PagedApiResponse<T>)
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 /* ── Envelope unwrap helpers (app idiom: res.data?.data ?? res.data) ───────── */
 const pick = (res) => res?.data?.data ?? res?.data ?? null;

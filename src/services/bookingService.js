@@ -1,6 +1,6 @@
 // // src/services/bookingService.js
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // /* ─────────────────────────────────────────────────────────────
 //    BOOKING SERVICE
@@ -161,7 +161,7 @@
 
 // src/services/bookingService.js
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 /* ─────────────────────────────────────────────────────────────
    BOOKING SERVICE

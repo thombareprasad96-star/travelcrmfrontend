@@ -14,7 +14,7 @@
 // fetches once and filters + paginates client-side.
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 /* res.data?.data ?? res.data — the envelope unwrap used across the app. */
 const unwrap = (res) => res?.data?.data ?? res?.data;

@@ -7,7 +7,7 @@
 
 // // 👉 Ensure this path exactly matches your project structure
 // import { authService } from "../services/LoginService";
-// import { loadMyPermissions } from "../services/access";
+// import { loadMyPermissions } from "@shared/lib/access";
 
 // const Login = ({ setIsAuthenticated }) => {
 //   // State for tracking the active role toggle
@@ -257,7 +257,7 @@ import { Eye, EyeOff, Lock, Mail, MapPin, Check, AlertCircle } from 'lucide-reac
 
 // 👉 Same service imports as before — auth logic untouched
 import { authService } from "../services/LoginService";
-import { loadMyPermissions } from "../services/access";
+import { loadMyPermissions } from "@shared/lib/access";
 
 const ROLES = [
   { key: 'super_admin', label: 'Super Admin' },

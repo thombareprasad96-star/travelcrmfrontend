@@ -4,7 +4,7 @@
 // Backend: Java Spring Boot REST API
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 
 // ═════════════════════════════════════════════════════════════

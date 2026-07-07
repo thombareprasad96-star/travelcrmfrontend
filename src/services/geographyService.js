@@ -16,7 +16,7 @@
 // We normalise every list to { id, name } so the UI code stays uniform.
 // ─────────────────────────────────────────────────────────────
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // DropdownDto { value, label } → { id, name }
 const toOptions = (res) =>

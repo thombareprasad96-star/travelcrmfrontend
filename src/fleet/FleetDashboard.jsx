@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import fleetService from "../services/fleetService";
-import { hasPermission, P } from "../services/access";
+import { hasPermission, P } from "@shared/lib/access";
 import {
   Button, Badge, cn,
   PageShell, PageHeader, GlassCard, LoadingState, EmptyState, useToast, errMsg,

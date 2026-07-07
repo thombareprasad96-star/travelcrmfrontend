@@ -1,6 +1,6 @@
 // src/services/customerService.js
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 /* ─────────────────────────────────────────────────────────────
    CUSTOMER SERVICE

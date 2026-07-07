@@ -1,4 +1,4 @@
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ==========================================================
 // // 🌟 DATA TRANSFORMER: Mapping Frontend data to Backend format
@@ -244,7 +244,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ==========================================================
 // CLOUDINARY CONFIG — .env mein yeh do values daalo:

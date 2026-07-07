@@ -1,4 +1,4 @@
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 // // ============================================================
 // // TRANSFORMER: Frontend form state  ➜  Backend DTO
@@ -175,7 +175,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 
 // ============================================================
 // ☁️ CLOUDINARY DIRECT UPLOAD

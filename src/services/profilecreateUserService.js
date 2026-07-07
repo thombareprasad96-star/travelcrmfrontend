@@ -6,7 +6,7 @@
 // // Covers: Create User + Permission Templates + Active Users Count
 // // ─────────────────────────────────────────────────────────────
 
-// import API from "./axiosInstance";
+// import API from "@shared/api/http";
 
 
 // // ═════════════════════════════════════════════════════════════
@@ -436,7 +436,7 @@
 
 
 
-import API from "./axiosInstance";
+import API from "@shared/api/http";
 import { LABEL_TO_ROLE, mapUserFromApi, unwrap } from "./userMappers";
 
 export const createUserService = {
