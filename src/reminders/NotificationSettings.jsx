@@ -865,6 +865,9 @@
 //   );
 // }
 
+
+
+
 import { useState, useEffect, useCallback } from "react";                     
 import { useNavigate } from "react-router-dom";
 import {
@@ -964,32 +967,53 @@ const inputCls = () =>
   focus:outline-none focus:ring-2 focus:border-blue-400 focus:ring-blue-50 transition-all bg-white
   disabled:bg-slate-50 disabled:text-slate-400`;
 
+/* ─── PRIORITY STYLING ───────────────────────────────────────── */
+const PRIORITY_CFG = {
+  High:   { badge:"bg-red-100 text-red-700",     grad:"from-rose-500 to-red-600"    },
+  Medium: { badge:"bg-amber-100 text-amber-700", grad:"from-blue-600 to-indigo-500" },
+  Low:    { badge:"bg-slate-100 text-slate-600", grad:"from-slate-500 to-slate-600" },
+};
+
 /* ─── STAGE CARD ─────────────────────────────────────────────── */
 function StageCard({ stage, onUpdate, idx }) {
   const update = (field, value) => onUpdate(stage.key, { ...stage, [field]: value });
+  const pri = PRIORITY_CFG[stage.priority] || PRIORITY_CFG.Medium;
 
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all
-        ${stage.enabled ? "border-slate-100" : "border-slate-100 opacity-75"}`}
+    <div className={`group relative bg-white rounded-2xl border overflow-hidden transition-all duration-300
+        ${stage.enabled
+          ? "border-slate-200/70 shadow-sm hover:shadow-xl hover:-translate-y-1"
+          : "border-slate-200/70 shadow-sm opacity-70 hover:opacity-100"}`}
       style={{ animation:"fadeUp .4s ease both", animationDelay:`${idx * 40}ms` }}>
 
       {/* Header */}
-      <div className={`px-5 py-3.5 flex items-center justify-between gap-3
-          ${stage.enabled ? "bg-gradient-to-r from-blue-600 to-blue-500" : "bg-slate-400"}`}>
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white flex-shrink-0">
+      <div className={`relative px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3 overflow-hidden
+          ${stage.enabled ? `bg-gradient-to-r ${pri.grad}` : "bg-gradient-to-r from-slate-400 to-slate-500"}`}>
+        {/* decorative blob */}
+        <div className="absolute -right-6 -top-8 w-24 h-24 rounded-full bg-white/10 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+        <div className="relative flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white flex-shrink-0 shadow-inner group-hover:scale-105 transition-transform">
             {stage.icon}
           </div>
           <h3 className="text-sm font-extrabold text-white truncate">{stage.stageLabel}</h3>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs font-bold text-white/90 hidden sm:inline">Enable</span>
+        <div className="relative flex items-center gap-2 flex-shrink-0">
+          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full
+            ${stage.enabled ? "bg-white/25 text-white" : "bg-white/15 text-white/70"}`}>
+            {stage.enabled ? "ON" : "OFF"}
+          </span>
           <ToggleSwitch checked={stage.enabled} onChange={v => update("enabled", v)} />
         </div>
       </div>
 
-      <div className="p-5 space-y-4">
-        <p className="text-xs text-slate-400 italic">{stage.helperText}</p>
+      <div className="p-4 sm:p-5 space-y-4">
+        {/* helper text + priority pill */}
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-xs text-slate-400 italic flex-1">{stage.helperText}</p>
+          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap ${pri.badge}`}>
+            {stage.priority}
+          </span>
+        </div>
 
         {/* Reminder Type */}
         <div>
@@ -1007,10 +1031,13 @@ function StageCard({ stage, onUpdate, idx }) {
         {/* Hours + Priority */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label>Create Reminder After (Hours)</Label>
-            <input type="number" min="0" step="0.5" value={stage.hours} disabled={!stage.enabled}
-              onChange={e => update("hours", parseFloat(e.target.value) || 0)}
-              className={inputCls()} />
+            <Label>Reminder After (Hours)</Label>
+            <div className="relative">
+              <input type="number" min="0" step="0.5" value={stage.hours} disabled={!stage.enabled}
+                onChange={e => update("hours", parseFloat(e.target.value) || 0)}
+                className={inputCls() + " pr-12"} />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-extrabold text-slate-400 uppercase pointer-events-none">hrs</span>
+            </div>
           </div>
           <div>
             <Label>Priority</Label>
@@ -1031,7 +1058,7 @@ function StageCard({ stage, onUpdate, idx }) {
           <input type="text" value={stage.titleTemplate} disabled={!stage.enabled}
             onChange={e => update("titleTemplate", e.target.value)} className={inputCls()} />
           <p className="mt-1 text-xs text-slate-400">
-            Use <code className="text-blue-500 font-semibold">{"{lead_name}"}</code> to include the lead's name
+            Use <code className="text-blue-500 font-semibold bg-blue-50 px-1 rounded">{"{lead_name}"}</code> to include the lead's name
           </p>
         </div>
 
@@ -1131,6 +1158,17 @@ export default function NotificationSettings() {
     showToast("Settings reset to defaults.");
   }, [showToast]);
 
+  /* ── Summary counts for the stats strip ── */
+  const activeCount   = stages.filter(s => s.enabled).length;
+  const highCount     = stages.filter(s => s.enabled && s.priority === "High").length;
+  const disabledCount = stages.length - activeCount;
+  const SUMMARY = [
+    { label:"Total Stages", value:stages.length, grad:"from-blue-600 to-indigo-600",  icon:<FaBell className="w-4 h-4"/> },
+    { label:"Active",       value:activeCount,   grad:"from-emerald-500 to-green-600", icon:<FaCheckCircle className="w-4 h-4"/> },
+    { label:"High Priority",value:highCount,     grad:"from-rose-500 to-red-600",      icon:<FaMoneyBillWave className="w-4 h-4"/> },
+    { label:"Disabled",     value:disabledCount, grad:"from-slate-500 to-slate-600",   icon:<FaTimesCircle className="w-4 h-4"/> },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100"
       style={{ fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif" }}>
@@ -1184,10 +1222,31 @@ export default function NotificationSettings() {
           </p>
         </div>
 
+        {/* SUMMARY STATS */}
+        {!loading && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {SUMMARY.map((s, i) => (
+              <div key={s.label}
+                className={`bg-gradient-to-br ${s.grad} rounded-2xl p-4 text-white relative overflow-hidden
+                  shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ring-1 ring-white/10`}
+                style={{ animation:"fadeUp .4s ease both", animationDelay:`${i * 50}ms` }}>
+                <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+                <div className="relative flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl sm:text-3xl font-extrabold leading-none">{s.value}</p>
+                    <p className="text-[10px] font-extrabold uppercase tracking-widest opacity-80 mt-1.5">{s.label}</p>
+                  </div>
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">{s.icon}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* SKELETON */}
         {loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                 <div className="h-12 bg-slate-200 animate-pulse" />
                 <div className="p-5 space-y-3">
@@ -1200,7 +1259,7 @@ export default function NotificationSettings() {
 
         {/* STAGE CARDS */}
         {!loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
             {stages.map((stage, idx) => (
               <StageCard key={stage.key} stage={stage} idx={idx} onUpdate={handleUpdateStage} />
             ))}
@@ -1209,36 +1268,34 @@ export default function NotificationSettings() {
 
         {/* SAVE / RESET BAR */}
         {!loading && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5"
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/70 p-4 sm:p-5"
             style={{ animation:"fadeUp .4s ease both" }}>
-            <div className="flex flex-col sm:flex-row items-stretch gap-3">
-              <button type="button" onClick={handleSave} disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2.5 px-8 py-3 rounded-xl
-                  bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm
-                  transition-all shadow-md shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed">
-                {saving
-                  ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Saving…</>
-                  : <><FiSave className="w-4 h-4" /> Save Settings</>}
-              </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <p className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 flex-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                {activeCount} of {stages.length} stages active
+              </p>
               <button type="button" onClick={handleReset} disabled={saving}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3
                   rounded-xl border-2 border-slate-200 hover:border-slate-300 text-slate-600
                   hover:text-slate-800 font-bold text-sm transition-all disabled:opacity-50 bg-white hover:bg-slate-50">
                 <FiRefreshCw className="w-4 h-4" /> Reset
               </button>
+              <button type="button" onClick={handleSave} disabled={saving}
+                className="flex-1 sm:flex-none sm:min-w-[200px] flex items-center justify-center gap-2.5 px-8 py-3 rounded-xl
+                  bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-sm
+                  transition-all shadow-md shadow-blue-200 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
+                {saving
+                  ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Saving…</>
+                  : <><FiSave className="w-4 h-4" /> Save Settings</>}
+              </button>
             </div>
-            <p className="text-center text-xs text-slate-400 mt-3 flex items-center justify-center gap-1.5">
-              <FiAlertCircle className="w-3.5 h-3.5" />
+            <p className="text-center sm:text-left text-xs text-slate-400 mt-3 flex items-center justify-center sm:justify-start gap-1.5">
+              <FiAlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               Changes apply to new leads entering each stage after saving.
             </p>
           </div>
         )}
-      </div>
-
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 mt-4 border-t border-slate-200
-        flex items-center justify-between text-xs text-slate-400">
-        <p>Copyright © {new Date().getFullYear()} <span className="text-blue-600 font-semibold">Tripotomize.</span> All rights reserved.</p>
-        <p>Version 1.0.0</p>
       </div>
     </div>
   );

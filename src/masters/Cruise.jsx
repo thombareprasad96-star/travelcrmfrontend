@@ -1135,11 +1135,12 @@ function RoomModal({ room, onSave, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1100] flex items-center justify-center p-5" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-white border border-slate-200 rounded-[18px] w-full max-w-[440px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-        <div className="bg-white border-b border-slate-200 px-5 py-4 flex items-center justify-between">
-          <span className="text-base font-bold text-[#0a1628]">
+        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4 flex items-center justify-between overflow-hidden">
+          <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+          <span className="relative text-base font-black text-white">
             {room?.id ? "✏️ Edit Room Type" : "➕ Add Room Type"}
           </span>
-          <button className="bg-slate-100 border-none text-slate-600 rounded-full w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 hover:bg-slate-200 transition-colors" onClick={onClose}>×</button>
+          <button className="relative bg-white/20 hover:bg-white/30 text-white rounded-xl w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 transition-colors" onClick={onClose}>×</button>
         </div>
         
         <div className="p-5.5 px-5 py-5">
@@ -1172,8 +1173,8 @@ function RoomModal({ room, onSave, onClose }) {
         </div>
         
         <div className="px-5 py-3.5 border-t border-slate-200 flex justify-end gap-3 bg-slate-100">
-          <button className="bg-white text-slate-800 border border-slate-200 rounded-lg px-5 py-2 font-semibold text-sm cursor-pointer hover:bg-slate-50 transition-colors" onClick={onClose}>Cancel</button>
-          <button className="bg-gradient-to-br from-[#1a7fd4] to-[#0e4f8a] text-white border-none rounded-lg px-6 py-2 font-bold text-sm cursor-pointer shadow-[0_4px_14px_rgba(26,127,212,0.3)] hover:shadow-lg transition-all" onClick={save}>Save Room</button>
+          <button className="bg-white text-slate-800 border border-slate-200 rounded-xl px-5 py-2 font-semibold text-sm cursor-pointer hover:bg-slate-100 transition-colors" onClick={onClose}>Cancel</button>
+          <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-none rounded-xl px-6 py-2 font-bold text-sm cursor-pointer shadow-md shadow-blue-200 transition-all" onClick={save}>Save Room</button>
         </div>
       </div>
     </div>
@@ -1188,9 +1189,14 @@ function ViewModal({ cruise, onClose }) {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] flex items-start justify-center p-5 overflow-y-auto" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-[1100px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-200 overflow-hidden my-2.5">
         
-        <div className="bg-white border-b border-slate-200 px-7 py-5 flex items-center justify-between">
-          <span className="m-0 text-xl font-extrabold text-[#0a1628]">🚢 {cruise.name}</span>
-          <button className="bg-slate-100 border-none text-slate-600 rounded-full w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 hover:bg-slate-200 transition-colors" onClick={onClose}>×</button>
+        <div className="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 px-5 sm:px-7 py-5 flex items-center justify-between overflow-hidden">
+          <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+          <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
+          <div className="relative flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-xl shadow-inner flex-shrink-0">🚢</div>
+            <span className="text-lg sm:text-xl font-black text-white truncate">{cruise.name}</span>
+          </div>
+          <button className="relative bg-white/20 hover:bg-white/30 text-white rounded-xl w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 transition-colors" onClick={onClose}>×</button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-7 p-7">
@@ -1241,21 +1247,20 @@ function DeleteModal({ cruise, onConfirm, onClose }) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1100] flex items-center justify-center p-5">
       <div className="bg-white border border-slate-200 rounded-[18px] w-full max-w-[440px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
         
-        <div className="bg-gradient-to-r from-[#b91c1c] to-[#ff6b6b] px-5 py-4 flex items-center justify-between">
-          <span className="text-base font-bold text-white">🗑️ Delete Cruise</span>
-          <button className="bg-white/20 text-white border-none rounded-full w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 hover:bg-white/30 transition-colors" onClick={onClose}>×</button>
+        <div className="p-6 pt-8 text-center">
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <span className="absolute inset-0 rounded-2xl bg-red-100 animate-ping opacity-40" />
+            <div className="relative w-16 h-16 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg shadow-red-200 ring-4 ring-red-50 text-2xl">🗑️</div>
+          </div>
+          <h3 className="text-lg font-black text-slate-900 mb-1">Delete Cruise?</h3>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Are you sure you want to delete <span className="font-bold text-slate-800">{cruise.name}</span>?<br className="hidden sm:block" /> This action cannot be undone.
+          </p>
         </div>
-        
-        <div className="py-7 px-5 text-center">
-          <div className="text-5xl mb-3">⚠️</div>
-          <p className="text-[15px] mb-1.5 text-slate-800 font-medium">Are you sure you want to delete</p>
-          <p className="text-lg font-bold text-[#ff6b6b] mb-1.5">{cruise.name}</p>
-          <p className="text-sm text-slate-600 m-0">This action cannot be undone.</p>
-        </div>
-        
-        <div className="px-5 py-3.5 border-t border-slate-200 flex justify-center gap-3 bg-slate-50">
-          <button className="bg-white text-slate-800 border border-slate-200 rounded-lg px-5 py-2 font-semibold text-sm cursor-pointer hover:bg-slate-100 transition-colors" onClick={onClose}>Cancel</button>
-          <button className="bg-gradient-to-br from-[#ff6b6b] to-[#ff8e53] text-white border-none rounded-lg px-5 py-2 font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity shadow-md" onClick={onConfirm}>Yes, Delete</button>
+
+        <div className="px-5 py-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 bg-slate-50">
+          <button className="bg-white text-slate-800 border border-slate-200 rounded-xl px-5 py-2.5 font-semibold text-sm cursor-pointer hover:bg-slate-100 transition-colors w-full sm:w-auto" onClick={onClose}>Cancel</button>
+          <button className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white border-none rounded-xl px-5 py-2.5 font-bold text-sm cursor-pointer transition-all shadow-md shadow-red-200 w-full sm:w-auto" onClick={onConfirm}>Delete Cruise</button>
         </div>
       </div>
     </div>
@@ -1337,9 +1342,17 @@ function CruiseModal({ cruise, onSave, onClose }) {
         <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-[1100px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-200 overflow-hidden my-2.5">
           
           {/* header */}
-          <div className="bg-white border-b border-slate-200 px-7 py-5 flex items-center justify-between">
-            <span className="m-0 text-xl font-extrabold text-[#0a1628]">{isEdit ? "✏️ Edit Cruise" : "🚢 Create Cruise"}</span>
-            <button className="bg-slate-100 border-none text-slate-600 rounded-full w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 hover:bg-slate-200 transition-colors" onClick={onClose}>×</button>
+          <div className="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 px-5 sm:px-7 py-5 flex items-center justify-between overflow-hidden">
+            <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+            <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
+            <div className="relative flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-xl shadow-inner flex-shrink-0">🚢</div>
+              <div>
+                <span className="block text-lg sm:text-xl font-black text-white leading-tight">{isEdit ? "Edit Cruise" : "Create Cruise"}</span>
+                <span className="text-xs text-white/70">{isEdit ? "Update cruise & room details" : "Add a new cruise to your fleet"}</span>
+              </div>
+            </div>
+            <button className="relative bg-white/20 hover:bg-white/30 text-white rounded-xl w-9 h-9 text-xl cursor-pointer flex items-center justify-center shrink-0 transition-colors" onClick={onClose}>×</button>
           </div>
 
           {/* body */}
@@ -1441,9 +1454,9 @@ function CruiseModal({ cruise, onSave, onClose }) {
           </div>
 
           {/* footer */}
-          <div className="px-7 py-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-100">
-            <button className="bg-white text-slate-800 border border-slate-200 rounded-lg px-5 py-2.5 font-semibold text-sm cursor-pointer hover:bg-slate-50 transition-colors" onClick={onClose}>Cancel</button>
-            <button className="bg-gradient-to-br from-[#1a7fd4] to-[#0e4f8a] text-white border-none rounded-lg px-6 py-2.5 font-bold text-sm cursor-pointer shadow-[0_4px_14px_rgba(26,127,212,0.3)] hover:opacity-90 transition-opacity" onClick={handleSave} disabled={loading}>
+          <div className="px-5 sm:px-7 py-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 bg-slate-50">
+            <button className="bg-white text-slate-800 border border-slate-200 rounded-xl px-5 py-2.5 font-semibold text-sm cursor-pointer hover:bg-slate-100 transition-colors w-full sm:w-auto" onClick={onClose}>Cancel</button>
+            <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-none rounded-xl px-6 py-2.5 font-bold text-sm cursor-pointer shadow-md shadow-blue-200 disabled:opacity-60 transition-all w-full sm:w-auto" onClick={handleSave} disabled={loading}>
               {loading ? "⏳ Saving…" : isEdit ? "💾 Update Cruise" : "🚀 Save Cruise"}
             </button>
           </div>
@@ -1504,54 +1517,70 @@ export default function CruiseMaster() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-800 p-0">
-      
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 text-slate-800"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        ::-webkit-scrollbar{width:6px;height:6px}
+        ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px}
+        ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+      `}</style>
+
       {/* ── HEADER ── */}
-      <header className="bg-white px-8 py-4 flex items-center justify-between shadow-[0_2px_12px_rgba(0,0,0,0.06)] border-b border-slate-200 sticky top-0 z-[100] gap-4 flex-wrap">
+      <header className="bg-white/80 backdrop-blur-xl px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm border-b border-slate-200/60 sticky top-0 z-30 gap-3 sm:gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <span className="text-[28px]">⚓</span>
+          <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-200 overflow-hidden flex-shrink-0">
+            <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/25 to-transparent opacity-60" />
+            <span className="relative text-xl">⚓</span>
+          </div>
           <div>
-            <h1 className="m-0 text-[22px] font-extrabold tracking-tight text-[#0a1628]">Cruise Master</h1>
-            <p className="m-0 text-xs text-slate-600 mt-0.5 font-medium">Manage your fleet & room inventory</p>
+            <h1 className="m-0 text-lg sm:text-xl font-black tracking-tight text-slate-800">Cruise Master</h1>
+            <p className="m-0 text-xs text-slate-400 mt-0.5 font-medium">Manage your fleet &amp; room inventory</p>
           </div>
         </div>
 
         {/* search */}
-        <div className="flex-1 max-w-[340px] relative">
-          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-slate-400 text-[15px]">🔍</span>
+        <div className="relative w-full sm:flex-1 sm:max-w-[340px] order-3 sm:order-2">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[15px]">🔍</span>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search cruises…"
-            className="w-full py-2.5 px-4 pl-10 rounded-full border border-slate-200 bg-slate-100 text-slate-800 text-sm outline-none placeholder:text-slate-400 focus:border-[#1a7fd4] focus:ring-1 focus:ring-[#1a7fd4] transition-all"
+            className="w-full py-2.5 px-4 pl-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm outline-none placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
           />
         </div>
 
-        <button  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5" onClick={() => setShowCreate(true)}>
-          ➕ Add New Cruise
+        <button className="order-2 sm:order-3 flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-md shadow-blue-200 hover:-translate-y-0.5 whitespace-nowrap flex-shrink-0" onClick={() => setShowCreate(true)}>
+          ➕ <span className="hidden sm:inline">Add New Cruise</span><span className="sm:hidden">Add</span>
         </button>
       </header>
 
       {/* ── MAIN ── */}
-      <main className="p-7 pb-16">
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 pb-16">
         {/* stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
-            { label: "Total Cruises",   value: cruises.length,              accent: "#0e4f8a",   icon: "🚢" },
-            { label: "Total Room Types",value: totalRooms,                  accent: "#f59e0b",  icon: "🛏️" },
-            { label: "Avg. Room Price", value: fmt(avgPrice),               accent: "#10b981",  icon: "💰" },
-            { label: "Search Results",  value: filtered.length,             accent: "#ff6b6b", icon: "🔍" },
+            { label: "Total Cruises",    value: cruises.length,  gradient: "from-blue-500 to-indigo-600",   icon: "🚢" },
+            { label: "Total Room Types", value: totalRooms,      gradient: "from-amber-500 to-orange-600",  icon: "🛏️" },
+            { label: "Avg. Room Price",  value: fmt(avgPrice),   gradient: "from-emerald-500 to-green-600", icon: "💰" },
+            { label: "Search Results",   value: filtered.length, gradient: "from-rose-500 to-red-600",      icon: "🔍" },
           ].map((s) => (
-            <div key={s.label} className="bg-white border border-slate-200 rounded-2xl p-4.5 py-5 px-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] border-l-4" style={{ borderLeftColor: s.accent }}>
-              <p className="text-[28px] font-extrabold m-0" style={{ color: s.accent }}>{s.icon} {s.value}</p>
-              <p className="text-xs text-slate-600 m-0 mt-1 font-semibold uppercase tracking-wider">{s.label}</p>
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} rounded-2xl p-4 sm:p-5 shadow-lg ring-1 ring-white/10 hover:-translate-y-0.5 transition-transform`}>
+              <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+              <div className="relative flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner flex-shrink-0">{s.icon}</div>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-black text-white leading-none truncate">{s.value}</p>
+                  <p className="text-[10px] sm:text-xs text-white/70 mt-1 font-semibold uppercase tracking-wider">{s.label}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
         {/* table */}
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+        <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-black/5 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-md">
             <table className="w-full border-collapse min-w-[700px]">
               <thead className="bg-slate-50">

@@ -1215,20 +1215,21 @@ function StatCard({ icon, label, value, gradient, sub, delay=0 }) {
   },[value,isNum]);
   const display = isNum ? displayed.toLocaleString("en-IN") : value;
   return (
-    <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
-      hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer`}
+    <div className={`bg-gradient-to-br ${gradient} rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden group
+      hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer ring-1 ring-white/10`}
       style={{animationDelay:`${delay}ms`}}>
+      <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none"/>
       <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300"/>
       <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10"/>
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all text-xl">
+          <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 group-hover:scale-105 flex items-center justify-center transition-all text-xl shadow-inner">
             {icon}
           </div>
           {sub&&<span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">{sub}</span>}
         </div>
         <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">{display}</p>
-        <p className="text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
+        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-80">{label}</p>
       </div>
     </div>
   );
@@ -1240,9 +1241,9 @@ function SectionCard({ title, icon, subtitle, children, delay=0 }) {
     <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden"
       style={{animation:`fadeUp .4s ease both`, animationDelay:`${delay}ms`}}>
       {title && (
-        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+        <div className="px-4 sm:px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center gap-3">
           {icon && (
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-blue-200/60">
               {icon}
             </div>
           )}
@@ -1252,7 +1253,7 @@ function SectionCard({ title, icon, subtitle, children, delay=0 }) {
           </div>
         </div>
       )}
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </div>
   );
 }
@@ -1327,22 +1328,24 @@ function Sidebar({
     : 0;
 
   return (
-    <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
+    <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4 lg:sticky lg:top-6 lg:self-start">
 
       {/* ── Profile card ── */}
       <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden"
         style={{animation:"fadeUp .4s ease both"}}>
         {/* Avatar + name banner */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-500 px-5 py-6 flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-white/20 to-white/10 border-2 border-white/30
+        <div className="relative bg-gradient-to-br from-blue-600 to-indigo-600 px-5 py-6 flex flex-col items-center gap-3 overflow-hidden">
+          <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none"/>
+          <div className="absolute -right-8 -bottom-8 w-28 h-28 rounded-full bg-white/10 pointer-events-none"/>
+          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-white/25 to-white/10 border-2 border-white/30
             flex items-center justify-center text-white text-2xl font-extrabold shadow-lg overflow-hidden">
             {company.logoUrl
               ? <img src={company.logoUrl} alt="logo" className="w-full h-full object-contain p-1 bg-white"/>
               : inits}
           </div>
-          <div className="text-center">
+          <div className="relative text-center">
             <h2 className="text-white font-extrabold text-base leading-snug">{company.name}</h2>
-            <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-extrabold bg-emerald-400/20 border border-emerald-300/40 text-emerald-200 px-2.5 py-1 rounded-full">
+            <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-extrabold bg-emerald-400/20 border border-emerald-300/40 text-emerald-100 px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"/>
               {company.status}
             </span>
@@ -1950,8 +1953,8 @@ const handleDelete = async (id) => {
           </div>
         ) : (
           <div className="space-y-2">
-            {rates.map(r=>(
-              <div key={r.id} className="flex items-center justify-between gap-3 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 group">
+            {rates.map((r, i)=>(
+              <div key={r.id ?? `rate-${i}`} className="flex items-center justify-between gap-3 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200 group">
                 <div className="flex items-center gap-3 flex-wrap min-w-0">
                   <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full flex-shrink-0
                     ${r.type==="GST"?"bg-blue-100 text-blue-700":r.type==="TCS"?"bg-amber-100 text-amber-700":"bg-slate-200 text-slate-700"}`}>
@@ -2121,8 +2124,9 @@ export default function CompanyProfile() {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center text-white text-xl shadow-lg shadow-blue-200 flex-shrink-0">
-                <FaBuilding className="w-5 h-5"/>
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-lg shadow-blue-200 flex-shrink-0 overflow-hidden">
+                <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/25 to-transparent opacity-60"/>
+                <FaBuilding className="relative w-5 h-5"/>
               </div>
               <div>
                 <h1 className="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
@@ -2145,8 +2149,8 @@ export default function CompanyProfile() {
               </div>
             </div>
             <button onClick={()=>setActiveTab("edit")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
-                shadow-md shadow-blue-200 hover:shadow-lg transition-all">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold
+                shadow-md shadow-blue-200 hover:shadow-lg transition-all w-full sm:w-auto">
               <FiEdit2 className="w-3.5 h-3.5"/> Edit Profile
             </button>
           </div>
@@ -2185,16 +2189,16 @@ export default function CompanyProfile() {
             {/* RIGHT CONTENT */}
             <div className="flex-1 min-w-0 space-y-5">
 
-              {/* TAB BAR — scrollable on mobile, exact same style as other pages */}
-              <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden fade-up">
+              {/* TAB BAR — scrollable pill style */}
+              <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm fade-up p-1.5">
                 <div className="overflow-x-auto">
-                  <div className="flex min-w-max border-b border-slate-100">
+                  <div className="flex min-w-max gap-1">
                     {TABS.map(tab=>(
                       <button key={tab.id} onClick={()=>setActiveTab(tab.id)}
-                        className={`px-5 sm:px-7 py-4 text-xs sm:text-sm font-bold border-b-2 -mb-px transition-all whitespace-nowrap
+                        className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all
                           ${activeTab===tab.id
-                            ?"border-blue-600 text-blue-600 bg-blue-50/60"
-                            :"border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}>
+                            ?"bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-200"
+                            :"text-slate-500 hover:text-slate-700 hover:bg-slate-100"}`}>
                         {tab.label}
                       </button>
                     ))}

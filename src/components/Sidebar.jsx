@@ -1204,7 +1204,7 @@ import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText,
   CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser,
-  User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock, Trash2
+  User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock, Trash2, Truck
 } from 'lucide-react';
 import { isSuperAdmin, hasPermission, P } from '../services/access';
 
@@ -1511,6 +1511,31 @@ const Sidebar = ({ isExpanded }) => {
           </li>
           )}
           
+          {/* --- Fleet / Vehicle Diary Dropdown --- */}
+          {hasPermission(P.FLEET_READ) && (
+          <li>
+            <button
+              onClick={() => handleMenuClick('Fleet')}
+              className={`w-full flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'justify-between px-4' : 'justify-center px-0'} ${
+                activeTab === 'Fleet' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <div className={`flex items-center ${showSidebar ? 'gap-3.5' : ''}`}>
+                <Truck size={20} strokeWidth={activeTab === 'Fleet' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Fleet' ? 'text-white' : 'text-sky-400'}`} />
+                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Vehicle Diary</span>}
+              </div>
+              {showSidebar && <ChevronDown size={16} className={`transition-transform duration-200 opacity-70 ${openDropdown === 'Fleet' ? 'rotate-180' : ''}`} />}
+            </button>
+            {showSidebar && openDropdown === 'Fleet' && (
+              <ul className="mt-1 space-y-1 mb-2">
+                <li><Link to="/fleet" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Dashboard</span></Link></li>
+                <li><Link to="/fleet/vehicles" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Vehicles</span></Link></li>
+                <li><Link to="/fleet/drivers" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Drivers</span></Link></li>
+                <li><Link to="/fleet/trips" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Trips</span></Link></li>
+              </ul>
+            )}
+          </li>
+          )}
 
           {/* --- Users Dropdown --- */}
 {hasPermission(P.USER_READ) && (

@@ -413,6 +413,7 @@
 
 
 import { useState, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plane, Plus, Search, Edit2, Trash2, Eye, X, Upload,
   CheckCircle2, AlertCircle, Clock, ChevronUp, ChevronDown,
@@ -614,7 +615,7 @@ function Modal({ show, onClose, children }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[600px] transform transition-all duration-200 animate-in fade-in zoom-in-95">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[600px] max-h-[90vh] overflow-y-auto transform transition-all duration-200 animate-in fade-in zoom-in-95">
         {children}
       </div>
     </div>
@@ -671,6 +672,7 @@ function ViewModal({ airline, onClose }) {
 }
 
 export default function AirlineMaster() {
+  const navigate = useNavigate();
   const [airlines, setAirlines] = useState(dummyAirlines);
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("createdAt");
@@ -746,27 +748,45 @@ export default function AirlineMaster() {
   const activeCount = airlines.filter(a => a.status === "Active").length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
+      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        ::-webkit-scrollbar{width:6px;height:6px}
+        ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px}
+        ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+      `}</style>
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md shadow-blue-200">
-                <Plane size={18} className="text-white" />
+              <div className="relative w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md shadow-blue-200 overflow-hidden flex-shrink-0">
+                <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/25 to-transparent opacity-60" />
+                <Plane size={18} className="relative text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-black text-gray-900 leading-none">Airline Master</h1>
-                <p className="text-xs text-gray-400 mt-0.5">Manage Airlines</p>
+                <h1 className="text-lg sm:text-xl font-black text-slate-800 leading-none">Airline Master</h1>
+                <p className="text-xs text-slate-400 mt-1">
+                  Manage airlines
+                  <span className="hidden sm:inline ml-2 text-slate-300">|</span>
+                  <span className="hidden sm:inline ml-2">
+                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/")}>Home</span>
+                    <span className="mx-1 text-slate-300">/</span>
+                    <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={() => navigate("/masters/cruises")}>Masters</span>
+                    <span className="mx-1 text-slate-300">/</span>
+                    <span className="text-blue-600 font-bold">Airlines</span>
+                  </span>
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="relative">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search by name, country, IATA..." className="border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition bg-slate-50 focus:bg-white" />
+                <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search name, country, IATA..." className="border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64 transition bg-slate-50 focus:bg-white" />
               </div>
-              <button onClick={openAdd} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-200 whitespace-nowrap">
-                <Plus size={16} /> Add New Airline
+              <button onClick={openAdd} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-95 text-white px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-md shadow-blue-200 whitespace-nowrap flex-shrink-0">
+                <Plus size={16} /> <span className="hidden sm:inline">Add New Airline</span><span className="sm:hidden">Add</span>
               </button>
             </div>
           </div>
@@ -782,11 +802,12 @@ export default function AirlineMaster() {
             { label: "Inactive", value: airlines.filter(a => a.status === "Inactive").length, gradient: "from-gray-400 to-gray-600", icon: "bg-white/20" },
             { label: "Suspended", value: airlines.filter(a => a.status === "Suspended").length, gradient: "from-red-500 to-rose-600", icon: "bg-white/20" },
           ].map(s => (
-            <div key={s.label} className={`bg-gradient-to-br ${s.gradient} rounded-2xl px-4 py-4 flex items-center gap-3 shadow-lg`}>
-              <div className={`w-10 h-10 rounded-xl ${s.icon} flex items-center justify-center flex-shrink-0`}>
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} rounded-2xl px-4 py-4 flex items-center gap-3 shadow-lg ring-1 ring-white/10 hover:-translate-y-0.5 transition-transform`}>
+              <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+              <div className={`relative w-10 h-10 rounded-xl ${s.icon} flex items-center justify-center flex-shrink-0 shadow-inner`}>
                 <Plane size={18} className="text-white" />
               </div>
-              <div>
+              <div className="relative">
                 <p className="text-2xl font-black text-white leading-none">{s.value}</p>
                 <p className="text-xs text-white/70 mt-0.5 font-medium">{s.label}</p>
               </div>
@@ -797,14 +818,14 @@ export default function AirlineMaster() {
 
       {/* Cards Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10">
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
           {/* Card area header */}
-          <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold text-gray-800">Airlines Directory</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{filtered.length} of {airlines.length} airlines</p>
+              <h2 className="text-sm font-extrabold text-slate-800">Airlines Directory</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{filtered.length} of {airlines.length} airlines</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-gray-400">Sort:</span>
               {[["name", "Name"], ["createdAt", "Date"], ["status", "Status"]].map(([f, l]) => (
                 <button key={f} onClick={() => handleSort(f)}
@@ -863,14 +884,19 @@ export default function AirlineMaster() {
 
       {/* Add / Edit Modal */}
       <Modal show={showAdd} onClose={() => setShowAdd(false)}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
-              <Plane size={15} className="text-white" />
+        <div className="relative bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700 rounded-t-2xl px-6 py-5 flex items-center justify-between overflow-hidden">
+          <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+          <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-inner flex-shrink-0">
+              <Plane size={18} className="text-white" />
             </div>
-            <h2 className="text-base font-bold text-gray-900">{editing ? "Edit Airline" : "Add New Airline"}</h2>
+            <div>
+              <h2 className="text-base font-black text-white leading-tight">{editing ? "Edit Airline" : "Add New Airline"}</h2>
+              <p className="text-xs text-white/70">{editing ? "Update airline details" : "Create a new airline record"}</p>
+            </div>
           </div>
-          <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition"><X size={18} /></button>
+          <button onClick={() => setShowAdd(false)} className="relative p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition flex-shrink-0"><X size={18} /></button>
         </div>
 
         <div className="p-6 space-y-5">
@@ -936,7 +962,7 @@ export default function AirlineMaster() {
 
         <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end">
           <button onClick={() => setShowAdd(false)} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition active:scale-95 shadow-md shadow-blue-200">
+          <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition active:scale-95 shadow-md shadow-blue-200">
             {saving ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving...</> : <><Plane size={14} />{editing ? "Update Airline" : "Save Airline"}</>}
           </button>
         </div>
@@ -948,16 +974,21 @@ export default function AirlineMaster() {
       <Modal show={!!deleting} onClose={() => setDeleting(null)}>
         {deleting && (
           <>
-            <div className="p-6 text-center">
-              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Trash2 size={24} className="text-red-500" />
+            <div className="p-6 pt-8 text-center">
+              <div className="relative w-16 h-16 mx-auto mb-4">
+                <span className="absolute inset-0 rounded-2xl bg-red-100 animate-ping opacity-40" />
+                <div className="relative w-16 h-16 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg shadow-red-200 ring-4 ring-red-50">
+                  <Trash2 size={26} className="text-white" />
+                </div>
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-1">Delete Airline</h3>
-              <p className="text-sm text-gray-500">Are you sure you want to delete <span className="font-bold text-gray-800">{deleting.name}</span>? This action cannot be undone.</p>
+              <h3 className="text-lg font-black text-gray-900 mb-1">Delete Airline?</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Are you sure you want to delete <span className="font-bold text-gray-800">{deleting.name}</span>?<br className="hidden sm:block" /> This action cannot be undone.
+              </p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex gap-3 justify-end">
-              <button onClick={() => setDeleting(null)} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancel</button>
-              <button onClick={() => handleDelete(deleting.id)} className="px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition active:scale-95">Delete</button>
+            <div className="px-6 py-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+              <button onClick={() => setDeleting(null)} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition w-full sm:w-auto">Cancel</button>
+              <button onClick={() => handleDelete(deleting.id)} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white text-sm font-bold transition active:scale-95 shadow-md shadow-red-200 w-full sm:w-auto">Delete Airline</button>
             </div>
           </>
         )}

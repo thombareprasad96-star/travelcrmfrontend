@@ -16,7 +16,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Trash2, RotateCcw, AlertTriangle, Search, X, RefreshCw, Inbox, Clock,
-  ShieldAlert,Check,
+  ShieldAlert, Check, LayoutGrid, List,
 } from "lucide-react";
 
 
@@ -82,6 +82,28 @@ const TYPE_BADGE = {
   COUNTRY:     "bg-slate-100 text-slate-700 border-slate-200",
 };
 const badgeFor = (t) => TYPE_BADGE[t] || "bg-slate-100 text-slate-700 border-slate-200";
+
+// Per-module gradient for the card avatar tile.
+const TYPE_GRAD = {
+  LEAD:        "from-cyan-500 to-blue-600",
+  CUSTOMER:    "from-teal-500 to-emerald-600",
+  BOOKING:     "from-orange-500 to-red-500",
+  QUOTATION:   "from-emerald-500 to-green-600",
+  VENDOR:      "from-amber-500 to-orange-600",
+  REMINDER:    "from-rose-500 to-pink-600",
+  HOTEL:       "from-purple-500 to-violet-600",
+  AIRLINE:     "from-sky-500 to-blue-600",
+  CRUISE:      "from-blue-500 to-indigo-600",
+  ADDON:       "from-violet-500 to-purple-600",
+  SIGHTSEEING: "from-fuchsia-500 to-pink-600",
+  VEHICLE:     "from-indigo-500 to-blue-600",
+  CITY:        "from-slate-500 to-slate-600",
+  DESTINATION: "from-slate-500 to-slate-600",
+  COUNTRY:     "from-slate-500 to-slate-600",
+};
+const gradFor = (t) => TYPE_GRAD[t] || "from-slate-500 to-slate-600";
+const moduleInitials = (m = "") =>
+  m.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "??";
 
 const FONT_STACK = '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif';
 
@@ -251,6 +273,7 @@ export default function TrashPage() {
   const [dateFrom,   setDateFrom]   = useState("");
   const [dateTo,     setDateTo]     = useState("");
   const [page,       setPage]       = useState(1);
+  const [view,       setView]       = useState("list"); // "list" | "grid"
 
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [deleteTarget,  setDeleteTarget]  = useState(null);
@@ -411,6 +434,62 @@ export default function TrashPage() {
     </div>
   );
 
+  /* ── Single trashed-item card (used by grid view + mobile list) ── */
+  const renderCard = (r, idx) => {
+    const stripe = r.daysUntilPurge <= 7 ? "bg-red-500"
+                 : r.daysUntilPurge <= 30 ? "bg-amber-400"
+                 : "bg-slate-300";
+    return (
+      <div key={`${r.entityType}-${r.publicId}`}
+        className="group bg-white rounded-2xl border border-slate-200/70 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-slate-300 transition-all duration-300 flex flex-col overflow-hidden"
+        style={{ animation:"fadeUp .35s ease both", animationDelay:`${idx*40}ms` }}>
+
+        {/* Urgency stripe */}
+        <div className={`h-1 w-full ${stripe}`} />
+
+        <div className="p-4 flex flex-col flex-1">
+          {/* Badge row */}
+          <div className="flex items-center justify-between gap-2 mb-3.5">
+            <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border ${badgeFor(r.entityType)}`}>
+              {r.module}
+            </span>
+            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${purgeStyle(r.daysUntilPurge)}`}>
+              <Clock size={11}/> {purgeLabel(r.daysUntilPurge)}
+            </span>
+          </div>
+
+          {/* Identity row: gradient avatar + label */}
+          <div className="flex items-center gap-3 mb-3.5">
+            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradFor(r.entityType)} flex items-center justify-center text-white text-sm font-black shadow-md flex-shrink-0 group-hover:scale-105 transition-transform`}>
+              {moduleInitials(r.module)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold text-slate-800 leading-snug line-clamp-2" title={r.label}>{r.label || "—"}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Deleted record</p>
+            </div>
+          </div>
+
+          {/* Meta boxes */}
+          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+            <div className="bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 min-w-0">
+              <p className="text-slate-400 mb-0.5">Deleted by</p>
+              <p className="font-bold text-slate-700 truncate">{r.deletedBy || "—"}</p>
+            </div>
+            <div className="bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 min-w-0">
+              <p className="text-slate-400 mb-0.5">Deleted at</p>
+              <p className="font-bold text-slate-700 truncate">{fmtDateTime(r.deletedAt)}</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="pt-3 mt-auto border-t border-slate-100">
+            <RowActions row={r}/>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   /* ─────────────────────────────────────────
      RENDER
   ───────────────────────────────────────── */
@@ -478,12 +557,25 @@ export default function TrashPage() {
                 <span className="text-xs text-slate-400 font-medium animate-pulse">Loading…</span>
               )}
             </div>
-            {anyFilter && (
-              <button onClick={resetFilters}
-                className="text-xs text-slate-400 hover:text-red-500 font-semibold flex items-center gap-1 transition-colors">
-                <X size={14}/> Clear filters
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {anyFilter && (
+                <button onClick={resetFilters}
+                  className="text-xs text-slate-400 hover:text-red-500 font-semibold flex items-center gap-1 transition-colors">
+                  <X size={14}/> Clear filters
+                </button>
+              )}
+              {/* Grid / List toggle */}
+              <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1">
+                {["grid", "list"].map((v) => (
+                  <button key={v} onClick={() => setView(v)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5
+                      ${view === v ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+                    {v === "grid" ? <LayoutGrid size={13}/> : <List size={13}/>}
+                    <span className="hidden sm:inline">{v === "grid" ? "Grid" : "List"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* ── FILTER ROW ── */}
@@ -541,8 +633,8 @@ export default function TrashPage() {
             </div>
           )}
 
-          {/* ── DESKTOP TABLE ── */}
-          {!error && (
+          {/* ── DESKTOP TABLE (list view) ── */}
+          {!error && view === "list" && (
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead className="bg-slate-50/80 border-b border-slate-100">
@@ -630,8 +722,8 @@ export default function TrashPage() {
             </div>
           )}
 
-          {/* ── MOBILE CARDS ── */}
-          {!error && (
+          {/* ── MOBILE CARDS (list view) ── */}
+          {!error && view === "list" && (
             <div className="md:hidden p-4 space-y-3">
               {loading ? (
                 [...Array(3)].map((_, i) => (
@@ -658,38 +750,42 @@ export default function TrashPage() {
                   )}
                 </div>
               ) : (
-                pageData.map((r, idx) => (
-                  <div key={`${r.entityType}-${r.publicId}`}
-                    className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4 space-y-3 hover:shadow-md hover:border-slate-300 transition-all"
-                    style={{ animation:"fadeUp .35s ease both", animationDelay:`${idx*40}ms` }}>
-                    {/* Top row */}
-                    <div className="flex items-start justify-between gap-2">
-                      <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border ${badgeFor(r.entityType)}`}>
-                        {r.module}
-                      </span>
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${purgeStyle(r.daysUntilPurge)}`}>
-                        <Clock size={11}/> {purgeLabel(r.daysUntilPurge)}
-                      </span>
-                    </div>
-                    {/* Label */}
-                    <p className="text-sm font-extrabold text-slate-800">{r.label || "—"}</p>
-                    {/* Meta */}
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
-                        <p className="text-slate-400 mb-0.5">Deleted by</p>
-                        <p className="font-bold text-slate-700">{r.deletedBy || "—"}</p>
-                      </div>
-                      <div className="bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
-                        <p className="text-slate-400 mb-0.5">Deleted at</p>
-                        <p className="font-bold text-slate-700">{fmtDateTime(r.deletedAt)}</p>
-                      </div>
-                    </div>
-                    {/* Actions */}
-                    <div className="pt-1">
-                      <RowActions row={r}/>
-                    </div>
+                pageData.map(renderCard)
+              )}
+            </div>
+          )}
+
+          {/* ── GRID VIEW (all breakpoints) ── */}
+          {!error && view === "grid" && (
+            <div className="p-4 sm:p-5">
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 h-44 animate-pulse"/>
+                  ))}
+                </div>
+              ) : pageData.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-4">
+                    <Inbox size={28}/>
                   </div>
-                ))
+                  <p className="text-slate-500 font-bold text-sm mb-2">
+                    {anyFilter ? "No items match your filters" : "Trash is empty"}
+                  </p>
+                  <p className="text-slate-400 text-xs mb-4">
+                    {anyFilter ? "Try adjusting your search or filter." : "Deleted records will appear here for 30 days."}
+                  </p>
+                  {anyFilter && (
+                    <button onClick={resetFilters}
+                      className="px-5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-sm transition-all">
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {pageData.map(renderCard)}
+                </div>
               )}
             </div>
           )}
