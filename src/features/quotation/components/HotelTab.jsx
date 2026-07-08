@@ -609,7 +609,7 @@ export default function HotelTab({ onDataChange, paxInfo = {}, destinations = []
           : h
       )));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [paxInfo.rooms]);
 
   useEffect(() => {

@@ -173,12 +173,12 @@ function SnoozeMenu({ onSnooze, onClose }) {
 
 /* ─── VIEW LEAD MODAL — fetches real lead from backend ───────── */
 function ViewLeadModal({ reminder, onClose }) {
-  if (!reminder) return null;
   const navigate = useNavigate();
   const [lead,    setLead]    = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!reminder) return;
     const leadId = reminder.leadId;
     if (!leadId) {
       // No leadId — show what we have from the reminder
@@ -238,6 +238,8 @@ function ViewLeadModal({ reminder, onClose }) {
       })
       .finally(() => setLoading(false));
   }, [reminder]);
+
+  if (!reminder) return null;
 
   const stageCfg = STAGE_CFG[lead?.stage]    || STAGE_CFG["New Lead"];
   const typeCfg  = LEAD_TYPE_CFG[lead?.type] || LEAD_TYPE_CFG["Fresh Lead"];

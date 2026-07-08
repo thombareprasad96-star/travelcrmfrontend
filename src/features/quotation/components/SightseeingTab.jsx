@@ -585,7 +585,7 @@ export default function SightseeingTab({ onDataChange, paxInfo = {}, dayCityMap 
           : d
       )));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [paxInfo.totalPax]);
 
   // ── Parent ko data do ─────────────────────────────────────
