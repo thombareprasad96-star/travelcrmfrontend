@@ -15,14 +15,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { FiArrowLeft, FiCheckCircle, FiSave, FiRefreshCw } from "react-icons/fi";
 import { FaHandshake }   from "react-icons/fa";
 
-import VendorInformation from "./VendorInformation";
-import VendorLocation    from "./VendorLocation";
-import VendorServices    from "./VendorServices";
-import VendorFinancials  from "./VendorFinancials";
-import VendorNotes       from "./VendorNotes";
-import VendorSummary     from "./VendorSummary";
+import VendorInformation from "../components/VendorInformation";
+import VendorLocation    from "../components/VendorLocation";
+import VendorServices    from "../components/VendorServices";
+import VendorFinancials  from "../components/VendorFinancials";
+import VendorNotes       from "../components/VendorNotes";
+import VendorSummary     from "../components/VendorSummary";
 
-import vendorService     from "../services/vendorService";
+import vendorService     from "../api/vendorService";
 
 /* ─── FONT STACK ─────────────────────────────────────────────── */
 const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";

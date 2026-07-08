@@ -10,15 +10,15 @@ import { useForm } from "react-hook-form";
 import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
 import { FaHandshake } from "react-icons/fa";
 
-import VendorInformation from "./VendorInformation";
-import VendorLocation    from "./VendorLocation";
-import VendorServices    from "./VendorServices";
-import VendorFinancials  from "./VendorFinancials";
-import VendorNotes       from "./VendorNotes";
-import VendorSummary     from "./VendorSummary";
+import VendorInformation from "../components/VendorInformation";
+import VendorLocation    from "../components/VendorLocation";
+import VendorServices    from "../components/VendorServices";
+import VendorFinancials  from "../components/VendorFinancials";
+import VendorNotes       from "../components/VendorNotes";
+import VendorSummary     from "../components/VendorSummary";
 
 // ── Uncomment when backend is ready ──────────────────────────
-import  vendorService  from "../services/vendorService";
+import  vendorService  from "../api/vendorService";
 import { useNavigate }    from "react-router-dom";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
