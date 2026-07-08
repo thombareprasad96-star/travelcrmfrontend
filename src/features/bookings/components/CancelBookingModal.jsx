@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import bookingService from "../services/bookingService";
+import bookingService from "../api/bookingService";
 import { hasPermission, P } from "@shared/lib/access";
 
 /* res.data?.data ?? res.data */

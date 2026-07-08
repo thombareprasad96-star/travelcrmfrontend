@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import bookingService                from "../services/bookingService";
-import CancelBookingModal            from "./CancelBookingModal";
+import bookingService                from "../api/bookingService";
+import CancelBookingModal            from "../components/CancelBookingModal";
 import { hasPermission, P }          from "@shared/lib/access";
 import {
   FiSearch, FiRefreshCw, FiFilter, FiDownload,

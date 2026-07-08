@@ -215,7 +215,7 @@ import {
   AddonService,
   Testimonials,
 } from "@features/masters";
-import Allbookings from "./bookings/Allbookings";
+import { Allbookings, EditBooking, BookingDetails } from "@features/bookings";
 import { AllCustomers, Createcustomer, EditCustomer } from "@features/customers";
 import { AllOrganization } from "@features/tenant";
 import { AllVendors, CreateVendor, EditVendor } from "@features/vendors";
@@ -255,7 +255,6 @@ import { SubscriptionInfo } from "@features/subscription";
 import { Dashboard } from "@features/dashboard";
 import { TrashPage } from "@features/trash";
 import EditLead from "./admin/leads/EditLead";
-import EditBooking from "./bookings/EditBooking";
 import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
 import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
 
@@ -272,7 +271,6 @@ import {
   FleetTripDetail,
 } from "@features/fleet";
 
-import BookingDetails from "./bookings/BookingDetails";
 
 // Route-level guard (defense-in-depth; backend is the real gate, menus already hide these).
 function Guard({ allow, children }) {
