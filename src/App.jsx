@@ -210,7 +210,7 @@ import {
   AllLeadLogs,
   WhatsAppPanel,
 } from "@features/leads";
-import AdminLogin from "./login/AdminLogin";
+import { AdminLogin } from "@features/auth";
 import {
   City,
   Destinations,

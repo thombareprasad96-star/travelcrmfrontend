@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, MapPin, Check, AlertCircle } from 'lucide-react';
 
 // 👉 Same service imports as before — auth logic untouched
-import { authService } from "../services/LoginService";
+import { authService } from "../api/LoginService";
 import { loadMyPermissions } from "@shared/lib/access";
 
 const ROLES = [
