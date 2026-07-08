@@ -11,7 +11,7 @@ import {
   FaAngleDoubleLeft, FaAngleDoubleRight,
 } from "react-icons/fa";
 
-import userService from "../services/profileUserService";
+import userService from "../api/profileUserService";
 import { hasPermission, P } from "@shared/lib/access";
 
 /* Users are loaded from the API — see profileUserService.getAll(). */

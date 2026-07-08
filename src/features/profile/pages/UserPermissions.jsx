@@ -8,8 +8,8 @@ import {
 import { FaUserShield, FaStar, FaCog } from "react-icons/fa";
 import { MdAdminPanelSettings } from "react-icons/md";
 
-import editUserService from "../services/profileEditUserService";
-import { userPermissionsService, permissionTemplateService, permissionCatalogService } from "../services/profileUserPermissionsService";
+import editUserService from "../api/profileEditUserService";
+import { userPermissionsService, permissionTemplateService, permissionCatalogService } from "../api/profileUserPermissionsService";
 
 /* ─── DATA SCOPE OPTIONS ─────────────────────────────────────── */
 const SCOPE_OPTIONS = [

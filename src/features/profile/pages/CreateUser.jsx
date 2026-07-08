@@ -11,8 +11,8 @@ import {
 } from "react-icons/fa";
 import { MdVerified, MdOutlineToggleOn, MdOutlineToggleOff } from "react-icons/md";
 
-import { createUserService } from "../services/profilecreateUserService";
-import userService from "../services/profileUserService";
+import { createUserService } from "../api/profilecreateUserService";
+import userService from "../api/profileUserService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 // Roles a tenant admin can assign (mapped to backend Role enum in userMappers).

@@ -11,8 +11,8 @@ import {
 import { HiTemplate } from "react-icons/hi";
 import { MdOutlineFlashOn } from "react-icons/md";
 
-import { permissionTemplateService } from "../services/profileUserPermissionsService";
-import userService from "../services/profileUserService";
+import { permissionTemplateService } from "../api/profileUserPermissionsService";
+import userService from "../api/profileUserService";
 
 /* ─── QUICK TEMPLATE PRESETS ─────────────────────────────────── */
 const QUICK_PRESETS = {

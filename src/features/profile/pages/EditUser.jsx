@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { MdVerified } from "react-icons/md";
 
-import editUserService from "../services/profileEditUserService";
+import editUserService from "../api/profileEditUserService";
 
 /* Roles a tenant admin can assign (mapped to backend Role enum in userMappers). */
 const ROLES = [

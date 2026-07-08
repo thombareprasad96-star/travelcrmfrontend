@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { leadService }   from "@/services/leadService";
 import bookingService     from "@/services/bookingService";
-import userService        from "@/services/profileUserService";
+import { profileUserService as userService } from "@features/profile";
 import { companyService } from "@features/settings";
 import { activityReportsService } from "@features/reports";
 import { useNavigate } from "react-router-dom";

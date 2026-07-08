@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import { HiTemplate } from "react-icons/hi";
 
-import { permissionTemplateService } from "../services/profileUserPermissionsService";
+import { permissionTemplateService } from "../api/profileUserPermissionsService";
 
 /* ─── QUICK SETUP PRESETS ────────────────────────────────────── */
 const QUICK_PRESETS = [
