@@ -18,13 +18,13 @@ import {
   FiLoader, FiFileText,
 } from "react-icons/fi";
 
-import { leadService } from "../../services/leadService";
+import { leadService } from "../api/leadService";
 
-import LeadInformation from "./CreateLead/LeadInformation";
-import TravelDetails   from "./CreateLead/TravelDetails";
-import ServicesSection from "./CreateLead/ServicesSection";
-import ItinerarySection from "./CreateLead/ItinerarySection";
-import LeadSummary      from "./CreateLead/LeadSummary";
+import LeadInformation from "../components/LeadInformation";
+import TravelDetails   from "../components/TravelDetails";
+import ServicesSection from "../components/ServicesSection";
+import ItinerarySection from "../components/ItinerarySection";
+import LeadSummary      from "../components/LeadSummary";
 
 let nextId = 1;
 
