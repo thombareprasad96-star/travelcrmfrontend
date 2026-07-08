@@ -119,7 +119,7 @@ export default function CreateLead() {
       // ── Navigate to All Leads after 1.2s so user sees the success toast ──
       setTimeout(() => navigate("/allleads"), 1200);
 
-    } catch {
+    } catch (error) {
       const msg =
         error?.response?.data?.message ||
         "Failed to create lead. Try again.";
