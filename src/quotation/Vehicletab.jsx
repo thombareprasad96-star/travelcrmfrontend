@@ -208,7 +208,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Car, Plus, IndianRupee, Users, Image as ImageIcon } from "lucide-react";
 import { Label, Input, Select, Textarea, SectionCard, RemoveBtn, IncludeToggle, EmptyState, FieldGrid } from "./ui";
-import { vehicleService } from "../services/VehicleService";
+import { vehicleService } from "@features/masters";
 
 export default function VehicleTab({ onDataChange }) {
   const [included, setIncluded] = useState(true);

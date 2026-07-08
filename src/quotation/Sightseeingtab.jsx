@@ -1681,8 +1681,8 @@ import { Map, Sun, Coffee, Utensils, Moon, Plus, IndianRupee, Search, ChevronDow
   Pencil, X, Globe, Building2, Hash, Clock, UploadCloud, AlertTriangle, Users } from "lucide-react";
 import { Label, Input, Select, Textarea, AddBtn, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./ui";
 import { ATTRACTIONS, MEALS_OPT, TRANSFER } from "../quotation/constants";
-import { sightseeingService } from "../services/SightseeingService";
-import { geographyService } from "../services/geographyService";
+import { sightseeingService } from "@features/masters";
+import { geographyService } from "@shared/api/geographyService";
 
 /* ════════════════════════════════════════════════════════
    INLINE SIGHTSEEING SEARCH DROPDOWN (HotelTab jaisa)

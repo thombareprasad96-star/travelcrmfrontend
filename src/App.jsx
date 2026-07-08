@@ -204,19 +204,21 @@ import Layout from "./Layout";
 import AllLeads from "./admin/leads/AllLeads";
 import AdminLogin from "./login/AdminLogin";
 import CreateLead from "./admin/leads/CreateLead/CreateLead";
-import City from "./masters/cities/City"
-import Destinations from "./masters/Destinations"
+import {
+  City,
+  Destinations,
+  Hotel,
+  Airline,
+  Cruise,
+  Vehiclas,
+  Sightseeing,
+  AddonService,
+  Testimonials,
+} from "@features/masters";
 import Allbookings from "./bookings/Allbookings";
 import AllCustomers from "./customers/AllCustomers";
-import Hotel from "./masters/Hotel"
-import Airline from "./masters/Airline"
 import Createcustomer from "./customers/Createcustomer";
-import Cruise from "./masters/Cruise";
-import Vehiclas from "./masters/Vehiclas"
-import Sightseeing from "./masters/Sightseeing";
-import AddonService from "./masters/AddonService";
 import { AllOrganization } from "@features/tenant";
-import Testimonials from "./masters/Testimonials"
 import AllVendors from "./vendors/AllVendors";
 import CreateVendor from "./vendors/CreateVendor";
 import {
