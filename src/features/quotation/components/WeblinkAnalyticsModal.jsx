@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, Eye, Users, Globe, Home, Loader2 } from "lucide-react";
-import { quotationService } from "../services/quotationService";
+import { quotationService } from "../api/quotationService";
 
 const fmt = (d) => {
   if (!d) return "—";

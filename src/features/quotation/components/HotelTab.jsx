@@ -4,8 +4,8 @@ import {
   Hotel, Search, Info, Plus, IndianRupee, Star, MapPin,
   ChevronDown, Edit2, X, Check, Upload, AlertCircle, BedDouble
 } from "lucide-react";
-import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./ui";
-import { ROOM_TYPES, MEAL_PLANS } from "./constants";
+import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./Ui";
+import { ROOM_TYPES, MEAL_PLANS } from "../Constants";
 import { hotelService, uploadHotelImageToCloudinary } from "@features/masters";
 import { geographyService } from "@shared/api/geographyService";
 

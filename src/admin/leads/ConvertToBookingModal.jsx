@@ -3,7 +3,7 @@ import {
   X, ArrowRightLeft, FileText, CheckCircle, AlertTriangle,
 } from 'lucide-react';
 import bookingService from '../../services/bookingService';
-import { quotationService } from '../../services/quotationService';
+import { quotationService } from "@features/quotation";
 
 /* res.data?.data ?? res.data — the project-wide envelope unwrap */
 const unwrap = (res) => res?.data?.data ?? res?.data;

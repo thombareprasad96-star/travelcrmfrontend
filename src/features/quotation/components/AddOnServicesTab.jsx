@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Package, IndianRupee } from "lucide-react";
-import { Label, Input, Select, SectionCard, AddBtn, RemoveBtn, EmptyState, FieldGrid } from "../quotation/ui";
-import { SERVICE_TYPES } from "./constants";
+import { Label, Input, Select, SectionCard, AddBtn, RemoveBtn, EmptyState, FieldGrid } from "./Ui";
+import { SERVICE_TYPES } from "../Constants";
 
 export default function AddOnServicesTab({ onDataChange }) {
   const [services, setServices] = useState([newService()]);

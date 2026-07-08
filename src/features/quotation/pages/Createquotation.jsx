@@ -7,18 +7,18 @@ import {
   Wallet, ShieldCheck, Download, Share2, CheckCircle, Loader2, AlertCircle
 } from "lucide-react";
 
-import FlightTab               from "./FlightTab";
-import HotelTab                from "./HotelTab";
-import SightseeingTab          from "./SightseeingTab";
-import CruiseTab               from "./CruiseTab";
-import VehicleTab              from "./VehicleTab";
-import AddOnServicesTab        from "./AddOnServicesTab";
-import InclusionsExclusionsTab from "./InclusionsExclusionsTab";
-import SummaryPricingTab       from "./SummaryPricingTab";
+import FlightTab               from "../components/FlightTab";
+import HotelTab                from "../components/HotelTab";
+import SightseeingTab          from "../components/SightseeingTab";
+import CruiseTab               from "../components/CruiseTab";
+import VehicleTab              from "../components/VehicleTab";
+import AddOnServicesTab        from "../components/AddOnServicesTab";
+import InclusionsExclusionsTab from "../components/InclusionsExclusionsTab";
+import SummaryPricingTab       from "../components/SummaryPricingTab";
 
-import { Input, Label }     from "./Ui";
-import { quotationService } from "../services/quotationService";
-import { leadService }      from "../services/leadService";
+import { Input, Label }     from "../components/Ui";
+import { quotationService } from "../api/quotationService";
+import { leadService }      from "@/services/leadService";
 
 /* ─── TAB CONFIG ─────────────────────────────────────── */
 const TABS = [

@@ -227,7 +227,7 @@ import {
   NotificationSettings,
 } from "@features/reminders";
 
-import CreateQuotation from "./quotation/Createquotation"
+import { CreateQuotation, PublicQuotationPage } from "@features/quotation";
 import {
   Users,
   CreateUser,
@@ -247,7 +247,6 @@ import {
   TravelDateAnalysis,
   InternationalDomestic,
 } from "@features/reports";
-import { PublicQuotationPage } from "./quotation/QuotationWebView";
 import LeadLogs from "./admin/leads/LeadLogs";
 import AddLeadLog from "./admin/leads/AddLeadLog";
 import AllLeadLogs from "./admin/leads/AllLeadLogs";

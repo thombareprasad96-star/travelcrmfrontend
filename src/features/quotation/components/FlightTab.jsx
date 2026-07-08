@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plane, Plus, IndianRupee, Users } from "lucide-react";
-import { Label, Input, Select, SectionCard, AddBtn, RemoveBtn, IncludeToggle, FieldGrid } from "./ui";
-import { AIRLINES, CLASSES, AIRPORTS, JOURNEY_TYPES } from "./constants";
+import { Label, Input, Select, SectionCard, AddBtn, RemoveBtn, IncludeToggle, FieldGrid } from "./Ui";
+import { AIRLINES, CLASSES, AIRPORTS, JOURNEY_TYPES } from "../Constants";
 
 function PriceBox({ label, value, highlight = false }) {
   return (

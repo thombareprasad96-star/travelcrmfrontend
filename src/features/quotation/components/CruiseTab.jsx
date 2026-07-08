@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Anchor, Plus, IndianRupee } from "lucide-react";
-import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, EmptyState, FieldGrid } from "./ui";
-import { CRUISE_TYPES, CABIN_CATS } from "./constants";
+import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, EmptyState, FieldGrid } from "./Ui";
+import { CRUISE_TYPES, CABIN_CATS } from "../Constants";
 
 export default function CruiseTab({ onDataChange }) {
   const [included, setIncluded] = useState(false);

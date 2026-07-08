@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from
 import { createPortal } from "react-dom";
 import { Map, Sun, Coffee, Utensils, Moon, Plus, IndianRupee, Search, ChevronDown, MapPin, Star,
   Pencil, X, Globe, Building2, Hash, Clock, UploadCloud, AlertTriangle, Users } from "lucide-react";
-import { Label, Input, Select, Textarea, AddBtn, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./ui";
-import { ATTRACTIONS, MEALS_OPT, TRANSFER } from "../quotation/constants";
+import { Label, Input, Select, Textarea, AddBtn, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./Ui";
+import { ATTRACTIONS, MEALS_OPT, TRANSFER } from "../Constants";
 import { sightseeingService } from "@features/masters";
 import { geographyService } from "@shared/api/geographyService";
 
