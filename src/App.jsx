@@ -228,14 +228,16 @@ import {
 } from "@features/reminders";
 
 import CreateQuotation from "./quotation/Createquotation"
-import CompanyProfile from "./profile/CompanyProfile";
-import ChangePassword from "./profile/ChangePassword";
-import Users from "./profile/Users";
-import CreateUser from "./profile/CreateUser";
-import EditUser from "./profile/EditUser";
-import UserPermissions from "./profile/UserPermissions";
-import PermissionTemplates from "./profile/PermissionTemplates";
-import CreatePermissionTemplate from "./profile/CreatePermissionTemplate";
+import {
+  Users,
+  CreateUser,
+  EditUser,
+  UserPermissions,
+  PermissionTemplates,
+  CreatePermissionTemplate,
+  CompanyProfile,
+  ChangePassword,
+} from "@features/profile";
 import {
   ReportsDashboard,
   ActivityReports,
