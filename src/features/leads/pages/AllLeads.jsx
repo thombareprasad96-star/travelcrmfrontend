@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { leadService } from "../api/leadService";
 import { quotationService } from "@features/quotation";
 import { hasPermission, P } from "@shared/lib/access";
-import AccessDenied from "@/components/AccessDenied";
+import AccessDenied from "../components/AccessDenied";
 import { formatToWhatsAppLink } from "../lib/whatsapp";
 import WhatsAppPanel from "./WhatsAppPanel";
 import {
