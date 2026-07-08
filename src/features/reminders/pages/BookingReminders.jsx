@@ -20,7 +20,7 @@ import {
 import { MdOutlineFlightTakeoff } from "react-icons/md";
 
 // ── Uncomment when backend is ready ──────────────────────────
-import bookingReminderService from '../services/bookingReminderService';
+import bookingReminderService from "../api/bookingReminderService";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
 // function daysAgo(d)  { const dt = new Date(); dt.setDate(dt.getDate() - d); return dt.toISOString(); }

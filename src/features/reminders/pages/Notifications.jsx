@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlineMarkEmailRead } from "react-icons/md";
 
-import notificationService from "../services/notificationService";
+import notificationService from "../api/notificationService";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
 function minsAgo(m)  { const dt = new Date(); dt.setMinutes(dt.getMinutes() - m); return dt.toISOString(); }

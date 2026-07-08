@@ -4,7 +4,7 @@ import {
   Menu, Plane, Bell, User, ChevronDown, ChevronRight,
   Search, Settings, LogOut, HelpCircle, CheckCheck,
 } from "lucide-react";
-import notificationService from "@/services/notificationService";
+import { notificationService } from "@features/reminders";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

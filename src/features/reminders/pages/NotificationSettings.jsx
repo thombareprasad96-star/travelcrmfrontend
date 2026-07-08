@@ -5,7 +5,7 @@ import {
 } from "react-icons/fi";
 import { FaBell, FaUserPlus, FaPhoneAlt, FaUserCheck, FaFileInvoiceDollar,
   FaHandshake, FaMoneyBillWave, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
-import notificationSettingsService from "../services/notificationSettingsService";
+import notificationSettingsService from "../api/notificationSettingsService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const REMINDER_TYPES = [

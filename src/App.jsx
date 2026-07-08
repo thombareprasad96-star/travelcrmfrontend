@@ -219,13 +219,15 @@ import { AllOrganization } from "@features/tenant";
 import Testimonials from "./masters/Testimonials"
 import AllVendors from "./vendors/AllVendors";
 import CreateVendor from "./vendors/CreateVendor";
-import Reminders from "./reminders/Reminders";
+import {
+  Reminders,
+  CreateReminder,
+  BookingReminders,
+  Notifications,
+  NotificationSettings,
+} from "@features/reminders";
 
 import CreateQuotation from "./quotation/Createquotation"
-import CreateReminder from "./reminders/CreateReminder";
-import BookingReminders from "./reminders/BookingReminders";
-import Notifications from "./reminders/Notifications";
-import NotificationSettings from "./reminders/NotificationSettings";
 import CompanyProfile from "./profile/CompanyProfile";
 import ChangePassword from "./profile/ChangePassword";
 import Users from "./profile/Users";

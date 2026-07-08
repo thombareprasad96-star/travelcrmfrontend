@@ -16,7 +16,7 @@ import {
   reminderService,
   leadService,
   userService,
-} from "../services/createReminderService";
+} from "../api/createReminderService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const REMINDER_TYPES = [
