@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlinePages } from "react-icons/md";
 
-import { leadService } from "../../services/leadService";
+import { leadService } from "../api/leadService";
 
 const STAGES = [
   "All Stages", "New Lead", "Contacted", "Follow Up",

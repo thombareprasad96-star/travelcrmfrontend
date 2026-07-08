@@ -6,13 +6,13 @@ import {
   FiLoader, FiFileText
 } from "react-icons/fi";
 import { MdFlightTakeoff } from "react-icons/md";
-import { leadService } from "../../../services/leadService";
+import { leadService } from "../api/leadService";
 
-import LeadInformation from "./LeadInformation";
-import TravelDetails from "./TravelDetails";
-import ServicesSection from "./ServicesSection";
-import ItinerarySection from "./ItinerarySection";
-import LeadSummary from "./LeadSummary";
+import LeadInformation from "../components/LeadInformation";
+import TravelDetails from "../components/TravelDetails";
+import ServicesSection from "../components/ServicesSection";
+import ItinerarySection from "../components/ItinerarySection";
+import LeadSummary from "../components/LeadSummary";
 
 let nextId = 1;
 

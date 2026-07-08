@@ -18,7 +18,7 @@ import SummaryPricingTab       from "../components/SummaryPricingTab";
 
 import { Input, Label }     from "../components/Ui";
 import { quotationService } from "../api/quotationService";
-import { leadService }      from "@/services/leadService";
+import { leadService } from "@features/leads";
 
 /* ─── TAB CONFIG ─────────────────────────────────────── */
 const TABS = [

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { leadService } from "@/services/leadService";
+import { leadService } from "@features/leads";
 import {
   FiBell, FiPlus, FiCheck, FiX, FiClock, FiAlertCircle,
   FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown,

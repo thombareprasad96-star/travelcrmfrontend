@@ -23,7 +23,7 @@ import {
 import { FaClipboardList, FaBell } from "react-icons/fa";
 
 // ── Uncomment when backend ready ─────────────────────────────
-// import leadLogsService from "../services/leadLogsService";
+// import leadLogsService from "../api/leadLogsService";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {

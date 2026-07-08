@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { leadService }   from "@/services/leadService";
+import { leadService } from "@features/leads";
 import { bookingService } from "@features/bookings";
 import { profileUserService as userService } from "@features/profile";
 import { companyService } from "@features/settings";

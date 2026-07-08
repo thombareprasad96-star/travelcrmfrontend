@@ -201,9 +201,16 @@ import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // !!localStorage.getItem("token")
 import Layout from "./Layout";
-import AllLeads from "./admin/leads/AllLeads";
+import {
+  AllLeads,
+  CreateLead,
+  EditLead,
+  LeadLogs,
+  AddLeadLog,
+  AllLeadLogs,
+  WhatsAppPanel,
+} from "@features/leads";
 import AdminLogin from "./login/AdminLogin";
-import CreateLead from "./admin/leads/CreateLead/CreateLead";
 import {
   City,
   Destinations,
@@ -247,15 +254,10 @@ import {
   TravelDateAnalysis,
   InternationalDomestic,
 } from "@features/reports";
-import LeadLogs from "./admin/leads/LeadLogs";
-import AddLeadLog from "./admin/leads/AddLeadLog";
-import AllLeadLogs from "./admin/leads/AllLeadLogs";
 import { CompanySettings, EmailConfiguration, WhatsAppConfiguration } from "@features/settings";
 import { SubscriptionInfo } from "@features/subscription";
 import { Dashboard } from "@features/dashboard";
 import { TrashPage } from "@features/trash";
-import EditLead from "./admin/leads/EditLead";
-import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
 import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
 
 // Fleet / Vehicle Diary

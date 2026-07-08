@@ -8,7 +8,7 @@ import {
   FaClipboardList, FaAngleDoubleLeft, FaAngleDoubleRight,
 } from "react-icons/fa";
 
-import { leadService } from "../../services/leadService";
+import { leadService } from "../api/leadService";
 
 /* Format backend timestamps to the strings this page already renders. */
 const fmtLogDateTime = (iso) => {

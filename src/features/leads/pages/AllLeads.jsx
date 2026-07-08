@@ -1,11 +1,11 @@
 import { useState, useEffect, memo, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { leadService } from '../../services/leadService';
+import { leadService } from "../api/leadService";
 import { quotationService } from "@features/quotation";
 import { hasPermission, P } from "@shared/lib/access";
-import AccessDenied from '../../components/AccessDenied';
-import { formatToWhatsAppLink } from '../../utils/whatsapp';
-import WhatsAppPanel from '../leads/WhatsAppPanel';
+import AccessDenied from "@/components/AccessDenied";
+import { formatToWhatsAppLink } from "../lib/whatsapp";
+import WhatsAppPanel from "./WhatsAppPanel";
 import {
   Users, Trophy, PieChart, TrendingUp, Search,
   DownloadCloud, FileText, Plus,
@@ -16,7 +16,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { QuotationWebView } from "@features/quotation";
 import { WeblinkAnalyticsModal } from "@features/quotation";
-import ConvertToBookingModal from './ConvertToBookingModal';
+import ConvertToBookingModal from "../components/ConvertToBookingModal";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
   getPaginationRowModel, getExpandedRowModel,

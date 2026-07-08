@@ -4,7 +4,7 @@ import {
   FiCalendar, FiTag, FiLayers, FiUserCheck
 } from "react-icons/fi";
 import { FaRupeeSign } from "react-icons/fa";
-import { leadService } from "../../../services/leadService";
+import { leadService } from "../api/leadService";
 
 const LEAD_SOURCES = [
   "Social Media", "Website", "Google Ads", "Facebook",
