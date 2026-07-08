@@ -7,7 +7,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Route as RouteIcon, Save, Users, CalendarClock, Receipt } from "lucide-react";
 
 import fleetService from "../api/fleetService";
-import bookingService from "@/services/bookingService";
+import { bookingService } from "@features/bookings";
 import {
   Button, Input, Select, Textarea,
   PageShell, LoadingState, FormHeader, FormSection, Field, FormActions,

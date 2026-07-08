@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams }            from "react-router-dom";
 import { useForm }                            from "react-hook-form";
-import bookingService                         from "../services/bookingService";
+import bookingService                         from "../api/bookingService";
 import {
   FiArrowLeft, FiSave, FiCheckCircle, FiAlertCircle, FiX,
   FiCalendar, FiDollarSign, FiPercent, FiCreditCard,

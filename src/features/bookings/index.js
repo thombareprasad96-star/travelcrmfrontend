@@ -1,0 +1,8 @@
+// src/features/bookings/index.js
+// Public API of the bookings feature.
+// bookingService is consumed by leads, fleet, dashboard and reports.
+
+export { default as Allbookings } from "./pages/Allbookings";
+export { default as EditBooking } from "./pages/EditBooking";
+export { default as BookingDetails } from "./pages/BookingDetails";
+export { default as bookingService } from "./api/bookingService";

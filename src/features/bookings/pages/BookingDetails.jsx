@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import bookingService from "../services/bookingService";
+import bookingService from "../api/bookingService";
 import {
   FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle,
   FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser,
