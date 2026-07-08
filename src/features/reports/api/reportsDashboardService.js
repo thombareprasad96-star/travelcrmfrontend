@@ -15,42 +15,8 @@
 //   8. Export all reports
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000, // reports can take longer
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 // ── PERIOD QUERY HELPER ───────────────────────────────────────
 // Maps frontend filter IDs to backend query params
@@ -87,7 +53,7 @@ const reportsDashboardService = {
   //   generatedAt:     "Jun 22, 2026 10:22 AM"
   // }
   getSummary: (period = "month") => {
-    return api.get("/api/reports/summary", {
+    return api.get("/reports/summary", {
       params: buildPeriodParams(period),
     });
   },
@@ -114,7 +80,7 @@ const reportsDashboardService = {
   //   ]
   // }
   getActivityReport: (period = "month", customFrom, customTo) => {
-    return api.get("/api/reports/activity", {
+    return api.get("/reports/activity", {
       params: buildPeriodParams(period, customFrom, customTo),
     });
   },
@@ -144,7 +110,7 @@ const reportsDashboardService = {
   //   ]
   // }
   getGeographicReport: (period = "month", customFrom, customTo) => {
-    return api.get("/api/reports/geographic", {
+    return api.get("/reports/geographic", {
       params: buildPeriodParams(period, customFrom, customTo),
     });
   },
@@ -171,7 +137,7 @@ const reportsDashboardService = {
   //   ]
   // }
   getFollowupReport: (period = "month", customFrom, customTo) => {
-    return api.get("/api/reports/followup", {
+    return api.get("/reports/followup", {
       params: buildPeriodParams(period, customFrom, customTo),
     });
   },
@@ -199,7 +165,7 @@ const reportsDashboardService = {
   //   ]
   // }
   getRevenueReport: (period = "month", customFrom, customTo) => {
-    return api.get("/api/reports/revenue", {
+    return api.get("/reports/revenue", {
       params: buildPeriodParams(period, customFrom, customTo),
     });
   },
@@ -232,7 +198,7 @@ const reportsDashboardService = {
   //   ]
   // }
   getTravelDateReport: (period = "month", customFrom, customTo) => {
-    return api.get("/api/reports/travel-dates", {
+    return api.get("/reports/travel-dates", {
       params: buildPeriodParams(period, customFrom, customTo),
     });
   },
@@ -258,7 +224,7 @@ const reportsDashboardService = {
   //   ]
   // }
   getIntlDomesticReport: (period = "month", customFrom, customTo) => {
-    return api.get("/api/reports/international-domestic", {
+    return api.get("/reports/international-domestic", {
       params: buildPeriodParams(period, customFrom, customTo),
     });
   },
@@ -282,7 +248,7 @@ const reportsDashboardService = {
   //   document.body.appendChild(link);
   //   link.click();
   exportAll: (period = "month", format = "pdf") => {
-    return api.get("/api/reports/export", {
+    return api.get("/reports/export", {
       params: { period, format },
       responseType: "blob",  // important for file download
     });
@@ -299,7 +265,7 @@ const reportsDashboardService = {
   // reportType: "activity" | "geographic" | "followup" |
   //             "revenue"  | "travel-dates" | "international-domestic"
   exportSingle: (reportType, period = "month", format = "excel") => {
-    return api.get(`/api/reports/${reportType}/export`, {
+    return api.get(`/reports/${reportType}/export`, {
       params: { period, format },
       responseType: "blob",
     });

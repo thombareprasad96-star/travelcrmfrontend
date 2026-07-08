@@ -10,42 +10,8 @@
 //   - Export CSV
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 // ── FILTER PARAMS BUILDER ─────────────────────────────────────
 // Strips default/empty values before sending to backend
@@ -113,7 +79,7 @@ const geographicDistributionService = {
   //   totalPages: 1
   // }
   getData: (filters = {}) => {
-    return api.get("/api/reports/geographic/data", {
+    return api.get("/reports/geographic/data", {
       params: buildParams(filters),
     });
   },
@@ -142,7 +108,7 @@ const geographicDistributionService = {
     if (filters.endDate   && filters.endDate   !== "") params.endDate   = filters.endDate;
     if (filters.leadType  && filters.leadType  !== "All Types")  params.leadType  = filters.leadType;
     if (filters.leadStage && filters.leadStage !== "All Stages") params.leadStage = filters.leadStage;
-    return api.get("/api/reports/geographic/summary", { params });
+    return api.get("/reports/geographic/summary", { params });
   },
 
   // ── EXPORT CSV ─────────────────────────────────────────────
@@ -159,7 +125,7 @@ const geographicDistributionService = {
   // Returns the full (unpaginated) dataset as CSV
   // Content-Disposition: attachment; filename="geographic-report-..."
   exportCsv: (filters = {}) => {
-    return api.get("/api/reports/geographic/export/csv", {
+    return api.get("/reports/geographic/export/csv", {
       params: buildParams(filters),
       responseType: "blob",
     });

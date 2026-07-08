@@ -11,42 +11,8 @@
 //   - Export CSV
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 
 // ═════════════════════════════════════════════════════════════
@@ -107,7 +73,7 @@ const activityReportsService = {
     if (filters.userId    && filters.userId    !== "All Users")   params.userId   = filters.userId;
     if (filters.perPage)  params.perPage = filters.perPage;
     if (filters.page)     params.page    = filters.page;
-    return api.get("/api/reports/activity/logs", { params });
+    return api.get("/reports/activity/logs", { params });
   },
 
   // ── GET ACTIVITY SUMMARY (stat cards) ──────────────────────
@@ -128,7 +94,7 @@ const activityReportsService = {
     const params = {};
     if (startDate) params.startDate = startDate;
     if (endDate)   params.endDate   = endDate;
-    return api.get("/api/reports/activity/summary", { params });
+    return api.get("/reports/activity/summary", { params });
   },
 
   // ── GET SINGLE LOG DETAIL ──────────────────────────────────
@@ -139,7 +105,7 @@ const activityReportsService = {
   //
   // Response: same shape as single log object (for the Details modal)
   getLogById: (id) => {
-    return api.get(`/api/reports/activity/logs/${id}`);
+    return api.get(`/reports/activity/logs/${id}`);
   },
 
   // ── GET USERS FOR DROPDOWN ─────────────────────────────────
@@ -150,7 +116,7 @@ const activityReportsService = {
   // Response: [{ id: 34, fullName: "Shreyash Raghvendra Shahi", username: "Shreyash_Shahi" }]
   // Used to populate the "User" filter dropdown
   getUsersForDropdown: () => {
-    return api.get("/api/users/dropdown");
+    return api.get("/users/dropdown");
   },
 
   // ── EXPORT CSV ─────────────────────────────────────────────
@@ -175,7 +141,7 @@ const activityReportsService = {
     if (filters.action    && filters.action    !== "All Actions") params.action   = filters.action;
     if (filters.userType  && filters.userType  !== "All Types")   params.userType = filters.userType;
     if (filters.userId    && filters.userId    !== "All Users")   params.userId   = filters.userId;
-    return api.get("/api/reports/activity/export/csv", {
+    return api.get("/reports/activity/export/csv", {
       params,
       responseType: "blob", // important — returns binary file
     });

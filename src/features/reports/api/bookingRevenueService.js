@@ -12,43 +12,8 @@
 //   - Export CSV
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 // ── FILTER PARAMS BUILDER ─────────────────────────────────────
 const buildParams = (filters = {}) => {
@@ -130,7 +95,7 @@ const bookingRevenueService = {
   //   totalPages: 1
   // }
   getBookings: (filters = {}) => {
-    return api.get("/api/reports/revenue/bookings", {
+    return api.get("/reports/revenue/bookings", {
       params: buildParams(filters),
     });
   },
@@ -163,7 +128,7 @@ const bookingRevenueService = {
     if (filters.paymentStatus && filters.paymentStatus !== "All Payment Statuses") params.paymentStatus = filters.paymentStatus;
     if (filters.minAmount     && filters.minAmount     !== "") params.minAmount = filters.minAmount;
     if (filters.maxAmount     && filters.maxAmount     !== "") params.maxAmount = filters.maxAmount;
-    return api.get("/api/reports/revenue/summary", { params });
+    return api.get("/reports/revenue/summary", { params });
   },
 
   // ── GET REVENUE BREAKDOWN (mini stat panel) ────────────────
@@ -186,7 +151,7 @@ const bookingRevenueService = {
     if (startDate && startDate !== "") params.startDate = startDate;
     if (endDate   && endDate   !== "") params.endDate   = endDate;
     if (dateType  && dateType  !== "Booking Date") params.dateType = dateType;
-    return api.get("/api/reports/revenue/breakdown", { params });
+    return api.get("/reports/revenue/breakdown", { params });
   },
 
   // ── GET BOOKING STATISTICS (Intl, Domestic, status counts) ─
@@ -210,7 +175,7 @@ const bookingRevenueService = {
     if (startDate && startDate !== "") params.startDate = startDate;
     if (endDate   && endDate   !== "") params.endDate   = endDate;
     if (dateType  && dateType  !== "Booking Date") params.dateType = dateType;
-    return api.get("/api/reports/revenue/statistics", { params });
+    return api.get("/reports/revenue/statistics", { params });
   },
 
   // ── EXPORT CSV ─────────────────────────────────────────────
@@ -229,7 +194,7 @@ const bookingRevenueService = {
   // Returns full (unpaginated) filtered dataset as CSV
   // Content-Disposition: attachment; filename="booking-revenue-..."
   exportCsv: (filters = {}) => {
-    return api.get("/api/reports/revenue/export/csv", {
+    return api.get("/reports/revenue/export/csv", {
       params: buildParams(filters),
       responseType: "blob",
     });

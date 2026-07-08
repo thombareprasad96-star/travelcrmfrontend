@@ -13,42 +13,8 @@
 //   - Export CSV
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 // ── FILTER PARAMS BUILDER ─────────────────────────────────────
 // Strips empty/default values before sending to backend
@@ -126,7 +92,7 @@ const followupReportService = {
   //   totalPages: 1
   // }
   getTasks: (filters = {}) => {
-    return api.get("/api/reports/followup/tasks", {
+    return api.get("/reports/followup/tasks", {
       params: buildParams(filters),
     });
   },
@@ -153,7 +119,7 @@ const followupReportService = {
     if (filters.assignedTo   && filters.assignedTo   !== "All Users")      params.assignedTo   = filters.assignedTo;
     if (filters.priority     && filters.priority     !== "All Priorities") params.priority     = filters.priority;
     if (filters.reminderType && filters.reminderType !== "All Types")      params.reminderType = filters.reminderType;
-    return api.get("/api/reports/followup/summary", { params });
+    return api.get("/reports/followup/summary", { params });
   },
 
   // ── GET USERS FOR "ASSIGNED TO" DROPDOWN ──────────────────
@@ -168,7 +134,7 @@ const followupReportService = {
   //   { id: 34, fullName: "Shreyash Raghvendra Shahi", username: "Shreyash_Shahi"        },
   // ]
   getUsersForDropdown: () => {
-    return api.get("/api/users/dropdown");
+    return api.get("/users/dropdown");
   },
 
   // ── MARK SINGLE TASK AS COMPLETED ─────────────────────────
@@ -184,7 +150,7 @@ const followupReportService = {
   //
   // Error: 404 if task not found
   markComplete: (id) => {
-    return api.patch(`/api/reports/followup/tasks/${id}/complete`);
+    return api.patch(`/reports/followup/tasks/${id}/complete`);
   },
 
   // ── MARK SELECTED TASKS AS COMPLETED (bulk) ───────────────
@@ -205,7 +171,7 @@ const followupReportService = {
   //   message:     "4 tasks marked as completed."
   // }
   bulkComplete: (ids = []) => {
-    return api.patch("/api/reports/followup/tasks/bulk-complete", { ids });
+    return api.patch("/reports/followup/tasks/bulk-complete", { ids });
   },
 
   // ── EXPORT CSV ─────────────────────────────────────────────
@@ -222,7 +188,7 @@ const followupReportService = {
   // Returns the full (unpaginated) filtered dataset as CSV
   // Content-Disposition: attachment; filename="followup-report.csv"
   exportCsv: (filters = {}) => {
-    return api.get("/api/reports/followup/export/csv", {
+    return api.get("/reports/followup/export/csv", {
       params: buildParams(filters),
       responseType: "blob",
     });

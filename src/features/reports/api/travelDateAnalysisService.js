@@ -13,42 +13,8 @@
 //   - Export CSV
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 // ── FILTER PARAMS BUILDER ─────────────────────────────────────
 // Strips default/empty values before sending to backend
@@ -94,7 +60,7 @@ const travelDateAnalysisService = {
     if (filters.endDate     && filters.endDate     !== "")             params.endDate     = filters.endDate;
     if (filters.bookingType && filters.bookingType !== "All Types")    params.bookingType = filters.bookingType;
     if (filters.status      && filters.status      !== "All Statuses") params.status      = filters.status;
-    return api.get("/api/reports/travel-dates/summary", { params });
+    return api.get("/reports/travel-dates/summary", { params });
   },
 
   // ── GET TREND DATA (chart: bookings + revenue per period) ──
@@ -121,7 +87,7 @@ const travelDateAnalysisService = {
   // ]
   // Note: "month" field holds the period label regardless of analysisType
   getTrends: (filters = {}) => {
-    return api.get("/api/reports/travel-dates/trends", {
+    return api.get("/reports/travel-dates/trends", {
       params: buildParams(filters),
     });
   },
@@ -150,7 +116,7 @@ const travelDateAnalysisService = {
     if (filters.endDate     && filters.endDate     !== "")             params.endDate     = filters.endDate;
     if (filters.bookingType && filters.bookingType !== "All Types")    params.bookingType = filters.bookingType;
     if (filters.status      && filters.status      !== "All Statuses") params.status      = filters.status;
-    return api.get("/api/reports/travel-dates/peak-dates", { params });
+    return api.get("/reports/travel-dates/peak-dates", { params });
   },
 
   // ── GET PERIOD ANALYSIS (table rows) ──────────────────────
@@ -186,7 +152,7 @@ const travelDateAnalysisService = {
   //   totalPages: 1
   // }
   getAnalysis: (filters = {}) => {
-    return api.get("/api/reports/travel-dates/analysis", {
+    return api.get("/reports/travel-dates/analysis", {
       params: buildParams(filters),
     });
   },
@@ -215,7 +181,7 @@ const travelDateAnalysisService = {
     if (filters.endDate     && filters.endDate     !== "")             params.endDate     = filters.endDate;
     if (filters.bookingType && filters.bookingType !== "All Types")    params.bookingType = filters.bookingType;
     if (filters.status      && filters.status      !== "All Statuses") params.status      = filters.status;
-    return api.get("/api/reports/travel-dates/duration", { params });
+    return api.get("/reports/travel-dates/duration", { params });
   },
 
   // ── EXPORT CSV ─────────────────────────────────────────────
@@ -231,7 +197,7 @@ const travelDateAnalysisService = {
   // Returns the full (unpaginated) analysis dataset as CSV
   // Content-Disposition: attachment; filename="travel-date-analysis-..."
   exportCsv: (filters = {}) => {
-    return api.get("/api/reports/travel-dates/export/csv", {
+    return api.get("/reports/travel-dates/export/csv", {
       params: buildParams(filters),
       responseType: "blob",
     });

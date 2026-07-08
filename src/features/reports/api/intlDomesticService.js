@@ -12,42 +12,8 @@
 //   - Export CSV
 // ─────────────────────────────────────────────────────────────
 
-import axios from "axios";
-
-// ── BASE URL ──────────────────────────────────────────────────
-// Add to your .env file:
-// REACT_APP_API_URL=http://localhost:8080
-const BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// ── AXIOS INSTANCE ────────────────────────────────────────────
-const api = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
-// ── REQUEST INTERCEPTOR — attach JWT token ────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// ── RESPONSE INTERCEPTOR — handle 401 globally ───────────────
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Shared axios instance (baseURL ".../api", JWT from localStorage "token", 401 handling).
+import api from "@shared/api/http";
 
 // ── FILTER PARAMS BUILDER ─────────────────────────────────────
 // Strips default/empty values before sending to backend
@@ -89,7 +55,7 @@ const intlDomesticService = {
   //   destinations: []          // top 5 international destinations
   // }
   getInternational: (filters = {}) => {
-    return api.get("/api/reports/international-domestic/international", {
+    return api.get("/reports/international-domestic/international", {
       params: buildParams(filters),
     });
   },
@@ -116,7 +82,7 @@ const intlDomesticService = {
   //   ]
   // }
   getDomestic: (filters = {}) => {
-    return api.get("/api/reports/international-domestic/domestic", {
+    return api.get("/reports/international-domestic/domestic", {
       params: buildParams(filters),
     });
   },
@@ -144,7 +110,7 @@ const intlDomesticService = {
   //   }
   // }
   getAll: (filters = {}) => {
-    return api.get("/api/reports/international-domestic/all", {
+    return api.get("/reports/international-domestic/all", {
       params: buildParams(filters),
     });
   },
@@ -172,7 +138,7 @@ const intlDomesticService = {
   //   domBookings:     2
   // }
   getDistribution: (filters = {}) => {
-    return api.get("/api/reports/international-domestic/distribution", {
+    return api.get("/reports/international-domestic/distribution", {
       params: buildParams(filters),
     });
   },
@@ -196,7 +162,7 @@ const intlDomesticService = {
   //   { name:"Thailand", country:"Thailand", bookings:0, revenue:0 },
   // ]
   getDestinations: (tripType, filters = {}, topN = 5) => {
-    return api.get("/api/reports/international-domestic/destinations", {
+    return api.get("/reports/international-domestic/destinations", {
       params: { tripType, topN, ...buildParams(filters) },
     });
   },
@@ -213,7 +179,7 @@ const intlDomesticService = {
   // Exports summary comparison + top destinations for both types
   // Content-Disposition: attachment; filename="intl-domestic-report-..."
   exportCsv: (filters = {}) => {
-    return api.get("/api/reports/international-domestic/export/csv", {
+    return api.get("/reports/international-domestic/export/csv", {
       params: buildParams(filters),
       responseType: "blob",
     });
