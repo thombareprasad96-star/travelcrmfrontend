@@ -12,7 +12,7 @@ import {
   Inbox, User, Calendar, ChevronDown, ChevronRight,
   Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle, Copy, BarChart3, ArrowRightLeft, MessageCircle, NotebookPen, Bell, AlertCircle, DollarSign
 } from 'lucide-react';
-import { FaWhatsapp } from 'react-icons/fa';
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
 import { Link } from 'react-router-dom';
 import { QuotationWebView } from "@features/quotation";
 import { WeblinkAnalyticsModal } from "@features/quotation";

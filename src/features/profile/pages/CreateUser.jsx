@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiUser, FiMail, FiPhone, FiEye, FiEyeOff, FiCheckCircle, FiXCircle, FiAlertCircle, FiArrowLeft, FiShield, FiUsers, FiChevronDown, FiInfo } from "react-icons/fi";
-import { FaUserPlus } from "react-icons/fa";
+import { User as FiUser, Mail as FiMail, Phone as FiPhone, Eye as FiEye, EyeOff as FiEyeOff, CircleCheck as FiCheckCircle, CircleX as FiXCircle, CircleAlert as FiAlertCircle, ArrowLeft as FiArrowLeft, Shield as FiShield, Users as FiUsers, ChevronDown as FiChevronDown, Info as FiInfo, UserPlus as FaUserPlus } from "lucide-react";
+
 
 import { createUserService } from "../api/profilecreateUserService";
 import userService from "../api/profileUserService";

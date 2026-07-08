@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  FiUser, FiPhone, FiMail, FiSearch, FiChevronDown,
-  FiCalendar, FiTag, FiLayers, FiUserCheck
-} from "react-icons/fi";
-import { FaRupeeSign } from "react-icons/fa";
+import { User as FiUser, Phone as FiPhone, Mail as FiMail, Search as FiSearch, ChevronDown as FiChevronDown, Calendar as FiCalendar, Tag as FiTag, Layers as FiLayers, UserCheck as FiUserCheck, IndianRupee as FaRupeeSign } from "lucide-react";
+
 import { leadService } from "../api/leadService";
 
 const LEAD_SOURCES = [

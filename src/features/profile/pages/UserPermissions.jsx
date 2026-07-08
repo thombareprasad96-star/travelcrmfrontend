@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FiShield, FiArrowLeft, FiSave, FiChevronDown, FiEye, FiLayers } from "react-icons/fi";
-import { FaUserShield, FaStar, FaCog } from "react-icons/fa";
+import { Shield as FiShield, ArrowLeft as FiArrowLeft, Save as FiSave, ChevronDown as FiChevronDown, Eye as FiEye, Layers as FiLayers, ShieldUser as FaUserShield, Star as FaStar, Settings as FaCog } from "lucide-react";
+
 
 import editUserService from "../api/profileEditUserService";
 import { userPermissionsService, permissionTemplateService, permissionCatalogService } from "../api/profileUserPermissionsService";

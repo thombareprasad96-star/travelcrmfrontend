@@ -1,11 +1,6 @@
 
-import {
-  FiCheck, FiGrid
-} from "react-icons/fi";
-import {
-  MdHotel, MdFlight, MdDirectionsBoat, MdLocationOn,
-  MdDirectionsCar, MdSecurity, MdCardTravel, MdVisibility
-} from "react-icons/md";
+import { Check as FiCheck, LayoutGrid as FiGrid, BedDouble as MdHotel, Plane as MdFlight, Ship as MdDirectionsBoat, MapPin as MdLocationOn, Car as MdDirectionsCar, Shield as MdSecurity, Luggage as MdCardTravel, Eye as MdVisibility } from "lucide-react";
+
 
 const SERVICES = [
   { id: "hotel", label: "Hotel", icon: MdHotel, color: "blue", desc: "Accommodation booking" },

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiUser, FiMail, FiPhone, FiEye, FiEyeOff, FiCheckCircle, FiXCircle, FiAlertCircle, FiSave, FiArrowLeft, FiShield, FiUsers, FiChevronDown, FiInfo, FiCalendar, FiClock, FiLock } from "react-icons/fi";
-import { FaUserEdit, FaShieldAlt } from "react-icons/fa";
-import { MdVerified } from "react-icons/md";
+import { User as FiUser, Mail as FiMail, Phone as FiPhone, Eye as FiEye, EyeOff as FiEyeOff, CircleCheck as FiCheckCircle, CircleX as FiXCircle, CircleAlert as FiAlertCircle, Save as FiSave, ArrowLeft as FiArrowLeft, Shield as FiShield, Users as FiUsers, ChevronDown as FiChevronDown, Info as FiInfo, Calendar as FiCalendar, Clock as FiClock, Lock as FiLock, UserPen as FaUserEdit, Shield as FaShieldAlt, BadgeCheck as MdVerified } from "lucide-react";
+
 
 import editUserService from "../api/profileEditUserService";
 

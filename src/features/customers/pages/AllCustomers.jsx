@@ -1,16 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import customerService from "../api/customerService";
-import {
-  FaUsers, FaUserCheck, FaCrown, FaRupeeSign, FaPlane,
-  FaRedoAlt, FaWhatsapp, FaEdit, FaTrash, FaEye,
-  FaSearch, FaTimes, FaDownload, FaUserPlus,
-  FaSort, FaSortUp, FaSortDown, FaMapMarkerAlt,
-  FaEnvelope, FaMobileAlt, FaCalendarAlt,
-  FaChevronLeft, FaChevronRight, FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaHistory, FaStickyNote, FaShareAlt,
-} from "react-icons/fa";
-import { MdLocationCity } from "react-icons/md";
+import { Users as FaUsers, UserCheck as FaUserCheck, Crown as FaCrown, IndianRupee as FaRupeeSign, Plane as FaPlane, RotateCw as FaRedoAlt, SquarePen as FaEdit, Trash2 as FaTrash, Eye as FaEye, Search as FaSearch, X as FaTimes, Download as FaDownload, UserPlus as FaUserPlus, ArrowUpDown as FaSort, ChevronUp as FaSortUp, ChevronDown as FaSortDown, MapPin as FaMapMarkerAlt, Mail as FaEnvelope, Smartphone as FaMobileAlt, Calendar as FaCalendarAlt, ChevronLeft as FaChevronLeft, ChevronRight as FaChevronRight, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, History as FaHistory, StickyNote as FaStickyNote, Share2 as FaShareAlt, Building as MdLocationCity } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 /* ─── BOOKING HISTORY MOCK (keep until backend booking history API ready) ── */
 const BOOKING_HISTORY = {

@@ -4,17 +4,8 @@ import {
   companyService,
   taxRateService,
 } from "@features/settings";
-import {
-  FiEdit2, FiSave,  FiMapPin,
-  FiCalendar, FiKey,  FiChevronDown, FiUpload,
-  FiPlus, FiTrash2, FiAlertTriangle, FiInfo, FiCheckCircle,
-  FiRefreshCw, FiExternalLink, FiAlertCircle,
-} from "react-icons/fi";
-import {
-  FaBuilding, FaFileInvoiceDollar, FaCrown, 
-} from "react-icons/fa";
-import { MdBusinessCenter, MdLocationCity } from "react-icons/md";
-import { HiSparkles } from "react-icons/hi";
+import { Pen as FiEdit2, Save as FiSave, MapPin as FiMapPin, Calendar as FiCalendar, Key as FiKey, ChevronDown as FiChevronDown, Upload as FiUpload, Plus as FiPlus, Trash2 as FiTrash2, TriangleAlert as FiAlertTriangle, Info as FiInfo, CircleCheck as FiCheckCircle, RefreshCw as FiRefreshCw, ExternalLink as FiExternalLink, CircleAlert as FiAlertCircle, Building2 as FaBuilding, ReceiptText as FaFileInvoiceDollar, Crown as FaCrown, BriefcaseBusiness as MdBusinessCenter, Building as MdLocationCity, Sparkles as HiSparkles } from "lucide-react";
+
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
 const INITIAL_COMPANY = {

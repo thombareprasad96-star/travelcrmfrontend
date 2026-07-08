@@ -16,11 +16,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import {
-  FiSave, FiArrowLeft, FiEye, FiList,
-  FiAlertCircle, FiPhone, FiCalendar,
-} from "react-icons/fi";
-import { FaClipboardList, FaBell } from "react-icons/fa";
+import { Save as FiSave, ArrowLeft as FiArrowLeft, Eye as FiEye, List as FiList, CircleAlert as FiAlertCircle, Phone as FiPhone, Calendar as FiCalendar, ClipboardList as FaClipboardList, Bell as FaBell } from "lucide-react";
+
 
 // ── Uncomment when backend ready ─────────────────────────────
 // import leadLogsService from "../api/leadLogsService";

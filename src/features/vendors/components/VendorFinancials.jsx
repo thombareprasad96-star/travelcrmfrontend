@@ -1,8 +1,7 @@
 // src/components/CreateVendor/VendorFinancials.jsx
 
-import { FiDollarSign, FiPercent, FiFileText, FiChevronDown } from "react-icons/fi";
-import { FaMoneyBillWave, FaUniversity, FaCreditCard } from "react-icons/fa";
-import { MdAccountBalance } from "react-icons/md";
+import { DollarSign as FiDollarSign, Percent as FiPercent, FileText as FiFileText, ChevronDown as FiChevronDown, Banknote as FaMoneyBillWave, Landmark as FaUniversity, CreditCard as FaCreditCard, Landmark as MdAccountBalance } from "lucide-react";
+
 
 const CURRENCIES      = ["INR (₹)", "USD ($)", "EUR (€)", "GBP (£)", "AED (د.إ)", "THB (฿)", "SGD (S$)"];
 const CREDIT_PERIODS  = ["No Credit", "7 Days", "15 Days", "30 Days", "45 Days", "60 Days", "90 Days"];

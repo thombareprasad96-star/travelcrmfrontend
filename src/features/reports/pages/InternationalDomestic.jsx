@@ -1,15 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiFilter, FiRefreshCw, FiDownload, FiArrowLeft,
-  FiChevronDown, FiChevronUp, FiSearch,
-} from "react-icons/fi";
-import {
-  FaGlobe, FaHome, FaRupeeSign, FaMoon,
-  FaPercentage, FaMapMarkerAlt,
-} from "react-icons/fa";
-import { MdOutlineBarChart } from "react-icons/md";
-import { HiOutlineGlobe } from "react-icons/hi";
+import { Filter as FiFilter, RefreshCw as FiRefreshCw, Download as FiDownload, ArrowLeft as FiArrowLeft, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Search as FiSearch, Globe as FaGlobe, House as FaHome, IndianRupee as FaRupeeSign, Moon as FaMoon, Percent as FaPercentage, MapPin as FaMapMarkerAlt, ChartColumn as MdOutlineBarChart, Globe as HiOutlineGlobe } from "lucide-react";
+
 
 import intlDomesticService from "../api/intlDomesticService";
 import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";

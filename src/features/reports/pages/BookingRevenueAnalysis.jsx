@@ -1,13 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiFilter, FiRefreshCw, FiDownload, FiArrowLeft, FiChevronDown, FiChevronUp, FiSearch, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiAlertTriangle, FiX, FiPrinter } from "react-icons/fi";
-import {
-  FaRupeeSign, FaChartLine, FaPercentage,
-  FaGlobe, FaHome, FaCheckCircle, FaTimesCircle,
-  FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaFileInvoiceDollar, FaExchangeAlt, FaHandHoldingUsd,
-} from "react-icons/fa";
-import { MdOutlineBarChart, MdOutlineReceiptLong } from "react-icons/md";
+import { Filter as FiFilter, RefreshCw as FiRefreshCw, Download as FiDownload, ArrowLeft as FiArrowLeft, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Search as FiSearch, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Eye as FiEye, Pen as FiEdit2, TriangleAlert as FiAlertTriangle, X as FiX, Printer as FiPrinter, IndianRupee as FaRupeeSign, ChartLine as FaChartLine, Percent as FaPercentage, Globe as FaGlobe, House as FaHome, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, ReceiptText as FaFileInvoiceDollar, ArrowLeftRight as FaExchangeAlt, HandCoins as FaHandHoldingUsd, ChartColumn as MdOutlineBarChart, ReceiptText as MdOutlineReceiptLong } from "lucide-react";
+
 
 import { bookingService } from "@features/bookings";
 

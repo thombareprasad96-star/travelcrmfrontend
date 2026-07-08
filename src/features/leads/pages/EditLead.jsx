@@ -13,10 +13,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  FiArrowLeft, FiSave, FiCheckCircle, FiAlertCircle,
-  FiLoader, FiFileText,
-} from "react-icons/fi";
+import { ArrowLeft as FiArrowLeft, Save as FiSave, CircleCheck as FiCheckCircle, CircleAlert as FiAlertCircle, Loader as FiLoader, FileText as FiFileText } from "lucide-react";
 
 import { leadService } from "../api/leadService";
 

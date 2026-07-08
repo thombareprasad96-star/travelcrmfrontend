@@ -1,16 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiFilter, FiRefreshCw, FiDownload, FiArrowLeft,
-  FiChevronDown, FiChevronUp, FiSearch, FiMapPin,
-  FiChevronLeft, FiChevronRight,
-} from "react-icons/fi";
-import {
-  FaMapMarkedAlt, FaFire, FaSnowflake,
-  FaUsers, FaCheckCircle, FaThermometerHalf,
-  FaAngleDoubleLeft, FaAngleDoubleRight,
-} from "react-icons/fa";
-import { MdOutlineLeaderboard } from "react-icons/md";
+import { Filter as FiFilter, RefreshCw as FiRefreshCw, Download as FiDownload, ArrowLeft as FiArrowLeft, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Search as FiSearch, MapPin as FiMapPin, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, MapPinned as FaMapMarkedAlt, Flame as FaFire, Snowflake as FaSnowflake, Users as FaUsers, CircleCheck as FaCheckCircle, Thermometer as FaThermometerHalf, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, ChartNoAxesColumn as MdOutlineLeaderboard } from "lucide-react";
+
 
 import geographicDistributionService from "../api/geographicDistributionService";
 import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";

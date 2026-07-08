@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiMail, FiChevronRight, FiCheck, FiZap, FiShield, FiGlobe, FiBell } from "react-icons/fi";
-import { FaWhatsapp, FaCog, FaUsers, FaServer, FaFlask, FaEnvelopeOpen, FaFileCode, FaCommentDots, FaBuilding, FaToggleOn } from "react-icons/fa";
-import { MdOutlineSettings } from "react-icons/md";
+import { Mail as FiMail, ChevronRight as FiChevronRight, Check as FiCheck, Zap as FiZap, Shield as FiShield, Globe as FiGlobe, Bell as FiBell, Settings as FaCog, Users as FaUsers, Server as FaServer, FlaskConical as FaFlask, MailOpen as FaEnvelopeOpen, FileCode as FaFileCode, MessageCircleMore as FaCommentDots, Building2 as FaBuilding, ToggleRight as FaToggleOn, Settings as MdOutlineSettings } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 import { companyService } from "../api/companyService";
 import emailConfigurationService from "../api/emailConfigurationService";
 import whatsAppConfigService from "../api/whatsAppConfigService";

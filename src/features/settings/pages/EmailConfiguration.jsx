@@ -1,12 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiMail, FiArrowLeft, FiSave, FiEye, FiEyeOff,
-  FiSend, FiAlertCircle, FiCheck, FiInfo,
-  FiChevronDown, FiX,
-} from "react-icons/fi";
-import { FaServer, FaEnvelope, FaBuilding } from "react-icons/fa";
-import { MdOutlineSettings } from "react-icons/md";
+import { Mail as FiMail, ArrowLeft as FiArrowLeft, Save as FiSave, Eye as FiEye, EyeOff as FiEyeOff, Send as FiSend, CircleAlert as FiAlertCircle, Check as FiCheck, Info as FiInfo, ChevronDown as FiChevronDown, X as FiX, Server as FaServer, Mail as FaEnvelope, Building2 as FaBuilding, Settings as MdOutlineSettings } from "lucide-react";
+
 
 import emailConfigurationService from "../api/emailConfigurationService";
 

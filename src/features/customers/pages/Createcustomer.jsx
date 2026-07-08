@@ -6,8 +6,8 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
-import { FiUser } from "react-icons/fi";
+import { ArrowLeft as FiArrowLeft, CircleCheck as FiCheckCircle, Save as FiSave, User as FiUser } from "lucide-react";
+
 
 import CustomerInformation from "../components/CustomerInformation";
 import CustomerAddress     from "../components/CustomerAddress";

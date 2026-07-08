@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBell, FiMail, FiClock, FiAlertTriangle, FiCheck, FiTrash2, FiRefreshCw, FiBellOff } from "react-icons/fi";
-import { FaMoneyBillWave, FaPassport, FaExclamationCircle } from "react-icons/fa";
-import { MdOutlineMarkEmailRead } from "react-icons/md";
+import { Bell as FiBell, Mail as FiMail, Clock as FiClock, TriangleAlert as FiAlertTriangle, Check as FiCheck, Trash2 as FiTrash2, RefreshCw as FiRefreshCw, BellOff as FiBellOff, Banknote as FaMoneyBillWave, BookUser as FaPassport, CircleAlert as FaExclamationCircle, MailCheck as MdOutlineMarkEmailRead } from "lucide-react";
+
 
 import notificationService from "../api/notificationService";
 

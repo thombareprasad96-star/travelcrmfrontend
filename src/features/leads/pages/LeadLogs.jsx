@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { FiPlus, FiList, FiCalendar, FiMessageSquare, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import {
-  FaClipboardList, FaAngleDoubleLeft, FaAngleDoubleRight,
-} from "react-icons/fa";
+import { Plus as FiPlus, List as FiList, Calendar as FiCalendar, MessageSquare as FiMessageSquare, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, ClipboardList as FaClipboardList, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight } from "lucide-react";
+
 
 import { leadService } from "../api/leadService";
 

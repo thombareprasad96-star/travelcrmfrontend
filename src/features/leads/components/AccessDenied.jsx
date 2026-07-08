@@ -5,7 +5,7 @@
 // Design-system: glass card, blue-600 primary, Plus Jakarta Sans.
 // ─────────────────────────────────────────────────────────────
 
-import { FiLock } from "react-icons/fi";
+import { Lock as FiLock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function AccessDenied({

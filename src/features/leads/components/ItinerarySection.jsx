@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  FiPlus,
-  FiTrash2,
-  FiMapPin,
-  FiMap,
-  FiMoon,
-} from "react-icons/fi";
-import { MdRoute } from "react-icons/md";
+import { Plus as FiPlus, Trash2 as FiTrash2, MapPin as FiMapPin, Map as FiMap, Moon as FiMoon, Route as MdRoute } from "lucide-react";
+
 import { geographyService } from "@shared/api/geographyService";
 
 /**

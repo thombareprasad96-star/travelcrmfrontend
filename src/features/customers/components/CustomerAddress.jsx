@@ -1,7 +1,7 @@
 
 
-import { FiMapPin, FiChevronDown } from "react-icons/fi";
-import { MdLocationCity } from "react-icons/md";
+import { MapPin as FiMapPin, ChevronDown as FiChevronDown, Building as MdLocationCity } from "lucide-react";
+
 
 const INDIA_STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",

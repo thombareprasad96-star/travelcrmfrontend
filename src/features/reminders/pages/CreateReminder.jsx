@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiCheckCircle, FiBell, FiUser, FiPhone, FiAlertCircle, FiInfo, FiClock, FiTag } from "react-icons/fi";
-import { FaBell, FaLightbulb, FaUserTie, FaStickyNote } from "react-icons/fa";
-import { MdOutlineAddTask } from "react-icons/md";
+import { ArrowLeft as FiArrowLeft, CircleCheck as FiCheckCircle, Bell as FiBell, User as FiUser, Phone as FiPhone, CircleAlert as FiAlertCircle, Info as FiInfo, Clock as FiClock, Tag as FiTag, Bell as FaBell, Lightbulb as FaLightbulb, UserRound as FaUserTie, StickyNote as FaStickyNote, ListPlus as MdOutlineAddTask } from "lucide-react";
+
 
 import {
   reminderService,

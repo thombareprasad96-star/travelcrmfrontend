@@ -1,7 +1,7 @@
 // src/components/CreateVendor/VendorNotes.jsx
 
-import { FaRegStickyNote, FaExclamationTriangle } from "react-icons/fa";
-import { FiAlertTriangle } from "react-icons/fi";
+import { StickyNote as FaRegStickyNote, TriangleAlert as FaExclamationTriangle, TriangleAlert as FiAlertTriangle } from "lucide-react";
+
 
 export default function VendorNotes({ register }) {
   return (

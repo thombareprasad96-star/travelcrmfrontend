@@ -1,12 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiAlertCircle, FiCheck, FiInfo, FiX, FiSend, FiExternalLink } from "react-icons/fi";
-import {
-  FaWhatsapp, FaCopy, FaKey, FaFileAlt,
-  FaGlobe, FaImage, FaPhone, FaCheckCircle,
-  FaListUl,
-} from "react-icons/fa";
-import { MdOutlineIntegrationInstructions } from "react-icons/md";
+import { ArrowLeft as FiArrowLeft, Save as FiSave, Eye as FiEye, EyeOff as FiEyeOff, CircleAlert as FiAlertCircle, Check as FiCheck, Info as FiInfo, X as FiX, Send as FiSend, ExternalLink as FiExternalLink, Copy as FaCopy, Key as FaKey, FileText as FaFileAlt, Globe as FaGlobe, Image as FaImage, Phone as FaPhone, CircleCheck as FaCheckCircle, List as FaListUl, Blocks as MdOutlineIntegrationInstructions } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 import whatsAppConfigService from "../api/whatsAppConfigService";
 

@@ -7,12 +7,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams }            from "react-router-dom";
 import { useForm }                            from "react-hook-form";
 import bookingService                         from "../api/bookingService";
-import {
-  FiArrowLeft, FiSave, FiCheckCircle, FiAlertCircle, FiX,
-  FiCalendar, FiDollarSign, FiPercent, FiCreditCard,
-  FiFileText, FiPackage, FiUser,
-} from "react-icons/fi";
-import { FaPlane } from "react-icons/fa";
+import { ArrowLeft as FiArrowLeft, Save as FiSave, CircleCheck as FiCheckCircle, CircleAlert as FiAlertCircle, X as FiX, Calendar as FiCalendar, DollarSign as FiDollarSign, Percent as FiPercent, CreditCard as FiCreditCard, FileText as FiFileText, Package as FiPackage, User as FiUser, Plane as FaPlane } from "lucide-react";
+
 
 const BOOKING_STATUSES = ["CONFIRMED","PENDING","CANCELLED","COMPLETED","REFUNDED"];
 const PAY_STATUSES     = ["PAID","PARTIAL","UNPAID","REFUNDED"];

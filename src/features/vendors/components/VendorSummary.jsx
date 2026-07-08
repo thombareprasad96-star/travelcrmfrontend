@@ -1,9 +1,7 @@
 // src/components/CreateVendor/VendorSummary.jsx
 
-import { FiCheckCircle, FiPhone, FiMail } from "react-icons/fi";
-import { FaHandshake } from "react-icons/fa";
-import { MdBusiness } from "react-icons/md";
-import { HiSparkles } from "react-icons/hi";
+import { CircleCheck as FiCheckCircle, Phone as FiPhone, Mail as FiMail, Handshake as FaHandshake, Building2 as MdBusiness, Sparkles as HiSparkles } from "lucide-react";
+
 
 const TYPE_CONFIG = {
   Hotel:          { icon:"🏨", bg:"bg-blue-50",   text:"text-blue-700",   border:"border-blue-200"   },

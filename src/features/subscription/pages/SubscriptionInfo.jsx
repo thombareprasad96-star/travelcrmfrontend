@@ -18,9 +18,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiCheck, FiChevronRight, FiUsers, FiClock, FiZap, FiShield } from "react-icons/fi";
-import { FaCrown, FaRocket, FaUserAlt, FaBuilding } from "react-icons/fa";
-import { MdOutlineSubscriptions } from "react-icons/md";
+import { Check as FiCheck, ChevronRight as FiChevronRight, Users as FiUsers, Clock as FiClock, Zap as FiZap, Shield as FiShield, Crown as FaCrown, Rocket as FaRocket, User as FaUserAlt, Building2 as FaBuilding, CalendarSync as MdOutlineSubscriptions } from "lucide-react";
+
 
 // ── Uncomment when backend ready ─────────────────────────────
 // import subscriptionService from "../api/subscriptionService";
