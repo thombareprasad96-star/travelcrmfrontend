@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { Fuel, Wrench, Plus, Pencil, Trash2 } from "lucide-react";
 
 import fleetService from "../api/fleetService";
-import CommonPagination from "@/components/CommanPegination";
+import CommonPagination from "./CommanPegination";
 import {
   Button, Input, Textarea, Label,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,

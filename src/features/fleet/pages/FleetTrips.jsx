@@ -11,7 +11,7 @@ import {
 
 import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";
-import CommonPagination from "@/components/CommanPegination";
+import CommonPagination from "../components/CommanPegination";
 import {
   Button, Input, Select, Textarea, Label,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
