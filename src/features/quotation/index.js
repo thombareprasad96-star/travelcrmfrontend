@@ -1,0 +1,9 @@
+// src/features/quotation/index.js
+// Public API of the quotation feature.
+// QuotationWebView / PublicQuotationPage / WeblinkAnalyticsModal /
+// quotationService are consumed by leads and the public /q/ route.
+
+export { default as CreateQuotation } from "./pages/Createquotation";
+export { default as QuotationWebView, PublicQuotationPage } from "./pages/QuotationWebView";
+export { default as WeblinkAnalyticsModal } from "./components/WeblinkAnalyticsModal";
+export { quotationService } from "./api/quotationService";

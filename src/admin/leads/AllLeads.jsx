@@ -3451,7 +3451,7 @@
 import { useState, useEffect, memo, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { leadService } from '../../services/leadService';
-import { quotationService } from '../../services/quotationService';
+import { quotationService } from "@features/quotation";
 import { hasPermission, P } from "@shared/lib/access";
 import AccessDenied from '../../components/AccessDenied';
 import { formatToWhatsAppLink } from '../../utils/whatsapp';
@@ -3464,8 +3464,8 @@ import {
 } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import QuotationWebView from '../../quotation/QuotationWebView';
-import WeblinkAnalyticsModal from '../../quotation/WeblinkAnalyticsModal';
+import { QuotationWebView } from "@features/quotation";
+import { WeblinkAnalyticsModal } from "@features/quotation";
 import ConvertToBookingModal from './ConvertToBookingModal';
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
