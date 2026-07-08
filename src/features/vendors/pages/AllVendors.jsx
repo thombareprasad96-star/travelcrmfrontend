@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import vendorService from "../services/vendorService";
+import vendorService from "../api/vendorService";
 import {
   FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye,
   FiDownload, FiPhone, FiMail, FiMapPin,
