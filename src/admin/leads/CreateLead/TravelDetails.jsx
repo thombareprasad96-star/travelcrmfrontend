@@ -193,7 +193,7 @@ import {
   FiCalendar, FiGlobe, FiMapPin, FiHome, FiUsers
 } from "react-icons/fi";
 import { MdChildCare, MdBabyChangingStation, MdHotel } from "react-icons/md";
-import { geographyService } from "../../../services/geographyService";
+import { geographyService } from "@shared/api/geographyService";
 import SearchableSelect from "../../../components/SearchableSelect";
 
 function NumberInput({ label, icon: Icon, value, onChange, min = 0, max = 20, color = "blue" }) {

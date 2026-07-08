@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, Car, UploadCloud, Image as ImageIcon, X, AlertTriangle, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { vehicleService, normalizeVehicleList, transformVehicleResponse, uploadImageToCloudinary } from '../services/VehicleService';
+import { vehicleService, normalizeVehicleList, transformVehicleResponse, uploadImageToCloudinary } from "../api/VehicleService";
 
 /* ─────────────────────────────────────────────
    🌟 CUSTOM TAILWIND TOAST SYSTEM

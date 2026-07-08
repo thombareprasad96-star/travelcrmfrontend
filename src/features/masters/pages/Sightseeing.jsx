@@ -8,9 +8,9 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { sightseeingService, transformSightseeingResponse } from "../services/SightseeingService";
-import { geographyService } from "../services/geographyService";
-import { cityService } from "../services/CityService";
+import { sightseeingService, transformSightseeingResponse } from "../api/SightseeingService";
+import { geographyService } from "@shared/api/geographyService";
+import { cityService } from "../api/CityService";
 
 // =========================================================================
 // 🌟 TOAST SYSTEM

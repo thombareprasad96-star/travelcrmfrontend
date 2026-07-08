@@ -6,8 +6,8 @@ import {
   PlaneTakeoff, Edit2, Trash2, Check, AlertCircle,
   Home, ChevronRight, Sparkles, Shield
 } from "lucide-react";
-import { hotelService, transformHotelResponse, uploadHotelImageToCloudinary } from "../services/HotelService";
-import { geographyService } from "../services/geographyService";
+import { hotelService, transformHotelResponse, uploadHotelImageToCloudinary } from "../api/HotelService";
+import { geographyService } from "@shared/api/geographyService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────── */
 const AMENITIES = [

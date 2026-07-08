@@ -4,8 +4,8 @@ import {
   MapPin, Globe, ChevronDown, AlertCircle, Loader2,
   Home, ChevronRight, RefreshCw
 } from "lucide-react";
-import { cityService } from "../../services/CityService";
-import { geographyService } from "../../services/geographyService";
+import { cityService } from "../api/CityService";
+import { geographyService } from "@shared/api/geographyService";
 
 /* ─── TOAST ─────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {

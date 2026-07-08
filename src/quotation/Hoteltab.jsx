@@ -2629,8 +2629,8 @@ import {
 } from "lucide-react";
 import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./ui";
 import { ROOM_TYPES, MEAL_PLANS } from "./constants";
-import { hotelService, uploadHotelImageToCloudinary } from "../services/HotelService";
-import { geographyService } from "../services/geographyService";
+import { hotelService, uploadHotelImageToCloudinary } from "@features/masters";
+import { geographyService } from "@shared/api/geographyService";
 
 /* Room type ready list (dropdown ke liye) */
 const ROOM_TYPE_OPTIONS = ["Standard", "Deluxe", "Super Deluxe", "Suite", "Executive", "Premium"];

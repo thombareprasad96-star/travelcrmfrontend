@@ -6,8 +6,8 @@ import {
   ArrowRight, ArrowLeft, CheckCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { destinationService, uploadImageToCloudinary } from '../services/DestinationService';
-import { geographyService } from "../services/geographyService";
+import { destinationService, uploadImageToCloudinary } from "../api/DestinationService";
+import { geographyService } from "@shared/api/geographyService";
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];

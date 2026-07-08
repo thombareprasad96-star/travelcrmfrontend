@@ -574,7 +574,7 @@ import {
   FiMoon,
 } from "react-icons/fi";
 import { MdRoute } from "react-icons/md";
-import { geographyService } from "../../../services/geographyService";
+import { geographyService } from "@shared/api/geographyService";
 
 /**
  * Travel itinerary builder.
