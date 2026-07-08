@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlineBarChart, MdOutlineReceiptLong } from "react-icons/md";
 
-import bookingService from "../services/bookingService";
+import bookingService from "@/services/bookingService";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
 /* ─── DATA NORMALISATION ─────────────────────────────────────

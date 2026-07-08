@@ -12,8 +12,8 @@ import {
 } from "react-icons/fa";
 import { MdOutlineLeaderboard } from "react-icons/md";
 
-import geographicDistributionService from "../services/geographicDistributionService";
-import { DEFAULT_START, DEFAULT_END } from "./dateDefaults";
+import geographicDistributionService from "../api/geographicDistributionService";
+import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";
 
 const VIEW_TYPES   = ["Departing Cities","Destinations","States","Countries"];
 const LEAD_TYPES   = ["All Types","Domestic","International","Corporate","Individual"];

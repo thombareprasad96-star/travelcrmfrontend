@@ -13,7 +13,7 @@ import {
 import { MdOutlineBarChart } from "react-icons/md";
 import { HiOutlineChartSquareBar } from "react-icons/hi";
 
-import reportsDashboardService from "../services/reportsDashboardService";
+import reportsDashboardService from "../api/reportsDashboardService";
 
 /* ─── REPORT CARDS CONFIG ────────────────────────────────────── */
 const REPORT_CARDS = [

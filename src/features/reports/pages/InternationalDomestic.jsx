@@ -11,8 +11,8 @@ import {
 import { MdOutlineBarChart } from "react-icons/md";
 import { HiOutlineGlobe } from "react-icons/hi";
 
-import intlDomesticService from "../services/intlDomesticService";
-import { DEFAULT_START, DEFAULT_END } from "./dateDefaults";
+import intlDomesticService from "../api/intlDomesticService";
+import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";
 
 /* Empty panel shape — used as a fallback so the render never dereferences null. */
 const EMPTY_PANEL = {

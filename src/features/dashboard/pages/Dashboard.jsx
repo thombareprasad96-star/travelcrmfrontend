@@ -3,7 +3,7 @@ import { leadService }   from "@/services/leadService";
 import bookingService     from "@/services/bookingService";
 import userService        from "@/services/profileUserService";
 import { companyService } from "@features/settings";
-import activityReportsService from "@/services/activityReportsService";
+import { activityReportsService } from "@features/reports";
 import { useNavigate } from "react-router-dom";
 import {
   FiUsers, FiTrendingUp, FiRefreshCw, FiTarget,

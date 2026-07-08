@@ -12,8 +12,8 @@ import {
 } from "react-icons/fa";
 import { MdLogin, MdOutlineBarChart } from "react-icons/md";
 
-import activityReportsService from "../services/activityReportsService";
-import { DEFAULT_START, DEFAULT_END } from "./dateDefaults";
+import activityReportsService from "../api/activityReportsService";
+import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";
 
 const ACTION_TYPES = ["All Actions","Login","Logout","Create","Update","Delete","Settings","Export"];
 const USER_TYPES   = ["All Types","Admin","User","Manager","Staff"];

@@ -13,8 +13,8 @@ import {
 } from "react-icons/fa";
 import { MdOutlineBarChart, MdOutlineCalendarMonth } from "react-icons/md";
 
-import travelDateAnalysisService from "../services/travelDateAnalysisService";
-import { todayISO, daysFromNowISO } from "./dateDefaults";
+import travelDateAnalysisService from "../api/travelDateAnalysisService";
+import { todayISO, daysFromNowISO } from "../dateDefaults";
 
 // Travel-date report looks forward: today → +6 months (kept relative so it never goes stale).
 const TRAVEL_START = todayISO();

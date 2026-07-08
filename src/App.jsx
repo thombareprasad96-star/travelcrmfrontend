@@ -234,13 +234,15 @@ import EditUser from "./profile/EditUser";
 import UserPermissions from "./profile/UserPermissions";
 import PermissionTemplates from "./profile/PermissionTemplates";
 import CreatePermissionTemplate from "./profile/CreatePermissionTemplate";
-import ReportsDashboard from "./reports/ReportsDashboard";
-import ActivityReports from "./reports/ActivityReports";
-import GeographicDistribution from "./reports/GeographicDistribution";
-import FollowupReports from "./reports/FollowupReports";
-import BookingRevenueAnalysis from "./reports/BookingRevenueAnalysis";
-import TravelDateAnalysis from "./reports/TravelDateAnalysis";
-import InternationalDomestic from "./reports/InternationalDomestic";
+import {
+  ReportsDashboard,
+  ActivityReports,
+  GeographicDistribution,
+  FollowupReports,
+  BookingRevenueAnalysis,
+  TravelDateAnalysis,
+  InternationalDomestic,
+} from "@features/reports";
 import { PublicQuotationPage } from "./quotation/QuotationWebView";
 import LeadLogs from "./admin/leads/LeadLogs";
 import AddLeadLog from "./admin/leads/AddLeadLog";

@@ -17,7 +17,7 @@ import {
   X, Phone, Mail, Users, User, Calendar,
   Briefcase, MapPin, DollarSign, XCircle, Pencil,
 } from "lucide-react";
-import { leadService } from "../services/leadService";
+import { leadService } from "@/services/leadService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const VIEW_TYPES      = ["All","Upcoming","Overdue","Due Today","Completed"];
