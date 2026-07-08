@@ -1,78 +1,105 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./Layout";
-import {
-  AllLeads,
-  CreateLead,
-  EditLead,
-  LeadLogs,
-  AddLeadLog,
-  AllLeadLogs,
-  WhatsAppPanel,
-} from "@features/leads";
-import { AdminLogin } from "@features/auth";
-import {
-  City,
-  Destinations,
-  Hotel,
-  Airline,
-  Cruise,
-  Vehiclas,
-  Sightseeing,
-  AddonService,
-  Testimonials,
-} from "@features/masters";
-import { Allbookings, EditBooking, BookingDetails } from "@features/bookings";
-import { AllCustomers, Createcustomer, EditCustomer } from "@features/customers";
-import { AllOrganization } from "@features/tenant";
-import { AllVendors, CreateVendor, EditVendor } from "@features/vendors";
-import {
-  Reminders,
-  CreateReminder,
-  BookingReminders,
-  Notifications,
-  NotificationSettings,
-} from "@features/reminders";
-
-import { CreateQuotation, PublicQuotationPage } from "@features/quotation";
-import {
-  Users,
-  CreateUser,
-  EditUser,
-  UserPermissions,
-  PermissionTemplates,
-  CreatePermissionTemplate,
-  CompanyProfile,
-  ChangePassword,
-} from "@features/profile";
-import {
-  ReportsDashboard,
-  ActivityReports,
-  GeographicDistribution,
-  FollowupReports,
-  BookingRevenueAnalysis,
-  TravelDateAnalysis,
-  InternationalDomestic,
-} from "@features/reports";
-import { CompanySettings, EmailConfiguration, WhatsAppConfiguration } from "@features/settings";
-import { SubscriptionInfo } from "@features/subscription";
-import { Dashboard } from "@features/dashboard";
-import { TrashPage } from "@features/trash";
+import PageLoader from "./PageLoader";
+import RouteErrorBoundary from "./RouteErrorBoundary";
 import { hasPermission, P } from "@shared/lib/access";
 
-// Fleet / Vehicle Diary
-import {
-  FleetDashboard,
-  FleetVehicles,
-  FleetVehicleForm,
-  FleetVehicleDetail,
-  FleetDrivers,
-  FleetDriverForm,
-  FleetTrips,
-  FleetTripForm,
-  FleetTripDetail,
-} from "@features/fleet";
+/* ── Lazy route chunks (Phase 5b) ─────────────────────────────
+   Each feature's pages load on first navigation, one chunk per feature.
+   Pages stay behind their feature's public index — lazyPage() picks the
+   named export off it, so the boundary rule still holds. */
+const lazyPage = (load, name) => lazy(() => load().then((m) => ({ default: m[name] })));
+
+const leads = () => import("@features/leads");
+const AllLeads      = lazyPage(leads, "AllLeads");
+const CreateLead    = lazyPage(leads, "CreateLead");
+const EditLead      = lazyPage(leads, "EditLead");
+const LeadLogs      = lazyPage(leads, "LeadLogs");
+const AddLeadLog    = lazyPage(leads, "AddLeadLog");
+const AllLeadLogs   = lazyPage(leads, "AllLeadLogs");
+const WhatsAppPanel = lazyPage(leads, "WhatsAppPanel");
+
+const AdminLogin = lazyPage(() => import("@features/auth"), "AdminLogin");
+
+const masters = () => import("@features/masters");
+const City         = lazyPage(masters, "City");
+const Destinations = lazyPage(masters, "Destinations");
+const Hotel        = lazyPage(masters, "Hotel");
+const Airline      = lazyPage(masters, "Airline");
+const Cruise       = lazyPage(masters, "Cruise");
+const Vehiclas     = lazyPage(masters, "Vehiclas");
+const Sightseeing  = lazyPage(masters, "Sightseeing");
+const AddonService = lazyPage(masters, "AddonService");
+const Testimonials = lazyPage(masters, "Testimonials");
+
+const bookings = () => import("@features/bookings");
+const Allbookings    = lazyPage(bookings, "Allbookings");
+const EditBooking    = lazyPage(bookings, "EditBooking");
+const BookingDetails = lazyPage(bookings, "BookingDetails");
+
+const customers = () => import("@features/customers");
+const AllCustomers   = lazyPage(customers, "AllCustomers");
+const Createcustomer = lazyPage(customers, "Createcustomer");
+const EditCustomer   = lazyPage(customers, "EditCustomer");
+
+const AllOrganization = lazyPage(() => import("@features/tenant"), "AllOrganization");
+
+const vendors = () => import("@features/vendors");
+const AllVendors   = lazyPage(vendors, "AllVendors");
+const CreateVendor = lazyPage(vendors, "CreateVendor");
+const EditVendor   = lazyPage(vendors, "EditVendor");
+
+const reminders = () => import("@features/reminders");
+const Reminders            = lazyPage(reminders, "Reminders");
+const CreateReminder       = lazyPage(reminders, "CreateReminder");
+const BookingReminders     = lazyPage(reminders, "BookingReminders");
+const Notifications        = lazyPage(reminders, "Notifications");
+const NotificationSettings = lazyPage(reminders, "NotificationSettings");
+
+const quotation = () => import("@features/quotation");
+const CreateQuotation     = lazyPage(quotation, "CreateQuotation");
+const PublicQuotationPage = lazyPage(quotation, "PublicQuotationPage");
+
+const profile = () => import("@features/profile");
+const Users                    = lazyPage(profile, "Users");
+const CreateUser               = lazyPage(profile, "CreateUser");
+const EditUser                 = lazyPage(profile, "EditUser");
+const UserPermissions          = lazyPage(profile, "UserPermissions");
+const PermissionTemplates      = lazyPage(profile, "PermissionTemplates");
+const CreatePermissionTemplate = lazyPage(profile, "CreatePermissionTemplate");
+const CompanyProfile           = lazyPage(profile, "CompanyProfile");
+const ChangePassword           = lazyPage(profile, "ChangePassword");
+
+const reports = () => import("@features/reports");
+const ReportsDashboard       = lazyPage(reports, "ReportsDashboard");
+const ActivityReports        = lazyPage(reports, "ActivityReports");
+const GeographicDistribution = lazyPage(reports, "GeographicDistribution");
+const FollowupReports        = lazyPage(reports, "FollowupReports");
+const BookingRevenueAnalysis = lazyPage(reports, "BookingRevenueAnalysis");
+const TravelDateAnalysis     = lazyPage(reports, "TravelDateAnalysis");
+const InternationalDomestic  = lazyPage(reports, "InternationalDomestic");
+
+const settings = () => import("@features/settings");
+const CompanySettings       = lazyPage(settings, "CompanySettings");
+const EmailConfiguration    = lazyPage(settings, "EmailConfiguration");
+const WhatsAppConfiguration = lazyPage(settings, "WhatsAppConfiguration");
+
+const SubscriptionInfo = lazyPage(() => import("@features/subscription"), "SubscriptionInfo");
+const Dashboard        = lazyPage(() => import("@features/dashboard"), "Dashboard");
+const TrashPage        = lazyPage(() => import("@features/trash"), "TrashPage");
+
+const fleet = () => import("@features/fleet");
+const FleetDashboard     = lazyPage(fleet, "FleetDashboard");
+const FleetVehicles      = lazyPage(fleet, "FleetVehicles");
+const FleetVehicleForm   = lazyPage(fleet, "FleetVehicleForm");
+const FleetVehicleDetail = lazyPage(fleet, "FleetVehicleDetail");
+const FleetDrivers       = lazyPage(fleet, "FleetDrivers");
+const FleetDriverForm    = lazyPage(fleet, "FleetDriverForm");
+const FleetTrips         = lazyPage(fleet, "FleetTrips");
+const FleetTripForm      = lazyPage(fleet, "FleetTripForm");
+const FleetTripDetail    = lazyPage(fleet, "FleetTripDetail");
 
 
 // Route-level guard (defense-in-depth; backend is the real gate, menus already hide these).
@@ -90,6 +117,8 @@ const AppRouter = () => {
 
   return (
     <BrowserRouter>
+      <RouteErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
 
         {/* Login */}
@@ -196,6 +225,8 @@ const AppRouter = () => {
         </Route>
  
       </Routes>
+      </Suspense>
+      </RouteErrorBoundary>
     </BrowserRouter>
   );
 };

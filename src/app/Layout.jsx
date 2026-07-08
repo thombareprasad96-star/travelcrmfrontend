@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet } from 'react-router-dom'; // 1. Ye naya import add karna hai
 import Sidebar from '@app/chrome/Sidebar';
 import Navbar from '@app/chrome/Navbar';
 import AppFooter from '@app/chrome/AppFooter';
+import PageLoader from '@app/PageLoader';
 
 const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
   // Default state ko ab false rakha hai taaki mobile par pehle se open na mile
@@ -32,8 +33,11 @@ const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
         
         <main className="flex-1 overflow-y-auto bg-[#f4f6f9] p-4">
           
-          {/* 3. YAHAN CHANGE HUA HAI: {children} ki jagah <Outlet /> laga diya */}
-          <Outlet /> 
+          {/* Page chunks load inside the chrome — navbar/sidebar stay visible
+              while a lazy route downloads (Phase 5b). */}
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
 <AppFooter/>
         </main>
       </div>
