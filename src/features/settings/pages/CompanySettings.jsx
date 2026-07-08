@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiMail, FiSettings, FiChevronRight, FiCheck,
-  FiZap, FiShield, FiGlobe, FiBell,
-} from "react-icons/fi";
-import {
-  FaWhatsapp, FaCog, FaUsers, FaServer,
-  FaFlask, FaEnvelopeOpen, FaCogs, FaFileCode,
-  FaCommentDots, FaBuilding, FaToggleOn,
-} from "react-icons/fa";
-import { MdOutlineSettings, MdOutlineIntegrationInstructions } from "react-icons/md";
+import { FiMail, FiChevronRight, FiCheck, FiZap, FiShield, FiGlobe, FiBell } from "react-icons/fi";
+import { FaWhatsapp, FaCog, FaUsers, FaServer, FaFlask, FaEnvelopeOpen, FaFileCode, FaCommentDots, FaBuilding, FaToggleOn } from "react-icons/fa";
+import { MdOutlineSettings } from "react-icons/md";
 import { companyService } from "../api/companyService";
 import emailConfigurationService from "../api/emailConfigurationService";
 import whatsAppConfigService from "../api/whatsAppConfigService";
@@ -134,7 +127,7 @@ function StatPill({ icon, label, value, color, bg }) {
 
 /* ─── SETTINGS CARD ──────────────────────────────────────────── */
 function SettingsCard({ card, onNavigate }) {
-  const [pressed, setPressed] = useState(false);
+  const [, setPressed] = useState(false);
 
   return (
     <div

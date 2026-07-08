@@ -95,7 +95,7 @@
 //       response.data.role = "super_admin";
 //       return response;
 
-//     } catch (superAdminError) {
+//     } catch {
 //       // Step 2: Agar SuperAdmin API fail hui, toh error mat do, User API par try karo
 //       console.log("Not a SuperAdmin, checking User...");
 
@@ -109,7 +109,7 @@
 //       } catch (userError) {
 //         // Step 3: Agar dono jagah fail ho gaya, tab jaakar asli error do
 //         console.error("Login failed for both.");
-//         throw new Error("Invalid Email or Password");
+//         throw new Error("Invalid Email or Password", { cause: userError });
 //       }
 //     }
 //   },
@@ -141,7 +141,7 @@ export const authService = {
       response.data.role = "super_admin";
       return response;
 
-    } catch (superAdminError) {
+    } catch {
       // Step 2: Agar SuperAdmin API fail hui, toh error mat do, User API par try karo
       console.log("Not a SuperAdmin, checking User...");
 
@@ -157,7 +157,7 @@ export const authService = {
       } catch (userError) {
         // Step 3: Agar dono jagah fail ho gaya, tab jaakar asli error do
         console.error("Login failed for both.");
-        throw new Error("Invalid Email or Password");
+        throw new Error("Invalid Email or Password", { cause: userError });
       }
     }
   },

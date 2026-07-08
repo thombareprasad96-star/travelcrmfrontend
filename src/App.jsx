@@ -197,7 +197,7 @@
 
 
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // !!localStorage.getItem("token")
 import Layout from "./Layout";
@@ -258,7 +258,7 @@ import { CompanySettings, EmailConfiguration, WhatsAppConfiguration } from "@fea
 import { SubscriptionInfo } from "@features/subscription";
 import { Dashboard } from "@features/dashboard";
 import { TrashPage } from "@features/trash";
-import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
+import { hasPermission, P } from "@shared/lib/access";
 
 // Fleet / Vehicle Diary
 import {

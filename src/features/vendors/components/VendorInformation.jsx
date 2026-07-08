@@ -1,6 +1,5 @@
 // src/components/CreateVendor/VendorInformation.jsx
 
-import { useState } from "react";
 import {
   FiUser, FiPhone, FiMail, FiChevronDown, FiCheckCircle,
 } from "react-icons/fi";
@@ -100,7 +99,6 @@ export default function VendorInformation({ register, errors, watch, setValue })
   const selectedType   = watch("vendorType");
   const selectedComm   = watch("commPref");
 
-  const tc = TYPE_CONFIG[selectedType] || null;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

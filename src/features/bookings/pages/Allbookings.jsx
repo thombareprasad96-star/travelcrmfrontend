@@ -3,12 +3,7 @@ import { useNavigate } from "react-router-dom";
 import bookingService                from "../api/bookingService";
 import CancelBookingModal            from "../components/CancelBookingModal";
 import { hasPermission, P }          from "@shared/lib/access";
-import {
-  FiSearch, FiRefreshCw, FiFilter, FiDownload,
-  FiChevronDown, FiChevronUp, FiEye, FiEdit2,
-  FiTrash2, FiX, FiPrinter, FiCheck, FiAlertCircle,
-  FiChevronLeft, FiChevronRight, FiTrendingUp,
-} from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiFilter, FiDownload, FiChevronDown, FiChevronUp, FiEye, FiEdit2, FiTrash2, FiX, FiPrinter, FiCheck, FiAlertCircle, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import {
   FaPlane, FaAngleDoubleLeft, FaAngleDoubleRight,
   FaRupeeSign, FaCheckCircle, FaTimesCircle,

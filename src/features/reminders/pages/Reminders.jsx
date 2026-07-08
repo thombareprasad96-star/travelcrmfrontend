@@ -1,16 +1,8 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { leadService } from "@features/leads";
-import {
-  FiBell, FiPlus, FiCheck, FiX, FiClock, FiAlertCircle,
-  FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown,
-  FiCalendar, FiUser, FiPhone, FiEye, FiRefreshCw,
-  FiMail, FiMapPin, FiTag, FiUserCheck, FiDollarSign,
-  FiExternalLink, FiAlertTriangle,
-} from "react-icons/fi";
-import {
-  FaWhatsapp, FaStickyNote, FaPhoneAlt, FaCrown, FaPlane,
-} from "react-icons/fa";
+import { FiBell, FiPlus, FiX, FiClock, FiAlertCircle, FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown, FiCalendar, FiUser, FiPhone, FiEye, FiRefreshCw, FiMail, FiMapPin, FiTag, FiUserCheck, FiDollarSign, FiExternalLink } from "react-icons/fi";
+import { FaWhatsapp, FaStickyNote, FaPhoneAlt } from "react-icons/fa";
 import { MdSnooze, MdOutlineAddTask } from "react-icons/md";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
@@ -173,12 +165,12 @@ function SnoozeMenu({ onSnooze, onClose }) {
 
 /* ─── VIEW LEAD MODAL — fetches real lead from backend ───────── */
 function ViewLeadModal({ reminder, onClose }) {
-  if (!reminder) return null;
   const navigate = useNavigate();
   const [lead,    setLead]    = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!reminder) return;
     const leadId = reminder.leadId;
     if (!leadId) {
       // No leadId — show what we have from the reminder
@@ -238,6 +230,8 @@ function ViewLeadModal({ reminder, onClose }) {
       })
       .finally(() => setLoading(false));
   }, [reminder]);
+
+  if (!reminder) return null;
 
   const stageCfg = STAGE_CFG[lead?.stage]    || STAGE_CFG["New Lead"];
   const typeCfg  = LEAD_TYPE_CFG[lead?.type] || LEAD_TYPE_CFG["Fresh Lead"];

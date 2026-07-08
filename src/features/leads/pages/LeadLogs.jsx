@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import {
-  FiPlus, FiArrowLeft, FiList, FiCalendar,
-  FiMessageSquare, FiChevronLeft, FiChevronRight,
-} from "react-icons/fi";
+import { FiPlus, FiList, FiCalendar, FiMessageSquare, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import {
   FaClipboardList, FaAngleDoubleLeft, FaAngleDoubleRight,
 } from "react-icons/fa";
@@ -24,10 +21,6 @@ const fmtLogDate = (iso) => {
   return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 };
 
-const STAGES = [
-  "New Lead", "Contacted", "Follow Up", "Qualified",
-  "Proposal Sent", "Ready to Book", "Converted", "Lost",
-];
 
 const STAGE_CFG = {
   "New Lead":       { bg:"bg-blue-500",    text:"text-white" },

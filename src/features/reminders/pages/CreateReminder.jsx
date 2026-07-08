@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import {
-  FiArrowLeft, FiCheckCircle, FiSave, FiBell,
-  FiUser, FiPhone, FiMail, FiCalendar, FiFlag,
-  FiAlertCircle, FiInfo, FiClock, FiTag,
-} from "react-icons/fi";
-import {
-  FaBell, FaWhatsapp, FaLightbulb, FaUserTie,
-  FaClock, FaFlag, FaStickyNote,
-} from "react-icons/fa";
+import { FiArrowLeft, FiCheckCircle, FiBell, FiUser, FiPhone, FiAlertCircle, FiInfo, FiClock, FiTag } from "react-icons/fi";
+import { FaBell, FaLightbulb, FaUserTie, FaStickyNote } from "react-icons/fa";
 import { MdOutlineAddTask } from "react-icons/md";
 
 import {

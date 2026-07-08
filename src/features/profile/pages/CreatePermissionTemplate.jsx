@@ -4,10 +4,7 @@ import {
   FiPlus, FiArrowLeft, FiAlertCircle, FiInfo,
   FiCheckCircle, FiSettings, FiChevronDown,
 } from "react-icons/fi";
-import {
-  FaUserShield, FaUserTie, FaUserCheck, FaEye,
-  FaLayerGroup, FaCog,
-} from "react-icons/fa";
+import { FaUserShield, FaUserTie, FaEye, FaLayerGroup } from "react-icons/fa";
 import { HiTemplate } from "react-icons/hi";
 import { MdOutlineFlashOn } from "react-icons/md";
 

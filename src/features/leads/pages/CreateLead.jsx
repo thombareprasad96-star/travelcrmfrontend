@@ -5,7 +5,6 @@ import {
   FiArrowLeft, FiSave, FiCheckCircle, FiAlertCircle,
   FiLoader, FiFileText
 } from "react-icons/fi";
-import { MdFlightTakeoff } from "react-icons/md";
 import { leadService } from "../api/leadService";
 
 import LeadInformation from "../components/LeadInformation";
@@ -165,7 +164,7 @@ export default function CreateLead() {
         `Lead found: ${lead.customerName}`
       );
 
-    } catch (error) {
+    } catch {
 
       showToast(
         "error",

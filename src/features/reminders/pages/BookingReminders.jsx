@@ -8,15 +8,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiSend, FiClock, FiCheckCircle, FiFilter, FiRefreshCw,
-  FiEdit2, FiTrash2, FiEye, FiPhone, FiCalendar, FiPlus,
-  FiAlertCircle, FiUser, FiDollarSign, FiMapPin, FiX,
-} from "react-icons/fi";
-import {
-  FaPlane, FaWhatsapp, FaHotel, FaPassport, FaMoneyBillWave,
-  FaPlaneDeparture, FaFileInvoiceDollar, FaSuitcaseRolling,
-} from "react-icons/fa";
+import { FiSend, FiClock, FiCheckCircle, FiFilter, FiRefreshCw, FiTrash2, FiEye, FiPhone, FiCalendar, FiMapPin } from "react-icons/fi";
+import { FaPlane, FaWhatsapp, FaPassport, FaMoneyBillWave, FaPlaneDeparture, FaFileInvoiceDollar, FaSuitcaseRolling } from "react-icons/fa";
 import { MdOutlineFlightTakeoff } from "react-icons/md";
 
 // ── Uncomment when backend is ready ──────────────────────────
@@ -69,10 +62,6 @@ function avatarGrad(id) { return AVATAR_GRADS[id % AVATAR_GRADS.length]; }
 function fmtDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" });
-}
-function fmtDateTime(d) {
-  if (!d) return "—";
-  return new Date(d).toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
 }
 function fmtINR(n) { return "₹" + Number(n || 0).toLocaleString("en-IN"); }
 

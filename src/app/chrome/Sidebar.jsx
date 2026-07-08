@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { 
-  LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText,
-  CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser,
-  User, CreditCard, LogOut, Bell, BellRing, Clock, CalendarClock, Trash2, Truck
-} from 'lucide-react';
+import { LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText, CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, User, CreditCard, LogOut, Bell, BellRing, CalendarClock, Trash2, Truck } from 'lucide-react';
 import { isSuperAdmin, hasPermission, P } from "@shared/lib/access";
 
 const Sidebar = ({ isExpanded }) => {

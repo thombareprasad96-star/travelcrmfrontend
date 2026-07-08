@@ -1,9 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  Search, Plus, Eye, EyeOff, Edit, Trash2, Shield, X,
-  Building2, CheckCircle2, ChevronDown, Key, AlertTriangle,
-  Globe, Phone, MapPin, Calendar, Hash, Mail, User
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Plus, Eye, EyeOff, Edit, Trash2, Shield, X, Building2, CheckCircle2, ChevronDown, Key, AlertTriangle, Phone, MapPin, Calendar, Hash, Mail, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { organizationService } from "../api/OrganizationService"; // Adjust path if needed
 

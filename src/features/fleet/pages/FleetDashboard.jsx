@@ -2,11 +2,7 @@
 // Fleet overview — counts, live trips, expiring documents and service-due vehicles.
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard, Car, IdCard, Route as RouteIcon, Plus, ShieldAlert, Wrench,
-  CheckCircle2, Clock, AlertTriangle, XCircle, Fuel, Gauge, TrendingUp, IndianRupee,
-  CalendarClock,
-} from "lucide-react";
+import { LayoutDashboard, Car, IdCard, Route as RouteIcon, Plus, ShieldAlert, Wrench, CheckCircle2, XCircle, Fuel, Gauge, TrendingUp, IndianRupee, CalendarClock } from "lucide-react";
 
 import fleetService from "../api/fleetService";
 import { hasPermission, P } from "@shared/lib/access";

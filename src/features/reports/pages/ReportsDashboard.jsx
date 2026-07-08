@@ -1,17 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiBarChart2, FiActivity, FiMapPin, FiClock,
-  FiTrendingUp, FiCalendar, FiGlobe, FiEye,
-  FiDownload, FiRefreshCw, FiArrowRight,
-  FiUsers, FiDollarSign, FiFileText,
-} from "react-icons/fi";
-import {
-  FaChartBar, FaChartLine, FaMapMarkedAlt,
-  FaRupeeSign, FaGlobe, FaRegClock,
-} from "react-icons/fa";
-import { MdOutlineBarChart } from "react-icons/md";
-import { HiOutlineChartSquareBar } from "react-icons/hi";
+import { FiBarChart2, FiActivity, FiClock, FiTrendingUp, FiCalendar, FiGlobe, FiEye, FiDownload, FiRefreshCw, FiArrowRight, FiUsers, FiFileText } from "react-icons/fi";
+import { FaMapMarkedAlt, FaRupeeSign, FaGlobe, FaRegClock } from "react-icons/fa";
 
 import reportsDashboardService from "../api/reportsDashboardService";
 

@@ -65,8 +65,6 @@ const TYPE_PILL = {
 };
 const typePill = (type) => TYPE_PILL[type] || 'bg-slate-100 text-slate-700 border-slate-200';
 
-/* Lead types offered in the edit page — the canonical set the pills above cover. */
-const LEAD_TYPES = Object.keys(TYPE_PILL);
 
 // Exact pastel colors per service, matched to the design mockup
 const SERVICE_COLORS = {
@@ -1296,7 +1294,7 @@ const Leads = () => {
   const [activeTab, setActiveTab] = useState('All');
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortOrder] = useState('desc');
   const [dateFilter, setDateFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

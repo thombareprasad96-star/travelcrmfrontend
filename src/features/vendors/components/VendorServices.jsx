@@ -4,11 +4,7 @@ import { useState } from "react";
 import {
   FiCheck, FiPlus, FiTrash2,
 } from "react-icons/fi";
-import {
-  FaHotel, FaPlane, FaBus, FaMapMarkedAlt,
-  FaShip, FaPassport, FaUmbrellaBeach,
-  FaCar, FaConciergeBell, FaRoute,
-} from "react-icons/fa";
+import { FaHotel, FaPlane, FaBus, FaShip, FaPassport, FaUmbrellaBeach, FaCar, FaConciergeBell, FaRoute } from "react-icons/fa";
 import { MdTour } from "react-icons/md";
 
 const PRESET_SERVICES = [

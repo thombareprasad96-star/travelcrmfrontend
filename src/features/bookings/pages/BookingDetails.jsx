@@ -9,20 +9,11 @@
 //        Payment History | Quotation Info | Booking Reminders
 // ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import bookingService from "../api/bookingService";
-import {
-  FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle,
-  FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser,
-  FiCalendar, FiMapPin, FiDollarSign, FiTruck, FiPrinter,
-  FiDownload, FiMail, FiPhone, FiChevronDown, FiChevronUp,
-  FiEye, FiBell, FiCheckCircle,
-} from "react-icons/fi";
-import {
-  FaPlane, FaHotel, FaCar, FaShip, FaPassport,
-  FaUmbrellaBeach, FaMoneyBillWave, FaReceipt,
-} from "react-icons/fa";
+import { FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle, FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser, FiTruck, FiPrinter, FiPhone, FiEye, FiBell } from "react-icons/fi";
+import { FaPlane, FaHotel, FaCar, FaShip, FaPassport, FaUmbrellaBeach, FaReceipt } from "react-icons/fa";
 import { MdOutlineAssignment, MdPayment } from "react-icons/md";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
@@ -334,7 +325,7 @@ export default function BookingDetails() {
       await bookingService.update(booking.id, { status: newStatus });
       setBooking(p => ({ ...p, status: newStatus.toUpperCase() }));
       showToast(`Booking status updated to ${titleCase(newStatus)}.`);
-    } catch (e) {
+    } catch {
       showToast("Failed to update status.", "error");
     }
   };

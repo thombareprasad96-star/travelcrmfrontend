@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { FiArrowLeft, FiCheckCircle, FiSave, FiLoader } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
 import { FiUser } from "react-icons/fi";
 
 import CustomerInformation from "../components/CustomerInformation";

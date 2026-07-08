@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   X, ArrowRightLeft, FileText, CheckCircle, AlertTriangle,
 } from 'lucide-react';

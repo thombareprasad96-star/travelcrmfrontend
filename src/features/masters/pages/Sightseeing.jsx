@@ -1,16 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  Map, ChevronDown, ChevronRight, Search, Plus, Eye, X,
-  Clock, Building2, Globe, Hash, Info, UploadCloud,
-  Bold, Italic, Underline, Strikethrough, AlignLeft,
-  AlignCenter, List, ListOrdered, Eraser, MapPin, AlertTriangle,
-  Pencil, Trash2, Layers, Sparkles, Image as ImageIcon, Calendar, Navigation
-} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Map, ChevronDown, ChevronRight, Search, Plus, Eye, X, Clock, Building2, Globe, Hash, Info, UploadCloud, Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, List, ListOrdered, Eraser, MapPin, AlertTriangle, Pencil, Trash2, Sparkles, Navigation } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { sightseeingService, transformSightseeingResponse } from "../api/SightseeingService";
 import { geographyService } from "@shared/api/geographyService";
-import { cityService } from "../api/CityService";
 
 // =========================================================================
 // 🌟 TOAST SYSTEM
@@ -155,7 +148,7 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
             setLoadingCity(true);
             try { setCityOptions(await geographyService.getCitiesByDestination(destId)); }
             finally { setLoadingCity(false); }
-          } catch {}
+          } catch { /* best-effort */ }
         })();
       }
     } else {
@@ -842,14 +835,14 @@ export default function SightseeingMaster() {
   const openAdd  = (dest = "") => { setEditingItem(null); setPrefillDest(dest); setModalOpen(true); };
   const openEdit = (item)       => { setEditingItem(item); setPrefillDest(""); setModalOpen(true); };
 
-  const handleSaved = (saved, type) => {
+  const handleSaved = () => {
     // Rows ko signal do ki naya data load karein
     setRefreshSignal((n) => n + 1);
     // Counts dobara compute karo (attractions/cities update)
     loadDestinationsWithCounts();
   };
 
-  const handleDelete = async (item, destName) => {
+  const handleDelete = async (item) => {
     // item se valid numeric id nikaalo (multiple field try karo)
     const delId = item?.id ?? item?.sightseeingId ?? item?.publicId;
 

@@ -1,8 +1,8 @@
 
 
 // calculate price==========================================================
-import React, { useState, useEffect } from "react";
-import { BarChart2, Plane, Hotel, Map, Anchor, Car, Package, Tag, IndianRupee, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BarChart2, Plane, Hotel, Map, Anchor, Car, Package, Tag, IndianRupee } from "lucide-react";
 import { Label, Input, Select, SectionCard, FieldGrid } from "./Ui";
 
 export default function SummaryPricingTab({ costs = {}, onDataChange }) {

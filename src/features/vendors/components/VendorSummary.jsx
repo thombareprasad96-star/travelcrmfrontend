@@ -1,11 +1,8 @@
 // src/components/CreateVendor/VendorSummary.jsx
 
-import { FiCheckCircle, FiPhone, FiMail, FiMapPin } from "react-icons/fi";
-import {
-  FaHotel, FaPlane, FaBus, FaMapMarkedAlt,
-  FaHandshake, FaWhatsapp,
-} from "react-icons/fa";
-import { MdBusiness, MdVerified } from "react-icons/md";
+import { FiCheckCircle, FiPhone, FiMail } from "react-icons/fi";
+import { FaHandshake } from "react-icons/fa";
+import { MdBusiness } from "react-icons/md";
 import { HiSparkles } from "react-icons/hi";
 
 const TYPE_CONFIG = {
@@ -35,13 +32,11 @@ function gradFor(name = "") {
 export default function VendorSummary({ watch, selectedServices }) {
   const name    = watch("vendorName")    || "";
   const type    = watch("vendorType")    || "";
-  const contact = watch("contactPerson") || "";
   const phone   = watch("phone")         || "";
   const email   = watch("email")         || "";
   const city    = watch("city")          || "";
   const country = watch("country")       || "";
   const contract= watch("contractType")  || "";
-  const payment = watch("paymentTerms")  || "";
   const status  = watch("status")        || "ACTIVE";
   const commission= watch("commissionRate") || "";
 

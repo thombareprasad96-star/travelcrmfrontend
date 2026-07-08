@@ -5,7 +5,7 @@ import {
   FiSend, FiAlertCircle, FiCheck, FiInfo,
   FiChevronDown, FiX,
 } from "react-icons/fi";
-import { FaServer, FaLock, FaEnvelope, FaBuilding } from "react-icons/fa";
+import { FaServer, FaEnvelope, FaBuilding } from "react-icons/fa";
 import { MdOutlineSettings } from "react-icons/md";
 
 import emailConfigurationService from "../api/emailConfigurationService";

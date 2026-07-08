@@ -1,10 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Search, Plus, Eye, Edit, Trash2, Map, Globe, Image as ImageIcon, X,
-  ChevronDown, Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight,
-  List, ListOrdered, Eraser, Baseline, UploadCloud, CheckCircle2, MapPin, AlertTriangle, Loader2, Trash,
-  ArrowRight, ArrowLeft, CheckCircle
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, Eye, Edit, Trash2, Map, Globe, Image as ImageIcon, X, ChevronDown, UploadCloud, CheckCircle2, MapPin, AlertTriangle, Loader2, Trash, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { destinationService, uploadImageToCloudinary } from "../api/DestinationService";
 import { geographyService } from "@shared/api/geographyService";
@@ -87,7 +82,6 @@ const DestinationMaster = () => {
   };
 
   // ── Image upload state ──────────────────────────────────────────────────
-  const fileInputRef = useRef(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);

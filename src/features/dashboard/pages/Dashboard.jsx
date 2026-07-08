@@ -5,25 +5,10 @@ import { profileUserService as userService } from "@features/profile";
 import { companyService } from "@features/settings";
 import { activityReportsService } from "@features/reports";
 import { useNavigate } from "react-router-dom";
-import {
-  FiUsers, FiTrendingUp, FiRefreshCw, FiTarget,
-  FiFilter, FiChevronRight, FiMapPin, FiPhone,
-  FiCalendar, FiAlertTriangle, FiCheck, FiCreditCard,
-  FiActivity, FiSettings, FiBarChart2, FiEdit2, FiPlus,
-  FiDollarSign, FiArrowUp, FiArrowDown,
-  FiAward, FiEye, FiGrid,
-} from "react-icons/fi";
-import {
-  FaFire, FaUsers, FaTrophy, FaRupeeSign, FaCheckCircle,
-  FaRegCalendarAlt, FaPlane, FaBuilding, FaChartLine,
-  FaGem, FaWhatsapp, FaBolt,
-} from "react-icons/fa";
-import { MdOutlineDashboard, MdLeaderboard } from "react-icons/md";
-import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
-  AreaChart, Area,
-} from "recharts";
+import { FiUsers, FiTrendingUp, FiRefreshCw, FiTarget, FiFilter, FiChevronRight, FiMapPin, FiPhone, FiCalendar, FiCheck, FiCreditCard, FiActivity, FiSettings, FiBarChart2, FiEdit2, FiPlus, FiDollarSign, FiArrowUp, FiArrowDown, FiGrid } from "react-icons/fi";
+import { FaFire, FaUsers, FaTrophy, FaRupeeSign, FaCheckCircle, FaRegCalendarAlt, FaPlane, FaBuilding, FaChartLine, FaGem } from "react-icons/fa";
+import { MdOutlineDashboard } from "react-icons/md";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from "recharts";
 
 /* ─── DEFAULT EMPTY STATE ───────────────────────────────────── */
 const EMPTY_D = {
@@ -103,7 +88,7 @@ function HeroCard({ icon, label, value, sub, from, to, delay=0, isINR, decimals=
 }
 
 /* ─── MINI METRIC CARD ───────────────────────────────────────── */
-function MiniCard({ icon, label, value, sub, bg, textColor="text-white", delay=0 }) {
+function MiniCard({ icon, label, value, sub, bg, delay=0 }) {
   return (
     <div className={`${bg} rounded-2xl px-4 sm:px-5 py-4 text-white flex items-center gap-3 sm:gap-4 relative overflow-hidden
       shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ring-1 ring-white/10`}

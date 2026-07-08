@@ -1,11 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiFilter, FiRefreshCw, FiDownload, FiArrowLeft,
-  FiChevronDown, FiChevronUp, FiSearch,
-  FiChevronLeft, FiChevronRight, FiEye, FiEdit2,
-  FiTrendingUp, FiAlertTriangle, FiX, FiPrinter,
-} from "react-icons/fi";
+import { FiFilter, FiRefreshCw, FiDownload, FiArrowLeft, FiChevronDown, FiChevronUp, FiSearch, FiChevronLeft, FiChevronRight, FiEye, FiEdit2, FiAlertTriangle, FiX, FiPrinter } from "react-icons/fi";
 import {
   FaRupeeSign, FaChartLine, FaPercentage,
   FaGlobe, FaHome, FaCheckCircle, FaTimesCircle,

@@ -1,12 +1,5 @@
-import React, { useState, useRef, useEffect, memo, useMemo } from "react";
-import {
-  Search, Plus, Eye, Edit, Trash2, X, Settings,
-  Bold, Italic, Underline, Strikethrough, AlignLeft,
-  AlignCenter, List, ListOrdered, Eraser, ChevronDown,
-  ChevronRight, Home, Package, IndianRupee, Sparkles,
-  ToggleLeft, ToggleRight, CheckCircle, XCircle, Inbox,
-  ArrowUp, ArrowDown
-} from "lucide-react";
+import { useState, useRef, useEffect, memo, useMemo } from "react";
+import { Search, Plus, Eye, Edit, Trash2, X, Settings, Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, List, ListOrdered, Eraser, ChevronDown, Home, Package, IndianRupee, Sparkles, ToggleLeft, ToggleRight, CheckCircle, XCircle, Inbox, ArrowUp, ArrowDown } from "lucide-react";
 
 /* ─── PAGINATION ─────────────────────────────────────────── */
 function buildPageNumbers(totalPages, pageIndex) {

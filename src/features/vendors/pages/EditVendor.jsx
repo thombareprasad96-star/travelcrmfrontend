@@ -12,7 +12,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm }       from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiArrowLeft, FiCheckCircle, FiSave, FiRefreshCw } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
 import { FaHandshake }   from "react-icons/fa";
 
 import VendorInformation from "../components/VendorInformation";

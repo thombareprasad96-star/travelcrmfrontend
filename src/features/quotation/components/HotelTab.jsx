@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   Hotel, Search, Info, Plus, IndianRupee, Star, MapPin,
   ChevronDown, Edit2, X, Check, Upload, AlertCircle, BedDouble
 } from "lucide-react";
-import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./Ui";
+import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, RichText } from "./Ui";
 import { ROOM_TYPES, MEAL_PLANS } from "../Constants";
 import { hotelService, uploadHotelImageToCloudinary } from "@features/masters";
 import { geographyService } from "@shared/api/geographyService";
@@ -283,7 +283,7 @@ function HotelFormModal({ open, onClose, editHotel, onSaved }) {
           setLoadingCity(true);
           try { setCities(await geographyService.getCitiesByDestination(editHotel.destinationId)); }
           finally { setLoadingCity(false); }
-        } catch {}
+        } catch { /* best-effort */ }
       })();
     } else {
       setForm(emptyHotelForm);
@@ -609,7 +609,7 @@ export default function HotelTab({ onDataChange, paxInfo = {}, destinations = []
           : h
       )));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [paxInfo.rooms]);
 
   useEffect(() => {
@@ -655,7 +655,7 @@ export default function HotelTab({ onDataChange, paxInfo = {}, destinations = []
   };
 
   // ── Modal save hone par → list refresh + row auto-fill ──
-  const handleModalSaved = async (savedHotel, wasEdit) => {
+  const handleModalSaved = async (savedHotel) => {
     const freshList = await loadHotels();
     // saved hotel ko allHotels se nikaalo (latest data)
     const fresh = freshList.find(
