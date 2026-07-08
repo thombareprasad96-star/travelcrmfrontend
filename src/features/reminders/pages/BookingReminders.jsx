@@ -8,9 +8,9 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiSend, FiClock, FiCheckCircle, FiFilter, FiRefreshCw, FiTrash2, FiEye, FiPhone, FiCalendar, FiMapPin } from "react-icons/fi";
-import { FaPlane, FaWhatsapp, FaPassport, FaMoneyBillWave, FaPlaneDeparture, FaFileInvoiceDollar, FaSuitcaseRolling } from "react-icons/fa";
-import { MdOutlineFlightTakeoff } from "react-icons/md";
+import { Send as FiSend, Clock as FiClock, CircleCheck as FiCheckCircle, Filter as FiFilter, RefreshCw as FiRefreshCw, Trash2 as FiTrash2, Eye as FiEye, Phone as FiPhone, Calendar as FiCalendar, MapPin as FiMapPin, Plane as FaPlane, BookUser as FaPassport, Banknote as FaMoneyBillWave, PlaneTakeoff as FaPlaneDeparture, ReceiptText as FaFileInvoiceDollar, Luggage as FaSuitcaseRolling, PlaneTakeoff as MdOutlineFlightTakeoff } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 // ── Uncomment when backend is ready ──────────────────────────
 import bookingReminderService from "../api/bookingReminderService";

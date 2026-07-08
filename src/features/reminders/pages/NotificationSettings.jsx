@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from "react";                     
 import { useNavigate } from "react-router-dom";
-import {
-  FiSave, FiRefreshCw, FiInfo, FiChevronDown, FiAlertCircle,
-} from "react-icons/fi";
-import { FaBell, FaUserPlus, FaPhoneAlt, FaUserCheck, FaFileInvoiceDollar,
-  FaHandshake, FaMoneyBillWave, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { Save as FiSave, RefreshCw as FiRefreshCw, Info as FiInfo, ChevronDown as FiChevronDown, CircleAlert as FiAlertCircle, Bell as FaBell, UserPlus as FaUserPlus, Phone as FaPhoneAlt, UserCheck as FaUserCheck, ReceiptText as FaFileInvoiceDollar, Handshake as FaHandshake, Banknote as FaMoneyBillWave, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle } from "lucide-react";
+
 import notificationSettingsService from "../api/notificationSettingsService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */

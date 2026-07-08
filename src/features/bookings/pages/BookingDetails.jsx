@@ -12,9 +12,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import bookingService from "../api/bookingService";
-import { FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle, FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser, FiTruck, FiPrinter, FiPhone, FiEye, FiBell } from "react-icons/fi";
-import { FaPlane, FaHotel, FaCar, FaShip, FaPassport, FaUmbrellaBeach, FaReceipt } from "react-icons/fa";
-import { MdOutlineAssignment, MdPayment } from "react-icons/md";
+import { ArrowLeft as FiArrowLeft, Pen as FiEdit2, Trash2 as FiTrash2, Check as FiCheck, X as FiX, CircleAlert as FiAlertCircle, Plus as FiPlus, ExternalLink as FiExternalLink, RefreshCw as FiRefreshCw, CreditCard as FiCreditCard, User as FiUser, Truck as FiTruck, Printer as FiPrinter, Phone as FiPhone, Eye as FiEye, Bell as FiBell, Plane as FaPlane, Hotel as FaHotel, Car as FaCar, Ship as FaShip, BookUser as FaPassport, TreePalm as FaUmbrellaBeach, Receipt as FaReceipt, ClipboardList as MdOutlineAssignment, CreditCard as MdPayment } from "lucide-react";
+
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const STATUS_STYLE = {

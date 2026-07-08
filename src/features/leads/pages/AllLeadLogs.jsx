@@ -1,15 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiSearch, FiArrowLeft, FiChevronDown,
-  FiPhone, FiFileText, FiPlus, FiList,
-  FiChevronLeft, FiChevronRight,
-  FiCalendar, FiUser,
-} from "react-icons/fi";
-import {
-  FaClipboardList, FaUsers, FaCalendarAlt, FaAngleDoubleLeft, FaAngleDoubleRight,
-} from "react-icons/fa";
-import { MdOutlinePages } from "react-icons/md";
+import { Search as FiSearch, ArrowLeft as FiArrowLeft, ChevronDown as FiChevronDown, Phone as FiPhone, FileText as FiFileText, Plus as FiPlus, List as FiList, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Calendar as FiCalendar, User as FiUser, ClipboardList as FaClipboardList, Users as FaUsers, Calendar as FaCalendarAlt, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, Files as MdOutlinePages } from "lucide-react";
+
 
 import { leadService } from "../api/leadService";
 

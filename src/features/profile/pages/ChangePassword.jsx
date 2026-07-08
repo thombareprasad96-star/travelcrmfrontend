@@ -16,10 +16,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiKey, FiEye, FiEyeOff, FiCheckCircle, FiXCircle,
-  FiAlertCircle, FiShield, FiInfo, FiArrowLeft, FiX,
-} from "react-icons/fi";
+import { Key as FiKey, Eye as FiEye, EyeOff as FiEyeOff, CircleCheck as FiCheckCircle, CircleX as FiXCircle, CircleAlert as FiAlertCircle, Shield as FiShield, Info as FiInfo, ArrowLeft as FiArrowLeft, X as FiX } from "lucide-react";
 
 // ── Uncomment when backend is ready ──────────────────────────
 // import authService from "../services/authService";

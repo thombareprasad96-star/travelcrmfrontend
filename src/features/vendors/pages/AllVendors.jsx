@@ -1,14 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import vendorService from "../api/vendorService";
-import {
-  FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye,
-  FiDownload, FiPhone, FiMail, FiMapPin,
-  FiStar, FiCheckCircle,
-} from "react-icons/fi";
-import { FaHotel, FaPlane, FaBus, FaMapMarkedAlt, FaHandshake, FaPercentage, FaWhatsapp, FaStar, FaMoneyBillWave, FaRegStar } from "react-icons/fa";
-import { MdVerified } from "react-icons/md";
-import { HiSparkles } from "react-icons/hi";
+import { Search as FiSearch, Plus as FiPlus, Pen as FiEdit2, Trash2 as FiTrash2, Eye as FiEye, Download as FiDownload, Phone as FiPhone, Mail as FiMail, MapPin as FiMapPin, Star as FiStar, CircleCheck as FiCheckCircle, Hotel as FaHotel, Plane as FaPlane, Bus as FaBus, MapPinned as FaMapMarkedAlt, Handshake as FaHandshake, Percent as FaPercentage, Star as FaStar, Banknote as FaMoneyBillWave, Star as FaRegStar, BadgeCheck as MdVerified, Sparkles as HiSparkles } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const VENDOR_TYPES = ["Hotel", "Airlines", "Transport", "DMC"];

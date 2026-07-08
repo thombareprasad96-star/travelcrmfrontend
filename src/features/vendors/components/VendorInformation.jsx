@@ -1,14 +1,8 @@
 // src/components/CreateVendor/VendorInformation.jsx
 
-import {
-  FiUser, FiPhone, FiMail, FiChevronDown, FiCheckCircle,
-} from "react-icons/fi";
-import {
-  FaHotel, FaPlane, FaBus, FaMapMarkedAlt,
-  FaHandshake, FaWhatsapp, FaFileContract,
-} from "react-icons/fa";
-import { MdBusiness, MdOutlineContactPhone } from "react-icons/md";
-import { HiSparkles } from "react-icons/hi";
+import { User as FiUser, Phone as FiPhone, Mail as FiMail, ChevronDown as FiChevronDown, CircleCheck as FiCheckCircle, Hotel as FaHotel, Plane as FaPlane, Bus as FaBus, MapPinned as FaMapMarkedAlt, Handshake as FaHandshake, FileSignature as FaFileContract, Building2 as MdBusiness, Contact as MdOutlineContactPhone, Sparkles as HiSparkles } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 const VENDOR_TYPES     = ["Hotel", "Airlines", "Transport", "DMC", "Travel Agency", "Car Rental", "Cruise", "Insurance"];
 const CONTRACT_TYPES   = ["Rate Contract", "Commission Based", "Fixed Price", "Retainer", "Per-Trip"];

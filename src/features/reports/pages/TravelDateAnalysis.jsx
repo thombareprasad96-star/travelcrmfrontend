@@ -1,13 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiChevronLeft } from "react-icons/fi";
-import { FiChevronRight } from "react-icons/fi";
-import { FiFilter, FiRefreshCw, FiDownload, FiArrowLeft, FiChevronDown, FiChevronUp, FiSearch, FiCalendar, FiUsers } from "react-icons/fi";
-import {
-  FaRupeeSign, FaCalendarAlt, FaCalendarCheck,
-  FaChartLine, FaClock,
-} from "react-icons/fa";
-import { MdOutlineBarChart, MdOutlineCalendarMonth } from "react-icons/md";
+import { ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Filter as FiFilter, RefreshCw as FiRefreshCw, Download as FiDownload, ArrowLeft as FiArrowLeft, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Search as FiSearch, Calendar as FiCalendar, Users as FiUsers, IndianRupee as FaRupeeSign, Calendar as FaCalendarAlt, CalendarCheck as FaCalendarCheck, ChartLine as FaChartLine, Clock as FaClock, ChartColumn as MdOutlineBarChart, Calendar as MdOutlineCalendarMonth } from "lucide-react";
+
 
 import travelDateAnalysisService from "../api/travelDateAnalysisService";
 import { todayISO, daysFromNowISO } from "../dateDefaults";

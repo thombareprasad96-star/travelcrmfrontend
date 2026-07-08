@@ -1,6 +1,6 @@
 
 
-import { FaRegStickyNote } from "react-icons/fa";
+import { StickyNote as FaRegStickyNote } from "lucide-react";
 
 export default function CustomerNotes({ register }) {
   return (

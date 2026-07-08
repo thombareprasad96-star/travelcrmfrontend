@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { leadService } from "@features/leads";
-import { FiBell, FiPlus, FiX, FiClock, FiAlertCircle, FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown, FiCalendar, FiUser, FiPhone, FiEye, FiRefreshCw, FiMail, FiMapPin, FiTag, FiUserCheck, FiDollarSign, FiExternalLink } from "react-icons/fi";
-import { FaWhatsapp, FaStickyNote, FaPhoneAlt } from "react-icons/fa";
-import { MdSnooze, MdOutlineAddTask } from "react-icons/md";
+import { Bell as FiBell, Plus as FiPlus, X as FiX, Clock as FiClock, CircleAlert as FiAlertCircle, CircleCheck as FiCheckCircle, Pen as FiEdit2, Trash2 as FiTrash2, Search as FiSearch, ChevronDown as FiChevronDown, Calendar as FiCalendar, User as FiUser, Phone as FiPhone, Eye as FiEye, RefreshCw as FiRefreshCw, Mail as FiMail, MapPin as FiMapPin, Tag as FiTag, UserCheck as FiUserCheck, DollarSign as FiDollarSign, ExternalLink as FiExternalLink, StickyNote as FaStickyNote, Phone as FaPhoneAlt, AlarmClock as MdSnooze, ListPlus as MdOutlineAddTask } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const SNOOZE_OPTS = [

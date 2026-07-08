@@ -7,8 +7,8 @@
 
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
-import { FaHandshake } from "react-icons/fa";
+import { ArrowLeft as FiArrowLeft, CircleCheck as FiCheckCircle, Save as FiSave, Handshake as FaHandshake } from "lucide-react";
+
 
 import VendorInformation from "../components/VendorInformation";
 import VendorLocation    from "../components/VendorLocation";

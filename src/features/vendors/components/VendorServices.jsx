@@ -1,11 +1,8 @@
 // src/components/CreateVendor/VendorServices.jsx
 
 import { useState } from "react";
-import {
-  FiCheck, FiPlus, FiTrash2,
-} from "react-icons/fi";
-import { FaHotel, FaPlane, FaBus, FaShip, FaPassport, FaUmbrellaBeach, FaCar, FaConciergeBell, FaRoute } from "react-icons/fa";
-import { MdTour } from "react-icons/md";
+import { Check as FiCheck, Plus as FiPlus, Trash2 as FiTrash2, Hotel as FaHotel, Plane as FaPlane, Bus as FaBus, Ship as FaShip, BookUser as FaPassport, TreePalm as FaUmbrellaBeach, Car as FaCar, ConciergeBell as FaConciergeBell, Route as FaRoute, Flag as MdTour } from "lucide-react";
+
 
 const PRESET_SERVICES = [
   { id:"hotel",         label:"Hotel Accommodation", icon:FaHotel,        color:"blue"   },

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  FiCalendar, FiGlobe, FiMapPin, FiHome, FiUsers
-} from "react-icons/fi";
-import { MdChildCare, MdBabyChangingStation, MdHotel } from "react-icons/md";
+import { Calendar as FiCalendar, Globe as FiGlobe, MapPin as FiMapPin, House as FiHome, Users as FiUsers, PersonStanding as MdChildCare, Baby as MdBabyChangingStation, BedDouble as MdHotel } from "lucide-react";
+
 import { geographyService } from "@shared/api/geographyService";
 import SearchableSelect from "./SearchableSelect";
 

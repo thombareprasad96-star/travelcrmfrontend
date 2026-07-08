@@ -1,13 +1,9 @@
 
 
 import { useState } from "react";
-import {
-  FiUser, FiPhone, FiMail, FiSearch, FiChevronDown, FiCheckCircle,
-} from "react-icons/fi";
-import {
-  FaCrown, FaWhatsapp, FaUserTie, FaCommentDots,
-} from "react-icons/fa";
-import { MdOutlineContactPhone } from "react-icons/md";
+import { User as FiUser, Phone as FiPhone, Mail as FiMail, Search as FiSearch, ChevronDown as FiChevronDown, CircleCheck as FiCheckCircle, Crown as FaCrown, UserRound as FaUserTie, MessageCircleMore as FaCommentDots, Contact as MdOutlineContactPhone } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 const CUSTOMER_TYPES = ["Individual", "Corporate", "VIP", "Group", "Agent"];
 const COMM_PREFS     = ["WhatsApp", "SMS", "Email", "Phone Call", "All Channels"];

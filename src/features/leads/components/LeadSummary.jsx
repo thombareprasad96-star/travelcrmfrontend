@@ -1,8 +1,5 @@
-import {
-  FiUser, FiCalendar, FiUsers, FiMapPin, FiGrid, FiCheckCircle
-} from "react-icons/fi";
-import { FaRupeeSign } from "react-icons/fa";
-import { MdHotel, MdFlight, MdDirectionsBoat, MdLocationOn, MdDirectionsCar, MdSecurity, MdCardTravel, MdVisibility } from "react-icons/md";
+import { User as FiUser, Calendar as FiCalendar, Users as FiUsers, MapPin as FiMapPin, LayoutGrid as FiGrid, CircleCheck as FiCheckCircle, IndianRupee as FaRupeeSign, BedDouble as MdHotel, Plane as MdFlight, Ship as MdDirectionsBoat, MapPin as MdLocationOn, Car as MdDirectionsCar, Shield as MdSecurity, Luggage as MdCardTravel, Eye as MdVisibility } from "lucide-react";
+
 
 const SERVICE_ICONS = {
   hotel: MdHotel, flight: MdFlight, cruise: MdDirectionsBoat,

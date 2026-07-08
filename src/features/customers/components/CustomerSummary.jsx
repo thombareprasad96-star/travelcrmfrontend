@@ -1,8 +1,7 @@
 
 
-import { FiUser, FiPhone, FiMail, FiCheckCircle } from "react-icons/fi";
-import { FaCrown, FaCommentDots } from "react-icons/fa";
-import { HiSparkles } from "react-icons/hi";
+import { User as FiUser, Phone as FiPhone, Mail as FiMail, CircleCheck as FiCheckCircle, Crown as FaCrown, MessageCircleMore as FaCommentDots, Sparkles as HiSparkles } from "lucide-react";
+
 
 const TYPE_COLORS = {
   Individual: { bg:"bg-blue-50",   text:"text-blue-700",   border:"border-blue-200"   },

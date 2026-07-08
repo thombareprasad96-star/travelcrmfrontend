@@ -1,11 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { FiUserPlus, FiSearch, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiShield } from "react-icons/fi";
-import {
-  FaUsers, FaUserCheck, FaUserTimes, FaUserShield,
-  FaAngleDoubleLeft, FaAngleDoubleRight,
-} from "react-icons/fa";
+import { UserPlus as FiUserPlus, Search as FiSearch, Pen as FiEdit2, Trash2 as FiTrash2, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Shield as FiShield, Users as FaUsers, UserCheck as FaUserCheck, UserX as FaUserTimes, ShieldUser as FaUserShield, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight } from "lucide-react";
+
 
 import userService from "../api/profileUserService";
 import { hasPermission, P } from "@shared/lib/access";

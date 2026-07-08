@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiBarChart2, FiActivity, FiClock, FiTrendingUp, FiCalendar, FiGlobe, FiEye, FiDownload, FiRefreshCw, FiArrowRight, FiUsers, FiFileText } from "react-icons/fi";
-import { FaMapMarkedAlt, FaRupeeSign, FaGlobe, FaRegClock } from "react-icons/fa";
+import { ChartColumn as FiBarChart2, Activity as FiActivity, Clock as FiClock, TrendingUp as FiTrendingUp, Calendar as FiCalendar, Globe as FiGlobe, Eye as FiEye, Download as FiDownload, RefreshCw as FiRefreshCw, ArrowRight as FiArrowRight, Users as FiUsers, FileText as FiFileText, MapPinned as FaMapMarkedAlt, IndianRupee as FaRupeeSign, Globe as FaGlobe, Clock as FaRegClock } from "lucide-react";
+
 
 import reportsDashboardService from "../api/reportsDashboardService";
 

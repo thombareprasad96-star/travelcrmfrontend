@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiFilter, FiRefreshCw, FiDownload, FiChevronDown, FiChevronUp, FiSearch, FiEye, FiInfo, FiCheck, FiClock, FiAlertTriangle, FiCalendar, FiUser } from "react-icons/fi";
-import { FaTasks } from "react-icons/fa";
+import { Filter as FiFilter, RefreshCw as FiRefreshCw, Download as FiDownload, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Search as FiSearch, Eye as FiEye, Info as FiInfo, Check as FiCheck, Clock as FiClock, TriangleAlert as FiAlertTriangle, Calendar as FiCalendar, User as FiUser, ListChecks as FaTasks } from "lucide-react";
+
 import {
   X, Phone, Mail, Users, User, Calendar,
   Briefcase, MapPin, DollarSign, XCircle, Pencil,

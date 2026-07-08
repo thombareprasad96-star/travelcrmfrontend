@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiActivity, FiFilter, FiRefreshCw, FiDownload, FiEye, FiChevronDown, FiChevronUp, FiArrowLeft, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { FaAngleDoubleLeft, FaAngleDoubleRight } from "react-icons/fa";
-import { MdOutlineBarChart } from "react-icons/md";
+import { Activity as FiActivity, Filter as FiFilter, RefreshCw as FiRefreshCw, Download as FiDownload, Eye as FiEye, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, ArrowLeft as FiArrowLeft, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, ChartColumn as MdOutlineBarChart } from "lucide-react";
+
 
 import activityReportsService from "../api/activityReportsService";
 import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";

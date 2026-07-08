@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  FiPlus, FiArrowLeft, FiAlertCircle, FiInfo,
-  FiCheckCircle, FiSettings, FiChevronDown,
-} from "react-icons/fi";
-import { FaUserShield, FaUserTie, FaEye, FaLayerGroup } from "react-icons/fa";
-import { HiTemplate } from "react-icons/hi";
-import { MdOutlineFlashOn } from "react-icons/md";
+import { Plus as FiPlus, ArrowLeft as FiArrowLeft, CircleAlert as FiAlertCircle, Info as FiInfo, CircleCheck as FiCheckCircle, Settings as FiSettings, ChevronDown as FiChevronDown, ShieldUser as FaUserShield, UserRound as FaUserTie, Eye as FaEye, Layers as FaLayerGroup, LayoutTemplate as HiTemplate, Zap as MdOutlineFlashOn } from "lucide-react";
+
 
 import { permissionTemplateService } from "../api/profileUserPermissionsService";
 import userService from "../api/profileUserService";

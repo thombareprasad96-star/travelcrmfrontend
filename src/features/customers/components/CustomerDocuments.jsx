@@ -1,7 +1,7 @@
 
 
-import { FiFileText } from "react-icons/fi";
-import { FaIdCard, FaLayerGroup } from "react-icons/fa";
+import { FileText as FiFileText, IdCard as FaIdCard, Layers as FaLayerGroup } from "lucide-react";
+
 
 function Field({ label, icon: Icon, error, hint, children }) {
   return (

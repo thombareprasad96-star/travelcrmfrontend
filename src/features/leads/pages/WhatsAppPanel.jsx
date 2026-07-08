@@ -11,9 +11,9 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useState, useRef, useEffect } from "react";
-import { FaWhatsapp } from "react-icons/fa";
-import { FiX, FiSend, FiPhone, FiSmile, FiChevronDown } from "react-icons/fi";
-import { MdDoneAll } from "react-icons/md";
+import { X as FiX, Send as FiSend, Phone as FiPhone, Smile as FiSmile, ChevronDown as FiChevronDown, CheckCheck as MdDoneAll } from "lucide-react";
+import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+
 
 /* ─── QUICK REPLY TEMPLATES ──────────────────────────────────
    Customise these for your travel agency                       */

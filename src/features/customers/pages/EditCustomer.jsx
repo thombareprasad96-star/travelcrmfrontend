@@ -12,8 +12,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
-import { FiUser } from "react-icons/fi";
+import { ArrowLeft as FiArrowLeft, CircleCheck as FiCheckCircle, Save as FiSave, User as FiUser } from "lucide-react";
+
 
 // ── Same folder imports (adjust if your structure differs) ────
 import CustomerInformation from "../components/CustomerInformation";

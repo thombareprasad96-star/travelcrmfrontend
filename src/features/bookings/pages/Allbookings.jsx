@@ -3,13 +3,8 @@ import { useNavigate } from "react-router-dom";
 import bookingService                from "../api/bookingService";
 import CancelBookingModal            from "../components/CancelBookingModal";
 import { hasPermission, P }          from "@shared/lib/access";
-import { FiSearch, FiRefreshCw, FiFilter, FiDownload, FiChevronDown, FiChevronUp, FiEye, FiEdit2, FiTrash2, FiX, FiPrinter, FiCheck, FiAlertCircle, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import {
-  FaPlane, FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaRupeeSign, FaCheckCircle, FaTimesCircle,
-  FaFileInvoiceDollar, FaHandHoldingUsd,
-} from "react-icons/fa";
-import { MdOutlineReceiptLong } from "react-icons/md";
+import { Search as FiSearch, RefreshCw as FiRefreshCw, Filter as FiFilter, Download as FiDownload, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Eye as FiEye, Pen as FiEdit2, Trash2 as FiTrash2, X as FiX, Printer as FiPrinter, Check as FiCheck, CircleAlert as FiAlertCircle, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Plane as FaPlane, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, IndianRupee as FaRupeeSign, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle, ReceiptText as FaFileInvoiceDollar, HandCoins as FaHandHoldingUsd, ReceiptText as MdOutlineReceiptLong } from "lucide-react";
+
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 export const BOOKING_STATUSES = ["Confirmed","Pending","Cancelled","Completed","Refunded"];

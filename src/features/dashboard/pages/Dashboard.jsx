@@ -5,9 +5,8 @@ import { profileUserService as userService } from "@features/profile";
 import { companyService } from "@features/settings";
 import { activityReportsService } from "@features/reports";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiTrendingUp, FiRefreshCw, FiTarget, FiFilter, FiChevronRight, FiMapPin, FiPhone, FiCalendar, FiCheck, FiCreditCard, FiActivity, FiSettings, FiBarChart2, FiEdit2, FiPlus, FiDollarSign, FiArrowUp, FiArrowDown, FiGrid } from "react-icons/fi";
-import { FaFire, FaUsers, FaTrophy, FaRupeeSign, FaCheckCircle, FaRegCalendarAlt, FaPlane, FaBuilding, FaChartLine, FaGem } from "react-icons/fa";
-import { MdOutlineDashboard } from "react-icons/md";
+import { Users as FiUsers, TrendingUp as FiTrendingUp, RefreshCw as FiRefreshCw, Target as FiTarget, Filter as FiFilter, ChevronRight as FiChevronRight, MapPin as FiMapPin, Phone as FiPhone, Calendar as FiCalendar, Check as FiCheck, CreditCard as FiCreditCard, Activity as FiActivity, Settings as FiSettings, ChartColumn as FiBarChart2, Pen as FiEdit2, Plus as FiPlus, DollarSign as FiDollarSign, ArrowUp as FiArrowUp, ArrowDown as FiArrowDown, LayoutGrid as FiGrid, Flame as FaFire, Users as FaUsers, Trophy as FaTrophy, IndianRupee as FaRupeeSign, CircleCheck as FaCheckCircle, Calendar as FaRegCalendarAlt, Plane as FaPlane, Building2 as FaBuilding, ChartLine as FaChartLine, Gem as FaGem, LayoutDashboard as MdOutlineDashboard } from "lucide-react";
+
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from "recharts";
 
 /* ─── DEFAULT EMPTY STATE ───────────────────────────────────── */
