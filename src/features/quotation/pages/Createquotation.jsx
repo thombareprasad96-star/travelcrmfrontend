@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Plane, Hotel, Map, Anchor, Car, Package, List, BarChart2,
@@ -116,8 +116,7 @@ export default function CreateQuotation() {
   const [leadData,    setLeadData]    = useState(null);
   const [leadLoading, setLeadLoading] = useState(false);
 
-  const validateFns = React.useRef({});
-  const registerValidate = (tabId) => (fn) => { validateFns.current[tabId] = fn; };
+  
 
   const [flightData,      setFlightData]      = useState({});
   const [hotelData,       setHotelData]       = useState({});
@@ -301,7 +300,7 @@ export default function CreateQuotation() {
       a.click();
       URL.revokeObjectURL(url);
       showToast("PDF downloaded successfully!");
-    } catch (err) {
+    } catch {
       showToast("Failed to generate PDF.", "error");
     } finally {
       setPdfLoading(false);
@@ -315,7 +314,7 @@ export default function CreateQuotation() {
       const res  = await quotationService.getShareLink(quotationId);
       const link = res.data?.data?.shareUrl || res.data?.shareUrl || "";
       if (link) { await navigator.clipboard.writeText(link); showToast("Share link copied!"); }
-    } catch (err) {
+    } catch {
       showToast("Failed to generate share link.", "error");
     }
   };

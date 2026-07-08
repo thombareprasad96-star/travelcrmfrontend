@@ -130,7 +130,6 @@ const Navbar = memo(function Navbar({
   const navigate = useNavigate(); // For redirecting on logout
 
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
   const [notifOpen,     setNotifOpen]     = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount,   setUnreadCount]   = useState(0);   // unread notifications only

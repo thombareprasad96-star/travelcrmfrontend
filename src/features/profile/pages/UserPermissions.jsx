@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import {
-  FiShield, FiArrowLeft, FiSave, FiChevronDown,
-  FiToggleLeft, FiToggleRight, FiEye, FiLayers,
-  FiAlertCircle, FiCheck,
-} from "react-icons/fi";
-import { FaUserShield, FaStar, FaCog } from "react-icons/fa";
-import { MdAdminPanelSettings } from "react-icons/md";
+import { FiShield, FiArrowLeft, FiSave, FiChevronDown, FiEye, FiLayers } from "react-icons/fi";
+import { FaUserShield, FaStar, FaCog } from "react-icons/fa";
 
 import editUserService from "../api/profileEditUserService";
 import { userPermissionsService, permissionTemplateService, permissionCatalogService } from "../api/profileUserPermissionsService";

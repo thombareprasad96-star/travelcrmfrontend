@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Plus, X, CreditCard, AlertTriangle, FileText } from "lucide-react";
-import { Label, Input, Textarea, SectionCard } from "./Ui";
+import { Input, SectionCard } from "./Ui";
 
 /* ─── Item List ──────────────────────────────────────── */
 function ItemList({ items, setItems, color }) {

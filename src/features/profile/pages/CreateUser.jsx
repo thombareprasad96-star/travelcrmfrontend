@@ -1,15 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiUser, FiMail, FiPhone, FiKey, FiEye, FiEyeOff,
-  FiCheckCircle, FiXCircle, FiAlertCircle, FiSave,
-  FiArrowLeft, FiShield, FiUsers, FiChevronDown,
-  FiInfo,
-} from "react-icons/fi";
-import {
-  FaUserPlus, FaUserShield, FaUserTie, FaUserCheck,
-} from "react-icons/fa";
-import { MdVerified, MdOutlineToggleOn, MdOutlineToggleOff } from "react-icons/md";
+import { FiUser, FiMail, FiPhone, FiEye, FiEyeOff, FiCheckCircle, FiXCircle, FiAlertCircle, FiArrowLeft, FiShield, FiUsers, FiChevronDown, FiInfo } from "react-icons/fi";
+import { FaUserPlus } from "react-icons/fa";
 
 import { createUserService } from "../api/profilecreateUserService";
 import userService from "../api/profileUserService";

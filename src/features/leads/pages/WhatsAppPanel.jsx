@@ -12,11 +12,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { FaWhatsapp } from "react-icons/fa";
-import {
-  FiX, FiSend, FiPhone, FiSmile, FiPaperclip,
-  FiCheck, FiCheckCircle, FiChevronDown,
-} from "react-icons/fi";
-import { MdDone, MdDoneAll } from "react-icons/md";
+import { FiX, FiSend, FiPhone, FiSmile, FiChevronDown } from "react-icons/fi";
+import { MdDoneAll } from "react-icons/md";
 
 /* ─── QUICK REPLY TEMPLATES ──────────────────────────────────
    Customise these for your travel agency                       */

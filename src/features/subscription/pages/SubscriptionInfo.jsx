@@ -18,15 +18,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiArrowLeft, FiCheck, FiChevronRight,
-  FiCalendar, FiUsers, FiClock,
-  FiZap, FiShield, FiStar,
-} from "react-icons/fi";
-import {
-  FaCheckCircle, FaCrown, FaRocket,
-  FaUserAlt, FaBuilding,
-} from "react-icons/fa";
+import { FiCheck, FiChevronRight, FiUsers, FiClock, FiZap, FiShield } from "react-icons/fi";
+import { FaCrown, FaRocket, FaUserAlt, FaBuilding } from "react-icons/fa";
 import { MdOutlineSubscriptions } from "react-icons/md";
 
 // ── Uncomment when backend ready ─────────────────────────────

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom'; // 1. Ye naya import add karna hai
 import Sidebar from '@app/chrome/Sidebar';
 import Navbar from '@app/chrome/Navbar';

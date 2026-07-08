@@ -1,22 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiBell, FiMail, FiClock, FiAlertTriangle, FiCheck, FiCheckCircle,
-  FiTrash2, FiRefreshCw, FiFilter, FiX, FiUser, FiDollarSign,
-  FiCalendar, FiAlertCircle, FiBellOff,
-} from "react-icons/fi";
-import {
-  FaWhatsapp, FaPlane, FaMoneyBillWave, FaPassport,
-  FaFileInvoiceDollar, FaExclamationCircle,
-} from "react-icons/fa";
+import { FiBell, FiMail, FiClock, FiAlertTriangle, FiCheck, FiTrash2, FiRefreshCw, FiBellOff } from "react-icons/fi";
+import { FaMoneyBillWave, FaPassport, FaExclamationCircle } from "react-icons/fa";
 import { MdOutlineMarkEmailRead } from "react-icons/md";
 
 import notificationService from "../api/notificationService";
 
 /* ─── MOCK DATA ──────────────────────────────────────────────── */
-function minsAgo(m)  { const dt = new Date(); dt.setMinutes(dt.getMinutes() - m); return dt.toISOString(); }
-function hoursAgo(h) { const dt = new Date(); dt.setHours(dt.getHours() - h); return dt.toISOString(); }
-function daysAgo(d)  { const dt = new Date(); dt.setDate(dt.getDate() - d); return dt.toISOString(); }
 
 
 const CATEGORY_CFG = {

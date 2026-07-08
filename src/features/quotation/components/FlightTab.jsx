@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Plane, Plus, IndianRupee, Users } from "lucide-react";
 import { Label, Input, Select, SectionCard, AddBtn, RemoveBtn, IncludeToggle, FieldGrid } from "./Ui";
 import { AIRLINES, CLASSES, AIRPORTS, JOURNEY_TYPES } from "../Constants";

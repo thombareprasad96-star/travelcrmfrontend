@@ -6,18 +6,13 @@ import {
   FiDownload, FiPhone, FiMail, FiMapPin,
   FiStar, FiCheckCircle,
 } from "react-icons/fi";
-import {
-  FaHotel, FaPlane, FaBus, FaMapMarkedAlt,
-  FaHandshake, FaPercentage, FaWhatsapp,
-  FaCrown, FaStar, FaMoneyBillWave, FaRegStar,
-} from "react-icons/fa";
-import { MdVerified, MdBusiness, MdPayment } from "react-icons/md";
+import { FaHotel, FaPlane, FaBus, FaMapMarkedAlt, FaHandshake, FaPercentage, FaWhatsapp, FaStar, FaMoneyBillWave, FaRegStar } from "react-icons/fa";
+import { MdVerified } from "react-icons/md";
 import { HiSparkles } from "react-icons/hi";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const VENDOR_TYPES = ["Hotel", "Airlines", "Transport", "DMC"];
 const STATUSES     = ["ACTIVE", "INACTIVE", "SUSPENDED", "BLACKLISTED"];
-const PAY_STATUSES = ["PAID", "UNPAID", "PARTIALLY_PAID", "OVERDUE"];
 
 const enumLabel = (v) =>
   (v || "").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
@@ -660,7 +655,7 @@ export default function Vendors() {
             { gradient:"from-green-500 to-emerald-600",icon:FiCheckCircle,  label:"Active Vendors",   value:stats.active,   money:false, delay:60  },
             { gradient:"from-amber-500 to-orange-500", icon:FaMoneyBillWave,label:"Total Vendor Costs",value:stats.cost,    money:true,  delay:120 },
             { gradient:"from-rose-500 to-red-500",     icon:FiStar,         label:"Avg. Rating",      value:Math.round(stats.avgRating*10)/10, money:false, delay:180 },
-          ].map((c, i) => (
+          ].map((c) => (
             <div key={c.label} className="fade-up" style={{ animationDelay:`${c.delay}ms` }}>
               <StatCard {...c}/>
             </div>

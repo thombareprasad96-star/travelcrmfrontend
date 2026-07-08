@@ -1,10 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiArrowLeft, FiSave, FiEye, FiEyeOff,
-  FiAlertCircle, FiCheck, FiInfo, FiX,
-  FiSend, FiChevronRight, FiExternalLink,
-} from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiEye, FiEyeOff, FiAlertCircle, FiCheck, FiInfo, FiX, FiSend, FiExternalLink } from "react-icons/fi";
 import {
   FaWhatsapp, FaCopy, FaKey, FaFileAlt,
   FaGlobe, FaImage, FaPhone, FaCheckCircle,

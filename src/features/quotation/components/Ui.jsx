@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from "react";
-import { ChevronDown, List, Plus, Trash2, Star, X, CheckCircle, XCircle } from "lucide-react";
+import { useRef, useEffect } from "react";
+import { ChevronDown, List, Plus, Trash2, Star } from "lucide-react";
 
 export function Label({ children, required }) {
   return (
@@ -125,7 +125,7 @@ export function FieldGrid({ cols = 3, children }) {
   return <div className={`grid ${gridCls[cols] || gridCls[3]} gap-4`}>{children}</div>;
 }
 
-export function RichText({ value, onChange, placeholder, rows = 5 }) {
+export function RichText({ value, onChange, rows = 5 }) {
   const ref = useRef();
   useEffect(() => {
     if (ref.current && ref.current.innerHTML !== value) ref.current.innerHTML = value || "";

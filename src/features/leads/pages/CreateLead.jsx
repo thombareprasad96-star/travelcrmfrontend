@@ -5,7 +5,6 @@ import {
   FiArrowLeft, FiSave, FiCheckCircle, FiAlertCircle,
   FiLoader, FiFileText
 } from "react-icons/fi";
-import { MdFlightTakeoff } from "react-icons/md";
 import { leadService } from "../api/leadService";
 
 import LeadInformation from "../components/LeadInformation";
@@ -120,7 +119,7 @@ export default function CreateLead() {
       // ── Navigate to All Leads after 1.2s so user sees the success toast ──
       setTimeout(() => navigate("/allleads"), 1200);
 
-    } catch (error) {
+    } catch {
       const msg =
         error?.response?.data?.message ||
         "Failed to create lead. Try again.";
@@ -165,7 +164,7 @@ export default function CreateLead() {
         `Lead found: ${lead.customerName}`
       );
 
-    } catch (error) {
+    } catch {
 
       showToast(
         "error",

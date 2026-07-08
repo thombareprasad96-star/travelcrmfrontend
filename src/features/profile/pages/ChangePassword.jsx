@@ -35,7 +35,7 @@ const RULES = [
 ];
 
 /* ─── STRENGTH CONFIG ────────────────────────────────────────── */
-function getStrength(password, confirmPassword) {
+function getStrength(password) {
   if (!password) return { score: 0, label: "", color: "" };
   let score = 0;
   if (password.length >= 6)             score++;

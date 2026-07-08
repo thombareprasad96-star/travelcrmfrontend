@@ -1,11 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  Search, Plus, ChevronDown, ChevronUp, X, Star, MapPin,
-  Phone, Mail, Globe, Upload, Eye, Hotel, Building2,
-  Utensils, Wifi, Car, Dumbbell, Waves, ConciergeBell,
-  PlaneTakeoff, Edit2, Trash2, Check, AlertCircle,
-  Home, ChevronRight, Sparkles, Shield
-} from "lucide-react";
+import { Search, Plus, ChevronDown, ChevronUp, X, Star, MapPin, Phone, Globe, Upload, Hotel, Building2, Utensils, Wifi, Car, Dumbbell, Waves, ConciergeBell, PlaneTakeoff, Edit2, Trash2, Check, AlertCircle, Home, ChevronRight, Shield } from "lucide-react";
 import { hotelService, transformHotelResponse, uploadHotelImageToCloudinary } from "../api/HotelService";
 import { geographyService } from "@shared/api/geographyService";
 
@@ -206,7 +200,7 @@ export default function HotelMaster() {
   const [mealErrors,       setMealErrors]       = useState({});
   const [roomSaving,       setRoomSaving]       = useState(false);
   const [mealSaving,       setMealSaving]       = useState(false);
-  const [hotelImageFile,   setHotelImageFile]   = useState(null);
+  const [,                 setHotelImageFile]   = useState(null);
   const [roomImageFiles,   setRoomImageFiles]   = useState(null);
   const [imageUploading,   setImageUploading]   = useState(false);  // ← NEW
   // Mobile modal tab — "info" ya "rooms"
@@ -337,7 +331,7 @@ export default function HotelMaster() {
       setLoadingFormCity(true);
       try { setFormCities(await geographyService.getCitiesByDestination(destinationId)); }
       finally { setLoadingFormCity(false); }
-    } catch {}
+    } catch { /* city load is best-effort */ }
   };
 
   const resetCascade = () => {
@@ -439,7 +433,7 @@ export default function HotelMaster() {
         const list2  = Array.isArray(raw2) ? raw2
           : Array.isArray(raw2?.content) ? raw2.content : [];
         let allDest2 = [];
-        try { allDest2 = await geographyService.getAllDestinations(); } catch {}
+        try { allDest2 = await geographyService.getAllDestinations(); } catch { /* destination list is best-effort */ }
         const dNameMap2 = new Map();
         allDest2.forEach(d => dNameMap2.set(String(d.id), d.name));
         const destMap2 = new Map();

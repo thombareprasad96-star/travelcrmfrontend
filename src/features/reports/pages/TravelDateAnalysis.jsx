@@ -2,11 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiChevronLeft } from "react-icons/fi";
 import { FiChevronRight } from "react-icons/fi";
-import {
-  FiFilter, FiRefreshCw, FiDownload, FiArrowLeft,
-  FiChevronDown, FiChevronUp, FiSearch, FiCalendar,
-  FiTrendingUp, FiUsers, FiBarChart2,
-} from "react-icons/fi";
+import { FiFilter, FiRefreshCw, FiDownload, FiArrowLeft, FiChevronDown, FiChevronUp, FiSearch, FiCalendar, FiUsers } from "react-icons/fi";
 import {
   FaRupeeSign, FaCalendarAlt, FaCalendarCheck,
   FaChartLine, FaClock,

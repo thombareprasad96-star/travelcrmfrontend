@@ -1,16 +1,8 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { leadService } from "@features/leads";
-import {
-  FiBell, FiPlus, FiCheck, FiX, FiClock, FiAlertCircle,
-  FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown,
-  FiCalendar, FiUser, FiPhone, FiEye, FiRefreshCw,
-  FiMail, FiMapPin, FiTag, FiUserCheck, FiDollarSign,
-  FiExternalLink, FiAlertTriangle,
-} from "react-icons/fi";
-import {
-  FaWhatsapp, FaStickyNote, FaPhoneAlt, FaCrown, FaPlane,
-} from "react-icons/fa";
+import { FiBell, FiPlus, FiX, FiClock, FiAlertCircle, FiCheckCircle, FiEdit2, FiTrash2, FiSearch, FiChevronDown, FiCalendar, FiUser, FiPhone, FiEye, FiRefreshCw, FiMail, FiMapPin, FiTag, FiUserCheck, FiDollarSign, FiExternalLink } from "react-icons/fi";
+import { FaWhatsapp, FaStickyNote, FaPhoneAlt } from "react-icons/fa";
 import { MdSnooze, MdOutlineAddTask } from "react-icons/md";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */

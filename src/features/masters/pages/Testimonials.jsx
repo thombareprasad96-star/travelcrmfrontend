@@ -1,10 +1,5 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
-import {
-  Search, Plus, Eye, Pencil, Trash2, X, Upload,
-  ChevronRight, Home, Star, CheckCircle, XCircle,
-  Users, TrendingUp, MessageSquare, ArrowUp, ArrowDown,
-  ChevronDown, Inbox
-} from "lucide-react";
+import { Search, Plus, Eye, Pencil, Trash2, X, Upload, Home, Star, CheckCircle, XCircle, Users, MessageSquare, ArrowUp, ArrowDown, ChevronDown, Inbox } from "lucide-react";
 
 /* ─── PAGINATION ─────────────────────────────────────────── */
 function buildPageNumbers(totalPages, pageIndex) {

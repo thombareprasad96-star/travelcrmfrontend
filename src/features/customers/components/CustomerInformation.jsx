@@ -7,8 +7,7 @@ import {
 import {
   FaCrown, FaWhatsapp, FaUserTie, FaCommentDots,
 } from "react-icons/fa";
-import { MdOutlineContactPhone } from "react-icons/md";
-import { HiSparkles } from "react-icons/hi";
+import { MdOutlineContactPhone } from "react-icons/md";
 
 const CUSTOMER_TYPES = ["Individual", "Corporate", "VIP", "Group", "Agent"];
 const COMM_PREFS     = ["WhatsApp", "SMS", "Email", "Phone Call", "All Channels"];

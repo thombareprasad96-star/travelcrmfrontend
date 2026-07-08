@@ -28,14 +28,6 @@ const INITIAL_COMPANY = {
   state:"Uttar Pradesh", logoUrl:null, faviconUrl:null,
 };
 
-const SUBSCRIPTION = {
-  plan:"Dolphin Plan Monthly - Subscription Plan",
-  startDate:"May 29, 2026", endDate:"Jun 28, 2026",
-  status:"Active", daysLeft:10,
-};
-
-const AI_CREDITS = { used:0, total:10, usedCost:5.67 };
-
 const INDIAN_STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
   "Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka",
@@ -55,11 +47,6 @@ const TABS = [
   { id:"business",  label:"Business Info"     },
   { id:"address",   label:"Address"           },
   { id:"tax",       label:"Tax Configuration" },
-];
-
-const AVATAR_COLORS = [
-  "from-blue-500 to-blue-600","from-indigo-500 to-indigo-600",
-  "from-teal-500 to-teal-600","from-cyan-500 to-cyan-600",
 ];
 
 /* ─── HELPERS ────────────────────────────────────────────────── */
@@ -196,14 +183,6 @@ function Sidebar({
   aiCredits,
 }) {
   const inits = initials(company.name);
-  const creditPct =
-  aiCredits?.total
-    ? Math.round(
-        ((aiCredits.total - aiCredits.used) /
-          aiCredits.total) *
-          100
-      )
-    : 0;
 
   return (
     <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4 lg:sticky lg:top-6 lg:self-start">

@@ -1,16 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiActivity, FiFilter, FiRefreshCw, FiDownload,
-  FiEye, FiChevronDown, FiChevronUp, FiArrowLeft,
-  FiSearch, FiX, FiCalendar, FiUser, FiAlertCircle,
-  FiChevronLeft, FiChevronRight, FiMonitor,
-} from "react-icons/fi";
-import {
-  FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaShieldAlt, FaUserCircle,
-} from "react-icons/fa";
-import { MdLogin, MdOutlineBarChart } from "react-icons/md";
+import { FiActivity, FiFilter, FiRefreshCw, FiDownload, FiEye, FiChevronDown, FiChevronUp, FiArrowLeft, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FaAngleDoubleLeft, FaAngleDoubleRight } from "react-icons/fa";
+import { MdOutlineBarChart } from "react-icons/md";
 
 import activityReportsService from "../api/activityReportsService";
 import { DEFAULT_START, DEFAULT_END } from "../dateDefaults";

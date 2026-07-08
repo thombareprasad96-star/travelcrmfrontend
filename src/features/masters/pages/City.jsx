@@ -1,9 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  Building2, Plus, Search, Trash2, Edit2, X, Check,
-  MapPin, Globe, ChevronDown, AlertCircle, Loader2,
-  Home, ChevronRight, RefreshCw
-} from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Building2, Plus, Search, Trash2, Edit2, X, Check, MapPin, Globe, AlertCircle, Loader2, Home, ChevronRight, RefreshCw } from "lucide-react";
 import { cityService } from "../api/CityService";
 import { geographyService } from "@shared/api/geographyService";
 

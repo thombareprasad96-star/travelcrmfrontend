@@ -1,11 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-  FiUsers, FiUserPlus, FiSearch, FiEdit2, FiTrash2,
-  FiKey, FiEye, FiEyeOff, FiCheckCircle, FiXCircle,
-  FiAlertCircle, FiChevronLeft, FiChevronRight, FiShield,
-} from "react-icons/fi";
+import { FiUserPlus, FiSearch, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiShield } from "react-icons/fi";
 import {
   FaUsers, FaUserCheck, FaUserTimes, FaUserShield,
   FaAngleDoubleLeft, FaAngleDoubleRight,
@@ -45,13 +41,6 @@ const STATUS_CFG = {
   Inactive: { bg:"bg-slate-100",   text:"text-slate-500",   dot:"bg-slate-400"   },
 };
 
-const PASSWORD_RULES = [
-  { id:"len",   label:"At least 6 characters",     test:(p)=>p.length>=6             },
-  { id:"upper", label:"At least one uppercase",     test:(p)=>/[A-Z]/.test(p)        },
-  { id:"lower", label:"At least one lowercase",     test:(p)=>/[a-z]/.test(p)        },
-  { id:"num",   label:"At least one number",        test:(p)=>/[0-9]/.test(p)        },
-  { id:"spec",  label:"At least one special char",  test:(p)=>/[^A-Za-z0-9]/.test(p) },
-];
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
@@ -139,154 +128,6 @@ function DeleteConfirm({ user, onClose, onConfirm }) {
   );
 }
 
-/* ─── RESET PASSWORD MODAL — kept inline ─────────────────────── */
-function ResetPasswordModal({ user, onClose, showToast }) {
-  const [newPass, setNewPass] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showP,   setShowP]   = useState(false);
-  const [showC,   setShowC]   = useState(false);
-  const [errs,    setErrs]    = useState({});
-  const [saving,  setSaving]  = useState(false);
-  
-
-  const ruleResults = PASSWORD_RULES.map(r=>({ ...r, passed:r.test(newPass) }));
-  const allPassed   = ruleResults.every(r=>r.passed);
-
-  const handleReset = async () => {
-    const e={};
-    if(!newPass)              e.newPass="Password is required";
-    if(!allPassed)            e.newPass="Password does not meet all requirements";
-    if(!confirm)              e.confirm="Please confirm the password";
-    if(newPass!==confirm)     e.confirm="Passwords do not match";
-    if(Object.keys(e).length){ setErrs(e); return; }
-    
-    setSaving(true);
-
-try {
-  await userService.resetPassword(
-    user.id,
-    newPass,
-    confirm
-  );
-
-  showToast(
-    `Password for ${user.fullName} reset successfully.`
-  );
-
-  onClose();
-} catch (err) {
-  showToast(
-    err?.response?.data?.message ||
-    "Failed to reset password.",
-    "error"
-  );
-} finally {
-  setSaving(false);
-}
-};
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}/>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10"
-        style={{animation:"popIn .25s ease both"}}>
-        <div className="bg-gradient-to-r from-teal-600 to-teal-500 px-6 py-5 rounded-t-2xl flex items-center justify-between">
-          <div>
-            <h2 className="text-white font-extrabold text-lg flex items-center gap-2">
-              <FiKey className="w-4 h-4"/> Reset Password
-            </h2>
-            <p className="text-white/70 text-xs mt-0.5">Reset password for {user?.fullName}</p>
-          </div>
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-lg transition-all">
-            ×
-          </button>
-        </div>
-        <div className="p-6 space-y-4">
-          {/* New Password */}
-          <div>
-            <label className="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1.5">
-              New Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showP?"text":"password"}
-                value={newPass}
-                onChange={e=>{ setNewPass(e.target.value); setErrs(p=>({...p,newPass:""})); }}
-                className={`w-full px-3.5 py-2.5 pr-11 rounded-xl border text-sm text-slate-700 placeholder-slate-400
-                  focus:outline-none focus:ring-2 transition-all bg-white
-                  ${errs.newPass?"border-red-300 focus:border-red-400 focus:ring-red-50":"border-slate-200 focus:border-blue-400 focus:ring-blue-50"}`}
-                placeholder="Min 6 characters"
-              />
-              <button type="button" onClick={()=>setShowP(v=>!v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                {showP?<FiEyeOff className="w-4 h-4"/>:<FiEye className="w-4 h-4"/>}
-              </button>
-            </div>
-            {errs.newPass&&<p className="mt-1 text-xs text-red-500 flex items-center gap-1"><FiAlertCircle className="w-3 h-3"/>{errs.newPass}</p>}
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1.5">
-              Confirm Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showC?"text":"password"}
-                value={confirm}
-                onChange={e=>{ setConfirm(e.target.value); setErrs(p=>({...p,confirm:""})); }}
-                className={`w-full px-3.5 py-2.5 pr-11 rounded-xl border text-sm text-slate-700 placeholder-slate-400
-                  focus:outline-none focus:ring-2 transition-all bg-white
-                  ${errs.confirm?"border-red-300 focus:border-red-400 focus:ring-red-50":"border-slate-200 focus:border-blue-400 focus:ring-blue-50"}`}
-                placeholder="Re-enter password"
-              />
-              <button type="button" onClick={()=>setShowC(v=>!v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                {showC?<FiEyeOff className="w-4 h-4"/>:<FiEye className="w-4 h-4"/>}
-              </button>
-            </div>
-            {errs.confirm&&<p className="mt-1 text-xs text-red-500 flex items-center gap-1"><FiAlertCircle className="w-3 h-3"/>{errs.confirm}</p>}
-          </div>
-
-          {/* Requirements checklist */}
-          {newPass && (
-            <div className="bg-slate-50 rounded-xl border border-slate-200 px-4 py-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {ruleResults.map(r=>(
-                  <div key={r.id} className="flex items-center gap-2">
-                    {r.passed
-                      ? <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0"/>
-                      : <FiXCircle    className="w-3.5 h-3.5 text-red-400    flex-shrink-0"/>}
-                    <span className={`text-xs ${r.passed?"text-emerald-600 font-semibold":"text-slate-500"}`}>
-                      {r.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-1">
-            <button onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">
-              Cancel
-            </button>
-            <button onClick={handleReset} disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm
-                shadow-md shadow-teal-200 transition-all disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving
-                ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
-                : <FiKey className="w-4 h-4"/>}
-              {saving?"Resetting…":"Reset Password"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function Users() {

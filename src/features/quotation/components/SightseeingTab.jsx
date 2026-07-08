@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { Map, Sun, Coffee, Utensils, Moon, Plus, IndianRupee, Search, ChevronDown, MapPin, Star,
-  Pencil, X, Globe, Building2, Hash, Clock, UploadCloud, AlertTriangle, Users } from "lucide-react";
-import { Label, Input, Select, Textarea, AddBtn, RemoveBtn, IncludeToggle, AIBanner, FieldGrid, RichText } from "./Ui";
-import { ATTRACTIONS, MEALS_OPT, TRANSFER } from "../Constants";
+import { Map, Sun, Coffee, Utensils, Moon, Plus, IndianRupee, Search, ChevronDown, MapPin, Pencil, X, Globe, Building2, Hash, Clock, UploadCloud, AlertTriangle } from "lucide-react";
+import { Label, Input, Textarea, AddBtn, RemoveBtn, IncludeToggle, FieldGrid, RichText } from "./Ui";
+import { MEALS_OPT, TRANSFER } from "../Constants";
 import { sightseeingService } from "@features/masters";
 import { geographyService } from "@shared/api/geographyService";
 
@@ -265,7 +264,7 @@ function SightseeingFormModal({ isOpen, onClose, editingItem, onSaved }) {
             setLoadingCity(true);
             try { setCityOptions(await geographyService.getCitiesByDestination(destId)); }
             finally { setLoadingCity(false); }
-          } catch {}
+          } catch { /* best-effort */ }
         })();
       }
     } else {
@@ -666,7 +665,7 @@ export default function SightseeingTab({ onDataChange, paxInfo = {}, dayCityMap 
   };
 
   // ── Modal save hone ke baad → list refresh + activity auto-fill ──
-  const handleModalSaved = async (saved, type) => {
+  const handleModalSaved = async (saved) => {
     const freshList = await loadAllItems(); // master list refresh
     // jis activity ke liye modal khula tha usme bharo
     if (modalTarget && saved) {

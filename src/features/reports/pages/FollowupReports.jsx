@@ -1,18 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  FiFilter, FiRefreshCw, FiDownload,
-  FiChevronDown, FiChevronUp, FiSearch,
-  FiChevronLeft, FiChevronRight, FiEye, FiInfo,
-  FiCheck, FiClock, FiAlertTriangle, FiCalendar,
-  FiUser, FiPhone, FiMail, FiMapPin,
-} from "react-icons/fi";
-import {
-  FaAngleDoubleLeft, FaAngleDoubleRight,
-  FaFire, FaLeaf,
-  FaTasks, FaStar,
-} from "react-icons/fa";
-import { MdOutlineAssignment } from "react-icons/md";
+import { FiFilter, FiRefreshCw, FiDownload, FiChevronDown, FiChevronUp, FiSearch, FiEye, FiInfo, FiCheck, FiClock, FiAlertTriangle, FiCalendar, FiUser } from "react-icons/fi";
+import { FaTasks } from "react-icons/fa";
 import {
   X, Phone, Mail, Users, User, Calendar,
   Briefcase, MapPin, DollarSign, XCircle, Pencil,
@@ -546,7 +535,7 @@ export default function FollowupReports() {
 
   /* data state */
   const [tasks,        setTasks]        = useState([]);
-  const [allLeads,     setAllLeads]     = useState([]);
+  const [,             setAllLeads]     = useState([]);
   const [usersOptions, setUsersOptions] = useState(["All Users"]);
   const [loading,      setLoading]      = useState(true);
   const [toast,        setToast]        = useState(null);

@@ -25,7 +25,6 @@ const STATUS_COLORS    = {
   REFUNDED: "bg-purple-100 text-purple-700 border-purple-200",
 };
 const fmtLabel = s => s.charAt(0) + s.slice(1).toLowerCase();
-const fmtINR   = n => n ? "+" + Number(n).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}) : "+0.00";
 
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3800); return () => clearTimeout(t); }, [onClose]);
@@ -99,7 +98,6 @@ const sel = err =>
 
 function LiveSummary({ watch, selectedServices }) {
   const w = watch();
-  const fmt = n => n ? String(fmtINR(n)).replace("+","") : "0.00";
   const profit = (Number(w.customerAmount)||0) - (Number(w.vendorCost)||0);
   const payPct = (Number(w.totalPayable)||0) > 0
     ? Math.round((Number(w.paidAmount)||0)/(Number(w.totalPayable)||1)*100) : 0;

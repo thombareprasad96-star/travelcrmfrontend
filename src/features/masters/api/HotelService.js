@@ -32,7 +32,7 @@ export function uploadHotelImageToCloudinary(file, onProgress) {
       }
     };
     xhr.onload = () => {
-      let payload = null;
+      let payload;
       try { payload = JSON.parse(xhr.responseText); } catch { payload = null; }
       if (xhr.status >= 200 && xhr.status < 300 && payload?.secure_url) {
         resolve(payload.secure_url);

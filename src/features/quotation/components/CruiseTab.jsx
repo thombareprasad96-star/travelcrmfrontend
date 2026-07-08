@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Anchor, Plus, IndianRupee } from "lucide-react";
 import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, EmptyState, FieldGrid } from "./Ui";
 import { CRUISE_TYPES, CABIN_CATS } from "../Constants";
