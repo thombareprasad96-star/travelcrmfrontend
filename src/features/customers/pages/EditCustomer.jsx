@@ -16,13 +16,13 @@ import { FiArrowLeft, FiCheckCircle, FiSave } from "react-icons/fi";
 import { FiUser } from "react-icons/fi";
 
 // ── Same folder imports (adjust if your structure differs) ────
-import CustomerInformation from "./CustomerInformation";
-import CustomerAddress     from "./CustomerAddress";
-import CustomerDocuments   from "./CustomerDocuments";
-import CustomerNotes       from "./CustomerNotes";
-import CustomerSummary     from "./CustomerSummary";
+import CustomerInformation from "../components/CustomerInformation";
+import CustomerAddress     from "../components/CustomerAddress";
+import CustomerDocuments   from "../components/CustomerDocuments";
+import CustomerNotes       from "../components/CustomerNotes";
+import CustomerSummary     from "../components/CustomerSummary";
 
-import customerService     from "../services/customerService";
+import customerService     from "../api/customerService";
 
 const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
 

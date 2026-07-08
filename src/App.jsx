@@ -216,8 +216,7 @@ import {
   Testimonials,
 } from "@features/masters";
 import Allbookings from "./bookings/Allbookings";
-import AllCustomers from "./customers/AllCustomers";
-import Createcustomer from "./customers/Createcustomer";
+import { AllCustomers, Createcustomer, EditCustomer } from "@features/customers";
 import { AllOrganization } from "@features/tenant";
 import AllVendors from "./vendors/AllVendors";
 import CreateVendor from "./vendors/CreateVendor";
@@ -256,7 +255,6 @@ import { SubscriptionInfo } from "@features/subscription";
 import { Dashboard } from "@features/dashboard";
 import { TrashPage } from "@features/trash";
 import EditVendor from "./vendors/EditVendor";
-import EditCustomer from "./customers/EditCustomer";
 import EditLead from "./admin/leads/EditLead";
 import EditBooking from "./bookings/EditBooking";
 import WhatsAppPanel from "./admin/leads/WhatsAppPanel";
