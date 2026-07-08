@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import { MdOutlineIntegrationInstructions } from "react-icons/md";
 
-import whatsAppConfigService from "../services/whatsAppConfigService";
+import whatsAppConfigService from "../api/whatsAppConfigService";
 
 /* ─── SETUP GUIDE STEPS ──────────────────────────────────────── */
 const SETUP_STEPS = [

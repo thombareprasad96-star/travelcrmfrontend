@@ -8,7 +8,7 @@ import {
 import { FaServer, FaLock, FaEnvelope, FaBuilding } from "react-icons/fa";
 import { MdOutlineSettings } from "react-icons/md";
 
-import emailConfigurationService from "../services/emailConfigurationService";
+import emailConfigurationService from "../api/emailConfigurationService";
 
 /* ─── SMTP PRESETS ───────────────────────────────────────────── */
 const SMTP_PRESETS = [

@@ -10,9 +10,9 @@ import {
   FaCommentDots, FaBuilding, FaToggleOn,
 } from "react-icons/fa";
 import { MdOutlineSettings, MdOutlineIntegrationInstructions } from "react-icons/md";
-import { companyService } from "../services/companyService";
-import emailConfigurationService from "../services/emailConfigurationService";
-import whatsAppConfigService from "../services/whatsAppConfigService";
+import { companyService } from "../api/companyService";
+import emailConfigurationService from "../api/emailConfigurationService";
+import whatsAppConfigService from "../api/whatsAppConfigService";
 
 /* ─── STATS ACROSS TOP ───────────────────────────────────────── */
 const STATS = [

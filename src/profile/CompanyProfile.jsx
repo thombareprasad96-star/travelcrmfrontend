@@ -1125,7 +1125,7 @@ import { useNavigate } from "react-router-dom";
 import {
   companyService,
   taxRateService,
-} from "../services/companyService";
+} from "@features/settings";
 import {
   FiEdit2, FiSave,  FiMapPin,
   FiCalendar, FiKey,  FiChevronDown, FiUpload,
