@@ -9,14 +9,14 @@ import { useForm } from "react-hook-form";
 import { FiArrowLeft, FiCheckCircle, FiSave, FiLoader } from "react-icons/fi";
 import { FiUser } from "react-icons/fi";
 
-import CustomerInformation from "./CustomerInformation";
-import CustomerAddress     from "./CustomerAddress";
-import CustomerDocuments   from "./CustomerDocuments";
-import CustomerNotes       from "./CustomerNotes";
-import CustomerSummary     from "./CustomerSummary";
+import CustomerInformation from "../components/CustomerInformation";
+import CustomerAddress     from "../components/CustomerAddress";
+import CustomerDocuments   from "../components/CustomerDocuments";
+import CustomerNotes       from "../components/CustomerNotes";
+import CustomerSummary     from "../components/CustomerSummary";
 
 // ── Uncomment when backend is ready ──────────────────────────
-import  customerService  from "../services/customerService";
+import  customerService  from "../api/customerService";
 import { useNavigate }     from "react-router-dom";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */

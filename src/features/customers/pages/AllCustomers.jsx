@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect, useCallback } from "react";
-import customerService from "../services/customerService";
+import customerService from "../api/customerService";
 import {
   FaUsers, FaUserCheck, FaCrown, FaRupeeSign, FaPlane,
   FaRedoAlt, FaWhatsapp, FaEdit, FaTrash, FaEye,

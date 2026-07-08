@@ -1,0 +1,6 @@
+// src/features/customers/index.js
+// Public API of the customers feature.
+
+export { default as AllCustomers } from "./pages/AllCustomers";
+export { default as Createcustomer } from "./pages/Createcustomer";
+export { default as EditCustomer } from "./pages/EditCustomer";
