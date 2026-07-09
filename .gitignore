@@ -28,3 +28,6 @@ dist-ssr
 *.sln
 *.sw?
 backups/
+
+# Claude Code personal settings (per-machine, not shared)
+.claude/settings.local.json

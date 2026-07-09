@@ -3,8 +3,11 @@ import { Anchor, Plus, IndianRupee } from "lucide-react";
 import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, EmptyState, FieldGrid } from "./Ui";
 import { CRUISE_TYPES, CABIN_CATS } from "../Constants";
 
-export default function CruiseTab({ onDataChange }) {
-  const [included, setIncluded] = useState(false);
+// export default function CruiseTab({ onDataChange }) {
+//   const [included, setIncluded] = useState(false);
+
+  export default function CruiseTab({ onDataChange, paxInfo = {}, defaultIncluded = true }) {
+  const [included, setIncluded] = useState(defaultIncluded);
   const [title,    setTitle]    = useState("Cruise Details");
   const [cruises,  setCruises]  = useState([newCruise()]);
 

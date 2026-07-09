@@ -3,8 +3,11 @@ import { Car, Plus, IndianRupee, Users, Image as ImageIcon } from "lucide-react"
 import { Label, Input, Textarea, SectionCard, RemoveBtn, IncludeToggle, EmptyState } from "./Ui";
 import { vehicleService } from "@features/masters";
 
-export default function VehicleTab({ onDataChange }) {
-  const [included, setIncluded] = useState(true);
+// export default function VehicleTab({ onDataChange }) {
+//   const [included, setIncluded] = useState(true);
+
+   export default function VehicleTab({ onDataChange, paxInfo = {}, defaultIncluded = true }) {
+  const [included, setIncluded] = useState(defaultIncluded);
   const [title,    setTitle]    = useState("Vehicle Details");
   const [vehicles, setVehicles] = useState([newVehicle()]);
 

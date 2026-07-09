@@ -14,8 +14,8 @@ function PriceBox({ label, value, highlight = false }) {
   );
 }
 
-export default function FlightTab({ onDataChange, paxInfo = {} }) {
-  const [included, setIncluded] = useState(true);
+export default function FlightTab({ onDataChange, paxInfo = {}, defaultIncluded = true }) {
+  const [included, setIncluded] = useState(defaultIncluded);
   const [title,    setTitle]    = useState("Flight Details");
   const [journey,  setJourney]  = useState("Round Trip");
   const [segments, setSegments] = useState([newSegment()]);

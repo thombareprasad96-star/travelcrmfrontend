@@ -143,6 +143,8 @@ export default function ServicesSection({ selectedServices, onToggle }) {
               if (!svc) return null;
               const c = colorMap[svc.color];
               const Icon = svc.icon;
+                        // console.log("LEAD SERVICES:", selectedServices, "| Flight ON?", svcOn("Flight"));
+
               return (
                 <span key={id} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${c.icon} border border-current`}>
                   <Icon className="w-3 h-3" />
@@ -150,8 +152,12 @@ export default function ServicesSection({ selectedServices, onToggle }) {
                 </span>
               );
             })}
+            
           </div>
         )}
+
+
+
       </div>
     </div>
   );

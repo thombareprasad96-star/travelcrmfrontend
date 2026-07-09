@@ -985,13 +985,8 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
                       <Eye size={13} /> Weblink
                     </button>
                     {/* Edit → opens CreateQuotation in edit mode (quotationId in the URL) */}
-                    {canEdit && (
-                      <button onClick={() => { onClose(); navigate(`/createquotation?leadId=${lead.publicId || lead.id}&quotationId=${q.publicId}`); }}
-                        title="Edit quotation"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold transition-all">
-                        <Pencil size={13} /> Edit
-                      </button>
-                    )}
+                   
+
                     <button onClick={() => downloadPdf(q)} disabled={downloadingId === q.publicId}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all disabled:opacity-50">
                       <DownloadCloud size={13} /> {downloadingId === q.publicId ? 'Downloading…' : 'PDF'}
@@ -1009,12 +1004,23 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
                       className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all">
                       <BarChart3 size={14} />
                     </button>
-                    {canDelete && (
-                      <button onClick={() => removeQuotation(q)} disabled={deletingId === q.publicId} title="Delete quotation"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-500 transition-all disabled:opacity-50 ml-auto">
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+
+<div className="ml-auto flex items-center gap-2">
+  {canEdit && (
+    <button onClick={() => { onClose(); navigate(`/createquotation?leadId=${lead.publicId || lead.id}&quotationId=${q.publicId}`); }}
+      title="Edit quotation"
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-600 transition-all">
+      <Pencil size={14} />
+    </button>
+  )}
+
+  {canDelete && (
+    <button onClick={() => removeQuotation(q)} disabled={deletingId === q.publicId} title="Delete quotation"
+      className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-500 transition-all disabled:opacity-50">
+      <Trash2 size={14} />
+    </button>
+  )}
+</div>
                   </div>
                 </div>
               ))}
