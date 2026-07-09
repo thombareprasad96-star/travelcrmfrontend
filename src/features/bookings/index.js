@@ -6,3 +6,6 @@ export { default as Allbookings } from "./pages/Allbookings";
 export { default as EditBooking } from "./pages/EditBooking";
 export { default as BookingDetails } from "./pages/BookingDetails";
 export { default as bookingService } from "./api/bookingService";
+export { default as BookingPayments } from "./pages/BookingPayments";
+export { default as BookingServices } from "./pages/BookingServices"
+

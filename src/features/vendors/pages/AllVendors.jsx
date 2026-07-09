@@ -612,7 +612,7 @@ export default function Vendors() {
       {deleteV && <DeleteConfirm vendor={deleteV} onClose={() => setDeleteV(null)} onConfirm={handleDelete}/>}
 
       {/* ── PAGE HEADER ── */}
-      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 shadow-sm">
+      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -856,7 +856,7 @@ export default function Vendors() {
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity duration-150">
                             {/* View */}
-                            <button onClick={() => setView(v)} title="View"
+                            <button onClick={() => navigate(`/VendorDetails/${v.id}`)} title="View"
                               className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all border border-blue-100">
                               <FiEye className="w-3.5 h-3.5"/>
                             </button>

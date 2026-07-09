@@ -790,7 +790,7 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDele
                   </Link>
                 )}
                 {isConverted ? (
-                  <Link to="/Allbookings"
+                  <Link to={`/BookingDetails/${lead.convertedBookingPublicId || lead.bookingPublicId || ''}`}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#DCFCE7', color: '#15803D', fontSize: '10px', fontWeight: 700, textDecoration: 'none', border: '1px solid #BBF7D0' }}>
                     <CheckCircle size={11} /> Booked ↗
                   </Link>

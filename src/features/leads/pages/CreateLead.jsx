@@ -37,13 +37,18 @@ export default function CreateLead() {
     formState: { errors },
     reset,
   } = useForm({
-  // nav added below
-  // placeholder
+    // ── SMART DEFAULTS: form khulte hi ye auto-selected honge ──
+    // User change kar sakta hai; reset() ke baad bhi yehi defaults aayenge.
     defaultValues: {
       customerName: "", phone: "", email: "",
-      // ── NEW: budget field ──
+      // ── budget field ──
       budget: "",
-      leadSource: "", leadType: "", leadStage: "New Lead", assignTo: "", birthDate: "",
+      leadSource: "Direct Call",   // ← default: Direct Call
+      leadType: "Fresh Lead",      // ← default: Fresh Lead
+      leadStage: "New Lead",
+      assignTo: "",
+      assignedUserId: "",          // ← logged-in user auto-select hota hai (LeadInformation mein)
+      birthDate: "",
       travelDate: "", departCountry: "India", departCity: "",
       rooms: 1, adults: 2, children: 0, infants: 0, extraBeds: 0,
       notes: "",
@@ -153,7 +158,7 @@ export default function CreateLead() {
       setValue("leadType", lead.leadType || "");
       setValue("leadStage", lead.leadStage || "");
       setValue("assignTo", lead.assignTo || "");
-      // ── NEW: prefill budget on phone-match too ──
+      // ── prefill budget on phone-match too ──
       if (lead.budget != null) setValue("budget", lead.budget);
 
       showToast(

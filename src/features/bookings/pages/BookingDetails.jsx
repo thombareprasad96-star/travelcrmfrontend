@@ -9,11 +9,21 @@
 //        Payment History | Quotation Info | Booking Reminders
 // ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import bookingService from "../api/bookingService";
-import { ArrowLeft as FiArrowLeft, Pen as FiEdit2, Trash2 as FiTrash2, Check as FiCheck, X as FiX, CircleAlert as FiAlertCircle, Plus as FiPlus, ExternalLink as FiExternalLink, RefreshCw as FiRefreshCw, CreditCard as FiCreditCard, User as FiUser, Truck as FiTruck, Printer as FiPrinter, Phone as FiPhone, Eye as FiEye, Bell as FiBell, Plane as FaPlane, Hotel as FaHotel, Car as FaCar, Ship as FaShip, BookUser as FaPassport, TreePalm as FaUmbrellaBeach, Receipt as FaReceipt, ClipboardList as MdOutlineAssignment, CreditCard as MdPayment } from "lucide-react";
-
+import {
+  FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle,
+  FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser,
+  FiCalendar, FiMapPin, FiDollarSign, FiTruck, FiPrinter,
+  FiDownload, FiMail, FiPhone, FiChevronDown, FiChevronUp,
+  FiEye, FiBell, FiCheckCircle,
+} from "react-icons/fi";
+import {
+  FaPlane, FaHotel, FaCar, FaShip, FaPassport,
+  FaUmbrellaBeach, FaMoneyBillWave, FaReceipt,
+} from "react-icons/fa";
+import { MdOutlineAssignment, MdPayment } from "react-icons/md";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const STATUS_STYLE = {
@@ -324,7 +334,7 @@ export default function BookingDetails() {
       await bookingService.update(booking.id, { status: newStatus });
       setBooking(p => ({ ...p, status: newStatus.toUpperCase() }));
       showToast(`Booking status updated to ${titleCase(newStatus)}.`);
-    } catch {
+    } catch (e) {
       showToast("Failed to update status.", "error");
     }
   };
@@ -359,7 +369,7 @@ export default function BookingDetails() {
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <p className="text-lg font-extrabold text-slate-600 mb-2">Booking Not Found</p>
-          <button onClick={()=>navigate("/BookingsPage")}
+          <button onClick={()=>navigate("/Allbookings")}
             className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all mx-auto">
             <FiArrowLeft className="w-4 h-4"/> Back to Bookings
           </button>
@@ -394,11 +404,11 @@ export default function BookingDetails() {
       {assignSvc   && <AssignVendorModal booking={b} service={assignSvc} onClose={()=>setAssignSvc(null)} onAssigned={()=>{ showToast("Vendor assigned!"); fetchBooking(); }}/>}
 
       {/* ── PAGE HEADER ── */}
-      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30 shadow-sm">
+      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <button onClick={()=>navigate("/BookingsPage")}
+              <button onClick={()=>navigate("/Allbookings")}
                 className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-all">
                 <FiArrowLeft className="w-4 h-4 text-slate-600"/>
               </button>
@@ -417,7 +427,7 @@ export default function BookingDetails() {
                 <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
                   <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/")}>Home</span>
                   <span className="mx-1">/</span>
-                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/BookingsPage")}>Bookings</span>
+                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/Allbookings")}>Bookings</span>
                   <span className="mx-1">/</span>
                   <span className="text-blue-600 font-bold">View</span>
                 </p>
@@ -535,11 +545,11 @@ export default function BookingDetails() {
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-sm">
                   <FiEdit2 className="w-4 h-4"/> Edit Booking
                 </button>
-                <button onClick={()=>setShowAddPay(true)}
+                <button onClick={()=>navigate(`/BookingPayments/${b.id}`)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-all shadow-sm">
                   <MdPayment className="w-4 h-4"/> Payments
                 </button>
-                <button onClick={()=>navigate(`/BookingsPage?services=${b.id}`)}
+                <button onClick={()=>navigate(`/BookingServices/${b.id}`)}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold transition-all shadow-sm">
                   <MdOutlineAssignment className="w-4 h-4"/> Services
                 </button>
@@ -653,7 +663,7 @@ export default function BookingDetails() {
             {/* ── Booking Services ── */}
             <SCard title="Booking Services" icon={<MdOutlineAssignment/>} accent="slate"
               action={
-                <button onClick={()=>setAssignSvc({ id:"all", type:"Service" })}
+                <button onClick={()=>navigate(`/BookingServices/${b.id}`)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">
                   <FiPlus className="w-3 h-3"/> Assign Vendor
                 </button>
@@ -684,7 +694,7 @@ export default function BookingDetails() {
                           <td className="px-3 py-3">
                             {svc.vendorName
                               ? <span className="text-sm text-slate-700 font-medium">{svc.vendorName}</span>
-                              : <button onClick={()=>setAssignSvc(svc)}
+                              : <button onClick={()=>navigate(`/BookingServices/${b.id}`)}
                                   className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 hover:underline">
                                   No vendor assigned
                                 </button>
@@ -725,7 +735,7 @@ export default function BookingDetails() {
             {/* ── Payment History ── */}
             <SCard title="Payment History" icon={<FiCreditCard/>} accent="green"
               action={
-                <button onClick={()=>setShowAddPay(true)}
+                <button onClick={()=>navigate(`/BookingPayments/${b.id}`)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">
                   <FiPlus className="w-3 h-3"/> Add Payment
                 </button>
@@ -769,7 +779,7 @@ export default function BookingDetails() {
                 <div className="text-center py-8">
                   <div className="text-3xl mb-2">💳</div>
                   <p className="text-sm text-slate-400 font-medium mb-3">No payments recorded yet</p>
-                  <button onClick={()=>setShowAddPay(true)}
+                  <button onClick={()=>navigate(`/BookingPayments/${b.id}`)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all mx-auto">
                     <FiPlus className="w-3.5 h-3.5"/> Record Payment
                   </button>

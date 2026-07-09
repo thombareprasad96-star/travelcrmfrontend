@@ -38,16 +38,20 @@ const bookings = () => import("@features/bookings");
 const Allbookings    = lazyPage(bookings, "Allbookings");
 const EditBooking    = lazyPage(bookings, "EditBooking");
 const BookingDetails = lazyPage(bookings, "BookingDetails");
+const BookingPayments = lazyPage(bookings, "BookingPayments");
+const BookingServices = lazyPage(bookings, "BookingServices");
 
 const customers = () => import("@features/customers");
 const AllCustomers   = lazyPage(customers, "AllCustomers");
 const Createcustomer = lazyPage(customers, "Createcustomer");
 const EditCustomer   = lazyPage(customers, "EditCustomer");
+const CustomerDetails = lazyPage(customers, "CustomerDetails");
 
 const vendors = () => import("@features/vendors");
 const AllVendors   = lazyPage(vendors, "AllVendors");
 const CreateVendor = lazyPage(vendors, "CreateVendor");
 const EditVendor   = lazyPage(vendors, "EditVendor");
+const VendorDetails = lazyPage(vendors, "VendorDetails");
 
 const reminders = () => import("@features/reminders");
 const Reminders            = lazyPage(reminders, "Reminders");
@@ -273,6 +277,10 @@ const AppRouter = () => {
           <Route path="fleet/trips/:publicId/edit" element={<Guard allow={hasPermission(P.FLEET_UPDATE)}><FleetTripForm/></Guard>}/>
 
           <Route path="BookingDetails/:id" element={<BookingDetails/>}/>
+          <Route path="/BookingPayments/:id" element={<BookingPayments/>}/>
+          <Route path="/BookingServices/:id" element={<BookingServices/>}/>
+          <Route path="/CustomerDetails/:id" element={<CustomerDetails/>}/>
+          <Route path="/VendorDetails/:id" element={<VendorDetails/>}/>
 
         </Route>
  

@@ -630,7 +630,7 @@ export default function Customers() {
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
                             {/* View */}
-                            <button onClick={() => setView(c)} title="View"
+                            <button onClick={() => navigate(`/CustomerDetails/${c.id}`)} title="View"
                               className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all text-sm">
                               <FaEye/>
                             </button>
@@ -721,7 +721,7 @@ export default function Customers() {
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${tc.border} ${tc.bg} ${tc.text}`}>{tc.icon} {c.tier}</span>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => setView(c)} className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
+                      <button onClick={() => navigate(`/CustomerDetails/${c.id}`)} className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all">
                         <FaEye/> View
                       </button>
                       {/* Edit → navigate */}

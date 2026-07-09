@@ -517,7 +517,7 @@ export default function TrashPage() {
       )}
 
       {/* ── PAGE HEADER ── */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
