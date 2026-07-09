@@ -111,6 +111,7 @@ export function isSuperAdmin()  { return getRole() === ROLES.SUPERADMIN; }
 export function isTenantAdmin() { return getRole() === ROLES.TENANT_ADMIN; }
 
 const PERMS_KEY = "userPermissions";
+const MODULES_KEY = "tenantModules";
 
 // Fetch the CURRENT user's EFFECTIVE permissions from the backend (role default
 // overlaid with their saved per-user map) and cache them. Call right after login.
@@ -131,6 +132,42 @@ export async function loadMyPermissions() {
 export function clearMyPermissions() {
   localStorage.removeItem(PERMS_KEY);
   localStorage.removeItem("isPlatformAdmin");
+  localStorage.removeItem(MODULES_KEY);
+}
+
+// ── Module entitlements (tenant plan) ─────────────────────────────────────────
+// Which whole MODULES the tenant's plan unlocks (Feature Flags) — distinct from permissions,
+// which gate a user's actions. The backend is always the real gate; this only HIDES modules the
+// plan excludes so staff don't see menus their organization hasn't bought.
+
+// Fetch + cache the tenant's effective modules. Call right after login (next to loadMyPermissions).
+export async function loadMyEntitlements() {
+  try {
+    const res  = await API.get("/me/entitlements");
+    const body = res?.data?.data ?? res?.data ?? {};
+    const modules = Array.isArray(body.modules) ? body.modules : [];
+    localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
+    return modules;
+  } catch {
+    localStorage.removeItem(MODULES_KEY);   // unknown → fail-open (show everything)
+    return null;
+  }
+}
+
+export function clearMyEntitlements() {
+  localStorage.removeItem(MODULES_KEY);
+}
+
+// True if the tenant's plan includes `moduleKey`. FAIL-OPEN: until entitlements load (or if the
+// fetch failed) every module shows — the soft-gate only ever HIDES a module we KNOW is excluded,
+// never blocks one on a missing/failed fetch. Module access is a tenant/plan property, so even
+// TENANT_ADMIN is bound by it (no role bypass here, unlike hasPermission).
+export function hasModule(moduleKey) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(MODULES_KEY) || "null");
+    if (Array.isArray(stored)) return stored.includes(moduleKey);
+  } catch { /* malformed cache → fail-open */ }
+  return true;
 }
 
 // True if the current user is allowed `permissionKey`.
@@ -154,4 +191,4 @@ export function hasAnyPermission(...keys) {
   return keys.some((k) => hasPermission(k));
 }
 
-export default { ROLES, P, getRole, isSuperAdmin, isTenantAdmin, hasPermission, hasAnyPermission, loadMyPermissions, clearMyPermissions };
+export default { ROLES, P, getRole, isSuperAdmin, isTenantAdmin, hasPermission, hasAnyPermission, hasModule, loadMyPermissions, clearMyPermissions, loadMyEntitlements, clearMyEntitlements };

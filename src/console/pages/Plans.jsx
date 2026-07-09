@@ -1,0 +1,265 @@
+import { useCallback, useEffect, useState } from "react";
+import {
+  Pencil, Loader2, X, CheckCircle2, AlertTriangle, RefreshCw, Users, Layers, Check,
+} from "lucide-react";
+import { planService, ALL_MODULES } from "../api/planService";
+
+const inputCls =
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-heading placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus";
+
+const fmtLimit = (v) => (v == null ? "Unlimited" : Number(v).toLocaleString());
+const fmtPrice = (v, ccy) =>
+  `${ccy || "INR"} ${Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
+function Field({ label, children, hint }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-semibold text-body">{label}</label>
+      {children}
+      {hint && <p className="mt-1 text-[11px] text-muted">{hint}</p>}
+    </div>
+  );
+}
+
+function PlanEditDrawer({ plan, onClose, onSaved, showToast }) {
+  const [form, setForm] = useState(() => ({
+    displayName: plan.displayName ?? "",
+    monthlyPrice: plan.monthlyPrice ?? 0,
+    currency: plan.currency ?? "INR",
+    maxUsers: plan.maxUsers ?? "", // "" = unlimited
+    maxLeads: plan.maxLeads ?? "",
+    modules: new Set(plan.modules ?? []),
+    active: plan.active ?? true,
+  }));
+  const [saving, setSaving] = useState(false);
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const toggleModule = (m) =>
+    setForm((f) => {
+      const s = new Set(f.modules);
+      s.has(m) ? s.delete(m) : s.add(m);
+      return { ...f, modules: s };
+    });
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await planService.update(plan.publicId, {
+        displayName: form.displayName,
+        monthlyPrice: Number(form.monthlyPrice),
+        currency: form.currency,
+        maxUsers: form.maxUsers === "" ? null : Number(form.maxUsers),
+        maxLeads: form.maxLeads === "" ? null : Number(form.maxLeads),
+        modules: Array.from(form.modules),
+        active: form.active,
+      });
+      showToast("success", "Plan updated");
+      onSaved();
+    } catch (e2) {
+      showToast("error", e2?.response?.data?.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 flex justify-end">
+      <div className="absolute inset-0 bg-slate-950/50" onClick={saving ? undefined : onClose} />
+      <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-surface shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h2 className="text-sm font-bold text-heading">
+            Edit plan · <span className="font-mono text-accent">{plan.code}</span>
+          </h2>
+          <button onClick={onClose} className="text-muted hover:text-body" disabled={saving}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+            <Field label="Display name">
+              <input className={inputCls} value={form.displayName} onChange={(e) => set("displayName", e.target.value)} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Monthly price">
+                <input type="number" min={0} step="0.01" className={inputCls} value={form.monthlyPrice}
+                  onChange={(e) => set("monthlyPrice", e.target.value)} />
+              </Field>
+              <Field label="Currency">
+                <input className={inputCls} value={form.currency} onChange={(e) => set("currency", e.target.value)} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Max users" hint="Blank = unlimited">
+                <input type="number" min={1} className={inputCls} value={form.maxUsers}
+                  onChange={(e) => set("maxUsers", e.target.value)} placeholder="∞" />
+              </Field>
+              <Field label="Max leads" hint="Blank = unlimited">
+                <input type="number" min={1} className={inputCls} value={form.maxLeads}
+                  onChange={(e) => set("maxLeads", e.target.value)} placeholder="∞" />
+              </Field>
+            </div>
+
+            <Field label="Modules unlocked">
+              <div className="grid grid-cols-2 gap-1.5">
+                {ALL_MODULES.map((m) => {
+                  const on = form.modules.has(m);
+                  return (
+                    <button key={m} type="button" onClick={() => toggleModule(m)}
+                      className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        on
+                          ? "border-accent bg-accent-soft text-accent-soft-text"
+                          : "border-border bg-surface text-muted hover:bg-surface-hover"
+                      }`}>
+                      <span className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-sm border ${on ? "border-accent bg-accent text-accent-text" : "border-border-strong"}`}>
+                        {on && <Check size={10} />}
+                      </span>
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+
+            <label className="flex items-center gap-2 text-sm text-body">
+              <input type="checkbox" checked={form.active} onChange={(e) => set("active", e.target.checked)}
+                className="h-4 w-4 rounded border-border-strong accent-violet-600" />
+              Plan is active (available to assign)
+            </label>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 border-t border-border px-5 py-4">
+            <button type="button" onClick={onClose} disabled={saving}
+              className="rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body hover:bg-surface-hover">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-60">
+              {saving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default function Plans() {
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [expiring, setExpiring] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((type, msg) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setPlans((await planService.list()) || []);
+    } catch {
+      setPlans([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const runExpiry = async () => {
+    setExpiring(true);
+    try {
+      const r = await planService.runExpiry();
+      showToast("success", `Expiry sweep complete — ${r?.expired ?? 0} tenant(s) expired`);
+    } catch {
+      showToast("error", "Expiry sweep failed");
+    } finally {
+      setExpiring(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-heading">Subscription Plans</h1>
+          <p className="text-sm text-body">Feature limits &amp; pricing. Assign a plan to a tenant from the Tenants page.</p>
+        </div>
+        <button onClick={runExpiry} disabled={expiring}
+          className="inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body hover:bg-surface-hover disabled:opacity-60">
+          {expiring ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+          Run expiry sweep
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="py-16 text-center text-muted"><Loader2 size={18} className="mx-auto animate-spin" /></div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {plans.map((p) => (
+            <div key={p.publicId} className="flex flex-col rounded-xl border border-border bg-surface p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-heading">{p.displayName}</h2>
+                    {!p.active && (
+                      <span className="rounded bg-slate-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">inactive</span>
+                    )}
+                  </div>
+                  <div className="font-mono text-xs text-muted">{p.code}</div>
+                </div>
+                <button onClick={() => setEditing(p)} title="Edit plan"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover hover:text-body">
+                  <Pencil size={15} />
+                </button>
+              </div>
+
+              <div className="mt-3 font-mono text-2xl font-bold text-heading">
+                {fmtPrice(p.monthlyPrice, p.currency)}
+                <span className="text-sm font-normal text-muted"> /mo</span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg bg-surface-hover px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted"><Users size={12} /> Users</div>
+                  <div className="font-mono font-semibold text-heading">{fmtLimit(p.maxUsers)}</div>
+                </div>
+                <div className="rounded-lg bg-surface-hover px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted"><Layers size={12} /> Leads</div>
+                  <div className="font-mono font-semibold text-heading">{fmtLimit(p.maxLeads)}</div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="mb-1.5 text-xs font-semibold text-muted">Modules ({(p.modules || []).length})</div>
+                <div className="flex flex-wrap gap-1">
+                  {(p.modules || []).map((m) => (
+                    <span key={m} className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent-soft-text">{m}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {editing && (
+        <PlanEditDrawer plan={editing} onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); load(); }} showToast={showToast} />
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg ${
+          toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
+        }`}>
+          {toast.type === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  );
+}

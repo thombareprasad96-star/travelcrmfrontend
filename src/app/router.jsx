@@ -44,8 +44,6 @@ const AllCustomers   = lazyPage(customers, "AllCustomers");
 const Createcustomer = lazyPage(customers, "Createcustomer");
 const EditCustomer   = lazyPage(customers, "EditCustomer");
 
-const AllOrganization = lazyPage(() => import("@features/tenant"), "AllOrganization");
-
 const vendors = () => import("@features/vendors");
 const AllVendors   = lazyPage(vendors, "AllVendors");
 const CreateVendor = lazyPage(vendors, "CreateVendor");
@@ -89,6 +87,30 @@ const WhatsAppConfiguration = lazyPage(settings, "WhatsAppConfiguration");
 const SubscriptionInfo = lazyPage(() => import("@features/subscription"), "SubscriptionInfo");
 const Dashboard        = lazyPage(() => import("@features/dashboard"), "Dashboard");
 const TrashPage        = lazyPage(() => import("@features/trash"), "TrashPage");
+
+// ── Platform SuperAdmin Console — SEPARATE realm (own token "sa_token", violet/dark theme) ──
+const consoleFeature = () => import("@/console");
+const ConsoleLogin   = lazyPage(consoleFeature, "ConsoleLogin");
+const ConsoleLayout  = lazyPage(consoleFeature, "ConsoleLayout");
+const ConsoleHome    = lazyPage(consoleFeature, "ConsoleHome");
+const ConsolePalette = lazyPage(consoleFeature, "ConsolePalette");
+const ConsoleTenants = lazyPage(consoleFeature, "ConsoleTenants");
+const ConsolePlans   = lazyPage(consoleFeature, "ConsolePlans");
+const ConsoleUsers   = lazyPage(consoleFeature, "ConsoleUsers");
+const ConsoleFeatureFlags = lazyPage(consoleFeature, "ConsoleFeatureFlags");
+const ConsoleGlobalConfig = lazyPage(consoleFeature, "ConsoleGlobalConfig");
+const ConsoleAuditLog = lazyPage(consoleFeature, "ConsoleAuditLog");
+const ConsoleAnnouncements = lazyPage(consoleFeature, "ConsoleAnnouncements");
+const ConsoleOps = lazyPage(consoleFeature, "ConsoleOps");
+
+const portal = () => import("@features/portal");
+const PortalLogin         = lazyPage(portal, "PortalLogin");
+const PortalLayout        = lazyPage(portal, "PortalLayout");
+const PortalTrips         = lazyPage(portal, "PortalTrips");
+const PortalBookingDetail = lazyPage(portal, "PortalBookingDetail");
+const PortalPayments      = lazyPage(portal, "PortalPayments");
+const PortalDocuments     = lazyPage(portal, "PortalDocuments");
+const PortalHelp          = lazyPage(portal, "PortalHelp");
 
 const fleet = () => import("@features/fleet");
 const FleetDashboard     = lazyPage(fleet, "FleetDashboard");
@@ -136,6 +158,37 @@ const AppRouter = () => {
         {/* Public quotation web view (no auth) — shareable /q/{publicId} link */}
         <Route path="/q/:publicId" element={<PublicQuotationPage />} />
 
+        {/* ── Customer-facing Traveler Portal — SEPARATE realm ──────────────
+            Own token ("travelerToken"), own OTP login, no staff chrome. The
+            PortalLayout self-guards (no token → /portal/login). */}
+        <Route path="/portal/login" element={<PortalLogin />} />
+        <Route path="/portal" element={<PortalLayout />}>
+          <Route index element={<PortalTrips />} />
+          <Route path="bookings/:publicId" element={<PortalBookingDetail />} />
+          <Route path="payments" element={<PortalPayments />} />
+          <Route path="documents" element={<PortalDocuments />} />
+          <Route path="help" element={<PortalHelp />} />
+        </Route>
+
+        {/* ── Platform SuperAdmin Console — SEPARATE realm ───────────────────
+            Own token ("sa_token"), own login, violet/slate theme (light+dark).
+            ConsoleLayout self-guards (no sa_token → /superadmin/login).
+            /console/login is the retired route, kept as a redirect for bookmarks. */}
+        <Route path="/superadmin/login" element={<ConsoleLogin />} />
+        <Route path="/console/login" element={<Navigate to="/superadmin/login" replace />} />
+        <Route path="/console" element={<ConsoleLayout />}>
+          <Route index element={<ConsoleHome />} />
+          <Route path="tenants" element={<ConsoleTenants />} />
+          <Route path="plans" element={<ConsolePlans />} />
+          <Route path="users" element={<ConsoleUsers />} />
+          <Route path="feature-flags" element={<ConsoleFeatureFlags />} />
+          <Route path="config" element={<ConsoleGlobalConfig />} />
+          <Route path="audit" element={<ConsoleAuditLog />} />
+          <Route path="announcements" element={<ConsoleAnnouncements />} />
+          <Route path="ops" element={<ConsoleOps />} />
+          <Route path="palette" element={<ConsolePalette />} />
+        </Route>
+
         {/* Protected Routes */}
         <Route
           path="/"
@@ -162,7 +215,6 @@ const AppRouter = () => {
           <Route path="masters/vehicles" element={<Vehiclas/>}/>
           <Route path="masters/sightseeing" element={<Sightseeing/>}/>
           <Route path="masters/add-on-services" element={<AddonService/>}/>
-          <Route path="allorganization" element={<AllOrganization/>}/>
           <Route path="masters/testimonials"  element={<Testimonials/>}/>
           <Route path="AllVendors" element={<AllVendors/>}/>
           <Route path="CreateVendor" element={<CreateVendor/>}/>

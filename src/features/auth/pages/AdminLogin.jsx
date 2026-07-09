@@ -1,40 +1,52 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, MapPin, Check, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  Eye, EyeOff, Lock, Mail, MapPin, Check, AlertCircle,
+  Users, FileText, MessageCircle, Sparkles, ShieldCheck, ArrowRight,
+  Megaphone, Globe, ServerCog,
+} from 'lucide-react';
 
 // 👉 Same service imports as before — auth logic untouched
 import { authService } from "../api/LoginService";
-import { loadMyPermissions } from "@shared/lib/access";
+import { loadMyPermissions, loadMyEntitlements } from "@shared/lib/access";
 
-const ROLES = [
-  { key: 'super_admin', label: 'Super Admin' },
-  { key: 'admin', label: 'Admin' },
-  { key: 'user', label: 'User' },
-];
+// No role switcher. It never chose the endpoint — LoginService always tries superadmin
+// first and falls back to the user login — and the backend returns the real role, which is
+// what gets persisted. The old tabs only set a label and a dead fallback string.
+// Platform operators sign in at /superadmin/login.
 
-const CAR_W = 48;                 // road car width (px)
-const AUTO_CAR_DEMO = true;       // false => car sirf role switch pe chalegi (no auto patrol)
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/* ---------- Big car (road, under role switcher) ---------- */
-const RoadCar = () => (
-  <svg className="tlc-body" viewBox="0 0 64 30" width="48" height="22.5" aria-hidden="true" style={{ display: 'block' }}>
-    <defs>
-      <linearGradient id="tlcCarGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stopColor="#2563EB" />
-        <stop offset="1" stopColor="#4F46E5" />
-      </linearGradient>
-    </defs>
-    <path d="M5 21 L5 16 Q5 11 12 11 L21 11 L27 4.5 Q28 3.5 30 3.5 L42 3.5 Q44 3.5 45 5 L50 11 Q59 11 59 17 L59 21 Q59 23 57 23 L7 23 Q5 23 5 21 Z" fill="url(#tlcCarGrad)" />
-    <path d="M28 6 L24 11 L34 11 L34 6 Z" fill="#DBEAFE" opacity=".95" />
-    <path d="M37 6 L37 11 L46 11 L42.5 6 Z" fill="#DBEAFE" opacity=".95" />
-    <line x1="35.5" y1="11" x2="35.5" y2="21" stroke="#1E40AF" opacity=".3" strokeWidth="1" />
-    <circle cx="57.5" cy="15.5" r="1.7" fill="#FDE68A" />
-    <rect x="5" y="14.5" width="2.2" height="3.4" rx="1" fill="#FCA5A5" />
-    <g className="tlc-wheel"><circle cx="16.5" cy="23" r="5.4" fill="#0F172A" /><circle cx="16.5" cy="23" r="2.3" fill="#CBD5E1" /><line x1="16.5" y1="18.4" x2="16.5" y2="23" stroke="#64748B" strokeWidth="1.3" /></g>
-    <g className="tlc-wheel"><circle cx="47.5" cy="23" r="5.4" fill="#0F172A" /><circle cx="47.5" cy="23" r="2.3" fill="#CBD5E1" /><line x1="47.5" y1="18.4" x2="47.5" y2="23" stroke="#64748B" strokeWidth="1.3" /></g>
-  </svg>
-);
+/* Product proof — why an agency runs TravelCRM. */
+const FEATURES = [
+  {
+    Icon: Users,
+    title: 'Leads & pipeline',
+    copy: 'Capture every enquiry, assign it to an agent, and never lose a follow-up.',
+  },
+  {
+    Icon: FileText,
+    title: 'Quotations → branded PDF',
+    copy: 'Build a multi-day itinerary and send a polished, branded quote in minutes.',
+  },
+  {
+    Icon: MessageCircle,
+    title: 'WhatsApp follow-ups',
+    copy: 'Reach travellers on the channel where they actually reply.',
+  },
+  {
+    Icon: Sparkles,
+    title: 'Disha AI',
+    copy: 'Drafts itineraries and replies, so your team spends its day selling.',
+  },
+];
+
+/* Agency services — the studio behind the product. */
+const SERVICES = [
+  { Icon: Megaphone, label: 'Digital Marketing' },
+  { Icon: Globe, label: 'Website Development' },
+  { Icon: ServerCog, label: 'IT Services' },
+];
 
 /* ---------- Mini white car (orbits inside the logo) ---------- */
 const MiniCar = () => (
@@ -49,7 +61,6 @@ const MiniCar = () => (
 );
 
 const Login = ({ setIsAuthenticated }) => {
-  const [activeRole, setActiveRole] = useState('admin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -64,96 +75,13 @@ const Login = ({ setIsAuthenticated }) => {
   const [pwShake, setPwShake] = useState(false);
   const [bannerShake, setBannerShake] = useState(false);
 
-  // Road car states
-  const [carMoving, setCarMoving] = useState(false);
-  const [facingLeft, setFacingLeft] = useState(false);
-  const [trackW, setTrackW] = useState(0);
-  const [ready, setReady] = useState(false);
-
-  const trackRef = useRef(null);
-  const idxRef = useRef(1);
-  const dirRef = useRef(1);
-  const autoRef = useRef(null);
-  const autoStopped = useRef(!AUTO_CAR_DEMO);
-
   const navigate = useNavigate();
 
-  const roleIndex = ROLES.findIndex(r => r.key === activeRole);
-  const currentRole = ROLES[roleIndex];
   const emailValid = EMAIL_RE.test(email);
   const pwValid = password.length >= 6;
 
-  const cell = trackW / 3;
-  const carX = trackW ? Math.round(roleIndex * cell + (cell - CAR_W) / 2) : 0;
-
-  useEffect(() => { idxRef.current = roleIndex; }, [roleIndex]);
-
-  // Measure road width (responsive) — layout effect avoids first-paint jump
-  useLayoutEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const update = () => setTrackW(el.clientWidth);
-    update();
-    let ro;
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(update);
-      ro.observe(el);
-    } else {
-      window.addEventListener('resize', update);
-    }
-    return () => {
-      if (ro) ro.disconnect();
-      else window.removeEventListener('resize', update);
-    };
-  }, []);
-
-  // Enable car transition only after first position is painted
-  useEffect(() => {
-    if (trackW > 0 && !ready) {
-      requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)));
-    }
-  }, [trackW, ready]);
-
-  const stopAutoDemo = () => {
-    autoStopped.current = true;
-    clearInterval(autoRef.current);
-  };
-
-  const switchRole = (key) => {
-    const newIdx = ROLES.findIndex(r => r.key === key);
-    const oldIdx = idxRef.current;
-    if (newIdx === oldIdx || loading || success) return;
-    setFacingLeft(newIdx < oldIdx);
-    setCarMoving(true);
-    setActiveRole(key);
-    // Same behaviour as before: role change clears the form
-    setEmail('');
-    setPassword('');
-    setErrorMessage('');
-    setEmailInvalid(false);
-    setPwInvalid(false);
-  };
-
-  // Auto patrol: Super Admin ↔ User (stops on first user interaction)
-  useEffect(() => {
-    if (!AUTO_CAR_DEMO || !ready || autoStopped.current) return;
-    const start = setTimeout(() => {
-      autoRef.current = setInterval(() => {
-        let n = idxRef.current + dirRef.current;
-        if (n > 2 || n < 0) {
-          dirRef.current *= -1;
-          n = idxRef.current + dirRef.current;
-        }
-        switchRole(ROLES[n].key);
-      }, 1600);
-    }, 1200);
-    return () => { clearTimeout(start); clearInterval(autoRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    stopAutoDemo();
 
     // Client-side validation with shake feedback
     let bad = false;
@@ -183,12 +111,14 @@ const Login = ({ setIsAuthenticated }) => {
       if (token && typeof token === 'string') {
         // 3. Persist session (unchanged)
         localStorage.setItem('token', token);
-        const roleToSave = responseData?.role || activeRole;
+        // LoginService always stamps a role (real tenant role, or "super_admin"), so this
+        // fallback is defensive only — default to the least-privileged value.
+        const roleToSave = responseData?.role || 'user';
         localStorage.setItem('userRole', roleToSave);
         localStorage.setItem('userEmail', email);
 
-        // Effective permissions (unchanged)
-        await loadMyPermissions();
+        // Effective permissions + plan module entitlements (both cached for the UI to gate/hide).
+        await Promise.all([loadMyPermissions(), loadMyEntitlements()]);
 
         // 4. Success beat (animated checkmark), then redirect
         setLoading(false);
@@ -223,180 +153,234 @@ const Login = ({ setIsAuthenticated }) => {
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center px-4 py-10 selection:bg-indigo-500 selection:text-white"
-      style={{
-        background: 'linear-gradient(135deg,#FFFFFF 0%,#F8FAFC 50%,#F1F5F9 100%)',
-        fontFamily: "'Plus Jakarta Sans','Inter',system-ui,sans-serif",
-      }}
+      className="min-h-screen w-full bg-white lg:grid lg:grid-cols-2 selection:bg-blue-600 selection:text-white"
+      style={{ fontFamily: "'Plus Jakarta Sans','Inter',system-ui,sans-serif" }}
     >
       <style>{styles}</style>
 
-      {/* Glass card */}
-      <div
-        className="tlc-card relative z-[1] w-full max-w-[460px] p-6 sm:p-10 sm:pb-8"
-        onMouseDown={stopAutoDemo}
-        onTouchStart={stopAutoDemo}
-        onFocusCapture={stopAutoDemo}
-      >
-        {/* Logo — car orbiting a destination pin */}
-        <div className="tlc-logo mx-auto mb-4">
-          <div className="tlc-ring" />
-          <MapPin size={19} className="tlc-pin" aria-hidden="true" />
-          <div className="tlc-orbit"><MiniCar /></div>
-        </div>
+      {/* ── Sign-in half ─────────────────────────────────────────────── */}
+      <div className="flex min-h-screen items-center justify-center px-5 py-12 sm:px-10">
+        <div className="w-full max-w-[400px]">
+          {/* Logo — car orbiting a destination pin */}
+          <div className="tlc-logo mx-auto mb-5">
+            <div className="tlc-ring" />
+            <MapPin size={19} className="tlc-pin" aria-hidden="true" />
+            <div className="tlc-orbit"><MiniCar /></div>
+          </div>
 
-        <h2 className="tlc-rise text-center text-[22px] sm:text-[25px] font-bold text-slate-900 tracking-tight" style={{ animationDelay: '.12s' }}>
-          Nepal Tours &amp; Travels
-        </h2>
-        <p className="tlc-rise text-center text-[13.5px] text-slate-500 mt-1.5 mb-5" style={{ animationDelay: '.2s' }}>
-          Sign in to manage your CRM account
-        </p>
+          <h1 className="tlc-rise text-center text-[24px] sm:text-[27px] font-extrabold text-slate-900 tracking-tight" style={{ animationDelay: '.12s' }}>
+            Nepal Tours &amp; Travels
+          </h1>
+          <p className="tlc-rise text-center text-[13.5px] text-slate-500 mt-1.5 mb-2" style={{ animationDelay: '.2s' }}>
+            Sign in to manage your CRM account
+          </p>
 
-        {/* Segmented role control with sliding thumb */}
-        <div className="tlc-seg tlc-rise" style={{ animationDelay: '.28s' }}>
-          <div className="tlc-thumb" style={{ transform: `translateX(${roleIndex * 100}%)` }} />
-          {ROLES.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              onClick={() => { stopAutoDemo(); switchRole(r.key); }}
-              className={`tlc-segbtn text-[11.5px] sm:text-[13px] ${activeRole === r.key ? 'active' : ''}`}
+          {/* Backend error banner */}
+          {errorMessage && (
+            <div
+              className={`mt-5 px-3.5 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[13px] font-medium flex items-center justify-center gap-2 text-center ${bannerShake ? 'tlc-shakeb' : ''}`}
+              onAnimationEnd={() => setBannerShake(false)}
+              role="alert"
+              aria-live="assertive"
             >
-              {r.label}
+              <AlertCircle size={15} className="shrink-0" />
+              {errorMessage}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate className="mt-5">
+            {/* Email — floating label + live validation */}
+            <div
+              className={`tlc-field tlc-rise mb-4 ${emailValid ? 'valid' : ''} ${emailInvalid ? 'invalid' : ''} ${emailShake ? 'shake' : ''}`}
+              style={{ animationDelay: '.38s' }}
+              onAnimationEnd={() => setEmailShake(false)}
+            >
+              <div className="tlc-control">
+                <Mail size={19} className="tlc-ico" />
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  autoComplete="email"
+                  spellCheck="false"
+                  placeholder=" "
+                  aria-invalid={emailInvalid}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setEmail(v);
+                    setEmailInvalid(v.length > 0 && !EMAIL_RE.test(v));
+                  }}
+                  className="tlc-input"
+                />
+                <label htmlFor="login-email">Email address</label>
+                <Check size={19} className="tlc-vcheck" aria-hidden="true" />
+              </div>
+              <div className="tlc-err"><AlertCircle size={13} /> Enter a valid email address</div>
+            </div>
+
+            {/* Password — floating label + visibility toggle */}
+            <div
+              className={`tlc-field tlc-rise mb-5 ${pwValid ? 'valid' : ''} ${pwInvalid ? 'invalid' : ''} ${pwShake ? 'shake' : ''}`}
+              style={{ animationDelay: '.46s' }}
+              onAnimationEnd={() => setPwShake(false)}
+            >
+              <div className="tlc-control">
+                <Lock size={19} className="tlc-ico" />
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  autoComplete="current-password"
+                  placeholder=" "
+                  aria-invalid={pwInvalid}
+                  onChange={(e) => { setPassword(e.target.value); setPwInvalid(false); }}
+                  className="tlc-input pr-12"
+                />
+                <label htmlFor="login-password">Password</label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="tlc-toggle"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                </button>
+              </div>
+              <div className="tlc-err"><AlertCircle size={13} /> Password is required</div>
+            </div>
+
+            {/* Submit — gradient, loading spinner, success checkmark */}
+            <button
+              type="submit"
+              disabled={loading || success}
+              className={`tlc-btn tlc-rise w-full ${success ? 'success' : ''}`}
+              style={{ animationDelay: '.62s' }}
+            >
+              {loading ? (
+                <>
+                  <span className="w-5 h-5 border-[2.5px] border-white/40 border-t-white rounded-full animate-spin" />
+                  Signing in…
+                </>
+              ) : success ? (
+                <>
+                  <Check size={20} className="tlc-pop" />
+                  Success
+                </>
+              ) : (
+                'Log In'
+              )}
             </button>
-          ))}
+          </form>
+
+          {/* Quiet bridge to the platform realm — deliberately understated. */}
+          <p className="tlc-rise mt-8 text-center text-[12.5px] text-slate-400" style={{ animationDelay: '.7s' }}>
+            <ShieldCheck size={13} className="inline-block -mt-0.5 mr-1" aria-hidden="true" />
+            Platform operator?{' '}
+            <Link
+              to="/superadmin/login"
+              className="font-semibold text-slate-500 underline-offset-2 hover:text-blue-600 hover:underline rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Sign in to the console
+            </Link>
+          </p>
         </div>
-
-        {/* Road + car that drives to the selected role */}
-        <div ref={trackRef} className="tlc-rise relative h-9 mt-1 mb-4 mx-0.5" style={{ animationDelay: '.32s' }}>
-          <div className="tlc-road"><div className="tlc-dash" /></div>
-          <div
-            className={`tlc-car ${carMoving ? 'moving' : ''}`}
-            style={{ transform: `translateX(${carX}px)`, transition: ready ? undefined : 'none' }}
-            onTransitionEnd={(e) => { if (e.propertyName === 'transform') setCarMoving(false); }}
-          >
-            <span className={`tlc-flip ${facingLeft ? 'left' : ''}`}>
-              <span className="tlc-zoom" aria-hidden="true"><span /><span /></span>
-              <RoadCar />
-            </span>
-          </div>
-        </div>
-
-        {/* Backend error banner */}
-        {errorMessage && (
-          <div
-            className={`mb-4 px-3.5 py-3 rounded-xl bg-red-50/90 border border-red-200 text-red-600 text-[13px] font-medium flex items-center justify-center gap-2 text-center ${bannerShake ? 'tlc-shakeb' : ''}`}
-            onAnimationEnd={() => setBannerShake(false)}
-            role="alert"
-          >
-            <AlertCircle size={15} className="shrink-0" />
-            {errorMessage}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Email — floating label + live validation */}
-          <div
-            className={`tlc-field tlc-rise mb-4 ${emailValid ? 'valid' : ''} ${emailInvalid ? 'invalid' : ''} ${emailShake ? 'shake' : ''}`}
-            style={{ animationDelay: '.38s' }}
-            onAnimationEnd={() => setEmailShake(false)}
-          >
-            <div className="tlc-control">
-              <Mail size={19} className="tlc-ico" />
-              <input
-                id="login-email"
-                type="email"
-                value={email}
-                autoComplete="email"
-                spellCheck="false"
-                placeholder=" "
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setEmail(v);
-                  setEmailInvalid(v.length > 0 && !EMAIL_RE.test(v));
-                }}
-                className="tlc-input"
-              />
-              <label htmlFor="login-email">{currentRole.label} email</label>
-              <Check size={19} className="tlc-vcheck" aria-hidden="true" />
-            </div>
-            <div className="tlc-err"><AlertCircle size={13} /> Enter a valid email address</div>
-          </div>
-
-          {/* Password — floating label + visibility toggle */}
-          <div
-            className={`tlc-field tlc-rise mb-4 ${pwValid ? 'valid' : ''} ${pwInvalid ? 'invalid' : ''} ${pwShake ? 'shake' : ''}`}
-            style={{ animationDelay: '.46s' }}
-            onAnimationEnd={() => setPwShake(false)}
-          >
-            <div className="tlc-control">
-              <Lock size={19} className="tlc-ico" />
-              <input
-                id="login-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                autoComplete="current-password"
-                placeholder=" "
-                onChange={(e) => { setPassword(e.target.value); setPwInvalid(false); }}
-                className="tlc-input pr-12"
-              />
-              <label htmlFor="login-password">Password</label>
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="tlc-toggle"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-              </button>
-            </div>
-            <div className="tlc-err"><AlertCircle size={13} /> Password is required</div>
-          </div>
-
-          {/* Remember + forgot */}
-          {/* <div className="tlc-rise flex items-center justify-between mt-0.5 mb-5" style={{ animationDelay: '.54s' }}>
-            <label className="tlc-check" htmlFor="remember-me">
-              <input id="remember-me" type="checkbox" />
-              <span className="tlc-box"><Check size={13} /></span>
-              <span className="text-[13px] text-slate-600 select-none">Remember this device</span>
-            </label>
-            <button type="button" className="tlc-link">Forgot password?</button>
-          </div> */}
-
-          {/* Submit — gradient, loading spinner, success checkmark */}
-          <button
-            type="submit"
-            disabled={loading || success}
-            className={`tlc-btn tlc-rise w-full ${success ? 'success' : ''}`}
-            style={{ animationDelay: '.62s' }}
-          >
-            {loading ? (
-              <>
-                <span className="w-5 h-5 border-[2.5px] border-white/40 border-t-white rounded-full animate-spin" />
-                Signing in…
-              </>
-            ) : success ? (
-              <>
-                <Check size={20} className="tlc-pop" />
-                Success
-              </>
-            ) : (
-              `Log In as ${currentRole.label}`
-            )}
-          </button>
-        </form>
       </div>
 
+      {/* ── Showcase half — full-bleed, product proof + agency services ── */}
+      <aside className="relative hidden overflow-hidden bg-slate-950 px-12 py-14 lg:flex lg:flex-col lg:justify-center xl:px-16">
+        <div className="tlc-glow" aria-hidden="true" />
+        <div className="tlc-dots" aria-hidden="true" />
+
+        <div className="relative z-10 mx-auto w-full max-w-[460px]">
+          <p className="tlc-in text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-300/80" style={{ animationDelay: '.15s' }}>
+            Why agencies run TravelCRM
+          </p>
+          <h2 className="tlc-in mt-3 text-[28px] font-extrabold leading-[1.22] tracking-tight text-white xl:text-[31px]" style={{ animationDelay: '.24s' }}>
+            Everything between a lead and a boarding pass.
+          </h2>
+
+          <ul className="mt-9 space-y-5">
+            {FEATURES.map(({ Icon, title, copy }, i) => (
+              <li key={title} className="tlc-feat tlc-in flex gap-4" style={{ animationDelay: `${0.36 + i * 0.09}s` }}>
+                <span className="tlc-chip flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10 ring-1 ring-amber-400/25">
+                  <Icon size={16} className="text-amber-400" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-[14.5px] font-semibold text-white">{title}</h3>
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-slate-400">{copy}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="tlc-in mt-9 flex items-center gap-3" style={{ animationDelay: '.78s' }}>
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Also from Veto Tech
+            </span>
+            <span className="tlc-rule h-px flex-1 bg-slate-800" aria-hidden="true" />
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {SERVICES.map(({ Icon, label }, i) => (
+              <div
+                key={label}
+                className="tlc-svc tlc-in rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 text-center"
+                style={{ animationDelay: `${0.86 + i * 0.08}s` }}
+              >
+                <Icon size={17} className="tlc-svc-ico mx-auto text-amber-400" aria-hidden="true" />
+                <p className="mt-2 text-[11.5px] font-medium leading-tight text-slate-300">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="tlc-in mt-8 flex items-center gap-2 text-[12.5px] text-slate-400" style={{ animationDelay: '1.12s' }}>
+            <ArrowRight size={14} className="tlc-nudge shrink-0 text-amber-400" aria-hidden="true" />
+            Need a website, campaign or custom build?{' '}
+            <a
+              href="mailto:vetotechit@gmail.com"
+              className="font-semibold text-slate-200 underline-offset-2 hover:text-amber-400 hover:underline rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            >
+              Talk to us
+            </a>
+          </p>
+        </div>
+      </aside>
     </div>
   );
 };
 
 /* ------------------------- Component styles ------------------------- */
 const styles = `
-.tlc-card{border-radius:24px;background:#FFFFFF;border:1px solid #E2E8F0;box-shadow:0 24px 60px -14px rgba(15,23,42,.12),0 8px 24px -10px rgba(15,23,42,.08);animation:tlcCardIn .7s cubic-bezier(.16,1,.3,1) both}
-@keyframes tlcCardIn{from{opacity:0;transform:translateY(26px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
 .tlc-rise{animation:tlcRise .6s ease-out both}
 @keyframes tlcRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Showcase entrance — each element drifts up and in, staggered by inline animationDelay. */
+.tlc-in{animation:tlcIn .65s cubic-bezier(.16,1,.3,1) both}
+@keyframes tlcIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* Showcase atmosphere — a blue/indigo bloom over a slowly drifting dot grid. */
+.tlc-glow{position:absolute;inset:0;background:radial-gradient(680px circle at 22% 14%,rgba(37,99,235,.30),transparent 62%),radial-gradient(560px circle at 88% 88%,rgba(79,70,229,.24),transparent 60%);animation:tlcBloom 11s ease-in-out infinite alternate}
+@keyframes tlcBloom{from{opacity:.75;transform:scale(1)}to{opacity:1;transform:scale(1.06)}}
+.tlc-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(148,163,184,.13) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 88%);mask-image:linear-gradient(180deg,#000 0%,transparent 88%);animation:tlcDrift 26s linear infinite}
+@keyframes tlcDrift{to{background-position:22px 22px}}
+
+/* Feature rows — the amber chip lifts and warms as the row is hovered. */
+.tlc-chip{transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .3s,box-shadow .3s}
+.tlc-feat:hover .tlc-chip{transform:translateY(-2px) scale(1.06);background:rgba(251,191,36,.16);box-shadow:0 8px 18px -8px rgba(251,191,36,.5)}
+
+/* The rule beside "Also from Veto Tech" draws itself in. */
+.tlc-rule{transform-origin:left;animation:tlcRule .7s cubic-bezier(.16,1,.3,1) 1s both}
+@keyframes tlcRule{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Service cards — lift on hover, icon pops. */
+.tlc-svc{transition:transform .25s ease,border-color .25s,background .25s,box-shadow .25s}
+.tlc-svc:hover{transform:translateY(-3px);border-color:#334155;background:#0F172A;box-shadow:0 14px 28px -14px rgba(0,0,0,.9)}
+.tlc-svc-ico{transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.tlc-svc:hover .tlc-svc-ico{transform:scale(1.18)}
+
+/* The contact arrow nudges forever — a small invitation to click. */
+.tlc-nudge{animation:tlcNudge 1.9s ease-in-out infinite}
+@keyframes tlcNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
 
 .tlc-logo{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);position:relative;box-shadow:0 12px 26px -6px rgba(37,99,235,.55);animation:tlcFloat 4.5s ease-in-out infinite}
 .tlc-logo::after{content:'';position:absolute;inset:-8px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#4F46E5);filter:blur(15px);opacity:.35;z-index:-1;animation:tlcGlowP 3.2s ease-in-out infinite}
@@ -408,41 +392,20 @@ const styles = `
 @keyframes tlcOrbit{to{transform:rotate(360deg)}}
 .tlc-minicar{position:absolute;top:3px;left:50%;transform:translateX(-50%);display:block}
 .tlc-minicar .tlc-wheel{animation:tlcWheel .35s linear infinite}
-
-.tlc-seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);background:#F1F5F9;border-radius:14px;padding:5px}
-.tlc-thumb{position:absolute;top:5px;left:5px;height:calc(100% - 10px);width:calc((100% - 10px)/3);background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(15,23,42,.09);transition:transform .7s cubic-bezier(.45,.05,.35,1)}
-.tlc-segbtn{position:relative;z-index:1;border:none;background:transparent;height:38px;font-weight:500;color:#64748B;cursor:pointer;transition:color .3s;font-family:inherit;border-radius:10px}
-.tlc-segbtn.active{color:#2563EB;font-weight:600}
-.tlc-segbtn:focus-visible{outline:2px solid #2563EB;outline-offset:-2px}
-
-.tlc-road{position:absolute;left:0;right:0;bottom:0;height:8px;border-radius:6px;background:#E2E8F0;overflow:hidden}
-.tlc-dash{position:absolute;left:0;right:0;top:3px;height:2px;background:repeating-linear-gradient(90deg,#fff 0 8px,transparent 8px 18px);opacity:.9}
-.tlc-car{position:absolute;bottom:6px;left:0;width:48px;transition:transform .7s cubic-bezier(.45,.05,.35,1);will-change:transform}
-.tlc-flip{display:block;transition:transform .22s}
-.tlc-flip.left{transform:scaleX(-1)}
 .tlc-wheel{transform-box:fill-box;transform-origin:center}
-.tlc-car.moving .tlc-wheel{animation:tlcWheel .4s linear infinite}
 @keyframes tlcWheel{to{transform:rotate(360deg)}}
-.tlc-car.moving .tlc-body{animation:tlcBob .26s ease-in-out infinite alternate}
-@keyframes tlcBob{from{transform:translateY(0)}to{transform:translateY(-1px)}}
-.tlc-zoom{position:absolute;left:-15px;top:9px;width:12px;opacity:0}
-.tlc-zoom span{display:block;height:2px;border-radius:2px;background:#94A3B8;margin:3px 0}
-.tlc-zoom span:first-child{width:12px}
-.tlc-zoom span:last-child{width:8px;margin-left:4px}
-.tlc-car.moving .tlc-zoom{animation:tlcZoomF .3s linear infinite}
-@keyframes tlcZoomF{0%{opacity:0;transform:translateX(2px)}40%{opacity:.8}100%{opacity:0;transform:translateX(-6px)}}
 
 .tlc-control{position:relative;height:52px}
 .tlc-ico{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#94A3B8;pointer-events:none;transition:color .25s}
-.tlc-input{width:100%;height:52px;border-radius:14px;border:1.6px solid #E2E8F0;background:rgba(255,255,255,.55);padding:0 46px;font-size:14.5px;color:#0F172A;outline:none;transition:border-color .25s,box-shadow .25s,background .25s;font-family:inherit}
-.tlc-input:focus{border-color:#2563EB;box-shadow:0 0 0 4px rgba(37,99,235,.12);background:#fff}
+.tlc-input{width:100%;height:52px;border-radius:14px;border:1.6px solid #E2E8F0;background:#FFFFFF;padding:0 46px;font-size:14.5px;color:#0F172A;outline:none;transition:border-color .25s,box-shadow .25s;font-family:inherit}
+.tlc-input:focus{border-color:#2563EB;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
 .tlc-field label{position:absolute;left:44px;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:14.5px;pointer-events:none;padding:0 5px;transition:all .2s ease;white-space:nowrap}
 .tlc-input:focus + label,.tlc-input:not(:placeholder-shown) + label{top:0;left:40px;transform:translateY(-50%) scale(.8);color:#2563EB;background:#fff;border-radius:4px}
-.tlc-field.valid .tlc-input{border-color:#22C55E;background:#fff}
+.tlc-field.valid .tlc-input{border-color:#22C55E}
 .tlc-field.valid .tlc-ico{color:#22C55E}
 .tlc-vcheck{position:absolute;right:16px;top:50%;transform:translateY(-50%) scale(0);color:#22C55E;transition:transform .3s cubic-bezier(.68,-.55,.27,1.55)}
 .tlc-field.valid .tlc-vcheck{transform:translateY(-50%) scale(1)}
-.tlc-field.invalid .tlc-input{border-color:#EF4444;box-shadow:0 0 0 4px rgba(239,68,68,.12);background:#fff}
+.tlc-field.invalid .tlc-input{border-color:#EF4444;box-shadow:0 0 0 4px rgba(239,68,68,.12)}
 .tlc-field.invalid .tlc-ico{color:#EF4444}
 .tlc-field.invalid .tlc-vcheck{transform:translateY(-50%) scale(0)}
 .tlc-err{color:#EF4444;font-size:12px;margin:6px 4px 0;display:flex;align-items:center;gap:5px;opacity:0;max-height:0;overflow:hidden;transition:opacity .2s}
@@ -452,19 +415,13 @@ const styles = `
 @keyframes tlcShake{0%,100%{transform:translateX(0)}18%,58%{transform:translateX(-6px)}38%,78%{transform:translateX(6px)}}
 .tlc-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#94A3B8;cursor:pointer;padding:8px;border-radius:9px;display:flex;transition:color .2s,background .2s;font-family:inherit}
 .tlc-toggle:hover{color:#475569;background:rgba(15,23,42,.05)}
+.tlc-toggle:focus-visible{outline:2px solid #2563EB;outline-offset:1px}
 
-.tlc-check{display:inline-flex;align-items:center;gap:9px;cursor:pointer}
-.tlc-check input{position:absolute;opacity:0;width:0;height:0}
-.tlc-box{width:20px;height:20px;border-radius:6px;border:1.6px solid #CBD5E1;display:flex;align-items:center;justify-content:center;background:#fff;transition:all .25s;color:#fff;flex-shrink:0}
-.tlc-box svg{transform:scale(0);transition:transform .25s cubic-bezier(.68,-.55,.27,1.55)}
-.tlc-check input:checked + .tlc-box{background:linear-gradient(135deg,#2563EB,#4F46E5);border-color:#4F46E5}
-.tlc-check input:checked + .tlc-box svg{transform:scale(1)}
-.tlc-check input:focus-visible + .tlc-box{box-shadow:0 0 0 3px rgba(37,99,235,.25)}
-
-.tlc-link{color:#2563EB;font-size:13px;font-weight:500;border:none;padding:0 0 1px;cursor:pointer;background-color:transparent;background-image:linear-gradient(#2563EB,#2563EB);background-size:0 1.5px;background-repeat:no-repeat;background-position:left bottom;transition:background-size .3s;font-family:inherit}
-.tlc-link:hover{background-size:100% 1.5px}
-
-.tlc-btn{height:52px;border:none;border-radius:14px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:#fff;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 10px 22px -6px rgba(37,99,235,.5);transition:transform .2s,box-shadow .2s,filter .2s,background .3s;font-family:inherit}
+.tlc-btn{position:relative;overflow:hidden;height:52px;border:none;border-radius:14px;background:linear-gradient(135deg,#2563EB,#4F46E5);color:#fff;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 10px 22px -6px rgba(37,99,235,.5);transition:transform .2s,box-shadow .2s,filter .2s,background .3s;font-family:inherit}
+/* Light sweeps across the button on hover. */
+.tlc-btn::after{content:'';position:absolute;top:0;bottom:0;left:-60%;width:45%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-20deg);opacity:0}
+.tlc-btn:hover:not(:disabled)::after{animation:tlcSheen .85s ease-out}
+@keyframes tlcSheen{0%{left:-60%;opacity:1}100%{left:120%;opacity:0}}
 .tlc-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 16px 30px -6px rgba(37,99,235,.55);filter:brightness(1.06)}
 .tlc-btn:active:not(:disabled){transform:translateY(0) scale(.98)}
 .tlc-btn:focus-visible{outline:2px solid #1D4ED8;outline-offset:3px}
@@ -474,8 +431,13 @@ const styles = `
 @keyframes tlcPop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
 
 @media (prefers-reduced-motion:reduce){
-  .tlc-logo,.tlc-logo::after,.tlc-orbit,.tlc-minicar .tlc-wheel,.tlc-card,.tlc-rise{animation:none!important}
-  .tlc-car,.tlc-thumb,.tlc-flip{transition-duration:.01ms!important}
+  .tlc-logo,.tlc-logo::after,.tlc-orbit,.tlc-minicar .tlc-wheel,.tlc-rise,.tlc-pop,
+  .tlc-in,.tlc-glow,.tlc-dots,.tlc-nudge,.tlc-btn:hover:not(:disabled)::after{animation:none!important}
+  /* Entrance animations fill "both" — with the keyframes off they must not stay hidden. */
+  .tlc-in,.tlc-rise{opacity:1!important;transform:none!important}
+  .tlc-rule{animation:none!important;transform:scaleX(1)!important}
+  .tlc-btn,.tlc-chip,.tlc-svc,.tlc-svc-ico{transition-duration:.01ms!important}
+  .tlc-btn:hover:not(:disabled),.tlc-svc:hover{transform:none!important}
 }
 `;
 

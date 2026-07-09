@@ -1,0 +1,207 @@
+import { useCallback, useEffect, useState } from "react";
+import {
+  Loader2, AlertTriangle, CheckCircle2, ShieldAlert, Save, Settings2, Power,
+} from "lucide-react";
+import { configService } from "../api/configService";
+
+const inputCls =
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-heading placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus";
+
+export default function GlobalConfig() {
+  const [enabled, setEnabled] = useState(false);
+  const [message, setMessage] = useState("");
+  const [config, setConfig] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [savingMaint, setSavingMaint] = useState(false);
+  const [edits, setEdits] = useState({});
+  const [savingKey, setSavingKey] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((type, msg) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [m, c] = await Promise.all([configService.getMaintenance(), configService.listConfig()]);
+      setEnabled(!!m.enabled);
+      setMessage(m.message || "");
+      setConfig(Array.isArray(c) ? c : []);
+    } catch {
+      showToast("error", "Failed to load config");
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveMaintenance = async (nextEnabled) => {
+    setSavingMaint(true);
+    try {
+      const res = await configService.setMaintenance(nextEnabled, message);
+      setEnabled(!!res.enabled);
+      setMessage(res.message || "");
+      showToast("success", nextEnabled ? "Maintenance mode ENABLED" : "Maintenance mode disabled");
+      load();
+    } catch (e) {
+      showToast("error", e?.response?.data?.message || "Save failed");
+    } finally {
+      setSavingMaint(false);
+    }
+  };
+
+  const saveConfigRow = async (key) => {
+    setSavingKey(key);
+    try {
+      await configService.setConfig(key, edits[key]);
+      showToast("success", `Saved ${key}`);
+      setEdits((e) => { const n = { ...e }; delete n[key]; return n; });
+      load();
+    } catch (e) {
+      showToast("error", e?.response?.data?.message || "Save failed");
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-heading">Global Config</h1>
+        <p className="text-sm text-body">Platform-wide settings and the tenant-app maintenance switch.</p>
+      </div>
+
+      {loading ? (
+        <div className="py-16 text-center text-muted"><Loader2 size={20} className="mx-auto animate-spin" /></div>
+      ) : (
+        <>
+          {/* ── Maintenance mode ── */}
+          <section
+            className={`rounded-xl border p-5 ${
+              enabled ? "border-red-500/40 bg-red-500/5" : "border-border bg-surface"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                  enabled ? "bg-red-500/15 text-red-500" : "bg-accent-soft text-accent-soft-text"}`}>
+                  <Power size={18} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-heading">Maintenance Mode</h2>
+                  <p className="mt-0.5 max-w-xl text-xs text-muted">
+                    When ON, every tenant user gets a 503 with the message below. The console and login stay reachable.
+                  </p>
+                </div>
+              </div>
+              <button
+                role="switch"
+                aria-checked={enabled}
+                onClick={() => saveMaintenance(!enabled)}
+                disabled={savingMaint}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
+                  enabled ? "bg-red-500" : "bg-border-strong"
+                }`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+              </button>
+            </div>
+
+            {enabled && (
+              <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-600">
+                <ShieldAlert size={14} /> The tenant app is currently DOWN for all users.
+              </div>
+            )}
+
+            <div className="mt-4">
+              <label className="mb-1 block text-xs font-semibold text-muted">Message shown to tenants</label>
+              <textarea
+                rows={2}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="We'll be back shortly…"
+                className={inputCls}
+              />
+              <div className="mt-2 flex justify-end">
+                <button
+                  onClick={() => saveMaintenance(enabled)}
+                  disabled={savingMaint}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body hover:bg-surface-hover disabled:opacity-60"
+                >
+                  {savingMaint ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Save message
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Raw config ── */}
+          <section className="overflow-hidden rounded-xl border border-border bg-surface">
+            <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+              <Settings2 size={15} className="text-muted" />
+              <h2 className="text-sm font-bold text-heading">All settings</h2>
+            </div>
+            {config.length === 0 ? (
+              <p className="px-4 py-10 text-center text-sm text-muted">
+                No settings yet. Toggling maintenance creates the first entries.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-left text-sm">
+                  <thead className="border-b border-border bg-surface-hover text-xs uppercase tracking-wide text-muted">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Key</th>
+                      <th className="px-4 py-3 font-semibold">Value</th>
+                      <th className="px-4 py-3 text-right font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {config.map((c) => {
+                      const dirty = edits[c.key] !== undefined && edits[c.key] !== c.value;
+                      return (
+                        <tr key={c.key} className="align-top hover:bg-surface-hover/60">
+                          <td className="px-4 py-3">
+                            <div className="font-mono text-xs font-semibold text-heading">{c.key}</div>
+                            {c.description && <div className="mt-0.5 text-xs text-muted">{c.description}</div>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              value={edits[c.key] ?? c.value ?? ""}
+                              onChange={(e) => setEdits((prev) => ({ ...prev, [c.key]: e.target.value }))}
+                              className={inputCls}
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => saveConfigRow(c.key)}
+                              disabled={!dirty || savingKey === c.key}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-40"
+                            >
+                              {savingKey === c.key ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg ${
+          toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
+        }`}>
+          {toast.type === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  );
+}

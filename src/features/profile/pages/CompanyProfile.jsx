@@ -4,6 +4,7 @@ import {
   companyService,
   taxRateService,
 } from "@features/settings";
+import { hasPermission, P } from "@shared/lib/access";
 import { Pen as FiEdit2, Save as FiSave, MapPin as FiMapPin, Calendar as FiCalendar, Key as FiKey, ChevronDown as FiChevronDown, Upload as FiUpload, Plus as FiPlus, Trash2 as FiTrash2, TriangleAlert as FiAlertTriangle, Info as FiInfo, CircleCheck as FiCheckCircle, RefreshCw as FiRefreshCw, ExternalLink as FiExternalLink, CircleAlert as FiAlertCircle, Building2 as FaBuilding, ReceiptText as FaFileInvoiceDollar, Crown as FaCrown, BriefcaseBusiness as MdBusinessCenter, Building as MdLocationCity, Sparkles as HiSparkles } from "lucide-react";
 
 
@@ -32,12 +33,16 @@ const INDIAN_STATES = [
 const TAX_TYPES    = ["GST","TCS","TDS","Service Tax","VAT","Other"];
 const CALCULATIONS = ["Additive","Inclusive","Exclusive"];
 
+// Every tenant user can view this page — the backend serves GET /api/company,
+// /subscription, /ai-credits and /api/tax-rates to any authenticated user. Writes need
+// SETTINGS_MANAGE, so the "edit" tab is filtered out for everyone else rather than
+// offering them a Save button that would 403.
 const TABS = [
-  { id:"overview",  label:"Company Details"   },
-  { id:"edit",      label:"Edit Profile"      },
-  { id:"business",  label:"Business Info"     },
-  { id:"address",   label:"Address"           },
-  { id:"tax",       label:"Tax Configuration" },
+  { id:"overview",  label:"Company Details",   manageOnly:false },
+  { id:"edit",      label:"Edit Profile",      manageOnly:true  },
+  { id:"business",  label:"Business Info",     manageOnly:false },
+  { id:"address",   label:"Address",           manageOnly:false },
+  { id:"tax",       label:"Tax Configuration", manageOnly:false },
 ];
 
 /* ─── HELPERS ────────────────────────────────────────────────── */
@@ -308,26 +313,34 @@ function Sidebar({
    ADMIN SETTINGS PANEL (reused across multiple tabs)
 ══════════════════════════════════════════════════════════════ */
 function AdminSettings() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  // Only a user who can actually reach /Users should be told they administer the company.
+  const canManageUsers = hasPermission(P.USER_READ);
+
   return (
     <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden"
       style={{animation:"fadeUp .5s ease both"}}>
       <div className="bg-gradient-to-r from-amber-500 to-orange-400 px-5 py-3 flex items-center gap-2">
         <FiKey className="w-4 h-4 text-white"/>
-        <span className="text-sm font-extrabold text-white">Admin Settings</span>
+        <span className="text-sm font-extrabold text-white">
+          {canManageUsers ? "Admin Settings" : "Account"}
+        </span>
       </div>
       <div className="p-5">
         <p className="text-sm font-bold text-slate-700 mb-0.5">Account Information</p>
         <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-          You are logged in as a company administrator. You can manage your company profile,
-          users, and access all features available in your subscription plan.
+          {canManageUsers
+            ? "You are logged in as a company administrator. You can manage your company profile, users, and access all features available in your subscription plan."
+            : "You are signed in to your company workspace. Company details are shown here for reference — contact your administrator to change them."}
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onClick={() => navigate("/Users")}
-            className="flex items-center justify-center gap-2.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700
-            text-white font-bold text-sm transition-all shadow-md shadow-blue-200 hover:shadow-lg">
-            <FiKey className="w-4 h-4"/> Manage Users
-          </button>
+        <div className={`grid grid-cols-1 gap-3 ${canManageUsers ? "sm:grid-cols-2" : ""}`}>
+          {canManageUsers && (
+            <button onClick={() => navigate("/Users")}
+              className="flex items-center justify-center gap-2.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700
+              text-white font-bold text-sm transition-all shadow-md shadow-blue-200 hover:shadow-lg">
+              <FiKey className="w-4 h-4"/> Manage Users
+            </button>
+          )}
           <button
               onClick={() => navigate("/ChangePassword")}
               className="flex items-center justify-center gap-2.5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600
@@ -691,7 +704,7 @@ function AddressTab({ company }) {
 /* ══════════════════════════════════════════════════════════════
    TAB 5 — TAX CONFIGURATION
 ══════════════════════════════════════════════════════════════ */
-function TaxConfigTab({ showToast }) {
+function TaxConfigTab({ showToast, canManage }) {
   const [rates, setRates] = useState([]);
   const [form,   setForm]   = useState({type:"",rate:"",calculation:"Additive",effectiveFrom:"",description:""});
   const [errs,   setErrs]   = useState({});
@@ -797,7 +810,11 @@ const handleDelete = async (id) => {
         {rates.length===0 ? (
           <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-xl px-4 py-3 flex items-center gap-3">
             <FiInfo className="w-4 h-4 text-white flex-shrink-0"/>
-            <p className="text-sm text-white font-medium">No active tax rates configured. Add a new rate below.</p>
+            <p className="text-sm text-white font-medium">
+              {canManage
+                ? "No active tax rates configured. Add a new rate below."
+                : "No active tax rates configured."}
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -813,7 +830,7 @@ const handleDelete = async (id) => {
                   {r.effectiveFrom&&<span className="text-xs text-slate-400">From {r.effectiveFrom}</span>}
                   {r.description&&<span className="text-xs text-slate-400 italic truncate">{r.description}</span>}
                 </div>
-                {delId===r.id ? (
+                {canManage && (delId===r.id ? (
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       onClick={() => handleDelete(r.id)}
@@ -832,14 +849,15 @@ const handleDelete = async (id) => {
                       flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 flex-shrink-0">
                     <FiTrash2 className="w-3.5 h-3.5"/>
                   </button>
-                )}
+                ))}
               </div>
             ))}
           </div>
         )}
       </SectionCard>
 
-      {/* Add new */}
+      {/* Add new — SETTINGS_MANAGE only; POST /api/tax-rates rejects everyone else. */}
+      {canManage && (
       <SectionCard title="Add New Tax Rate" icon={<FiPlus className="w-4 h-4"/>} delay={40}>
         {/* Warning */}
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
@@ -902,6 +920,7 @@ const handleDelete = async (id) => {
           Add Tax Rate
         </button>
       </SectionCard>
+      )}
 
       <AdminSettings/>
     </div>
@@ -913,6 +932,9 @@ const handleDelete = async (id) => {
 ══════════════════════════════════════════════════════════════ */
 export default function CompanyProfile() {
   const navigate   = useNavigate();
+  // Viewable by every tenant user; only SETTINGS_MANAGE holders see the write affordances.
+  const canManage  = hasPermission(P.SETTINGS_MANAGE);
+  const visibleTabs = TABS.filter(t => canManage || !t.manageOnly);
   const [activeTab, setActiveTab] = useState("overview");
   const [company, setCompany] = useState(INITIAL_COMPANY);
   const [subscription, setSubscription] = useState(null);
@@ -982,9 +1004,16 @@ export default function CompanyProfile() {
                   <span className="hidden sm:inline text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">
                     {company.prefix}
                   </span>
+                  {!canManage && (
+                    <span className="hidden sm:inline text-xs bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">
+                      View only
+                    </span>
+                  )}
                 </h1>
                 <p className="text-sm text-slate-400 mt-0.5">
-                  Manage company details, branding, address &amp; tax configuration
+                  {canManage
+                    ? "Manage company details, branding, address & tax configuration"
+                    : "Company details, branding, address & tax configuration"}
                   <span className="hidden sm:inline ml-3 text-slate-300">|</span>
                   <span className="hidden sm:inline ml-3 text-xs">
                     <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={()=>navigate("/")}>Home</span>
@@ -996,11 +1025,13 @@ export default function CompanyProfile() {
                 </p>
               </div>
             </div>
-            <button onClick={()=>setActiveTab("edit")}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold
-                shadow-md shadow-blue-200 hover:shadow-lg transition-all w-full sm:w-auto">
-              <FiEdit2 className="w-3.5 h-3.5"/> Edit Profile
-            </button>
+            {canManage && (
+              <button onClick={()=>setActiveTab("edit")}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold
+                  shadow-md shadow-blue-200 hover:shadow-lg transition-all w-full sm:w-auto">
+                <FiEdit2 className="w-3.5 h-3.5"/> Edit Profile
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1041,7 +1072,7 @@ export default function CompanyProfile() {
               <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm fade-up p-1.5">
                 <div className="overflow-x-auto">
                   <div className="flex min-w-max gap-1">
-                    {TABS.map(tab=>(
+                    {visibleTabs.map(tab=>(
                       <button key={tab.id} onClick={()=>setActiveTab(tab.id)}
                         className={`px-4 sm:px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all
                           ${activeTab===tab.id
@@ -1056,10 +1087,10 @@ export default function CompanyProfile() {
 
               {/* TAB CONTENT */}
               {activeTab==="overview"  && <OverviewTab    company={company} aiCredits={aiCredits}/>}
-              {activeTab==="edit"      && <EditProfileTab  company={company} onSave={setCompany} showToast={showToast}/>}
+              {activeTab==="edit"      && canManage && <EditProfileTab company={company} onSave={setCompany} showToast={showToast}/>}
               {activeTab==="business"  && <BusinessInfoTab company={company}/>}
               {activeTab==="address"   && <AddressTab      company={company}/>}
-              {activeTab==="tax"       && <TaxConfigTab    showToast={showToast}/>}
+              {activeTab==="tax"       && <TaxConfigTab    showToast={showToast} canManage={canManage}/>}
 
             </div>
           </div>
