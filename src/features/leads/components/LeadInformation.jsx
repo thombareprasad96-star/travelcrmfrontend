@@ -23,6 +23,45 @@ const stageColors = {
   "Lost":          "bg-red-100    text-red-700",
 };
 
+/* ── Resolve logged-in user (for Assign To auto-select) ───────
+   Login ke waqt user/token jahan store hota hai wahan se identity
+   nikaalta hai. Common localStorage patterns + JWT payload fallback
+   dono try karta hai.
+   TODO: agar aapka auth kisi aur key ya util mein user rakhta hai
+   (e.g. authService.getCurrentUser()), yaha adjust kar lena. */
+function getLoggedInIdentity() {
+  // 1) Common localStorage user objects
+  const userKeys = ["user", "authUser", "currentUser", "loggedInUser"];
+  for (const k of userKeys) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const u = JSON.parse(raw);
+      if (u && (u.publicId || u.userId || u.id || u.username || u.email)) {
+        return {
+          publicId: u.publicId || u.userId || u.id || null,
+          username: u.username || u.email || u.fullName || null,
+        };
+      }
+    } catch { /* bad JSON — try next key */ }
+  }
+  // 2) Fallback: decode JWT payload (Spring Security mein sub = username/email)
+  const tokenKeys = ["token", "accessToken", "authToken", "jwt"];
+  for (const k of tokenKeys) {
+    const token = localStorage.getItem(k);
+    if (!token || token.split(".").length !== 3) continue;
+    try {
+      const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(atob(b64));
+      return {
+        publicId: payload.publicId || payload.userId || null,
+        username: payload.sub || payload.username || payload.email || null,
+      };
+    } catch { /* invalid token — try next key */ }
+  }
+  return { publicId: null, username: null };
+}
+
 function FieldWrapper({ label, required, icon: Icon, error, children }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -86,6 +125,29 @@ export default function LeadInformation({
           ? res.data
           : Array.isArray(res.data?.data) ? res.data.data : [];
         setUsers(list);
+
+        // ── AUTO-SELECT: logged-in user ko Assign To mein default set karo ──
+        // (sirf tab jab user ne pehle se kuch select nahi kiya ho)
+        if (!watch("assignedUserId") && list.length > 0) {
+          const me   = getLoggedInIdentity();
+          const norm = (s) => (s || "").toString().trim().toLowerCase();
+
+          const match = list.find((u) =>
+            (me.publicId && (u.publicId === me.publicId || u.id === me.publicId)) ||
+            (me.username && (
+              norm(u.username) === norm(me.username) ||
+              norm(u.email)    === norm(me.username) ||
+              norm(u.fullName) === norm(me.username)
+            ))
+          );
+
+          if (match) {
+            setValue("assignedUserId", match.publicId || match.id, { shouldValidate: true });
+          } else if (list.length === 1) {
+            // Solo user tenant — ek hi option hai toh wahi select kar do
+            setValue("assignedUserId", list[0].publicId || list[0].id, { shouldValidate: true });
+          }
+        }
       } catch {
         setUsersError(true);
         setUsers([]);
@@ -94,6 +156,7 @@ export default function LeadInformation({
       }
     };
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = async () => {
@@ -179,7 +242,7 @@ export default function LeadInformation({
             />
           </FieldWrapper>
 
-          {/* ── NEW: Budget field ── */}
+          {/* ── Budget field ── */}
           <FieldWrapper label="Budget (₹)" icon={FaRupeeSign} error={errors.budget?.message}>
             <InputField
               type="number"

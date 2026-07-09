@@ -62,9 +62,28 @@ export default function TravelDetails({ register, watch, setValue }) {
 
   useEffect(() => {
     geographyService.getCountries()
-      .then(setCountries)
+      .then((list) => {
+        setCountries(list);
+
+        // ── AUTO-SELECT: Departing Country = India (default) ──
+        // List load hone ke baad India ko canonical value se set karte hain
+        // taaki SearchableSelect mein properly selected dikhe. User ne agar
+        // pehle se koi doosra country choose kiya ho toh usse nahi chhedte.
+        const current = watch("departCountry");
+        if (!current || current === "India") {
+          const india = (Array.isArray(list) ? list : []).find((c) => {
+            const name = typeof c === "string" ? c : (c?.name || c?.countryName || "");
+            return name.trim().toLowerCase() === "india";
+          });
+          const value = india
+            ? (typeof india === "string" ? india : (india.name || india.countryName))
+            : "India";
+          setValue("departCountry", value, { shouldValidate: true });
+        }
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoadingCountries(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   console.log(countries)
