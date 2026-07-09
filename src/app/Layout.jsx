@@ -4,6 +4,8 @@ import Sidebar from '@app/chrome/Sidebar';
 import Navbar from '@app/chrome/Navbar';
 import AppFooter from '@app/chrome/AppFooter';
 import PageLoader from '@app/PageLoader';
+import ImpersonationBanner from '@app/chrome/ImpersonationBanner';
+import MaintenanceOverlay from '@app/chrome/MaintenanceOverlay';
 
 const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
   // Default state ko ab false rakha hai taaki mobile par pehle se open na mile
@@ -14,8 +16,11 @@ const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 relative">
-      
+    <div className="flex h-screen flex-col overflow-hidden">
+      <MaintenanceOverlay />
+      <ImpersonationBanner />
+      <div className="flex flex-1 overflow-hidden bg-gray-50 relative">
+
       {/* --- MOBILE OVERLAY START --- */}
       {/* Yeh sirf mobile (md:hidden) par dikhega jab sidebar open hoga. Ispe click karne se sidebar band ho jayega */}
       {isSidebarExpanded && (
@@ -40,6 +45,7 @@ const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
           </Suspense>
 <AppFooter/>
         </main>
+      </div>
       </div>
     </div>
   );

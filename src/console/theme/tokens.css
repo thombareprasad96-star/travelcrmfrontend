@@ -1,0 +1,139 @@
+/* ============================================================================
+   PLATFORM CONSOLE — semantic token layer (Tailwind v4, CSS-first)
+   ----------------------------------------------------------------------------
+   Deliberately SEPARATE from the tenant app (tenant = blue-600). Every value is
+   scoped under `.sa-console`, so these tokens and this palette can NEVER leak
+   into the tenant UI, and the tenant UI's utilities are unaffected here.
+
+   Identity = a modern VIOLET → FUCHSIA console on an indigo-tinted slate base.
+   Dark mode = a `.dark` class on the console root (toggled by ConsoleThemeProvider).
+   Components consume the semantic utilities generated below (bg-surface,
+   text-heading, bg-accent, border-border, ring-focus, the hue chips …) plus the
+   raw --sa-gradient / --sa-card-shadow vars for flair — never raw slate/white for
+   structural colour.
+   ============================================================================ */
+
+/* Enable `dark:` variants driven by a `.dark` class (self or ancestor). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Raw semantic values — LIGHT (default) ───────────────────────────────── */
+.sa-console {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+
+  --sa-page:            #f5f5fb; /* indigo-tinted slate-50   */
+  --sa-surface:         #ffffff; /* white                    */
+  --sa-surface-hover:   #f1f0fa; /* violet-tinted slate-100  */
+  --sa-sidebar:         #ffffff; /* white                    */
+  --sa-border:          #e7e5f2; /* violet-tinted slate-200  */
+  --sa-border-strong:   #d3cfe6; /* violet-tinted slate-300  */
+  --sa-text-heading:    #17143a; /* deep indigo              */
+  --sa-text-body:       #514c70; /* indigo-slate             */
+  --sa-text-muted:      #948eb0; /* muted indigo             */
+  --sa-accent:          #7c3aed; /* violet-600               */
+  --sa-accent-hover:    #6d28d9; /* violet-700               */
+  --sa-accent-text:     #ffffff;
+  --sa-accent-soft-bg:  #f1ebfe; /* violet-100-ish           */
+  --sa-accent-soft-txt: #6d28d9; /* violet-700               */
+  --sa-focus-ring:      #8b5cf6; /* violet-500               */
+
+  /* Brand flourishes (logo, wordmark, hero CTAs) + card depth */
+  --sa-gradient:      linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #db2777 100%);
+  --sa-gradient-soft: linear-gradient(135deg, #f1ebfe 0%, #fbe8f3 100%);
+  --sa-card-shadow:   0 1px 2px rgb(23 20 58 / 0.05), 0 10px 26px -14px rgb(76 29 149 / 0.16);
+
+  /* Hue chips — KPI tiles / iconography (soft bg + strong fg) */
+  --sa-hue-violet:  #7c3aed; --sa-hue-violet-soft:  #efe8fe;
+  --sa-hue-indigo:  #4f46e5; --sa-hue-indigo-soft:  #e6e8fd;
+  --sa-hue-sky:     #0284c7; --sa-hue-sky-soft:     #dcf0fd;
+  --sa-hue-emerald: #059669; --sa-hue-emerald-soft: #d4f5e7;
+  --sa-hue-amber:   #d97706; --sa-hue-amber-soft:   #fdefc8;
+  --sa-hue-rose:    #e11d48; --sa-hue-rose-soft:    #ffe0e9;
+}
+
+/* ── Raw semantic values — DARK (class on the console root or an ancestor) ── */
+.sa-console.dark,
+.dark .sa-console {
+  color-scheme: dark;
+
+  --sa-page:            #0a0a17;                /* deep indigo-black */
+  --sa-surface:         #15132b;                /* indigo-slate 900  */
+  --sa-surface-hover:   rgb(139 92 246 / 0.10); /* violet wash       */
+  --sa-sidebar:         #100e22;                /* indigo-slate 950  */
+  --sa-border:          #272443;                /* indigo-slate 800  */
+  --sa-border-strong:   #3a3560;                /* indigo-slate 700  */
+  --sa-text-heading:    #f3f1ff;
+  --sa-text-body:       #b4aed6;
+  --sa-text-muted:      #7b749f;
+  --sa-accent:          #8b5cf6;                /* violet-500        */
+  --sa-accent-hover:    #a78bfa;                /* violet-400        */
+  --sa-accent-text:     #ffffff;
+  --sa-accent-soft-bg:  rgb(139 92 246 / 0.16); /* violet-500/16     */
+  --sa-accent-soft-txt: #c4b5fd;                /* violet-300        */
+  --sa-focus-ring:      #a78bfa;                /* violet-400        */
+
+  --sa-gradient:      linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #ec4899 100%);
+  --sa-gradient-soft: linear-gradient(135deg, rgb(139 92 246 / 0.18) 0%, rgb(236 72 153 / 0.14) 100%);
+  --sa-card-shadow:   0 1px 2px rgb(0 0 0 / 0.30), 0 10px 30px -14px rgb(0 0 0 / 0.60);
+
+  --sa-hue-violet:  #c4b5fd; --sa-hue-violet-soft:  rgb(139 92 246 / 0.16);
+  --sa-hue-indigo:  #a5b4fc; --sa-hue-indigo-soft:  rgb(99 102 241 / 0.16);
+  --sa-hue-sky:     #7dd3fc; --sa-hue-sky-soft:     rgb(14 165 233 / 0.16);
+  --sa-hue-emerald: #6ee7b7; --sa-hue-emerald-soft: rgb(16 185 129 / 0.16);
+  --sa-hue-amber:   #fcd34d; --sa-hue-amber-soft:   rgb(245 158 11 / 0.16);
+  --sa-hue-rose:    #fda4af; --sa-hue-rose-soft:    rgb(244 63 94 / 0.16);
+}
+
+/* ── Map raw values → Tailwind color utilities ───────────────────────────────
+   `inline` makes each utility reference the var (not a copied value), so the same
+   class resolves to the light or dark value depending on the .dark scope.
+   Generates the bg-, text-, border- and ring- utilities for each name below. */
+@theme inline {
+  --color-page:             var(--sa-page);
+  --color-surface:          var(--sa-surface);
+  --color-surface-hover:    var(--sa-surface-hover);
+  --color-sidebar:          var(--sa-sidebar);
+  --color-border:           var(--sa-border);
+  --color-border-strong:    var(--sa-border-strong);
+  --color-heading:          var(--sa-text-heading);
+  --color-body:             var(--sa-text-body);
+  --color-muted:            var(--sa-text-muted);
+  --color-accent:           var(--sa-accent);
+  --color-accent-hover:     var(--sa-accent-hover);
+  --color-accent-text:      var(--sa-accent-text);
+  --color-accent-soft:      var(--sa-accent-soft-bg);
+  --color-accent-soft-text: var(--sa-accent-soft-txt);
+  --color-focus:            var(--sa-focus-ring);
+
+  --color-hue-violet:       var(--sa-hue-violet);
+  --color-hue-violet-soft:  var(--sa-hue-violet-soft);
+  --color-hue-indigo:       var(--sa-hue-indigo);
+  --color-hue-indigo-soft:  var(--sa-hue-indigo-soft);
+  --color-hue-sky:          var(--sa-hue-sky);
+  --color-hue-sky-soft:     var(--sa-hue-sky-soft);
+  --color-hue-emerald:      var(--sa-hue-emerald);
+  --color-hue-emerald-soft: var(--sa-hue-emerald-soft);
+  --color-hue-amber:        var(--sa-hue-amber);
+  --color-hue-amber-soft:   var(--sa-hue-amber-soft);
+  --color-hue-rose:         var(--sa-hue-rose);
+  --color-hue-rose-soft:    var(--sa-hue-rose-soft);
+}
+
+/* Console-only mono face → `font-console`. Deliberately NOT Tailwind's `font-mono`, so a
+   tenant page that uses font-mono is unaffected. Mono is the console's typographic tell:
+   eyebrows, capability labels, indices and status strips. The tenant app never uses it. */
+@theme {
+  --font-console: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* The console's entire motion budget: one restrained fade-up on mount. */
+@keyframes sa-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.sa-console .sa-fade-in { animation: sa-fade-in 0.32s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-console .sa-fade-in { animation: none; }
+}

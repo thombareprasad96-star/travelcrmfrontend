@@ -140,30 +140,69 @@ const notificationService = {
   },
 
   // ── SSE: live push from server ───────────────────────────────────────────
-  // EventSource can't set Authorization header, so token is passed as query param.
-  // Backend validates it in a HandlerInterceptor before upgrading to SSE.
+  // EventSource can't set an Authorization header, so the JWT is passed as a query
+  // param. The token is embedded in the URL, so the browser's built-in auto-reconnect
+  // would reuse a STALE token forever (→ endless 401s after it expires). Instead we
+  // self-manage reconnection: on a permanently-closed connection we rebuild the
+  // EventSource with a FRESH token read from storage, and back off between attempts.
+  // Returns a handle with the same { close() } contract the caller already relies on.
   subscribeToSSE(onNotification, onError) {
-    const token = localStorage.getItem('token');
-    const url   = `${BASE}/stream?token=${encodeURIComponent(token)}`;
-    const es    = new EventSource(url);
+    let es = null;
+    let stopped = false;
+    let retryTimer = null;
+    let backoff = 3000;              // 3s, doubles each failure, capped
+    const MAX_BACKOFF = 30000;
 
-    // Backend sends named events: SseEmitter.event().name("notification").data(...)
-    // Named SSE events do NOT fire onmessage — must use addEventListener
-    es.addEventListener('notification', (e) => {
-      try {
-        const notification = JSON.parse(e.data);
-        onNotification(notification);
-      } catch (err) {
-        console.error('[SSE] Parse error:', err);
-      }
-    });
-
-    es.onerror = (err) => {
-      console.warn('[SSE] Connection error — browser will auto-reconnect');
-      onError?.(err);
+    const cleanup = () => {
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+      if (es) { try { es.close(); } catch { /* noop */ } es = null; }
     };
 
-    return es; // caller must call es.close() on unmount
+    const scheduleReconnect = () => {
+      if (stopped || retryTimer) return;
+      // Logged out — nothing to reconnect with; stop cleanly.
+      if (!localStorage.getItem('token')) { cleanup(); return; }
+      retryTimer = setTimeout(() => { retryTimer = null; connect(); }, backoff);
+      backoff = Math.min(backoff * 2, MAX_BACKOFF);
+    };
+
+    const connect = () => {
+      if (stopped) return;
+      const token = localStorage.getItem('token');
+      if (!token) { cleanup(); return; }   // not logged in — don't open a socket
+
+      if (es) { try { es.close(); } catch { /* noop */ } }
+      es = new EventSource(`${BASE}/stream?token=${encodeURIComponent(token)}`);
+
+      // Backend sends named events: SseEmitter.event().name("notification").data(...)
+      // Named SSE events do NOT fire onmessage — must use addEventListener.
+      es.addEventListener('notification', (e) => {
+        try {
+          onNotification(JSON.parse(e.data));
+        } catch (err) {
+          console.error('[SSE] Parse error:', err);
+        }
+      });
+
+      es.onopen = () => { backoff = 3000; };  // reset backoff once connected
+
+      es.onerror = (err) => {
+        onError?.(err);
+        // Transient blip → readyState CONNECTING; let the browser retry (token still valid).
+        // Permanently CLOSED (e.g. a 401 from an expired token) → the browser won't recover
+        // with the stale URL token, so reconnect ourselves with a fresh one.
+        if (es && es.readyState === EventSource.CLOSED) {
+          console.warn('[SSE] Connection closed — reconnecting with a fresh token');
+          scheduleReconnect();
+        }
+      };
+    };
+
+    connect();
+
+    return {
+      close() { stopped = true; cleanup(); },
+    };
   },
 };
 

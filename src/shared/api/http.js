@@ -43,6 +43,7 @@ API.interceptors.response.use(
     if (status === 401 && !isAuthRequest) {
       // Token expired or invalid — redirect to login
       localStorage.removeItem("token");
+      localStorage.removeItem("tenantModules");
       window.location.href = "/login";
     }
 
@@ -52,6 +53,13 @@ API.interceptors.response.use(
 
     if (status === 500) {
       console.error("Server error:", message);
+    }
+
+    if (status === 503) {
+      // Maintenance mode — surface a full-screen overlay instead of a broken page.
+      // (MaintenanceOverlay listens for this event and mirrors it in sessionStorage.)
+      sessionStorage.setItem("app:maintenance", message);
+      window.dispatchEvent(new CustomEvent("app:maintenance", { detail: { message } }));
     }
 
     console.error(`API Error [${status}]:`, message);
