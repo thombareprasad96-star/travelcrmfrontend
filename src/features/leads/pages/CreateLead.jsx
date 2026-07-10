@@ -1,8 +1,10 @@
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft as FiArrowLeft, Save as FiSave, CircleCheck as FiCheckCircle, CircleAlert as FiAlertCircle, Loader as FiLoader, FileText as FiFileText } from "lucide-react";
+import { ArrowLeft as FiArrowLeft, Save as FiSave, CircleCheck as FiCheckCircle, Loader as FiLoader, FileText as FiFileText } from "lucide-react";
 import { leadService } from "../api/leadService";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, getFieldErrors, isAlreadyReported } from "@shared/api/apiError";
 
 import LeadInformation from "../components/LeadInformation";
 import TravelDetails from "../components/TravelDetails";
@@ -12,28 +14,11 @@ import LeadSummary from "../components/LeadSummary";
 
 let nextId = 1;
 
-function Toast({ type, message, onClose }) {
-  const styles = {
-    success: "bg-green-50 border-green-200 text-green-800",
-    error: "bg-red-50 border-red-200 text-red-800",
-  };
-  const Icon = type === "success" ? FiCheckCircle : FiAlertCircle;
-  return (
-    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg max-w-sm
-      ${styles[type]} animate-slide-in`}
-    >
-      <Icon className="w-5 h-5 flex-shrink-0" />
-      <p className="text-sm font-medium flex-1">{message}</p>
-      <button onClick={onClose} className="text-current opacity-60 hover:opacity-100 ml-2 text-lg leading-none">×</button>
-    </div>
-  );
-}
-
 export default function CreateLead() {
   const navigate = useNavigate();
 
   const {
-    register, handleSubmit, watch, setValue,
+    register, handleSubmit, watch, setValue, setError, getValues,
     formState: { errors },
     reset,
   } = useForm({
@@ -59,13 +44,11 @@ export default function CreateLead() {
   const [itinerary, setItinerary] = useState([{ id: nextId++, destination: "", city: "", nights: 2 }]);
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
-  const [toast, setToast] = useState(null);
   const [searching, setSearching] = useState(false);
 
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
+  // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
+  // Argument order is (message, type) everywhere — see shared/ui/toast.jsx.
+  const { showToast } = useToast();
 
   const toggleService = useCallback((id) => {
     setSelectedServices((prev) =>
@@ -85,9 +68,24 @@ export default function CreateLead() {
     setItinerary((prev) => prev.map((r) => r.id === id ? { ...r, [field]: value } : r));
   };
 
+  /**
+   * A 400 VALIDATION_ERROR carries `fieldErrors`, and those belong beside the input that caused
+   * them — never in a toast. Anything the form doesn't actually render (an unknown key, or a
+   * non-validation failure) still has to be said out loud, so that falls back to the toast.
+   */
+  const applyServerFieldErrors = (error, fallback) => {
+    const fieldErrors = getFieldErrors(error) || {};
+    const formFields = getValues();
+    const inline = Object.keys(fieldErrors).filter((name) => name in formFields);
+
+    inline.forEach((name) => setError(name, { type: "server", message: fieldErrors[name] }));
+
+    if (inline.length === 0) showToast(getErrorMessage(error, fallback), "error");
+  };
+
   const onSubmit = async (data) => {
     if (selectedServices.length === 0) {
-      showToast("error", "Please select at least one service.");
+      showToast("Please select at least one service.", "error");
       return;
     }
 
@@ -109,10 +107,7 @@ export default function CreateLead() {
 
       console.log("Lead Created:", response.data);
 
-      showToast(
-        "success",
-        `Lead for "${data.customerName}" created successfully!`
-      );
+      showToast(`Lead for "${data.customerName}" created successfully!`, "success");
 
       reset();
       setSelectedServices(["hotel"]);
@@ -122,11 +117,9 @@ export default function CreateLead() {
       setTimeout(() => navigate("/allleads"), 1200);
 
     } catch (error) {
-      const msg =
-        error?.response?.data?.message ||
-        "Failed to create lead. Try again.";
+      if (isAlreadyReported(error)) return;   // the interceptor's toast already said it
 
-      showToast("error", msg);
+      applyServerFieldErrors(error, "Failed to create lead. Try again.");
 
     } finally {
       setSubmitting(false);
@@ -139,7 +132,7 @@ export default function CreateLead() {
     await new Promise((r) => setTimeout(r, 1000));
     console.log("Draft saved:", data);
     setSavingDraft(false);
-    showToast("success", "Draft saved successfully!");
+    showToast("Draft saved successfully!", "success");
   };
 
   const handlePhoneSearch = async (phone) => {
@@ -161,16 +154,19 @@ export default function CreateLead() {
       // ── prefill budget on phone-match too ──
       if (lead.budget != null) setValue("budget", lead.budget);
 
-      showToast(
-        "success",
-        `Lead found: ${lead.customerName}`
-      );
+      showToast(`Lead found: ${lead.customerName}`, "success");
 
-    } catch {
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
 
+      // "No match" is the expected 404 and is not a failure the user needs alarming about.
+      // Anything else (a 400, a conflict) must not be disguised as an empty result.
+      const notFound = error?.response?.status === 404;
       showToast(
-        "error",
-        "No existing lead found for this phone number."
+        notFound
+          ? "No existing lead found for this phone number."
+          : getErrorMessage(error, "Couldn't search by phone number."),
+        notFound ? "info" : "error"
       );
 
     } finally {
@@ -180,8 +176,6 @@ export default function CreateLead() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
-
       {/* Page Header */}
       <div className="bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">

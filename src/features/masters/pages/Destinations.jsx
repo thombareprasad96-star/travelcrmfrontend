@@ -3,6 +3,8 @@ import { Search, Plus, Eye, Edit, Trash2, Map, Globe, Image as ImageIcon, X, Che
 import { Link } from 'react-router-dom';
 import { destinationService, uploadImageToCloudinary } from "../api/DestinationService";
 import { geographyService } from "@shared/api/geographyService";
+import { getErrorMessage } from "@shared/api/apiError";
+import { toast } from "@shared/ui/toast";
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
@@ -133,7 +135,7 @@ const DestinationMaster = () => {
       setImagePreview(secureUrl);
     } catch (err) {
       console.error('Cloudinary upload failed:', err);
-      setUploadError(err.message || 'Image upload failed. Please try again.');
+      setUploadError(getErrorMessage(err, 'Image upload failed. Please try again.'));
       setImagePreview(null);
       setFormData(prev => ({ ...prev, imagePath: '' }));
     } finally {
@@ -264,7 +266,7 @@ const DestinationMaster = () => {
       await loadDestinations();
     } catch (error) {
       console.error('Error deleting destination:', error);
-      alert(error.response?.data?.message || 'Failed to delete destination.');
+      toast.error(getErrorMessage(error, 'Failed to delete destination.'));
     }
   };
 

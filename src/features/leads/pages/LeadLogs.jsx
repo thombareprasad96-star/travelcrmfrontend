@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Plus as FiPlus, List as FiList, Calendar as FiCalendar, MessageSquare as FiMessageSquare, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, ClipboardList as FaClipboardList, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight } from "lucide-react";
 
 
 import { leadService } from "../api/leadService";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 
 /* Format backend timestamps to the strings this page already renders. */
 const fmtLogDateTime = (iso) => {
@@ -33,25 +35,6 @@ const STAGE_CFG = {
 
 const STAGE_DEF = { bg:"bg-slate-400", text:"text-white" };
 
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function Toast({ msg, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3800);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-sm
-      ${type === "success"
-        ? "bg-green-50 border-green-200 text-green-800"
-        : "bg-red-50 border-red-200 text-red-800"}`}
-      style={{ animation: "slideIn .3s ease both" }}>
-      <span className="text-lg">{type === "success" ? "✅" : "❌"}</span>
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg ml-1">×</button>
-    </div>
-  );
-}
-
 /* ─── SKELETON ROW ───────────────────────────────────────────── */
 function SkeletonRow() {
   return (
@@ -75,11 +58,11 @@ export default function LeadLogs() {
 
   const [logs,       setLogs]       = useState([]);
   const [loading,    setLoading]    = useState(true);
-  const [toast,      setToast]      = useState(null);
   const [page,       setPage]       = useState(1);
   const perPage = 10;
 
-  const showToast = useCallback((msg, type = "success") => setToast({ msg, type }), []);
+  // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
+  const { showToast } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -99,8 +82,10 @@ export default function LeadLogs() {
         if (active) setLogs(mapped);
       })
       .catch((err) => {
-        console.error("Failed to load lead logs:", err);
-        if (active) { setLogs([]); showToast("Failed to load logs. Please try again.", "error"); }
+        if (!active) return;
+        setLogs([]);
+        if (isAlreadyReported(err)) return;   // <ToastHost/> already showed it
+        showToast(getErrorMessage(err, "Failed to load logs. Please try again."), "error");
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -123,8 +108,6 @@ export default function LeadLogs() {
         ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px}
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
       `}</style>
-
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">

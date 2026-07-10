@@ -25,12 +25,19 @@ export default function ImpersonationBanner() {
   const exit = async () => {
     setExiting(true);
     try {
-      await fetch(`${API_BASE}/impersonation/end`, {
+      const res = await fetch(`${API_BASE}/impersonation/end`, {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-    } catch {
+      // fetch resolves on 4xx/5xx, so without this a failed call looked identical to a successful
+      // one. The local session is cleared either way — but a silent failure leaves the server-side
+      // impersonation audit record open, which is exactly the thing an audit trail exists to catch.
+      if (!res.ok) {
+        console.warn(`Failed to close impersonation session server-side (${res.status}).`);
+      }
+    } catch (err) {
       /* best-effort audit — still clear the session below */
+      console.warn("Failed to reach the impersonation-end endpoint.", err);
     }
     ["token", "userEmail", "userRole", "impersonation"].forEach((k) => localStorage.removeItem(k));
     window.location.href = "/console/users";

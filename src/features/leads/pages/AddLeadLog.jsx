@@ -14,32 +14,15 @@
 //   - Toast + validation
 // ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Save as FiSave, ArrowLeft as FiArrowLeft, Eye as FiEye, List as FiList, CircleAlert as FiAlertCircle, Phone as FiPhone, Calendar as FiCalendar, ClipboardList as FaClipboardList, Bell as FaBell } from "lucide-react";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 
 
 // ── Uncomment when backend ready ─────────────────────────────
 // import leadLogsService from "../api/leadLogsService";
-
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function Toast({ msg, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3800);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-sm
-      ${type === "success"
-        ? "bg-green-50 border-green-200 text-green-800"
-        : "bg-red-50 border-red-200 text-red-800"}`}
-      style={{ animation: "slideIn .3s ease both" }}>
-      <span className="text-lg">{type === "success" ? "✅" : "❌"}</span>
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg ml-1">×</button>
-    </div>
-  );
-}
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function AddLeadLog() {
@@ -59,9 +42,9 @@ export default function AddLeadLog() {
   const [followDate, setFollowDate] = useState("");
   const [errs,       setErrs]       = useState({});
   const [saving,     setSaving]     = useState(false);
-  const [toast,      setToast]      = useState(null);
 
-  const showToast = useCallback((msg, type = "success") => setToast({ msg, type }), []);
+  // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
+  const { showToast } = useToast();
 
   /* validation */
   const validate = () => {
@@ -100,10 +83,8 @@ export default function AddLeadLog() {
         navigate(`/LeadLogs/${id}?name=${encodeURIComponent(leadName)}`);
       }, 1500);
     } catch (err) {
-      showToast(
-        err?.response?.data?.message || "Failed to save log. Please try again.",
-        "error"
-      );
+      if (isAlreadyReported(err)) return;   // the interceptor's toast already said it
+      showToast(getErrorMessage(err, "Failed to save log. Please try again."), "error");
     } finally {
       setSaving(false);
     }
@@ -131,8 +112,6 @@ export default function AddLeadLog() {
         ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px}
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
       `}</style>
-
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">

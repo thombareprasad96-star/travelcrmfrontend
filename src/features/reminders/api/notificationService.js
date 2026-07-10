@@ -105,7 +105,12 @@ const notificationService = {
     const res = await fetch(`${BASE}?page=${page}&size=${size}`, {
       headers: authHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch notifications');
+    // Messages thrown from here reach the user verbatim (see shared/api/apiError.js), so they read
+    // like copy rather than like a log line. The status goes to the console, not the toast.
+    if (!res.ok) {
+      console.warn(`GET ${BASE} failed with ${res.status}`);
+      throw new Error("Couldn't load notifications.");
+    }
     const body = await res.json();
     return { content: body.data ?? [] };
   },
@@ -124,19 +129,30 @@ const notificationService = {
   },
 
   // ── Mark single notification as read ────────────────────────────────────
+  // `fetch` does NOT reject on 4xx/5xx — it only rejects on a transport failure. Without an
+  // explicit res.ok check these two resolved successfully against a 401 or a 500, so the bell
+  // cleared locally while the server never recorded the read, and the count came back on refresh.
   async markRead(publicId) {
-    await fetch(`${BASE}/${publicId}/read`, {
+    const res = await fetch(`${BASE}/${publicId}/read`, {
       method: 'PUT',
       headers: authHeaders(),
     });
+    if (!res.ok) {
+      console.warn(`PUT ${BASE}/${publicId}/read failed with ${res.status}`);
+      throw new Error("Couldn't mark that notification as read.");
+    }
   },
 
   // ── Mark all as read ────────────────────────────────────────────────────
   async markAllRead() {
-    await fetch(`${BASE}/mark-all-read`, {
+    const res = await fetch(`${BASE}/mark-all-read`, {
       method: 'PUT',
       headers: authHeaders(),
     });
+    if (!res.ok) {
+      console.warn(`PUT ${BASE}/mark-all-read failed with ${res.status}`);
+      throw new Error("Couldn't mark notifications as read.");
+    }
   },
 
   // ── SSE: live push from server ───────────────────────────────────────────

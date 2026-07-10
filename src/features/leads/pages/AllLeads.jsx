@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { leadService } from "../api/leadService";
 import { quotationService } from "@features/quotation";
 import { hasPermission, P } from "@shared/lib/access";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 import AccessDenied from "../components/AccessDenied";
 import { formatToWhatsAppLink } from "../lib/whatsapp";
 import WhatsAppPanel from "./WhatsAppPanel";
@@ -10,7 +12,7 @@ import {
   Users, Trophy, PieChart, TrendingUp, Search,
   DownloadCloud, FileText, Plus,
   Inbox, User, Calendar, ChevronDown, ChevronRight,
-  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, XCircle, Copy, BarChart3, ArrowRightLeft, MessageCircle, NotebookPen, Bell, AlertCircle, DollarSign
+  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, Copy, BarChart3, ArrowRightLeft, MessageCircle, NotebookPen, Bell, AlertCircle, DollarSign
 } from 'lucide-react';
 import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
 import { Link } from 'react-router-dom';
@@ -240,22 +242,6 @@ function SkeletonRow() {
       {[...Array(7)].map((_, i) => (
         <div key={i} className="h-4 rounded-lg bg-slate-200 animate-pulse mx-1" style={{ width: `${40 + Math.random() * 50}%` }} />
       ))}
-    </div>
-  );
-}
-
-/* ─── TOAST ──────────────────────────────────────────── */
-function Toast({ msg, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
-  return (
-    <div
-      className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-xs
-        ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}
-      style={{ animation: 'slideIn .3s ease both' }}
-    >
-      {type === 'success' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 ml-1"><X size={16} /></button>
     </div>
   );
 }
@@ -819,7 +805,7 @@ const QUOTE_STAGE_PILL = {
   Rejected: 'bg-red-100 text-red-700 border-red-200',
 };
 
-function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
+function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
   const navigate = useNavigate();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -831,16 +817,18 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
   const [analyticsQ, setAnalyticsQ] = useState(null);   // quotation shown in the weblink-analytics modal
   const [deletingId, setDeletingId] = useState(null);   // quotation being deleted
 
+  const { showToast } = useToast();
+
   const removeQuotation = async (q) => {
     if (!window.confirm(`Delete quotation ${q.version || ''}? This cannot be undone.`)) return;
     try {
       setDeletingId(q.publicId);
       await quotationService.deleteQuotation(q.publicId);
       setList(prev => prev.filter(x => x.publicId !== q.publicId));
-      onToast?.('Quotation deleted.', 'success');
+      showToast('Quotation deleted.', 'success');
     } catch (e) {
-      console.error('Delete quotation failed:', e);
-      onToast?.(e?.response?.data?.message || 'Failed to delete quotation.', 'error');
+      if (isAlreadyReported(e)) return;   // <ToastHost/> already showed it
+      showToast(getErrorMessage(e, 'Failed to delete quotation.'), 'error');
     } finally {
       setDeletingId(null);
     }
@@ -860,8 +848,9 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
         data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         if (active) setList(data);
       } catch (e) {
-        console.error('Failed to load quotations:', e);
-        if (active) setError('Could not load quotations. Please try again.');
+        // An inline banner, not a toast — it explains the empty list in place, so it is shown
+        // even for errors the interceptor already toasted.
+        if (active) setError(getErrorMessage(e, 'Could not load quotations. Please try again.'));
       } finally {
         if (active) setLoading(false);
       }
@@ -882,7 +871,10 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      console.error('PDF download failed:', e);
+      // Was console-only: the button just stopped spinning and the user was left guessing.
+      // The response is a Blob here, so there is no envelope to read — the fallback carries it.
+      if (isAlreadyReported(e)) return;
+      showToast(getErrorMessage(e, 'Could not download the PDF. Please try again.'), 'error');
     } finally {
       setDownloading(null);
     }
@@ -896,10 +888,11 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
     try {
       await navigator.clipboard.writeText(webLink(q));
       setCopied(true);
-      onToast?.('Link copied to clipboard', 'success');
+      showToast('Link copied to clipboard', 'success');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      onToast?.('Could not copy the link.', 'error');
+      // navigator.clipboard, not axios — a denied permission or an insecure origin. No envelope.
+      showToast('Could not copy the link.', 'error');
     }
   };
 
@@ -917,7 +910,7 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
   // Email — sends the PDF to the lead's email via the backend, with the web link in the body.
   // Confirmed first (outward action).
   const shareEmail = async (q) => {
-    if (!lead.email) { onToast?.('This lead has no email address.', 'error'); return; }
+    if (!lead.email) { showToast('This lead has no email address.', 'error'); return; }
     if (!window.confirm(`Send quotation ${q.version || ''} to ${lead.email}?`)) return;
     const url = webLink(q);
     try {
@@ -927,10 +920,12 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
         subject: `Travel Quotation ${q.version || ''}`.trim(),
         message: `Dear ${lead.customerName || 'Customer'},\n\nView your travel quotation online: ${url}\n\n(A PDF copy is attached.)\n\nRegards,\nTeam`,
       });
-      onToast?.(`Quotation emailed to ${lead.email}`, 'success');
+      showToast(`Quotation emailed to ${lead.email}`, 'success');
     } catch (e) {
-      console.error('Email share failed:', e);
-      onToast?.('Failed to send the email.', 'error');
+      // A mail failure comes back as a 502 whose copy the server wrote ("We couldn't send that
+      // email…"), so it lands in the interceptor's INTERNAL_ERROR branch and is already toasted.
+      if (isAlreadyReported(e)) return;
+      showToast(getErrorMessage(e, 'Failed to send the email.'), 'error');
     } finally {
       setEmailing(null);
     }
@@ -1065,7 +1060,7 @@ function QuotationsModal({ lead, onClose, onToast, canDelete, canEdit }) {
 /* ─── ADD LOG MODAL ──────────────────────────────────── */
 /* Popup version of the old AddLeadLog page: read-only current stage + hint, inline field
    validation, and an amber follow-up box that auto-creates a reminder assigned to you. */
-function AddLogModal({ lead, onClose, onToast }) {
+function AddLogModal({ lead, onClose }) {
   const [comment, setComment] = useState('');
   const [createReminder, setCreateReminder] = useState(false);
   const [followUpDate, setFollowUpDate] = useState('');
@@ -1073,6 +1068,8 @@ function AddLogModal({ lead, onClose, onToast }) {
   const [saving, setSaving] = useState(false);
   const leadId = lead.publicId || lead.id;
   const today = new Date().toISOString().slice(0, 10);
+
+  const { showToast } = useToast();
 
   const validate = () => {
     const e = {};
@@ -1084,15 +1081,15 @@ function AddLogModal({ lead, onClose, onToast }) {
 
   const submit = async () => {
     const e = validate();
-    if (Object.keys(e).length) { setErrs(e); onToast?.('Please fix the errors below.', 'error'); return; }
+    if (Object.keys(e).length) { setErrs(e); showToast('Please fix the errors below.', 'error'); return; }
     try {
       setSaving(true);
       await leadService.addLog(leadId, { comment, createReminder, followUpDate, stage: lead.leadStage });
-      onToast?.('Log saved successfully!', 'success');
+      showToast('Log saved successfully!', 'success');
       onClose();
     } catch (err) {
-      console.error('Add log failed:', err);
-      onToast?.(err?.response?.data?.message || 'Failed to save log. Please try again.', 'error');
+      if (isAlreadyReported(err)) return;   // <ToastHost/> already showed it
+      showToast(getErrorMessage(err, 'Failed to save log. Please try again.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -1179,12 +1176,14 @@ function AddLogModal({ lead, onClose, onToast }) {
 }
 
 /* ─── LOGS LIST MODAL (all activity logs for one lead) ─── */
-function LogsModal({ lead, onClose, onToast, canDelete }) {
+function LogsModal({ lead, onClose, canDelete }) {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const leadId = lead.publicId || lead.id;
+
+  const { showToast } = useToast();
 
   const remove = async (logEntry) => {
     if (!window.confirm('Delete this log entry? This cannot be undone.')) return;
@@ -1192,10 +1191,10 @@ function LogsModal({ lead, onClose, onToast, canDelete }) {
       setDeletingId(logEntry.id);
       await leadService.deleteLog(leadId, logEntry.id);
       setList(prev => prev.filter(l => l.id !== logEntry.id));
-      onToast?.('Log deleted.', 'success');
+      showToast('Log deleted.', 'success');
     } catch (e) {
-      console.error('Delete log failed:', e);
-      onToast?.(e?.response?.data?.message || 'Failed to delete log.', 'error');
+      if (isAlreadyReported(e)) return;   // <ToastHost/> already showed it
+      showToast(getErrorMessage(e, 'Failed to delete log.'), 'error');
     } finally {
       setDeletingId(null);
     }
@@ -1213,8 +1212,8 @@ function LogsModal({ lead, onClose, onToast, canDelete }) {
         data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         if (active) setList(data);
       } catch (e) {
-        console.error('Failed to load logs:', e);
-        if (active) setError('Could not load logs. Please try again.');
+        // Inline banner, not a toast — it explains the empty list in place.
+        if (active) setError(getErrorMessage(e, 'Could not load logs. Please try again.'));
       } finally {
         if (active) setLoading(false);
       }
@@ -1314,12 +1313,13 @@ const Leads = () => {
   const [convertLead, setConvertLead] = useState(null);
   const [logLead, setLogLead] = useState(null);
   const [logsViewLead, setLogsViewLead] = useState(null);
-  const [toast, setToast] = useState(null);
   const [waLead, setWaLead] = useState(null); // WhatsApp panel
   const isMobile = useIsMobile();
   const [denied, setDenied] = useState(false);
 
-  const showToast = (msg, type = 'success') => setToast({ msg, type });
+  // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
+  // Argument order is (message, type) everywhere — see shared/ui/toast.jsx.
+  const { showToast } = useToast();
 
   useEffect(() => { fetchLeads(); }, []);
 
@@ -1336,11 +1336,14 @@ const Leads = () => {
       }
       setLeads(data);
     } catch (err) {
-      console.error('Error fetching leads:', err);
       // A 403 here means the page was opened without LEAD_READ (e.g. by URL) —
       // show the friendly access-denied page instead of a blank list.
       if (err.response?.status === 403) setDenied(true);
       setLeads([]);
+
+      // 403 lands in isAlreadyReported too, so the interceptor's toast is the only one.
+      if (isAlreadyReported(err)) return;
+      showToast(getErrorMessage(err, 'Failed to load leads. Please try again.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -1375,8 +1378,8 @@ const Leads = () => {
       setLeads(prev => prev.map(l => l.id === leadToUpdate.id ? { ...l, leadStage: newStage } : l));
       showToast(`Lead #${leadToUpdate.id} marked as ${newStage}!`);
     } catch (err) {
-      console.error('Failed to update stage:', err);
-      showToast(err.response?.data?.message || 'Error updating lead stage. Please try again.', 'error');
+      if (isAlreadyReported(err)) return;   // <ToastHost/> already showed it
+      showToast(getErrorMessage(err, 'Error updating lead stage. Please try again.'), 'error');
     }
   };
 
@@ -1389,8 +1392,8 @@ const Leads = () => {
       showToast(`Lead #${deleteTarget.id} has been deleted.`);
       setDeleteTarget(null);
     } catch (err) {
-      console.error('Error deleting lead:', err);
-      showToast(err.response?.data?.message || 'Failed to delete lead. Please try again.', 'error');
+      if (isAlreadyReported(err)) return;   // <ToastHost/> already showed it
+      showToast(getErrorMessage(err, 'Failed to delete lead. Please try again.'), 'error');
     }
   };
 
@@ -1525,14 +1528,14 @@ const Leads = () => {
       `}</style>
 
       {waLead && <WhatsAppPanel lead={waLead} onClose={() => setWaLead(null)} />}
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
       {viewLead && <ViewLeadModal lead={viewLead} onClose={() => setViewLead(null)} onEdit={l => { setViewLead(null); handleEditNavigate(l); }} canEdit={hasPermission(P.LEAD_UPDATE)} />}
       {/* EditLeadModal removed — Edit now navigates to /EditLead/:id */}
       {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
-      {quotationsLead && <QuotationsModal lead={quotationsLead} onClose={() => setQuotationsLead(null)} onToast={showToast} canEdit={hasPermission(P.QUOTATION_UPDATE)} canDelete={hasPermission(P.QUOTATION_DELETE)} />}
-      {convertLead && <ConvertToBookingModal lead={convertLead} onClose={() => setConvertLead(null)} onConverted={handleConverted} onToast={showToast} />}
-      {logLead && <AddLogModal lead={logLead} onClose={() => setLogLead(null)} onToast={showToast} />}
-      {logsViewLead && <LogsModal lead={logsViewLead} onClose={() => setLogsViewLead(null)} onToast={showToast} canDelete={hasPermission(P.LEAD_UPDATE)} />}
+      {/* No onToast prop: every modal reaches the shared toast store directly. */}
+      {quotationsLead && <QuotationsModal lead={quotationsLead} onClose={() => setQuotationsLead(null)} canEdit={hasPermission(P.QUOTATION_UPDATE)} canDelete={hasPermission(P.QUOTATION_DELETE)} />}
+      {convertLead && <ConvertToBookingModal lead={convertLead} onClose={() => setConvertLead(null)} onConverted={handleConverted} />}
+      {logLead && <AddLogModal lead={logLead} onClose={() => setLogLead(null)} />}
+      {logsViewLead && <LogsModal lead={logsViewLead} onClose={() => setLogsViewLead(null)} canDelete={hasPermission(P.LEAD_UPDATE)} />}
 
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">

@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import { bookingService } from "@features/bookings";
 import { quotationService } from "@features/quotation";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 
 /* res.data?.data ?? res.data — the project-wide envelope unwrap */
 const unwrap = (res) => res?.data?.data ?? res?.data;
@@ -48,7 +50,7 @@ function deriveServices(q) {
  * preview that mirrors the server (GST 5% + TCS 5%). Submits to
  * POST /api/leads/{publicId}/convert-to-booking (gated by BOOKING_CREATE).
  */
-export default function ConvertToBookingModal({ lead, onClose, onConverted, onToast }) {
+export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
   const leadId = lead.publicId || lead.id;
   const leadDest = (lead.itinerary && lead.itinerary.length > 0 ? lead.itinerary[0].destination : '') || '';
 
@@ -57,6 +59,10 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted, onTo
   const [selectedQid, setSelectedQid]   = useState('');
   const [submitting, setSubmitting]     = useState(false);
   const [errors, setErrors]             = useState({});
+
+  // Toasts go straight to the shared store — no `onToast` prop, so this modal no longer
+  // depends on whichever page happened to render it.
+  const { showToast } = useToast();
 
   const [form, setForm] = useState({
     customerName:   lead.customerName || '',
@@ -88,7 +94,8 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted, onTo
           applyQuotation(def.publicId, list);
         }
       } catch (e) {
-        console.error('Failed to load quotations for conversion:', e);
+        if (!active || isAlreadyReported(e)) return;
+        showToast(getErrorMessage(e, "Couldn't load this lead's quotations."), 'error');
       } finally {
         if (active) setLoadingQuotes(false);
       }
@@ -123,7 +130,10 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted, onTo
         services:       svc.length ? svc : p.services,
       }));
     } catch (e) {
-      console.error('Failed to load quotation detail:', e);
+      // Prefill is best-effort — the summary row already seeded amount + destination, and the
+      // agent can still fill the rest by hand. Say so rather than looking silently broken.
+      if (isAlreadyReported(e)) return;
+      showToast(getErrorMessage(e, "Couldn't prefill from that quotation. Please check the fields."), 'error');
     }
   };
 
@@ -184,18 +194,14 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted, onTo
         services:       form.services,
       };
       const booking = unwrap(await bookingService.convertFromLead(leadId, payload));
-      onToast?.(`Booking ${booking?.bookingCode || ''} created from lead`, 'success');
+      showToast(`Booking ${booking?.bookingCode || ''} created from lead`, 'success');
       onConverted?.(lead, booking);
       onClose();
     } catch (err) {
-      console.error('Lead conversion failed:', err);
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.message;
-      if (status === 403) {
-        onToast?.("You don't have access to this. Please contact your administrator.", 'error');
-      } else {
-        onToast?.(msg || 'Failed to convert lead to booking. Please try again.', 'error');
-      }
+      // The hand-rolled 403 branch is gone: the interceptor owns PERMISSION_DENIED and has
+      // already toasted it, in copy kept byte-identical to the server's.
+      if (isAlreadyReported(err)) return;
+      showToast(getErrorMessage(err, 'Failed to convert lead to booking. Please try again.'), 'error');
     } finally {
       setSubmitting(false);
     }

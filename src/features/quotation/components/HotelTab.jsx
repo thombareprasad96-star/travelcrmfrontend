@@ -1812,6 +1812,7 @@ import { Label, Input, Select, SectionCard, RemoveBtn, IncludeToggle, RichText }
 import { ROOM_TYPES, MEAL_PLANS } from "../Constants";
 import { hotelService, uploadHotelImageToCloudinary } from "@features/masters";
 import { geographyService } from "@shared/api/geographyService";
+import { getErrorMessage } from "@shared/api/apiError";
 
 /* Room type ready list (dropdown ke liye) */
 const ROOM_TYPE_OPTIONS = ["Standard", "Deluxe", "Super Deluxe", "Suite", "Executive", "Premium"];
@@ -2125,7 +2126,7 @@ function HotelFormModal({ open, onClose, editHotel, onSaved }) {
       const url = await uploadHotelImageToCloudinary(file);
       setForm(f => ({ ...f, imagePath: url }));
     } catch (err) {
-      setSaveError(err.message || "Image upload failed.");
+      setSaveError(getErrorMessage(err, "Image upload failed."));
     } finally { setImageUploading(false); }
   };
 

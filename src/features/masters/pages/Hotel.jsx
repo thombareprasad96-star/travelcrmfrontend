@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { Search, Plus, ChevronDown, ChevronUp, X, Star, MapPin, Phone, Globe, Upload, Hotel, Building2, Utensils, Wifi, Car, Dumbbell, Waves, ConciergeBell, PlaneTakeoff, Edit2, Trash2, Check, AlertCircle, Home, ChevronRight, Shield } from "lucide-react";
 import { hotelService, transformHotelResponse, uploadHotelImageToCloudinary } from "../api/HotelService";
 import { geographyService } from "@shared/api/geographyService";
+import { getErrorMessage } from "@shared/api/apiError";
+import { toast } from "@shared/ui/toast";
 
 /* ─── CONSTANTS ──────────────────────────────────────────── */
 const AMENITIES = [
@@ -222,7 +224,7 @@ export default function HotelMaster() {
       setForm(f => ({ ...f, imagePath: secureUrl }));   // form mein save
     } catch (err) {
       console.error("Cloudinary upload failed:", err);
-      setSaveError(err.message || "Image upload failed.");
+      setSaveError(getErrorMessage(err, "Image upload failed."));
       setHotelImageFile(null);
     } finally {
       setImageUploading(false);
@@ -469,7 +471,7 @@ export default function HotelMaster() {
       await hotelService.deleteHotel(hotelId);
       setDestinations(prev => prev.map(d => d.id === destId ? { ...d, hotels: (d.hotels || []).filter(h => h.id !== hotelId) } : d));
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete hotel.");
+      toast.error(getErrorMessage(err, "Failed to delete hotel."));
     }
   };
 
@@ -508,7 +510,7 @@ export default function HotelMaster() {
     const roomId  = form.roomTypes[idx]?.id;
     if (hotelId && roomId) {
       try { await hotelService.deleteRoomType(hotelId, roomId); }
-      catch (err) { alert(err?.response?.data?.message || "Failed to delete."); return; }
+      catch (err) { toast.error(getErrorMessage(err, "Failed to delete.")); return; }
     }
     setForm(f => ({ ...f, roomTypes: f.roomTypes.filter((_, i) => i !== idx) }));
   };
@@ -544,7 +546,7 @@ export default function HotelMaster() {
     const mealId  = form.mealPlans[idx]?.id;
     if (hotelId && mealId) {
       try { await hotelService.deleteMealPlan(hotelId, mealId); }
-      catch (err) { alert(err?.response?.data?.message || "Failed to delete."); return; }
+      catch (err) { toast.error(getErrorMessage(err, "Failed to delete.")); return; }
     }
     setForm(f => ({ ...f, mealPlans: f.mealPlans.filter((_, i) => i !== idx) }));
   };

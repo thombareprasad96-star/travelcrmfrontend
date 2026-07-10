@@ -17,6 +17,7 @@ import { Loader2, Inbox, X, ChevronDown, ArrowLeft, LayoutGrid, List } from "luc
 
 export { cn } from "@shared/lib/cn";
 import { cn } from "@shared/lib/cn";
+import { getErrorMessage } from "@shared/api/apiError";
 
 /* ═════════════════════════════════════════════════════════════
    FORM PRIMITIVES (plain Tailwind — replace shadcn ui)
@@ -367,45 +368,26 @@ export function GlassCard({ className, children }) {
 }
 
 /* ═════════════════════════════════════════════════════════════
-   TOAST (inline — app convention)
+   TOAST + ERROR TEXT — re-exported from the shared modules
 ═════════════════════════════════════════════════════════════ */
-export function Toast({ msg, type = "success", onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div
-      className={cn(
-        "fixed right-5 top-5 z-[999] flex max-w-sm items-center gap-3 rounded-2xl border px-4 py-3.5 shadow-2xl",
-        type === "success"
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-red-200 bg-red-50 text-red-800"
-      )}
-      style={{ animation: "slideIn .3s ease both" }}
-    >
-      <span className="text-lg">{type === "success" ? "✅" : "❌"}</span>
-      <p className="flex-1 text-sm font-semibold">{msg}</p>
-      <button onClick={onClose} className="ml-1 text-lg leading-none opacity-50 hover:opacity-100">
-        ×
-      </button>
-    </div>
-  );
-}
+// These used to be local to Fleet: a per-page `useToast()` holding its own useState, and an `errMsg`
+// that fell back to `e.message` (an axios error's technical string: "Request failed with status code
+// 500"). Both now delegate to the app-wide implementations.
+//
+// The signatures are unchanged, so the six Fleet pages that do
+//   `const { showToast, toastNode } = useToast();` … `{toastNode}`
+// keep working untouched. `toastNode` is now `null` because <ToastHost/> (mounted in App.jsx)
+// renders every toast — rendering `{null}` is a no-op.
+export { useToast } from "@shared/ui/toast";
 
-/** Hook: `const { showToast, toastNode } = useToast();` — render {toastNode} in the page. */
-export function useToast() {
-  const [toast, setToast] = useState(null);
-  const showToast = useCallback((msg, type = "success") => setToast({ msg, type }), []);
-  const toastNode = toast ? (
-    <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />
-  ) : null;
-  return { showToast, toastNode };
-}
-
-/** Pull a human message out of an axios error (falls back to a default). */
+/**
+ * Pull a human message out of an error (falls back to a default).
+ *
+ * Delegates to getErrorMessage(), which — unlike the old implementation — never returns axios's
+ * `.message`, so the `fallback` argument is finally reachable.
+ */
 export function errMsg(e, fallback = "Something went wrong.") {
-  return e?.response?.data?.message || e?.message || fallback;
+  return getErrorMessage(e, fallback);
 }
 
 /* ═════════════════════════════════════════════════════════════

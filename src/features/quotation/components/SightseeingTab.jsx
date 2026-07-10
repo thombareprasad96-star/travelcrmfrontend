@@ -1780,6 +1780,8 @@ import { Label, Input, Textarea, AddBtn, RemoveBtn, IncludeToggle, FieldGrid, Ri
 import { MEALS_OPT, TRANSFER } from "../Constants";
 import { sightseeingService } from "@features/masters";
 import { geographyService } from "@shared/api/geographyService";
+import { getErrorMessage } from "@shared/api/apiError";
+import { toast } from "@shared/ui/toast";
 
 /* ════════════════════════════════════════════════════════
    INLINE SIGHTSEEING SEARCH DROPDOWN (HotelTab jaisa)
@@ -2081,7 +2083,7 @@ function SightseeingFormModal({ isOpen, onClose, editingItem, onSaved }) {
       const url = await sightseeingService.uploadSightseeingImage(file);
       setForm(p => ({ ...p, imagePath: url, imagePreview: url }));
     } catch (err) {
-      setError(err.message || "Image upload failed.");
+      setError(getErrorMessage(err, "Image upload failed."));
     } finally {
       setImgUploading(false);
     }
@@ -2440,7 +2442,7 @@ export default function SightseeingTab({ onDataChange, paxInfo = {}, dayCityMap 
 
     if (!found) {
       // Master mein nahi mila — user ko batao (silent fail nahi)
-      alert("This attraction was not found in Sightseeing Master.\n\nPlease select an attraction from the dropdown first, then click Edit.");
+      toast.error("This attraction isn't in the Sightseeing Master. Select one from the dropdown first, then click Edit.");
       return;
     }
     setEditingItem(found);

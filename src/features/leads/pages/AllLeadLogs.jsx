@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search as FiSearch, ArrowLeft as FiArrowLeft, ChevronDown as FiChevronDown, Phone as FiPhone, FileText as FiFileText, Plus as FiPlus, List as FiList, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Calendar as FiCalendar, User as FiUser, ClipboardList as FaClipboardList, Users as FaUsers, Calendar as FaCalendarAlt, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, Files as MdOutlinePages } from "lucide-react";
 
 
 import { leadService } from "../api/leadService";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 
 const STAGES = [
   "All Stages", "New Lead", "Contacted", "Follow Up",
@@ -24,24 +26,6 @@ const STAGE_DEF = { bg:"bg-slate-400", text:"text-white" };
 
 const PER_PAGE = 12;
 
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function Toast({ msg, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl max-w-sm
-      ${type==="success"
-        ? "bg-green-50 border-green-200 text-green-800"
-        : "bg-red-50 border-red-200 text-red-800"}`}
-      style={{animation:"slideIn .3s ease both"}}>
-      <span className="text-lg">{type==="success"?"✅":"❌"}</span>
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 text-lg">×</button>
-    </div>
-  );
-}
 
 /* ─── HERO STAT CARD ─────────────────────────────────────────── */
 function HeroCard({ value, label, bg, icon, isDate, delay=0 }) {
@@ -191,9 +175,9 @@ export default function AllLeadLogs() {
   const [stage,   setStage]   = useState("All Stages");
   const [user,    setUser]    = useState("All Users");
   const [page,    setPage]    = useState(1);
-  const [toast,   setToast]   = useState(null);
 
-  const showToast = useCallback((msg, type="success") => setToast({msg, type}), []);
+  // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
+  const { showToast } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -208,8 +192,10 @@ export default function AllLeadLogs() {
         if (active) setData(leads);
       })
       .catch((err) => {
-        console.error("Failed to load lead logs summary:", err);
-        if (active) { setData([]); showToast("Failed to load lead logs. Please try again.", "error"); }
+        if (!active) return;
+        setData([]);
+        if (isAlreadyReported(err)) return;   // <ToastHost/> already showed it
+        showToast(getErrorMessage(err, "Failed to load lead logs. Please try again."), "error");
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -276,8 +262,6 @@ export default function AllLeadLogs() {
         ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:99px}
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
       `}</style>
-
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">

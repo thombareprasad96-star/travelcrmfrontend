@@ -4,35 +4,18 @@ import { Link } from "react-router-dom";
 
 import { sightseeingService, transformSightseeingResponse } from "../api/SightseeingService";
 import { geographyService } from "@shared/api/geographyService";
+import { getErrorMessage } from "@shared/api/apiError";
+import { toast } from "@shared/ui/toast";
 
-// =========================================================================
-// 🌟 TOAST SYSTEM
-// =========================================================================
-let _toastSetter = null;
-const toast = {
-  success: (msg) => _toastSetter?.({ msg, type: "success", id: Date.now() }),
-  error:   (msg) => _toastSetter?.({ msg, type: "error",   id: Date.now() }),
-};
-
-function ToastContainer() {
-  const [toasts, setToasts] = useState([]);
-  useEffect(() => {
-    _toastSetter = (t) => {
-      setToasts((prev) => [...prev, t]);
-      setTimeout(() => setToasts((p) => p.filter((x) => x.id !== t.id)), 3000);
-    };
-    return () => { _toastSetter = null; };
-  }, []);
-  return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3">
-      {toasts.map((t) => (
-        <div key={t.id} className={`${t.type === "success" ? "bg-emerald-500" : "bg-rose-500"} text-white rounded-xl px-5 py-3.5 font-semibold text-sm shadow-lg flex items-center gap-2.5 animate-in slide-in-from-bottom-5 duration-300`}>
-          <span>{t.type === "success" ? "✓" : "✕"}</span> {t.msg}
-        </div>
-      ))}
-    </div>
-  );
-}
+// The page-local toast system that used to live here has been deleted in favour of @shared/ui/toast.
+//
+// It was built on a module-level `let _toastSetter = null`, assigned by <ToastContainer/>'s effect.
+// Every call went through `_toastSetter?.(…)` — so before the container mounted, after it unmounted,
+// or if a second instance ever clobbered the reference, `toast.error(...)` silently did nothing.
+// An upload failure would leave the user staring at an unchanged form.
+//
+// The shared store has no such window: it queues, and <ToastHost/> (mounted in App.jsx, above the
+// error boundary) drains it on subscribe.
 
 // =========================================================================
 // 🌟 RICH TEXT EDITOR
@@ -220,7 +203,7 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
       const url = await sightseeingService.uploadSightseeingImage(file);
       setForm((prev) => ({ ...prev, imagePath: url, imagePreview: url }));
     } catch (err) {
-      toast.error(err.message || "Image upload failed.");
+      toast.error(getErrorMessage(err, "Image upload failed."));
     } finally {
       setImageUploading(false);
     }
@@ -1018,8 +1001,6 @@ export default function SightseeingMaster() {
         editingItem={editingItem}
         onSaved={handleSaved}
       />
-
-      <ToastContainer />
     </div>
   );
 }

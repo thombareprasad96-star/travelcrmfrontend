@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { getErrorMessage } from "@shared/api/apiError";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
@@ -97,7 +98,10 @@ export default function QuotationWebView({ publicId }) {
         console.log("=== QUOTATION DATA ===", data);
         if (active) setQ(data);
       } catch (e) {
-        if (active) setError(e.message || "Failed to load the quotation.");
+        // getErrorMessage keeps the messages thrown just above (they were written for the reader),
+        // and turns a raw `fetch` transport failure into "Can't reach the server" instead of the
+        // browser's "Failed to fetch".
+        if (active) setError(getErrorMessage(e, "Failed to load the quotation."));
       } finally {
         if (active) setLoading(false);
       }
