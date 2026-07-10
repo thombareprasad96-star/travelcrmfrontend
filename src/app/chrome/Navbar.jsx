@@ -5,6 +5,8 @@ import {
   Search, Settings, LogOut, HelpCircle, CheckCheck,
 } from "lucide-react";
 import { notificationService } from "@features/reminders";
+import { getErrorMessage } from "@shared/api/apiError";
+import { toast } from "@shared/ui/toast";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,10 +68,15 @@ async function fetchReminderAlerts() {
 
 /** Mark a single notification read by its numeric id (new Long-id endpoint). */
 async function markNotificationReadById(id) {
-  await fetch(`${API_BASE}/api/notifications/${id}/read`, {
+  // fetch resolves on 4xx/5xx — check explicitly, or a failed write reads as a success.
+  const res = await fetch(`${API_BASE}/api/notifications/${id}/read`, {
     method: "PUT",
     headers: bellAuthHeaders(),
   });
+  if (!res.ok) {
+    console.warn(`PUT /api/notifications/${id}/read failed with ${res.status}`);
+    throw new Error("Couldn't mark that notification as read.");
+  }
 }
 
 // ─── Breadcrumb (supports array or ReactNode) ─────────────────────────────────
@@ -171,10 +178,18 @@ const Navbar = memo(function Navbar({
     }
   }, []);
 
-  // Badge counts + live SSE on mount
+  // Badge counts + live SSE on mount.
+  // Both promises need a .catch(): an unhandled rejection here would surface as a console-level
+  // "Uncaught (in promise)" and, under a strict CSP / error reporter, as a page-level error. A bell
+  // badge that fails to load is not worth interrupting the user for, so it degrades to zero quietly.
   useEffect(() => {
-    notificationService.getUnreadCount().then(setUnreadCount);
-    fetchReminderAlerts().then((alerts) => setReminderCount(alerts.length));
+    notificationService
+      .getUnreadCount()
+      .then(setUnreadCount)
+      .catch(() => setUnreadCount(0));
+    fetchReminderAlerts()
+      .then((alerts) => setReminderCount(alerts.length))
+      .catch(() => setReminderCount(0));
     sseRef.current = notificationService.subscribeToSSE((incoming) => {
       setNotifications((prev) => [{ ...incoming, kind: "notification" }, ...prev].slice(0, 20));
       setUnreadCount((c) => c + 1);
@@ -200,14 +215,26 @@ const Navbar = memo(function Navbar({
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
         setNotifications(merged);
+      } catch (err) {
+        // getNotifications() now throws on a non-2xx; without this the click handler would leave an
+        // unhandled rejection and the dropdown would sit on a spinner forever.
+        setNotifications([]);
+        toast.error(getErrorMessage(err, "Couldn't load notifications."));
       } finally {
         setLoading(false);
       }
     }
   };
 
+  // The local state update only runs if the server actually accepted the write. Previously the
+  // fetch resolved on a 401/500 too, so the badge cleared and the notifications reappeared on reload.
   const handleMarkAllRead = async () => {
-    await notificationService.markAllRead();
+    try {
+      await notificationService.markAllRead();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Couldn't mark notifications as read."));
+      return;
+    }
     setNotifications((prev) =>
       prev.map((n) => (n.kind === "reminder" ? n : { ...n, status: "READ" }))
     );
@@ -231,11 +258,16 @@ const Navbar = memo(function Navbar({
       return;
     }
     if (notif.status === "UNREAD") {
-      await markNotificationReadById(notif.id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notif.id ? { ...n, status: "READ" } : n))
-      );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      try {
+        await markNotificationReadById(notif.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notif.id ? { ...n, status: "READ" } : n))
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch (err) {
+        // Marking-read failing shouldn't block navigation to the record the user clicked.
+        toast.error(getErrorMessage(err, "Couldn't mark that notification as read."));
+      }
     }
     // Route to the relevant module based on the backend referenceType discriminator.
     const dest = NOTIF_ROUTE_MAP[notif.referenceType];

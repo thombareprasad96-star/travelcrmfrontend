@@ -1,10 +1,27 @@
 // src/shared/api/http.js
+//
+// The staff app's axios client. Attaches the JWT, and routes every failure through the shared
+// error policy in authRealm.js.
+//
+// What changed and why:
+//  • 401 used to redirect once per failing request. Six parallel requests meant six redirects racing
+//    six localStorage clears. The realm latch collapses that into one.
+//  • 403 and 500 were `console.error`-only — invisible to the user. They now toast.
+//  • Every error hit an unconditional `console.error`, including in production. Gone; the interceptor
+//    logs nothing the user isn't already being shown, and callers still get the rejection.
+//  • `error.response?.data?.message || "Something went wrong."` is replaced by normalizeError(), which
+//    also copes with the responses that carry no body at all (401 from the security entry point) and
+//    with the ones that aren't JSON (a proxy's 502 HTML page).
 
 import axios from "axios";
+import { createAuthRealm, matchesAuthPath } from "./authRealm";
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
-  timeout: 10000,
+  // 30s, not 10s: CSV exports and server-rendered quotation PDFs routinely run past ten seconds,
+  // and an axios timeout produces no `error.response` at all — so a slow export used to surface as
+  // an indistinguishable "Something went wrong."
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -25,44 +42,36 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+/* ── ERROR POLICY ─────────────────────────────────────────────
+   Staff realm: "token" + "tenantModules", login at /login.
+─────────────────────────────────────────────────────────────── */
+const staffRealm = createAuthRealm({
+  loginPath: "/login",
+  // Login endpoints answer 401 for "wrong credentials". LoginService probes the superadmin endpoint
+  // first and expects to catch that 401 before falling back to the user endpoint — redirecting here
+  // would break the probe.
+  isAuthUrl: (url) => matchesAuthPath(url),
+  clearSession: () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("tenantModules");
+  },
+  // Maintenance keeps its existing surface: a full-screen overlay, not a toast.
+  // MaintenanceOverlay listens for this event and mirrors it in sessionStorage.
+  onMaintenance: (message) => {
+    sessionStorage.setItem("app:maintenance", message);
+    window.dispatchEvent(new CustomEvent("app:maintenance", { detail: { message } }));
+  },
+});
+
 /* ── RESPONSE INTERCEPTOR ─────────────────────────────────────
-   Handle global errors: 401 redirect, 403 forbidden, 500 etc.
+   Auth, transport, server and quota errors are handled here.
+   Validation / not-found / conflict are passed through untouched
+   for the call site to render inline.
 ─────────────────────────────────────────────────────────────── */
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status  = error.response?.status;
-    const message = error.response?.data?.message || "Something went wrong.";
-
-    // Auth endpoints (login etc.) return 401 as a normal "wrong credentials /
-    // not this role" signal — let the caller handle those instead of redirecting.
-    // e.g. LoginService tries superadmin login, catches the 401, then falls back
-    // to user login; redirecting here would break that fallback.
-    const isAuthRequest = (error.config?.url || "").includes("auth/");
-
-    if (status === 401 && !isAuthRequest) {
-      // Token expired or invalid — redirect to login
-      localStorage.removeItem("token");
-      localStorage.removeItem("tenantModules");
-      window.location.href = "/login";
-    }
-
-    if (status === 403) {
-      console.error("Access denied:", message);
-    }
-
-    if (status === 500) {
-      console.error("Server error:", message);
-    }
-
-    if (status === 503) {
-      // Maintenance mode — surface a full-screen overlay instead of a broken page.
-      // (MaintenanceOverlay listens for this event and mirrors it in sessionStorage.)
-      sessionStorage.setItem("app:maintenance", message);
-      window.dispatchEvent(new CustomEvent("app:maintenance", { detail: { message } }));
-    }
-
-    console.error(`API Error [${status}]:`, message);
+    staffRealm.handleError(error);
     return Promise.reject(error);
   }
 );

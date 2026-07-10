@@ -1,124 +1,19 @@
-
-
-// import axios from "axios";
-
-
-// const API = axios.create({
-//   baseURL: "http://localhost:8080/api",
-//   headers: { "Content-Type": "application/json" },
-// });
-
-
-// function transformLoginData(email, password) {
-//   return {
-//     email: email,
-//     password: password,
-//   };
-// }
-
-// // Service Object export 
-// export const authService= {
-//   // Login API call 
-//   login: (email, password) => 
-//     API.post("auth/superadmin/login", transformLoginData(email, password)),
-//       // API.post("auth/user/login", transformLoginData(email, password)),
-
-
-// //  auth/superadmin/login
-
-// };
-
-// import axios from "axios";
-
-// // baseURL already includes /api, so we don't need to type it again in our requests
-// const API = axios.create({
-//   baseURL: "http://localhost:8080/api",
-//   headers: { "Content-Type": "application/json" },
-// });
-
-// // Sends email and password exactly as your Java backend expects
-// function transformLoginData(email, password) {
-//   return {
-//     email: email, 
-//     password: password,
-//   };
-// }
-
-// export const authService = {
-  
-//   // 👉 FIX: Dynamically construct the URL based on the selected role
-//   login: (email, password, role) => {
-//     let endpoint = "";
-
-//     // Assuming your Java backend has different endpoints for different roles
-//     if (role === 'super_admin') {
-//       endpoint = "/auth/superadmin/login";
-//     } else if (role === 'admin') {
-//       endpoint = "/auth/admin/login"; // Change this if your Java URL is different
-//     } else if (role === 'user') {
-//       endpoint = "/auth/user/login";  // Change this if your Java URL is different
-//     } 
-//   //  else {
-//     //   // Default fallback
-//     //   endpoint = "/auth/login"; 
-//     // }
-
-//     // Now it makes a request to: http://localhost:8080/api/auth/superadmin/login
-//     return API.post(endpoint, transformLoginData(email, password));
-//   },
-
-// };
-
-
-
-
-// import API from "@shared/api/http";
-
-// function transformLoginData(email, password) {
-//   return {
-//     email: email,
-//     password: password,
-//   };
-// }
-
-// export const authService = {
-  
-//   // 👉 Async/Await ka use karenge taki code clean rahe
-//   login: async (email, password) => {
-//     const loginData = transformLoginData(email, password);
-
-//     try {
-//       // Step 1: Pehle SuperAdmin ki API par try karo
-//       const response = await API.post("auth/superadmin/login", loginData);
-      
-//       // Agar backend ne OK bola, toh frontend ke liye hum ek tag laga denge
-//       response.data.role = "super_admin";
-//       return response;
-
-//     } catch {
-//       // Step 2: Agar SuperAdmin API fail hui, toh error mat do, User API par try karo
-//       console.log("Not a SuperAdmin, checking User...");
-
-//       try {
-//         const response = await API.post("auth/user/login", loginData);
-        
-//         // Agar yahan pass ho gaya, toh tag laga do ki ye user hai
-//         response.data.role = "user";
-//         return response;
-
-//       } catch (userError) {
-//         // Step 3: Agar dono jagah fail ho gaya, tab jaakar asli error do
-//         console.error("Login failed for both.");
-//         throw new Error("Invalid Email or Password", { cause: userError });
-//       }
-//     }
-//   },
-
-// };
-
-
+// src/features/auth/api/LoginService.js
+//
+// There is one login form for two backend realms, so the form probes the superadmin endpoint first
+// and falls back to the tenant-user endpoint. Two things about that fallback were wrong:
+//
+//  1. It fell through on ANY error. A 429 from the rate limiter therefore fired a SECOND request,
+//     burning a second bucket — the fallback actively made the rate limiting worse. So did a 500 and
+//     a network outage. Now only a 401/403 (genuinely "not this realm") falls through.
+//
+//  2. It ended in `throw new Error("Invalid Email or Password")`, a hardcoded string that discarded
+//     the real cause. Rate-limited, in maintenance, server down, offline — the user was told their
+//     password was wrong. The real error now propagates, and the caller renders its message via
+//     getErrorMessage().
 
 import API from "@shared/api/http";
+import { normalizeError, ErrorCode } from "@shared/api/apiError";
 
 function transformLoginData(email, password) {
   return {
@@ -127,39 +22,33 @@ function transformLoginData(email, password) {
   };
 }
 
+/** Only these mean "wrong realm, try the other endpoint". Everything else is a real failure. */
+function isWrongRealm(error) {
+  const { code } = normalizeError(error);
+  return code === ErrorCode.UNAUTHENTICATED || code === ErrorCode.PERMISSION_DENIED;
+}
+
 export const authService = {
-  
-  // 👉 Async/Await ka use karenge taki code clean rahe
   login: async (email, password) => {
     const loginData = transformLoginData(email, password);
 
     try {
-      // Step 1: Pehle SuperAdmin ki API par try karo
+      // Step 1: try the platform SuperAdmin endpoint.
       const response = await API.post("auth/superadmin/login", loginData);
-      
-      // Agar backend ne OK bola, toh frontend ke liye hum ek tag laga denge
       response.data.role = "super_admin";
       return response;
+    } catch (superAdminError) {
+      // A 429 / 5xx / network failure here says nothing about which realm the account is in.
+      // Retrying against the user endpoint would double the load and mask the real cause.
+      if (!isWrongRealm(superAdminError)) throw superAdminError;
 
-    } catch {
-      // Step 2: Agar SuperAdmin API fail hui, toh error mat do, User API par try karo
-      console.log("Not a SuperAdmin, checking User...");
-
-      try {
-        const response = await API.post("auth/user/login", loginData);
-
-        // Preserve the REAL tenant role from the backend (TENANT_ADMIN / MANAGER /
-        // TRAVEL_AGENT / STAFF / ACCOUNTANT). This was previously hard-coded to "user",
-        // which made every tenant user appear as STAFF in the UI (Users menu hidden, etc.).
-        if (!response.data.role) response.data.role = "user";
-        return response;
-
-      } catch (userError) {
-        // Step 3: Agar dono jagah fail ho gaya, tab jaakar asli error do
-        console.error("Login failed for both.");
-        throw new Error("Invalid Email or Password", { cause: userError });
-      }
+      // Step 2: not a SuperAdmin — try the tenant user endpoint.
+      // Preserve the REAL tenant role from the backend (TENANT_ADMIN / MANAGER /
+      // TRAVEL_AGENT / STAFF / ACCOUNTANT). This was previously hard-coded to "user",
+      // which made every tenant user appear as STAFF in the UI (Users menu hidden, etc.).
+      const response = await API.post("auth/user/login", loginData);
+      if (!response.data.role) response.data.role = "user";
+      return response;
     }
   },
-
 };

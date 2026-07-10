@@ -2,6 +2,9 @@
 // Catches render errors — most importantly failed lazy-chunk loads after a
 // redeploy (stale index.html referencing old hashed chunks). Reloading fetches
 // the fresh manifest, which resolves that case.
+//
+// The toast host is mounted ABOVE this boundary (see App.jsx), so it survives the tree being
+// replaced and can still surface anything raised while the fallback is showing.
 import { Component } from "react";
 
 export default class RouteErrorBoundary extends Component {
@@ -9,6 +12,12 @@ export default class RouteErrorBoundary extends Component {
 
   static getDerivedStateFromError(error) {
     return { error };
+  }
+
+  // Without this the crash is swallowed: React logs its own message, but the component stack —
+  // the only part that says *where* it broke — is discarded.
+  componentDidCatch(error, errorInfo) {
+    console.error("Render crash caught by RouteErrorBoundary:", error, errorInfo?.componentStack);
   }
 
   render() {

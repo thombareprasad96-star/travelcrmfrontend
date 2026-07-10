@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Eye, Edit, Trash2, Car, UploadCloud, Image as ImageIcon, X, AlertTriangle, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { vehicleService, normalizeVehicleList, transformVehicleResponse, uploadImageToCloudinary } from "../api/VehicleService";
+import { getErrorMessage, isCanceled } from "@shared/api/apiError";
 
 /* ─────────────────────────────────────────────
    🌟 CUSTOM TAILWIND TOAST SYSTEM
@@ -33,12 +34,11 @@ function ToastContainer() {
   );
 }
 
-// ── Fallback seed data (used when API is unavailable) ──────
-const SEED_DATA = [
-  { id: 1, name: 'Toyota Innova Crysta', type: 'SUV',    capacity: 7,  image: null, description: 'Premium 7-seater SUV for long tours.',            createdAt: '2026-06-01' },
-  { id: 2, name: 'Volvo 9400 Sleeper',   type: 'Bus',    capacity: 40, image: null, description: 'Luxury sleeper bus for intercity travel.',         createdAt: '2026-06-05' },
-  { id: 3, name: 'Mercedes S-Class',     type: 'Sedan',  capacity: 4,  image: null, description: 'Ultra-luxury sedan for VIP clients.',             createdAt: '2026-06-08' },
-];
+// NOTE: this page used to fall back to a hardcoded SEED_DATA list whenever the API failed, and also
+// whenever a tenant's real list came back empty. Both were silent: a signed-out user, a 500, or a
+// brand-new tenant would see three fake vehicles — "Toyota Innova Crysta", "Volvo 9400 Sleeper",
+// "Mercedes S-Class" — indistinguishable from real records, quotable into a real quotation.
+// A failure now shows a failure, and an empty tenant shows an empty state.
 
 const EMPTY_FORM = { name: '', type: '', capacity: '', image: null, imagePreview: null, imagePath: null, description: '' };
 
@@ -49,6 +49,7 @@ export default function VehicleMaster() {
   // --- State ---
   const [vehicles,      setVehicles]      = useState([]);
   const [loading,       setLoading]       = useState(false);
+  const [loadError,     setLoadError]     = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false); // upload progress indicator
 
@@ -78,16 +79,17 @@ export default function VehicleMaster() {
 
   const fetchVehicles = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const response = await vehicleService.getAllVehicles();
       // normalizeVehicleList handles both array and wrapped { data: [] } responses
       // Backend: { success, data: [...] } ya { success, data: { content: [...] } }
       const raw  = response.data?.data ?? response.data;
-      const list = normalizeVehicleList(raw);
-      setVehicles(list.length > 0 ? list : SEED_DATA);
+      setVehicles(normalizeVehicleList(raw));
     } catch (error) {
-      console.warn("API unavailable, using seed data.", error);
-      setVehicles(SEED_DATA);
+      if (isCanceled(error)) return;   // component unmounted — leave state alone
+      setVehicles([]);
+      setLoadError(getErrorMessage(error, "Couldn't load vehicles."));
     } finally {
       setLoading(false);
     }
@@ -144,7 +146,9 @@ export default function VehicleMaster() {
     } catch (err) {
       console.error("Cloudinary upload failed:", err);
       setFormData(prev => ({ ...prev, image: null, imagePath: null }));
-      setErrors(prev => ({ ...prev, image: err.message || 'Image upload failed. Try again.' }));
+      // Not `err.message || fallback` — axios always sets .message, so the fallback was dead code and
+      // the user saw "Request failed with status code 413".
+      setErrors(prev => ({ ...prev, image: getErrorMessage(err, 'Image upload failed. Try again.') }));
     } finally {
       setImageUploading(false);
     }
@@ -325,6 +329,25 @@ export default function VehicleMaster() {
                       ))}
                     </tr>
                   ))
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan="7" className="text-center py-16">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                          <AlertTriangle size={28} className="text-red-400" />
+                        </div>
+                        <p className="text-slate-700 font-semibold">Couldn't load vehicles</p>
+                        <p className="text-slate-400 text-sm mt-0.5 max-w-sm">{loadError}</p>
+                        <button
+                          type="button"
+                          onClick={fetchVehicles}
+                          className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ) : filteredVehicles.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="text-center py-16">

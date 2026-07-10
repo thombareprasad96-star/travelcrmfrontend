@@ -13,9 +13,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft as FiArrowLeft, Save as FiSave, CircleCheck as FiCheckCircle, CircleAlert as FiAlertCircle, Loader as FiLoader, FileText as FiFileText } from "lucide-react";
+import { ArrowLeft as FiArrowLeft, Save as FiSave, CircleCheck as FiCheckCircle, Loader as FiLoader, FileText as FiFileText } from "lucide-react";
 
 import { leadService } from "../api/leadService";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, getFieldErrors, isAlreadyReported } from "@shared/api/apiError";
 
 import LeadInformation from "../components/LeadInformation";
 import TravelDetails   from "../components/TravelDetails";
@@ -24,23 +26,6 @@ import ItinerarySection from "../components/ItinerarySection";
 import LeadSummary      from "../components/LeadSummary";
 
 let nextId = 1;
-
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function Toast({ type, message, onClose }) {
-  const styles = {
-    success: "bg-green-50 border-green-200 text-green-800",
-    error: "bg-red-50 border-red-200 text-red-800",
-  };
-  const Icon = type === "success" ? FiCheckCircle : FiAlertCircle;
-  return (
-    <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg max-w-sm
-      ${styles[type]} animate-slide-in`}>
-      <Icon className="w-5 h-5 flex-shrink-0" />
-      <p className="text-sm font-medium flex-1">{message}</p>
-      <button onClick={onClose} className="text-current opacity-60 hover:opacity-100 ml-2 text-lg leading-none">×</button>
-    </div>
-  );
-}
 
 /* ─── SKELETON LOADER ────────────────────────────────────────── */
 function SkeletonBlock({ h = "h-64" }) {
@@ -53,7 +38,7 @@ export default function EditLead() {
   const { id } = useParams(); // lead publicId/id from URL
 
   const {
-    register, handleSubmit, watch, setValue, reset,
+    register, handleSubmit, watch, setValue, reset, setError, getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -73,17 +58,30 @@ export default function EditLead() {
   const [itinerary, setItinerary]       = useState([{ id: nextId++, destination: "", city: "", nights: 2 }]);
   const [submitting, setSubmitting]     = useState(false);
   const [savingDraft, setSavingDraft]   = useState(false);
-  const [toast, setToast]               = useState(null);
   const [searching, setSearching]       = useState(false);
 
-  const showToast = useCallback((type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  }, []);
+  // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
+  // Argument order is (message, type) everywhere — see shared/ui/toast.jsx.
+  const { showToast } = useToast();
+
+  /**
+   * A 400 VALIDATION_ERROR carries `fieldErrors`, and those belong beside the input that caused
+   * them — never in a toast. Anything the form doesn't actually render (an unknown key, or a
+   * non-validation failure) still has to be said out loud, so that falls back to the toast.
+   */
+  const applyServerFieldErrors = useCallback((error, fallback) => {
+    const fieldErrors = getFieldErrors(error) || {};
+    const formFields = getValues();
+    const inline = Object.keys(fieldErrors).filter((name) => name in formFields);
+
+    inline.forEach((name) => setError(name, { type: "server", message: fieldErrors[name] }));
+
+    if (inline.length === 0) showToast(getErrorMessage(error, fallback), "error");
+  }, [getValues, setError, showToast]);
 
   /* ── Load lead on mount ──────────────────────────────────── */
   useEffect(() => {
-    if (!id) { showToast("error", "No lead ID provided."); return; }
+    if (!id) { showToast("No lead ID provided.", "error"); return; }
     setLoadingLead(true);
 
     leadService.getLeadById(id)
@@ -143,8 +141,8 @@ export default function EditLead() {
         setLeadCode(lead.publicId || lead.id || id);
       })
       .catch((err) => {
-        console.error("Failed to load lead:", err);
-        showToast("error", err?.response?.data?.message || "Failed to load lead details.");
+        if (isAlreadyReported(err)) return;   // the interceptor's toast already said it
+        showToast(getErrorMessage(err, "Failed to load lead details."), "error");
       })
       .finally(() => setLoadingLead(false));
   }, [id, reset, showToast]);
@@ -176,9 +174,19 @@ export default function EditLead() {
       setValue("customerName", lead.customerName || "");
       setValue("email", lead.email || "");
       if (lead.budget != null) setValue("budget", lead.budget);
-      showToast("success", `Lead found: ${lead.customerName}`);
-    } catch {
-      showToast("error", "No existing lead found for this phone number.");
+      showToast(`Lead found: ${lead.customerName}`, "success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+
+      // "No match" is the expected 404 and is not a failure the user needs alarming about.
+      // Anything else (a 400, a conflict) must not be disguised as an empty result.
+      const notFound = error?.response?.status === 404;
+      showToast(
+        notFound
+          ? "No existing lead found for this phone number."
+          : getErrorMessage(error, "Couldn't search by phone number."),
+        notFound ? "info" : "error"
+      );
     } finally {
       setSearching(false);
     }
@@ -189,13 +197,13 @@ export default function EditLead() {
     setSavingDraft(true);
     await new Promise((r) => setTimeout(r, 800));
     setSavingDraft(false);
-    showToast("success", "Draft saved locally.");
+    showToast("Draft saved locally.", "success");
   };
 
   /* ── Submit (Update) ──────────────────────────────────────── */
   const onSubmit = async (data) => {
     if (selectedServices.length === 0) {
-      showToast("error", "Please select at least one service.");
+      showToast("Please select at least one service.", "error");
       return;
     }
     setSubmitting(true);
@@ -215,12 +223,12 @@ export default function EditLead() {
         itinerary
       );
 
-      showToast("success", `Lead "${data.customerName}" updated successfully!`);
+      showToast(`Lead "${data.customerName}" updated successfully!`, "success");
 
       setTimeout(() => navigate("/allleads"), 1200);
     } catch (err) {
-      console.error("Failed to update lead:", err);
-      showToast("error", err?.response?.data?.message || "Failed to update lead. Try again.");
+      if (isAlreadyReported(err)) return;   // the interceptor's toast already said it
+      applyServerFieldErrors(err, "Failed to update lead. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -229,7 +237,6 @@ export default function EditLead() {
   /* ── RENDER ──────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
       {/* Page Header */}
       <div className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">

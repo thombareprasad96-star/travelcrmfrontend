@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Calendar as FiCalendar, Globe as FiGlobe, MapPin as FiMapPin, House as FiHome, Users as FiUsers, PersonStanding as MdChildCare, Baby as MdBabyChangingStation, BedDouble as MdHotel } from "lucide-react";
 
 import { geographyService } from "@shared/api/geographyService";
+import { getErrorMessage } from "@shared/api/apiError";
 import SearchableSelect from "./SearchableSelect";
 
 function NumberInput({ label, icon: Icon, value, onChange, min = 0, max = 20, color = "blue" }) {
@@ -81,7 +82,8 @@ export default function TravelDetails({ register, watch, setValue }) {
           setValue("departCountry", value, { shouldValidate: true });
         }
       })
-      .catch((err) => setError(err.message))
+      // Was `err.message` — an axios error, so the user saw "Request failed with status code 500".
+      .catch((err) => setError(getErrorMessage(err, "Couldn't load countries.")))
       .finally(() => setLoadingCountries(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
