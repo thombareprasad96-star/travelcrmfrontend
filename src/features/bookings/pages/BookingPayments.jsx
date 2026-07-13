@@ -177,10 +177,10 @@ export default function BookingPayments() {
   /* ── Loading / Error ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 flex items-center justify-center"
         style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
         <div className="text-center">
-          <div className="w-14 h-14 border-4 border-gold-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
+          <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
           <p className="text-slate-500 font-semibold">Loading payment details…</p>
         </div>
       </div>
@@ -189,13 +189,13 @@ export default function BookingPayments() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 flex items-center justify-center"
         style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <p className="text-lg font-extrabold text-slate-600 mb-2">Booking Not Found</p>
           <button onClick={()=>navigate("/Allbookings")}
-            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm mx-auto">
+            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm mx-auto">
             <FiArrowLeft className="w-4 h-4"/> Back to Bookings
           </button>
         </div>
@@ -209,13 +209,13 @@ export default function BookingPayments() {
     `w-full px-3.5 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all
      ${err
        ? "border-red-300 bg-red-50 focus:border-red-400 focus:ring-2 focus:ring-red-50"
-       : "border-slate-200 bg-white focus:border-gold-400 focus:ring-2 focus:ring-gold-100 hover:border-slate-300"}`;
+       : "border-slate-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 hover:border-slate-300"}`;
 
   const selectCls = (err) => inputCls(err) + " appearance-none cursor-pointer pr-9";
 
   /* ─── RENDER ──────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100"
       style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
@@ -235,18 +235,18 @@ export default function BookingPayments() {
               <div>
                 <h1 className="text-lg font-extrabold text-slate-800">Booking Payments</h1>
                 <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/")}>Home</span>
+                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/")}>Home</span>
                   <span className="mx-1 text-slate-300">/</span>
-                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/Allbookings")}>Bookings</span>
+                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/Allbookings")}>Bookings</span>
                   <span className="mx-1 text-slate-300">/</span>
-                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate(`/BookingDetails/${id}`)}>View Booking</span>
+                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate(`/BookingDetails/${id}`)}>View Booking</span>
                   <span className="mx-1 text-slate-300">/</span>
-                  <span className="text-gold-700 font-bold">Payments</span>
+                  <span className="text-blue-600 font-bold">Payments</span>
                 </p>
               </div>
             </div>
             <button onClick={fetchData}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-gold-700 text-xs font-bold transition-all">
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
               <FiRefreshCw className={`w-3.5 h-3.5 ${loading?"animate-spin":""}`}/> Refresh
             </button>
           </div>
@@ -258,7 +258,7 @@ export default function BookingPayments() {
         {/* ══════════════════════════════════════════════════════
             BOOKING PAYMENT SUMMARY BAR
         ══════════════════════════════════════════════════════ */}
-        <div className="bg-gradient-to-r from-gold-400 to-gold-600 rounded-2xl px-5 py-4 shadow-lg shadow-gold-200"
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-500 rounded-2xl px-5 py-4 shadow-lg shadow-blue-200"
           style={{animation:"fadeUp .4s ease both"}}>
           <div className="flex items-center gap-2 mb-3">
             <FiAlertCircle className="w-4 h-4 text-white/80"/>
@@ -287,7 +287,7 @@ export default function BookingPayments() {
             </div>
             {/* Col 4 */}
             <div>
-              <p className="text-white/80 text-xs font-medium">Due Amount: <span className="font-extrabold text-gold-900">{fmtINR(Math.max(0,dueAmount))}</span></p>
+              <p className="text-white/80 text-xs font-medium">Due Amount: <span className="font-extrabold text-blue-800">{fmtINR(Math.max(0,dueAmount))}</span></p>
               <p className="text-white/80 text-xs font-medium">Total Refunds: <span className="font-bold text-white">{fmtINR(totalRefunded)}</span></p>
               <p className="text-white/80 text-xs font-medium">Net Received: <span className="font-bold text-white">{fmtINR(netReceived)}</span></p>
             </div>
@@ -302,7 +302,7 @@ export default function BookingPayments() {
           {/* ── LEFT: ADD PAYMENT FORM ── */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
             style={{animation:"fadeUp .4s ease both .1s"}}>
-            <div className="bg-gradient-to-r from-gold-400 to-gold-600 px-5 py-3.5">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-500 px-5 py-3.5">
               <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
                 <FiPlus className="w-4 h-4"/> Add Payment
               </h3>
@@ -419,8 +419,8 @@ export default function BookingPayments() {
               {/* Submit */}
               <button onClick={handleAddPayment} disabled={saving || !canEdit}
                 className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl
-                  bg-gold-600 hover:bg-gold-700 text-white font-extrabold text-sm
-                  shadow-md shadow-gold-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                  bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm
+                  shadow-md shadow-blue-200 transition-all disabled:opacity-60 disabled:cursor-not-allowed">
                 {saving
                   ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/> Adding…</>
                   : <><FiPlus className="w-4 h-4"/> Add Payment</>
@@ -437,13 +437,13 @@ export default function BookingPayments() {
               style={{animation:"fadeUp .4s ease both .15s"}}>
               <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-slate-700 flex items-center gap-2">
-                  <FiCreditCard className="w-4 h-4 text-gold-600"/> Payment History
+                  <FiCreditCard className="w-4 h-4 text-blue-600"/> Payment History
                 </h3>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
                     Paid: {fmtINR(paidAmount)}
                   </span>
-                  <span className="text-xs font-bold bg-gold-100 text-gold-700 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-bold bg-blue-100 text-blue-600 px-2.5 py-1 rounded-full">
                     Net: {fmtINR(netReceived)}
                   </span>
                 </div>
@@ -466,7 +466,7 @@ export default function BookingPayments() {
                           const statusLabel = pay.paymentStatus || pay.status || (isRefund ? "Refunded" : "Completed");
                           const statusLower = statusLabel.toLowerCase();
                           return (
-                            <tr key={pay.publicId||i} className="hover:bg-gold-50/40 group transition-colors"
+                            <tr key={pay.publicId||i} className="hover:bg-blue-50/40 group transition-colors"
                               style={{animation:`fadeUp .3s ease both ${i*30}ms`}}>
                               <td className="px-3 py-3 text-xs text-slate-400 font-mono">{i+1}</td>
                               <td className="px-3 py-3 text-xs font-semibold text-slate-700 whitespace-nowrap">{fmtDate(pay.paymentDate||pay.createdAt)}</td>
@@ -531,7 +531,7 @@ export default function BookingPayments() {
               <h3 className="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Payment Summary</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label:"Total Payable", value:fmtINR(totalPayable),          icon:"₹",  bg:"from-gold-400 to-gold-600"    },
+                  { label:"Total Payable", value:fmtINR(totalPayable),          icon:"₹",  bg:"from-blue-600 to-indigo-500"    },
                   { label:"Paid",          value:fmtINR(paidAmount),            icon:"💰", bg:"from-green-500 to-emerald-500" },
                   { label:"Refunded",      value:fmtINR(totalRefunded),         icon:"↩️",  bg:"from-amber-500 to-yellow-500"  },
                   { label:"Due",           value:fmtINR(Math.max(0,dueAmount)), icon:"📋", bg:"from-red-500 to-rose-500"      },

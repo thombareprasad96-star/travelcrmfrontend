@@ -118,7 +118,7 @@ function normalizeBooking(b = {}) {
 /* ─── SECTION CARD ───────────────────────────────────────────── */
 function SCard({ title, icon, action, children, accent = "gold" }) {
   const accents = {
-    gold:   "bg-gold-600",
+    gold:   "bg-blue-600",
     green:  "bg-green-600",
     amber:  "bg-amber-500",
     purple: "bg-purple-600",
@@ -194,31 +194,31 @@ function AddPaymentModal({ booking, onClose, onAdded, showToast }) {
             <input type="number" step="0.01" min="0" value={form.amount}
               onChange={e=>{ setForm(p=>({...p,amount:e.target.value})); setErr(""); }}
               placeholder="e.g. 10000"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none"/>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment Method</label>
             <select value={form.paymentMethod} onChange={e=>setForm(p=>({...p,paymentMethod:e.target.value}))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none appearance-none cursor-pointer">
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 outline-none appearance-none cursor-pointer">
               {["Cash","Card","UPI","Bank Transfer","Cheque","Other"].map(m=><option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment Date</label>
             <input type="date" value={form.paymentDate} onChange={e=>setForm(p=>({...p,paymentDate:e.target.value}))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 outline-none"/>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Reference (optional)</label>
             <input value={form.reference} onChange={e=>setForm(p=>({...p,reference:e.target.value}))}
               placeholder="e.g. UTR / txn id"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 outline-none"/>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Note (optional)</label>
             <input value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}
               placeholder="e.g. First instalment"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 outline-none"/>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -281,8 +281,8 @@ function AssignVendorModal({ booking, service, onClose, onAssigned, showToast })
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}/>
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10 p-6" style={{animation:"popIn .25s ease both"}}>
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-gold-100 flex items-center justify-center">
-            <FiTruck className="w-5 h-5 text-gold-700"/>
+          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+            <FiTruck className="w-5 h-5 text-blue-600"/>
           </div>
           <div>
             <h3 className="text-base font-extrabold text-slate-800">Assign Vendor</h3>
@@ -296,7 +296,7 @@ function AssignVendorModal({ booking, service, onClose, onAssigned, showToast })
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Vendor *</label>
             <select value={vendorPublicId} onChange={e=>{ setVendorId(e.target.value); setErr(""); }}
               disabled={loadingVendors}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none appearance-none cursor-pointer disabled:opacity-60">
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none appearance-none cursor-pointer disabled:opacity-60">
               <option value="">{loadingVendors ? "Loading vendors…" : "Select a vendor"}</option>
               {vendors.map(v => (
                 <option key={v.publicId} value={v.publicId}>{v.vendorName ?? v.name ?? "Unnamed vendor"}</option>
@@ -307,13 +307,13 @@ function AssignVendorModal({ booking, service, onClose, onAssigned, showToast })
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Vendor Cost (₹)</label>
             <input type="number" step="0.01" min="0" value={vendorCost} onChange={e=>setVendorCost(e.target.value)}
               placeholder="0.00"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 outline-none"/>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
           <button onClick={handleAssign} disabled={saving||loadingVendors}
-            className="flex-1 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2">
             {saving&&<span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>}
             {saving?"Saving…":"Assign Vendor"}
           </button>
@@ -487,10 +487,10 @@ export default function BookingDetails() {
   /* ── LOADING ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 flex items-center justify-center"
         style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
         <div className="text-center">
-          <div className="w-14 h-14 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
+          <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
           <p className="text-slate-500 font-semibold">Loading booking details…</p>
         </div>
       </div>
@@ -499,13 +499,13 @@ export default function BookingDetails() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 flex items-center justify-center"
         style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <p className="text-lg font-extrabold text-slate-600 mb-2">Booking Not Found</p>
           <button onClick={()=>navigate("/Allbookings")}
-            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm transition-all mx-auto">
+            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all mx-auto">
             <FiArrowLeft className="w-4 h-4"/> Back to Bookings
           </button>
         </div>
@@ -524,7 +524,7 @@ export default function BookingDetails() {
 
   /* ─── RENDER ──────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100"
       style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
@@ -556,7 +556,7 @@ export default function BookingDetails() {
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-lg font-extrabold text-slate-800">Booking Details</h1>
-                  <span className="text-sm font-bold text-gold-700 bg-gold-50 border border-gold-200 px-2.5 py-0.5 rounded-lg">{b.code}</span>
+                  <span className="text-sm font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-lg">{b.code}</span>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${statusStyle}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`}/>
                     {titleCase(b.status)}
@@ -566,36 +566,36 @@ export default function BookingDetails() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/")}>Home</span>
+                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/")}>Home</span>
                   <span className="mx-1">/</span>
-                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/Allbookings")}>Bookings</span>
+                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/Allbookings")}>Bookings</span>
                   <span className="mx-1">/</span>
-                  <span className="text-gold-700 font-bold">View</span>
+                  <span className="text-blue-600 font-bold">View</span>
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={loadAll}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-gold-300 bg-white text-slate-600 hover:text-gold-700 text-xs font-bold transition-all">
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-blue-300 bg-white text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
                 <FiRefreshCw className={`w-3.5 h-3.5 ${loading?"animate-spin":""}`}/> Refresh
               </button>
               {canUpdate && (
                 <button onClick={()=>navigate(`/EditBooking/${b.id}`)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold shadow-sm transition-all">
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all">
                   <FiEdit2 className="w-3.5 h-3.5"/> Edit
                 </button>
               )}
               <button onClick={downloadInvoice} disabled={downloading==="invoice"}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold shadow-sm shadow-gold-200 transition-all disabled:opacity-60">
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-200 transition-all disabled:opacity-60">
                 {downloading==="invoice"
                   ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
                   : <FaReceipt className="w-3.5 h-3.5"/>}
                 Invoice
               </button>
               <button onClick={downloadVoucher} disabled={downloading==="voucher"}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gold-300 bg-white text-gold-800 hover:bg-gold-50 text-xs font-bold transition-all disabled:opacity-60">
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 text-xs font-bold transition-all disabled:opacity-60">
                 {downloading==="voucher"
-                  ? <span className="w-3.5 h-3.5 border-2 border-gold-300 border-t-gold-700 rounded-full animate-spin"/>
+                  ? <span className="w-3.5 h-3.5 border-2 border-blue-200 border-t-blue-700 rounded-full animate-spin"/>
                   : <FiDownload className="w-3.5 h-3.5"/>}
                 Voucher
               </button>
@@ -620,7 +620,7 @@ export default function BookingDetails() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
               style={{animation:"fadeUp .4s ease both"}}>
               {/* Airplane header */}
-              <div className="bg-gradient-to-br from-gold-400 to-gold-600 px-5 py-6 text-center shadow-gold-200">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-500 px-5 py-6 text-center shadow-blue-200">
                 <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-3">
                   <FaPlane className="w-8 h-8 text-white"/>
                 </div>
@@ -655,7 +655,7 @@ export default function BookingDetails() {
                   ["Customer Amount", b.customerAmount, "text-slate-700"],
                   ["GST",             b.gst,            "text-slate-500"],
                   ["TCS",             b.tcs,            "text-slate-500"],
-                  ["Total Payable",   b.totalPayable,   "text-gold-700 font-extrabold"],
+                  ["Total Payable",   b.totalPayable,   "text-blue-600 font-extrabold"],
                   ["Paid Amount",     b.paid,           "text-green-600 font-bold"],
                   ["Due Amount",      b.due,            b.due > 0 ? "text-red-600 font-bold" : "text-green-600 font-bold"],
                   ["Vendor Costs",    b.vendorCost,     "text-slate-500"],
@@ -680,11 +680,11 @@ export default function BookingDetails() {
               <div className="px-5 pb-4">
                 <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
                   <span>Payment Progress</span>
-                  <span className={b.payPct===100?"text-green-600 font-bold":"text-gold-700 font-bold"}>{b.payPct}%</span>
+                  <span className={b.payPct===100?"text-green-600 font-bold":"text-blue-600 font-bold"}>{b.payPct}%</span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all duration-700
-                    ${b.payPct===100?"bg-gradient-to-r from-green-500 to-emerald-500":"bg-gradient-to-r from-gold-400 to-gold-600"}`}
+                    ${b.payPct===100?"bg-gradient-to-r from-green-500 to-emerald-500":"bg-gradient-to-r from-blue-600 to-indigo-500"}`}
                     style={{width:`${b.payPct}%`}}/>
                 </div>
               </div>
@@ -693,7 +693,7 @@ export default function BookingDetails() {
               <div className="px-5 pb-5 space-y-2">
                 {canUpdate && (
                   <button onClick={()=>navigate(`/EditBooking/${b.id}`)}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-sm font-bold transition-all shadow-sm">
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-sm">
                     <FiEdit2 className="w-4 h-4"/> Edit Booking
                   </button>
                 )}
@@ -705,16 +705,16 @@ export default function BookingDetails() {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={downloadInvoice} disabled={downloading==="invoice"}
-                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold transition-all disabled:opacity-60">
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all disabled:opacity-60">
                     {downloading==="invoice"
                       ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
                       : <FaReceipt className="w-3 h-3"/>}
                     Invoice
                   </button>
                   <button onClick={downloadVoucher} disabled={downloading==="voucher"}
-                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gold-300 bg-white text-gold-800 hover:bg-gold-50 text-xs font-bold transition-all disabled:opacity-60">
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 text-xs font-bold transition-all disabled:opacity-60">
                     {downloading==="voucher"
-                      ? <span className="w-3 h-3 border-2 border-gold-300 border-t-gold-700 rounded-full animate-spin"/>
+                      ? <span className="w-3 h-3 border-2 border-blue-200 border-t-blue-700 rounded-full animate-spin"/>
                       : <FiDownload className="w-3 h-3"/>}
                     Voucher
                   </button>
@@ -764,7 +764,7 @@ export default function BookingDetails() {
                 </div>
                 {b.customerPhone && (
                   <a href={`tel:${b.customerPhone}`}
-                    className="flex items-center gap-2 text-xs text-gold-700 hover:text-gold-800 font-semibold">
+                    className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold">
                     <FiPhone className="w-3.5 h-3.5"/> {b.customerPhone}
                   </a>
                 )}
@@ -800,10 +800,10 @@ export default function BookingDetails() {
               <h3 className="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Profit Summary</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label:"Customer Amount", value:fmtINR(b.customerAmount), sub:`Paid: ${fmtINR(b.paid)} · Due: ${fmtINR(b.due)}`, icon:"₹", bg:"from-gold-400 to-gold-600", small:false },
+                  { label:"Customer Amount", value:fmtINR(b.customerAmount), sub:`Paid: ${fmtINR(b.paid)} · Due: ${fmtINR(b.due)}`, icon:"₹", bg:"from-blue-600 to-indigo-500", small:false },
                   { label:"Actual Vendor Costs", value:fmtINR(b.vendorCost), sub:`Original: ${fmtINR(b.vendorCost)}`, icon:"🏷️", bg:"from-amber-500 to-orange-500", small:false },
                   { label:"Net Profit", value:fmtINR(b.netProfit), sub:`Customer − Vendor − GST · (${b.netMargin}%)`, icon:"📈", bg:"from-green-500 to-emerald-600", small:false },
-                  { label:"Profit Margin", value:`${b.netMargin}%`, sub:`Based on Customer Amount`, icon:"📊", bg:"from-gold-400 to-gold-600", small:true },
+                  { label:"Profit Margin", value:`${b.netMargin}%`, sub:`Based on Customer Amount`, icon:"📊", bg:"from-blue-600 to-indigo-500", small:true },
                 ].map((card, i) => (
                   <div key={card.label}
                     className={`bg-gradient-to-br ${card.bg} rounded-2xl p-4 text-white shadow-lg relative overflow-hidden`}
@@ -853,7 +853,7 @@ export default function BookingDetails() {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {services.map((svc) => (
-                        <tr key={svc.publicId} className="hover:bg-gold-50/40 transition-colors group">
+                        <tr key={svc.publicId} className="hover:bg-blue-50/40 transition-colors group">
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-2">
                               <span className="text-base">{SVC_ICON[svc.serviceType] || SVC_ICON[svc.title] || "📋"}</span>
@@ -868,7 +868,7 @@ export default function BookingDetails() {
                               ? <span className="text-sm text-slate-700 font-medium">{svc.vendorName}</span>
                               : canUpdate
                                 ? <button onClick={()=>setAssignSvc(svc)}
-                                    className="text-xs text-gold-700 hover:text-gold-800 font-semibold flex items-center gap-1 hover:underline">
+                                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 hover:underline">
                                     <FiPlus className="w-3 h-3"/> Assign vendor
                                   </button>
                                 : <span className="text-xs text-slate-400">No vendor</span>
@@ -893,9 +893,9 @@ export default function BookingDetails() {
                           <td className="px-3 py-3">
                             <button onClick={()=>downloadServiceVoucher(svc)} disabled={downloading===`svc-${svc.publicId}`}
                               title="Download service voucher"
-                              className="w-7 h-7 rounded-lg border border-gold-300 text-gold-700 hover:bg-gold-50 flex items-center justify-center transition-all disabled:opacity-60">
+                              className="w-7 h-7 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 flex items-center justify-center transition-all disabled:opacity-60">
                               {downloading===`svc-${svc.publicId}`
-                                ? <span className="w-3 h-3 border-2 border-gold-300 border-t-gold-700 rounded-full animate-spin"/>
+                                ? <span className="w-3 h-3 border-2 border-blue-200 border-t-blue-700 rounded-full animate-spin"/>
                                 : <FiFileText className="w-3.5 h-3.5"/>}
                             </button>
                           </td>
@@ -1002,7 +1002,7 @@ export default function BookingDetails() {
                       ["Created", fmtDate(b.quotation.createdAt)],
                       ["Weblink", b.quotation.shareToken
                         ? <a href={`/quotation/${b.quotation.shareToken}`} target="_blank" rel="noreferrer"
-                            className="text-gold-700 hover:underline flex items-center gap-1">
+                            className="text-blue-600 hover:underline flex items-center gap-1">
                             View <FiExternalLink className="w-3 h-3"/>
                           </a>
                         : "—"
@@ -1039,7 +1039,7 @@ export default function BookingDetails() {
                       {b.reminders.map((rem, i) => {
                         const pc = PRIORITY_CFG[rem.priority] || PRIORITY_CFG.Medium;
                         return (
-                          <tr key={rem.id||i} className="hover:bg-gold-50/40">
+                          <tr key={rem.id||i} className="hover:bg-blue-50/40">
                             <td className="px-3 py-3 text-sm font-semibold text-slate-700 whitespace-nowrap">{fmtDateTime(rem.dueDate||rem.reminderDate)}</td>
                             <td className="px-3 py-3 text-sm text-slate-500">{rem.daysBefore ? `${rem.daysBefore} days before` : "—"}</td>
                             <td className="px-3 py-3">

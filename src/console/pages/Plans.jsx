@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Pencil, Loader2, X, CheckCircle2, AlertTriangle, RefreshCw, Users, Layers, Check,
-  CalendarClock, HardDrive,
+  CalendarClock, HardDrive, BellRing,
 } from "lucide-react";
 import { planService, ALL_MODULES } from "../api/planService";
 
@@ -166,6 +166,7 @@ export default function Plans() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [expiring, setExpiring] = useState(false);
+  const [dunning, setDunning] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = useCallback((type, msg) => {
@@ -198,6 +199,18 @@ export default function Plans() {
     }
   };
 
+  const runDunning = async () => {
+    setDunning(true);
+    try {
+      const r = await planService.runDunning();
+      showToast("success", `Dunning sweep complete — ${r?.changed ?? 0} tenant(s) updated`);
+    } catch {
+      showToast("error", "Dunning sweep failed");
+    } finally {
+      setDunning(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -205,11 +218,18 @@ export default function Plans() {
           <h1 className="text-xl font-bold text-heading">Subscription Plans</h1>
           <p className="text-sm text-body">Feature limits &amp; pricing. Assign a plan to a tenant from the Tenants page.</p>
         </div>
-        <button onClick={runExpiry} disabled={expiring}
-          className="inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body hover:bg-surface-hover disabled:opacity-60">
-          {expiring ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-          Run expiry sweep
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button onClick={runDunning} disabled={dunning} title="ACTIVE→PAST_DUE (overdue) and PAST_DUE→EXPIRED (past grace)"
+            className="inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body hover:bg-surface-hover disabled:opacity-60">
+            {dunning ? <Loader2 size={15} className="animate-spin" /> : <BellRing size={15} />}
+            Run dunning sweep
+          </button>
+          <button onClick={runExpiry} disabled={expiring}
+            className="inline-flex items-center gap-2 rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-body hover:bg-surface-hover disabled:opacity-60">
+            {expiring ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+            Run expiry sweep
+          </button>
+        </div>
       </div>
 
       {loading ? (

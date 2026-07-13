@@ -14,6 +14,8 @@ function BillingStatusPill({ status, overdue }) {
     PAID: "bg-emerald-500/10 text-emerald-600 ring-emerald-500/20",
     UNPAID: "bg-amber-500/10 text-amber-600 ring-amber-500/20",
     VOID: "bg-slate-500/10 text-slate-500 ring-slate-500/20",
+    // Credit note (negative amount) from a mid-cycle downgrade proration.
+    CREDIT: "bg-sky-500/10 text-sky-600 ring-sky-500/20",
   };
   return (
     <span className="inline-flex items-center gap-1">
