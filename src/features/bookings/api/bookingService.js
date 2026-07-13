@@ -1,280 +1,161 @@
-// import API from "@shared/api/http";
-
-// /* ─────────────────────────────────────────────────────────────
-//    BOOKING SERVICE
-//    Base URL : /api/bookings
-//    All methods return an Axios Promise → { data, status, ... }
-// ───────────────────────────────────────────────────────────── */
-
-// const bookingService = {
-
-//   /* ── GET ALL BOOKINGS ───────────────────────────────────────
-//      GET /api/bookings
-//      Response: BookingResponseDTO[]
-//   ──────────────────────────────────────────────────────────── */
-//   getAll: (page = 0, size = 1000, sortBy = "createdAt", sortDir = "desc") =>
-//     API.get("/bookings", { params: { page, size, sortBy, sortDir } }),
-
-//   /* ── GET BOOKING BY ID ──────────────────────────────────────
-//      GET /api/bookings/:id
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   getById: (id) =>
-//     API.get(`/bookings/${id}`),
-
-//   /* ── GET BOOKING BY BOOKING CODE ────────────────────────────
-//      GET /api/bookings/code/BK10001
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   getByCode: (code) =>
-//     API.get(`/bookings/code/${code}`),
-
-//   /* ── CREATE NEW BOOKING ─────────────────────────────────────
-//      POST /api/bookings
-//      Body: BookingRequestDTO
-//      {
-//        customer, destination, travelDate,
-//        customerAmount, vendorCost, paid,
-//        status, payStatus, createdBy,
-//        services: ["Hotel", "Flight"],
-//        customerId  (optional - links to Customer)
-//      }
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   create: (bookingData) =>
-//     API.post("/bookings", bookingData),
-
-//   /* ── CONVERT LEAD → BOOKING ─────────────────────────────────
-//      POST /api/leads/:leadPublicId/convert-to-booking
-//      Body: {
-//        quotationPublicId?,   // accepted quotation to carry over (optional)
-//        customerName, destination, travelDate,
-//        bookingDate?, customerAmount, vendorCost,
-//        paidAmount?, services: ["Hotel", "Flight"]
-//      }
-//      Response: BookingResponseDTO  (gated by BOOKING_CREATE)
-//   ──────────────────────────────────────────────────────────── */
-//   convertFromLead: (leadPublicId, payload) =>
-//     API.post(`/leads/${leadPublicId}/convert-to-booking`, payload),
-
-//   /* ── UPDATE BOOKING ─────────────────────────────────────────
-//      PUT /api/bookings/:id
-//      Body: BookingRequestDTO (partial)
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   update: (id, bookingData) =>
-//     API.put(`/bookings/${id}`, bookingData),
-
-//   /* ── UPDATE BOOKING STATUS ONLY ─────────────────────────────
-//      PATCH /api/bookings/:id/status
-//      Body: { status: "Confirmed" | "Pending" | "Cancelled" | "Completed" | "Refunded" }
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   updateStatus: (id, status) =>
-//     API.patch(`/bookings/${id}/status`, { status }),
-
-//   /* ── UPDATE PAYMENT STATUS & AMOUNT ─────────────────────────
-//      PATCH /api/bookings/:id/payment
-//      Body: { payStatus: "Paid" | "Partial" | "Unpaid", paid: 50000 }
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   updatePayment: (id, paymentData) =>
-//     API.patch(`/bookings/${id}/payment`, paymentData),
-
-//   /* ── CANCEL BOOKING (retains the booking; acts on the lead) ──
-//      POST /api/bookings/:publicId/cancel
-//      Body: { action: "MOVE_TO_LEAD" | "PERMANENT_DELETE_LEAD" }
-//        - MOVE_TO_LEAD          → booking CANCELLED, lead re-activated (REOPENED)  [BOOKING_CANCEL]
-//        - PERMANENT_DELETE_LEAD → booking CANCELLED, lead hard-deleted (irreversible) [LEAD_PERMANENT_DELETE]
-//      Response: BookingResponseDTO
-//   ──────────────────────────────────────────────────────────── */
-//   cancel: (publicId, action) =>
-//     API.post(`/bookings/${publicId}/cancel`, { action }),
-
-//   /* ── DELETE BOOKING ─────────────────────────────────────────
-//      DELETE /api/bookings/:id
-//      Response: 204 No Content
-//   ──────────────────────────────────────────────────────────── */
-//   delete: (id) =>
-//     API.delete(`/bookings/${id}`),
-
-//   /* ── GET BOOKINGS BY CUSTOMER ───────────────────────────────
-//      GET /api/bookings/customer/:customerId
-//      Response: BookingResponseDTO[]
-//   ──────────────────────────────────────────────────────────── */
-//   getByCustomer: (customerId) =>
-//     API.get(`/bookings/customer/${customerId}`),
-
-//   /* ── FILTER BOOKINGS ─────────────────────────────────────────
-//      GET /api/bookings/filter
-//      Params: status, payStatus, month, travelMonth
-//      Response: BookingResponseDTO[]
-
-//      Usage:
-//        bookingService.filter({ status: "Confirmed", payStatus: "Paid" })
-//        bookingService.filter({ month: "2026-04" })
-//   ──────────────────────────────────────────────────────────── */
-//   filter: (params = {}) =>
-//     API.get("/bookings/filter", { params }),
-
-//   /* ── SEARCH BOOKINGS ─────────────────────────────────────────
-//      GET /api/bookings/search?q=Maldives
-//      Response: BookingResponseDTO[]
-//   ──────────────────────────────────────────────────────────── */
-//   search: (query) =>
-//     API.get("/bookings/search", {
-//       params: { q: query },
-//     }),
-
-//   /* ── GET BOOKINGS STATS SUMMARY ──────────────────────────────
-//      GET /api/bookings/stats
-//      Response: {
-//        total, confirmed, pending, cancelled,
-//        completed, refunded,
-//        totalRevenue, netRevenue,
-//        totalRefunds, netProfit,
-//        totalGST, totalTCS
-//      }
-//   ──────────────────────────────────────────────────────────── */
-//   getStats: () =>
-//     API.get("/bookings/stats"),
-
-//   /* ── GET PAGE SUMMARY (for Tax & Profit section) ─────────────
-//      GET /api/bookings/page-summary?page=1&size=10
-//      Response: {
-//        totalCharges, netProfit, gstCollected, tcsCollected
-//      }
-//   ──────────────────────────────────────────────────────────── */
-//   getPageSummary: (page = 1, size = 10) =>
-//     API.get("/bookings/page-summary", {
-//       params: { page, size },
-//     }),
-
-//   /* ── EXPORT BOOKINGS CSV ─────────────────────────────────────
-//      GET /api/bookings/export
-//      Response: Blob (CSV file)
-//   ──────────────────────────────────────────────────────────── */
-//   exportCSV: () =>
-//     API.get("/bookings/export", {
-//       responseType: "blob",
-//     }),
-
-//   /* ── SEND VOUCHER EMAIL ──────────────────────────────────────
-//      POST /api/bookings/:id/send-voucher
-//      Response: { message: "Voucher sent successfully" }
-//   ──────────────────────────────────────────────────────────── */
-//   sendVoucher: (id) =>
-//     API.post(`/bookings/${id}/send-voucher`),
-
-// };
-
-// export default bookingService;
-
-
-
-
-// src/services/bookingService.js
+// src/features/bookings/api/bookingService.js
+//
+// Booking API client. Base URL is `http://localhost:8080/api` (see shared/api/http.js), so every
+// path here starts at `/bookings`. Throughout, a booking/payment/service "id" is its publicId
+// (UUID) — never the internal Long — matching the backend `{publicId}` path variables.
+//
+// Enum note: the backend binds enums case-sensitively (no case-insensitive Jackson config), so
+// status / payment-method / service-status values are sent UPPERCASE. The UI shows Title-case and
+// these helpers normalise on the way out.
 
 import API from "@shared/api/http";
 
+/** UI label ("Confirmed", "Bank Transfer") → backend enum token ("CONFIRMED", "BANK_TRANSFER"). */
+const toEnum = (v) =>
+  v == null || v === "" ? undefined : String(v).trim().toUpperCase().replace(/[\s-]+/g, "_");
+
 const bookingService = {
 
+  // ── Core CRUD ──────────────────────────────────────────────────────────────
   getAll: (page = 0, size = 1000, sortBy = "createdAt", sortDir = "desc") =>
     API.get("/bookings", { params: { page, size, sortBy, sortDir } }),
 
-  getById: (id) =>
-    API.get(`/bookings/${id}`),
+  getById: (publicId) => API.get(`/bookings/${publicId}`),
 
-  getByCode: (code) =>
-    API.get(`/bookings/code/${code}`),
+  getByCode: (code) => API.get(`/bookings/code/${code}`),
 
-  create: (bookingData) =>
-    API.post("/bookings", bookingData),
+  create: (bookingData) => API.post("/bookings", bookingData),
 
   convertFromLead: (leadPublicId, payload) =>
     API.post(`/leads/${leadPublicId}/convert-to-booking`, payload),
 
-  update: (id, bookingData) =>
-    API.put(`/bookings/${id}`, bookingData),
+  update: (publicId, bookingData) => API.put(`/bookings/${publicId}`, bookingData),
 
-  updateStatus: (id, status) =>
-    API.patch(`/bookings/${id}/status`, { status }),
+  // Booking status: backend enum is UPPERCASE (CONFIRMED | PENDING | COMPLETED | REFUNDED).
+  // CANCELLED must go through cancel() — the backend rejects it here.
+  updateStatus: (publicId, status, reason) =>
+    API.patch(`/bookings/${publicId}/status`, { status: toEnum(status), reason }),
 
-  updatePayment: (id, paymentData) =>
-    API.patch(`/bookings/${id}/payment`, paymentData),
+  // Legacy running-total top-up (kept for compatibility). New UI records payments via the
+  // itemised ledger (addPayment) instead so each receipt is a visible row.
+  updatePayment: (publicId, { amount, paymentDate, paymentReference, notes } = {}) =>
+    API.patch(`/bookings/${publicId}/payment`, { amount, paymentDate, paymentReference, notes }),
 
-  cancel: (publicId, action) =>
-    API.post(`/bookings/${publicId}/cancel`, { action }),
+  // ── Cancellation, refund & documents ────────────────────────────────────────
+  // The BACKEND computes every rupee. The UI submits proposed figures and renders exactly what
+  // these endpoints return — it must never recompute a retained/refund amount in JS.
 
-  delete: (id) =>
-    API.delete(`/bookings/${id}`),
+  // Dry-run preview of a cancellation. Optional { overrideChargeBase, vendorRecoverable } show the
+  // exact figures of a proposed waiver/override before confirming. Returns the itemised quote.
+  getCancellationPreview: (publicId, { overrideChargeBase, vendorRecoverable } = {}) =>
+    API.get(`/bookings/${publicId}/cancellation/preview`, {
+      params: { overrideChargeBase, vendorRecoverable },
+    }),
 
-  getByCustomer: (customerId) =>
-    API.get(`/bookings/customer/${customerId}`),
+  // Confirm the cancellation. `payload` may be the bare action string (back-compat) or the full body:
+  //   { action, reason?, overrideChargeBase?, overrideReason?, vendorRecoverable? }
+  // action: "MOVE_TO_LEAD" | "PERMANENT_DELETE_LEAD". Override fields require BOOKING_REFUND.
+  cancel: (publicId, payload) =>
+    API.post(`/bookings/${publicId}/cancel`,
+      typeof payload === "string" ? { action: payload } : payload),
 
-  filter: (params = {}) =>
-    API.get("/bookings/filter", { params }),
+  // Frozen refund position of a cancelled booking (due / paid-out / remaining). 404 if never cancelled.
+  getCancellationSummary: (publicId) =>
+    API.get(`/bookings/${publicId}/cancellation`),
 
-  search: (query) =>
-    API.get("/bookings/search", { params: { q: query } }),
+  // Record one refund disbursement against a cancelled booking. `payload`:
+  //   { amount, method?, reference?, refundDate?, notes?, idempotencyKey? }
+  // Requires BOOKING_REFUND. The backend caps the amount to what's still refundable and issues a voucher.
+  refund: (publicId, payload) =>
+    API.post(`/bookings/${publicId}/cancellation/refund`, payload),
 
-  getStats: () =>
-    API.get("/bookings/stats"),
+  // Cancellation note (Credit Note when refunded, Debit Note when the customer owes) — PDF blob.
+  getCreditNote: (publicId) =>
+    API.get(`/bookings/${publicId}/cancellation/credit-note`, { responseType: "blob" }),
 
-  getPageSummary: (page = 1, size = 10) =>
+  // Refund voucher — PDF blob. Available only after a refund has been disbursed.
+  getRefundVoucher: (publicId) =>
+    API.get(`/bookings/${publicId}/cancellation/refund-voucher`, { responseType: "blob" }),
+
+  delete: (publicId) => API.delete(`/bookings/${publicId}`),
+
+  getByCustomer: (customerId) => API.get(`/bookings/customer/${customerId}`),
+
+  // Backend expects `keyword` (was mistakenly `q` before).
+  search: (keyword) => API.get("/bookings/search", { params: { keyword } }),
+
+  // Enum params are normalised; month params are 1–12 integers.
+  filter: ({ status, paymentStatus, bookingMonth, travelMonth, customerId,
+             fromDate, toDate, minAmount, maxAmount } = {}) =>
+    API.get("/bookings/filter", {
+      params: {
+        status: toEnum(status),
+        paymentStatus: toEnum(paymentStatus),
+        bookingMonth, travelMonth, customerId, fromDate, toDate, minAmount, maxAmount,
+      },
+    }),
+
+  getStats: () => API.get("/bookings/stats"),
+
+  getPageSummary: (page = 0, size = 10) =>
     API.get("/bookings/page-summary", { params: { page, size } }),
 
-  exportCSV: () =>
-    API.get("/bookings/export", { responseType: "blob" }),
+  exportCSV: () => API.get("/bookings/export", { responseType: "blob" }),
 
-  sendVoucher: (id) =>
-    API.post(`/bookings/${id}/send-voucher`),
+  // ── Payment ledger ─────────────────────────────────────────────────────────
+  // GET  /bookings/{id}/payments
+  getPayments: (bookingId) => API.get(`/bookings/${bookingId}/payments`),
 
-  // ═══════════════════════════════════════════════════════════
-  // PAYMENT METHODS (used by BookingPayments.jsx)
-  // ═══════════════════════════════════════════════════════════
+  // POST /bookings/{id}/payments
+  // body: { amount, paymentType?, paymentMethod?, paymentDate?, reference?, notes?, serviceItemPublicId? }
+  // paymentMethod is a free label ("Bank Transfer", "Credit Card", …) — sent as-is.
+  addPayment: (bookingId, data) => API.post(`/bookings/${bookingId}/payments`, data),
 
-  // GET /api/bookings/:bookingId/payments
-  getPayments: (bookingId) =>
-    API.get(`/bookings/${bookingId}/payments`),
-
-  // POST /api/bookings/:bookingId/payments
-  // body: { paymentType, amount, paymentMethod, paymentDate, paymentStatus, reference, notes }
-  addPayment: (bookingId, data) =>
-    API.post(`/bookings/${bookingId}/payments`, data),
-
-  // DELETE /api/bookings/:bookingId/payments/:paymentId
+  // DELETE /bookings/{id}/payments/{paymentId}
   deletePayment: (bookingId, paymentId) =>
     API.delete(`/bookings/${bookingId}/payments/${paymentId}`),
 
-  // ═══════════════════════════════════════════════════════════
-  // VENDOR ASSIGNMENT (used by BookingDetails.jsx)
-  // ═══════════════════════════════════════════════════════════
+  // ── Service line items + vendor assignment ──────────────────────────────────
+  // GET  /bookings/{id}/services
+  getServices: (bookingId) => API.get(`/bookings/${bookingId}/services`),
 
-  // PUT /api/bookings/:bookingId/services/:serviceId/vendor
-  assignVendor: (bookingId, serviceId, data) =>
-    API.put(`/bookings/${bookingId}/services/${serviceId}/vendor`, data),
-
-  // ═══════════════════════════════════════════════════════════
-  // SERVICE MANAGEMENT (used by BookingServices.jsx)
-  // ═══════════════════════════════════════════════════════════
-
-  // GET /api/bookings/:bookingId/services
-  getServices: (bookingId) =>
-    API.get(`/bookings/${bookingId}/services`),
-
-  // POST /api/bookings/:bookingId/services
+  // POST /bookings/{id}/services
+  // body: { serviceType?, title, description?, serviceDate?, endDate?, status?, cost?, vendorCost?, confirmationNumber?, notes? }
   addService: (bookingId, data) =>
-    API.post(`/bookings/${bookingId}/services`, data),
+    API.post(`/bookings/${bookingId}/services`, { ...data, status: toEnum(data?.status) }),
 
-  // PUT /api/bookings/:bookingId/services/:serviceId
+  // PUT /bookings/{id}/services/{serviceId}
   updateService: (bookingId, serviceId, data) =>
-    API.put(`/bookings/${bookingId}/services/${serviceId}`, data),
+    API.put(`/bookings/${bookingId}/services/${serviceId}`, {
+      ...data,
+      status: toEnum(data?.status),
+    }),
 
-  // DELETE /api/bookings/:bookingId/services/:serviceId
+  // DELETE /bookings/{id}/services/{serviceId}
   deleteService: (bookingId, serviceId) =>
     API.delete(`/bookings/${bookingId}/services/${serviceId}`),
 
+  // PUT /bookings/{id}/services/{serviceId}/vendor
+  // body: { vendorPublicId, vendorCost?, confirmationNumber? }
+  assignVendor: (bookingId, serviceId, data) =>
+    API.put(`/bookings/${bookingId}/services/${serviceId}/vendor`, data),
+
+  // Vendor dropdown for the assign modal (uses the vendors module list endpoint).
+  getVendors: () => API.get("/vendors", { params: { page: 0, size: 1000 } }),
+
+  // ── Documents (server-rendered PDF, on-the-fly) ─────────────────────────────
+  // Each returns an axios blob response; hand `res.data` to downloadBlob()/openBlob().
+  getInvoice: (bookingId) =>
+    API.get(`/bookings/${bookingId}/invoice`, { responseType: "blob" }),
+
+  getVoucher: (bookingId) =>
+    API.get(`/bookings/${bookingId}/voucher`, { responseType: "blob" }),
+
+  getServiceVoucher: (bookingId, serviceId) =>
+    API.get(`/bookings/${bookingId}/services/${serviceId}/voucher`, { responseType: "blob" }),
+
+  // send-voucher (email) remains a backend stub; the PDF endpoints above are the real deliverables.
+  sendVoucher: (bookingId) => API.post(`/bookings/${bookingId}/send-voucher`),
 };
 
 export default bookingService;

@@ -63,6 +63,8 @@ const NotificationSettings = lazyPage(reminders, "NotificationSettings");
 const quotation = () => import("@features/quotation");
 const CreateQuotation     = lazyPage(quotation, "CreateQuotation");
 const PublicQuotationPage = lazyPage(quotation, "PublicQuotationPage");
+const PackageTemplates    = lazyPage(quotation, "PackageTemplates");
+const TemplateBuilder     = lazyPage(quotation, "TemplateBuilder");
 
 const profile = () => import("@features/profile");
 const Users                    = lazyPage(profile, "Users");
@@ -100,6 +102,7 @@ const ConsoleHome    = lazyPage(consoleFeature, "ConsoleHome");
 const ConsolePalette = lazyPage(consoleFeature, "ConsolePalette");
 const ConsoleTenants = lazyPage(consoleFeature, "ConsoleTenants");
 const ConsolePlans   = lazyPage(consoleFeature, "ConsolePlans");
+const ConsoleUsage   = lazyPage(consoleFeature, "ConsoleUsage");
 const ConsoleUsers   = lazyPage(consoleFeature, "ConsoleUsers");
 const ConsoleFeatureFlags = lazyPage(consoleFeature, "ConsoleFeatureFlags");
 const ConsoleGlobalConfig = lazyPage(consoleFeature, "ConsoleGlobalConfig");
@@ -184,6 +187,7 @@ const AppRouter = () => {
           <Route index element={<ConsoleHome />} />
           <Route path="tenants" element={<ConsoleTenants />} />
           <Route path="plans" element={<ConsolePlans />} />
+          <Route path="usage" element={<ConsoleUsage />} />
           <Route path="users" element={<ConsoleUsers />} />
           <Route path="feature-flags" element={<ConsoleFeatureFlags />} />
           <Route path="config" element={<ConsoleGlobalConfig />} />
@@ -225,6 +229,10 @@ const AppRouter = () => {
           <Route path="Reminders" element={<Reminders/>}/>
          
           <Route path="createquotation"  element={<CreateQuotation/>}/>
+          {/* Package templates — gated by QUOTATION_* (page also self-checks). */}
+          <Route path="quotations/templates" element={<Guard allow={hasPermission(P.QUOTATION_READ)}><PackageTemplates/></Guard>}/>
+          <Route path="quotations/templates/new" element={<Guard allow={hasPermission(P.QUOTATION_CREATE)}><TemplateBuilder/></Guard>}/>
+          <Route path="quotations/templates/:publicId/edit" element={<Guard allow={hasPermission(P.QUOTATION_UPDATE)}><TemplateBuilder/></Guard>}/>
           <Route path="CreateReminder" element={<CreateReminder/>}/>
           <Route path="BookingReminders" element={<BookingReminders/>}/>
           <Route path="Notifications" element={<Notifications/>}/>

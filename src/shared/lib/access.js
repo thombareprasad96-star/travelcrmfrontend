@@ -30,6 +30,9 @@ export const P = {
   LEAD_READ: "LEAD_READ", LEAD_CREATE: "LEAD_CREATE", LEAD_UPDATE: "LEAD_UPDATE", LEAD_DELETE: "LEAD_DELETE",
   LEAD_PERMANENT_DELETE: "LEAD_PERMANENT_DELETE",
   BOOKING_READ: "BOOKING_READ", BOOKING_CREATE: "BOOKING_CREATE", BOOKING_UPDATE: "BOOKING_UPDATE", BOOKING_CANCEL: "BOOKING_CANCEL", BOOKING_DELETE: "BOOKING_DELETE",
+  // High-privilege: override/waive a cancellation charge and disburse refunds. TENANT_ADMIN-only
+  // until explicitly granted (mirrors LEAD_PERMANENT_DELETE — not in any non-admin role default).
+  BOOKING_REFUND: "BOOKING_REFUND", CANCELLATION_POLICY_MANAGE: "CANCELLATION_POLICY_MANAGE",
   CUSTOMER_READ: "CUSTOMER_READ", CUSTOMER_CREATE: "CUSTOMER_CREATE", CUSTOMER_UPDATE: "CUSTOMER_UPDATE", CUSTOMER_DELETE: "CUSTOMER_DELETE",
   QUOTATION_READ: "QUOTATION_READ", QUOTATION_CREATE: "QUOTATION_CREATE", QUOTATION_UPDATE: "QUOTATION_UPDATE", QUOTATION_DELETE: "QUOTATION_DELETE",
   VENDOR_READ: "VENDOR_READ", VENDOR_CREATE: "VENDOR_CREATE", VENDOR_UPDATE: "VENDOR_UPDATE", VENDOR_DELETE: "VENDOR_DELETE",
@@ -113,6 +116,10 @@ export function isTenantAdmin() { return getRole() === ROLES.TENANT_ADMIN; }
 const PERMS_KEY = "userPermissions";
 const MODULES_KEY = "tenantModules";
 
+// Base URL for the bare-fetch prime call (see primeSessionCaches) that must NOT go through the
+// staff-realm axios interceptor. Mirrors http.js / ImpersonationBanner.
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
 // Fetch the CURRENT user's EFFECTIVE permissions from the backend (role default
 // overlaid with their saved per-user map) and cache them. Call right after login.
 export async function loadMyPermissions() {
@@ -158,6 +165,49 @@ export function clearMyEntitlements() {
   localStorage.removeItem(MODULES_KEY);
 }
 
+// ── Impersonation session priming (role-agnostic) ─────────────────────────────
+// Resolve + cache the effective permissions AND module entitlements for an EXPLICIT token, using a
+// bare fetch that BYPASSES the staff-realm axios interceptor (so a transient 401 can never redirect
+// the CONSOLE tab that primes the session). The impersonation hand-off calls this under the freshly
+// minted token BEFORE opening the tenant tab, so the tenant app renders from the impersonated user's
+// OWN access on its very first paint — never the browser's prior (possibly elevated) tenant cache.
+//
+// Works for EVERY role: /permissions/me returns exactly that user's effective keys (STAFF → none,
+// MANAGER/AGENT/ACCOUNTANT → their set, TENANT_ADMIN → all). On any failure the relevant cache is
+// CLEARED, so hasPermission falls back to the impersonated user's ROLE defaults — safe, never stale.
+export async function primeSessionCaches(token) {
+  const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+
+  const permissions = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/permissions/me`, { headers });
+      if (!res.ok) throw new Error(`permissions/me ${res.status}`);
+      const body = await res.json();
+      const data = body?.data ?? body ?? {};
+      const keys = Array.isArray(data.permissions) ? data.permissions : [];
+      localStorage.setItem(PERMS_KEY, JSON.stringify(keys));
+      localStorage.setItem("isPlatformAdmin", data.platformAdmin ? "1" : "0");
+    } catch {
+      clearMyPermissions();   // → role-default fallback, never a stale elevated cache
+    }
+  })();
+
+  const entitlements = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/me/entitlements`, { headers });
+      if (!res.ok) throw new Error(`me/entitlements ${res.status}`);
+      const body = await res.json();
+      const data = body?.data ?? body ?? {};
+      const modules = Array.isArray(data.modules) ? data.modules : [];
+      localStorage.setItem(MODULES_KEY, JSON.stringify(modules));
+    } catch {
+      clearMyEntitlements();  // unknown → fail-open (hasModule shows all), same as login path
+    }
+  })();
+
+  await Promise.all([permissions, entitlements]);
+}
+
 // True if the tenant's plan includes `moduleKey`. FAIL-OPEN: until entitlements load (or if the
 // fetch failed) every module shows — the soft-gate only ever HIDES a module we KNOW is excluded,
 // never blocks one on a missing/failed fetch. Module access is a tenant/plan property, so even
@@ -191,4 +241,4 @@ export function hasAnyPermission(...keys) {
   return keys.some((k) => hasPermission(k));
 }
 
-export default { ROLES, P, getRole, isSuperAdmin, isTenantAdmin, hasPermission, hasAnyPermission, hasModule, loadMyPermissions, clearMyPermissions, loadMyEntitlements, clearMyEntitlements };
+export default { ROLES, P, getRole, isSuperAdmin, isTenantAdmin, hasPermission, hasAnyPermission, hasModule, loadMyPermissions, clearMyPermissions, loadMyEntitlements, clearMyEntitlements, primeSessionCaches };

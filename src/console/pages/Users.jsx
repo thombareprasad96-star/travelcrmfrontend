@@ -4,6 +4,7 @@ import {
   Users as UsersIcon, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { userService } from "../api/userService";
+import { clearMyPermissions, clearMyEntitlements, primeSessionCaches } from "@shared/lib/access";
 
 const inputCls =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-heading placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus";
@@ -147,6 +148,15 @@ export default function Users() {
         name: data.name, email: data.email,
         tenantName: data.tenantName, tenantCode: data.tenantCode, startedAt: Date.now(),
       }));
+      // SECURITY: the impersonated session must NEVER inherit this browser's prior tenant permission
+      // cache (a previous admin/manager login could leave USER_READ etc. behind → the impersonated
+      // user would see menus they don't have). Wipe it, then resolve the TARGET user's OWN effective
+      // permissions/entitlements under the new token BEFORE the tenant tab opens — so it renders from
+      // the correct set on first paint (role-agnostic; works for every role). If priming fails the
+      // caches stay cleared → safe fallback to the impersonated user's role defaults.
+      clearMyPermissions();
+      clearMyEntitlements();
+      await primeSessionCaches(data.token);
       window.open("/", "_blank", "noopener");
       showToast("success", `Opened a session as ${u.email}`);
     } catch (e) {

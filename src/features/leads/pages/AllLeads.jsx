@@ -12,12 +12,13 @@ import {
   Users, Trophy, PieChart, TrendingUp, Search,
   DownloadCloud, FileText, Plus,
   Inbox, User, Calendar, ChevronDown, ChevronRight,
-  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, Copy, BarChart3, ArrowRightLeft, MessageCircle, NotebookPen, Bell, AlertCircle, DollarSign
+  Eye, Pencil, Trash2, X, Mail, Phone, MapPin, Briefcase, CheckCircle, Copy, BarChart3, ArrowRightLeft, MessageCircle, NotebookPen, Bell, AlertCircle, DollarSign, Sparkles
 } from 'lucide-react';
 import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
 import { Link } from 'react-router-dom';
 import { QuotationWebView } from "@features/quotation";
 import { WeblinkAnalyticsModal } from "@features/quotation";
+import { SuggestPackagesModal } from "@features/quotation";
 import ConvertToBookingModal from "../components/ConvertToBookingModal";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
@@ -432,7 +433,7 @@ function CopyableEmail({ email }) {
 }
 
 /* ─── EXPANDABLE LEAD ROW ─────────────────────────────── */
-function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDelete, onStageChange, onViewQuotations, onConvert, onAddLog, onViewLogs, canEdit, canDelete, canConvert, isMobile, onWhatsApp }) {
+function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDelete, onStageChange, onViewQuotations, onSuggestPackages, onConvert, onAddLog, onViewLogs, canEdit, canDelete, canConvert, canCreateQuotation, isMobile, onWhatsApp }) {
   const isConverted = lead.leadStage === 'Converted' || !!lead.convertedBookingPublicId;
   const { avatar, accent } = colorForIndex(index);
   const name = lead.customerName || 'N/A';
@@ -756,6 +757,12 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDele
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', cursor: 'pointer' }}>
                   <Eye size={11} /> View Logs
                 </button>
+                {canCreateQuotation && (
+                  <button onClick={() => onSuggestPackages(lead)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: '10px', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px #6366f155' }}>
+                    <Sparkles size={11} /> Suggest Packages
+                  </button>
+                )}
                 {lead.latestQuotation?.publicId ? (
                   <>
                     {/* Existing quotation(s) → open a popup listing all of them, latest first */}
@@ -1310,6 +1317,7 @@ const Leads = () => {
   // ── editLead state removed — Edit now navigates to /EditLead/:id ──
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [quotationsLead, setQuotationsLead] = useState(null);
+  const [suggestLead, setSuggestLead] = useState(null);   // "Suggest packages" modal target
   const [convertLead, setConvertLead] = useState(null);
   const [logLead, setLogLead] = useState(null);
   const [logsViewLead, setLogsViewLead] = useState(null);
@@ -1533,6 +1541,7 @@ const Leads = () => {
       {deleteTarget && <DeleteConfirm lead={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />}
       {/* No onToast prop: every modal reaches the shared toast store directly. */}
       {quotationsLead && <QuotationsModal lead={quotationsLead} onClose={() => setQuotationsLead(null)} canEdit={hasPermission(P.QUOTATION_UPDATE)} canDelete={hasPermission(P.QUOTATION_DELETE)} />}
+      {suggestLead && <SuggestPackagesModal lead={suggestLead} onClose={() => setSuggestLead(null)} />}
       {convertLead && <ConvertToBookingModal lead={convertLead} onClose={() => setConvertLead(null)} onConverted={handleConverted} />}
       {logLead && <AddLogModal lead={logLead} onClose={() => setLogLead(null)} />}
       {logsViewLead && <LogsModal lead={logsViewLead} onClose={() => setLogsViewLead(null)} canDelete={hasPermission(P.LEAD_UPDATE)} />}
@@ -1704,6 +1713,7 @@ const Leads = () => {
                     onDelete={setDeleteTarget}
                     onStageChange={handleStageChange}
                     onViewQuotations={setQuotationsLead}
+                    onSuggestPackages={setSuggestLead}
                     onConvert={setConvertLead}
                     onAddLog={setLogLead}
                     onViewLogs={setLogsViewLead}
@@ -1711,6 +1721,7 @@ const Leads = () => {
                     canEdit={hasPermission(P.LEAD_UPDATE)}
                     canDelete={hasPermission(P.LEAD_DELETE)}
                     canConvert={hasPermission(P.BOOKING_CREATE)}
+                    canCreateQuotation={hasPermission(P.QUOTATION_CREATE)}
                     isMobile={isMobile}
                   />
                 );

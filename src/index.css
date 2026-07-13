@@ -3,3 +3,27 @@
 
 /* Platform console semantic token layer (scoped to .sa-console; never affects the tenant app). */
 @import "./console/theme/tokens.css";
+
+/* ─────────────────────────────────────────────────────────────
+   GOLD / AMBER design tokens — the Bookings feature's accent.
+   Anchored on the brand champagne gold #eeda92 (= gold-300). The
+   light end (100–300) is for bands, tints and badges; the deep end
+   (600–900) carries text and primary actions where white/ink needs
+   contrast. `--color-gold-ink` is the safe text color on a gold fill.
+   Registered via @theme so `bg-gold-500`, `text-gold-700`,
+   `border-gold-200`, `ring-gold-300`, etc. all work as normal utilities.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --color-gold-50:  #fdfaf0;
+  --color-gold-100: #faf3dc;
+  --color-gold-200: #f4e6b8;
+  --color-gold-300: #eeda92;
+  --color-gold-400: #e2c463;
+  --color-gold-500: #cba33a;
+  --color-gold-600: #b8891f;
+  --color-gold-700: #966e15;
+  --color-gold-800: #6b4e12;
+  --color-gold-900: #4a370c;
+  --color-gold:     #eeda92;
+  --color-gold-ink: #4a370c;
+}

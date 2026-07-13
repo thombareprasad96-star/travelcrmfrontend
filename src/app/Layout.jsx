@@ -6,6 +6,7 @@ import AppFooter from '@app/chrome/AppFooter';
 import PageLoader from '@app/PageLoader';
 import ImpersonationBanner from '@app/chrome/ImpersonationBanner';
 import MaintenanceOverlay from '@app/chrome/MaintenanceOverlay';
+import DishaWidget from '../features/assistant/DishaWidget';
 
 const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
   // Default state ko ab false rakha hai taaki mobile par pehle se open na mile
@@ -47,6 +48,9 @@ const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
         </main>
       </div>
       </div>
+
+      {/* Floating internal AI assistant — available on every authenticated page. */}
+      <DishaWidget />
     </div>
   );
 };

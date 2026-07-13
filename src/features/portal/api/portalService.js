@@ -58,6 +58,21 @@ export const portalService = {
     return unwrap(await portalClient.get(`/portal/bookings/${publicId}/itinerary`));
   },
 
+  // ── Booking documents (invoice / cancellation note / refund voucher) ─────
+  // The list contains only documents that actually exist; each carries a `path`
+  // suffix used to fetch the PDF. Every PDF is customer-safe (no vendor cost).
+  async bookingDocuments(publicId) {
+    return unwrap(await portalClient.get(`/portal/bookings/${publicId}/documents`)) ?? [];
+  },
+  async openBookingDoc(publicId, path) {
+    const res = await portalClient.get(`/portal/bookings/${publicId}/${path}`, {
+      responseType: "blob",
+    });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+
   // ── Documents ────────────────────────────────────────────────────────
   async myDocuments() {
     return unwrap(await portalClient.get("/portal/documents")) ?? [];

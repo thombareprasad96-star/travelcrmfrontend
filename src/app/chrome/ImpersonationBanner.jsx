@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ShieldAlert, X, Loader2 } from "lucide-react";
+import { clearMyPermissions, clearMyEntitlements } from "@shared/lib/access";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
@@ -39,7 +40,13 @@ export default function ImpersonationBanner() {
       /* best-effort audit — still clear the session below */
       console.warn("Failed to reach the impersonation-end endpoint.", err);
     }
+    // Tear down the FULL impersonated session — identity keys AND the cached permission/entitlement
+    // state primed for the impersonated user — so none of it can bleed into the next tenant login on
+    // this browser. The console session (sa_token) is untouched, so the SuperAdmin lands back in the
+    // console with its own real authority restored (a separate live realm, never a stashed token).
     ["token", "userEmail", "userRole", "impersonation"].forEach((k) => localStorage.removeItem(k));
+    clearMyPermissions();
+    clearMyEntitlements();
     window.location.href = "/console/users";
   };
 

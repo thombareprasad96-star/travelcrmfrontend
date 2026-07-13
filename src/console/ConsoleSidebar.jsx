@@ -9,6 +9,7 @@ import {
   ScrollText,
   Megaphone,
   Wrench,
+  Gauge,
   Palette as PaletteIcon,
   ShieldCheck,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const NAV = [
   { to: "/console/tenants", label: "Tenants", Icon: Building2 },
   { to: "/console/palette", label: "Design Tokens", Icon: PaletteIcon },
   { to: "/console/plans", label: "Subscriptions", Icon: CreditCard },
+  { to: "/console/usage", label: "Usage & Quotas", Icon: Gauge },
   { to: "/console/users", label: "Users", Icon: Users },
   { to: "/console/feature-flags", label: "Feature Flags", Icon: ToggleLeft },
   { to: "/console/config", label: "Global Config", Icon: Settings2 },

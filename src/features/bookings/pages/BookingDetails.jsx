@@ -1,4 +1,4 @@
-// src/bookings/BookingDetails.jsx
+// src/features/bookings/pages/BookingDetails.jsx
 // ─────────────────────────────────────────────────────────────
 // Full Booking Details page — matches screenshot layout exactly
 // Route: /Bookings/:id  (id = booking publicId)
@@ -7,21 +7,28 @@
 // LEFT:  Booking code + customer info + financials + action buttons
 // RIGHT: Profit Summary | Travel Info | Booking Services |
 //        Payment History | Quotation Info | Booking Reminders
+//
+// Data loading: getById does NOT embed payments/services, so this page loads
+// service lines via getServices(id) and the payment ledger via getPayments(id)
+// as separate requests and renders those tables from the fetched state.
 // ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import bookingService from "../api/bookingService";
+import { useToast } from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
+import { downloadBlob, hydrateBlobError } from "@shared/lib/download";
+import { hasPermission, P } from "@shared/lib/access";
+import RefundBookingModal from "../components/RefundBookingModal";
 import {
   FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle,
   FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser,
-  FiCalendar, FiMapPin, FiDollarSign, FiTruck, FiPrinter,
-  FiDownload, FiMail, FiPhone, FiChevronDown, FiChevronUp,
-  FiEye, FiBell, FiCheckCircle,
+  FiTruck, FiDownload, FiPhone, FiEye, FiBell, FiFileText,
 } from "react-icons/fi";
 import {
   FaPlane, FaHotel, FaCar, FaShip, FaPassport,
-  FaUmbrellaBeach, FaMoneyBillWave, FaReceipt,
+  FaUmbrellaBeach, FaReceipt,
 } from "react-icons/fa";
 import { MdOutlineAssignment, MdPayment } from "react-icons/md";
 
@@ -30,12 +37,12 @@ const STATUS_STYLE = {
   CONFIRMED: "bg-green-100 text-green-700 border-green-200",
   PENDING:   "bg-amber-100 text-amber-700 border-amber-200",
   CANCELLED: "bg-red-100   text-red-600   border-red-200",
-  COMPLETED: "bg-blue-100  text-blue-700  border-blue-200",
+  COMPLETED: "bg-emerald-100 text-emerald-700 border-emerald-200",
   REFUNDED:  "bg-purple-100 text-purple-700 border-purple-200",
 };
 const STATUS_DOT = {
   CONFIRMED:"bg-green-500", PENDING:"bg-amber-500",
-  CANCELLED:"bg-red-500",   COMPLETED:"bg-blue-500", REFUNDED:"bg-purple-500",
+  CANCELLED:"bg-red-500",   COMPLETED:"bg-emerald-500", REFUNDED:"bg-purple-500",
 };
 const PAY_STYLE = {
   PAID:     "bg-emerald-100 text-emerald-700",
@@ -64,7 +71,11 @@ const fmtDate = d => d
 const fmtDateTime = d => d
   ? new Date(d).toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })
   : "—";
-const titleCase = s => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "—";
+const titleCase = s => s
+  ? String(s).replace(/_/g, " ").split(" ").filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ")
+  : "—";
+const unwrap = res => res?.data?.data ?? res?.data;
 
 function normalizeBooking(b = {}) {
   const customerAmount = Number(b.customerAmount) || 0;
@@ -75,7 +86,7 @@ function normalizeBooking(b = {}) {
   const paid           = Number(b.paidAmount)     || 0;
   const netProfit      = Number(b.netProfit)      || (customerAmount - vendorCost);
   const netMargin      = customerAmount > 0 ? ((netProfit / customerAmount) * 100).toFixed(1) : 0;
-  const due            = Math.max(0, totalPayable - paid);
+  const due            = b.pendingAmount != null ? Number(b.pendingAmount) : Math.max(0, totalPayable - paid);
   const payPct         = totalPayable > 0 ? Math.round((paid / totalPayable) * 100) : 0;
 
   return {
@@ -84,8 +95,6 @@ function normalizeBooking(b = {}) {
     customer:        b.customerNameSnapshot || b.customerName || "—",
     customerPhone:   b.customerPhone || b.phone || "",
     destination:     b.destinationSnapshot || b.destination || "—",
-    services:        Array.isArray(b.services) ? b.services : [],
-    bookingServices: Array.isArray(b.bookingServices) ? b.bookingServices : [],
     bookingDate:     b.bookingDate || b.createdAt,
     travelDate:      b.travelDate,
     travelEndDate:   b.travelEndDate || b.returnDate,
@@ -99,7 +108,6 @@ function normalizeBooking(b = {}) {
     status:          (b.status || "PENDING").toUpperCase(),
     payStatus:       (b.paymentStatus || b.payStatus || "UNPAID").toUpperCase(),
     notes:           b.notes || "",
-    payments:        Array.isArray(b.payments)  ? b.payments  : [],
     reminders:       Array.isArray(b.reminders) ? b.reminders : [],
     quotation:       b.quotation || null,
     leadId:          b.leadId || b.leadPublicId || null,
@@ -107,27 +115,10 @@ function normalizeBooking(b = {}) {
   };
 }
 
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function Toast({ msg, type, onClose }) {
-  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
-  const ok = type === "success";
-  return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3.5 rounded-2xl border shadow-2xl max-w-sm
-      ${ok ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}
-      style={{ animation:"slideIn .3s ease both" }}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${ok?"bg-green-100":"bg-red-100"}`}>
-        {ok ? <FiCheck className="w-4 h-4 text-green-600"/> : <FiAlertCircle className="w-4 h-4 text-red-600"/>}
-      </div>
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose}><FiX className="w-4 h-4 opacity-50 hover:opacity-100"/></button>
-    </div>
-  );
-}
-
 /* ─── SECTION CARD ───────────────────────────────────────────── */
-function SCard({ title, icon, action, children, accent = "blue" }) {
+function SCard({ title, icon, action, children, accent = "gold" }) {
   const accents = {
-    blue:   "bg-blue-600",
+    gold:   "bg-gold-600",
     green:  "bg-green-600",
     amber:  "bg-amber-500",
     purple: "bg-purple-600",
@@ -137,7 +128,7 @@ function SCard({ title, icon, action, children, accent = "blue" }) {
   };
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-      <div className={`${accents[accent]} px-5 py-3.5 flex items-center justify-between`}>
+      <div className={`${accents[accent] || accents.gold} px-5 py-3.5 flex items-center justify-between`}>
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white text-sm flex-shrink-0">
             {icon}
@@ -152,8 +143,11 @@ function SCard({ title, icon, action, children, accent = "blue" }) {
 }
 
 /* ─── ADD PAYMENT MODAL ──────────────────────────────────────── */
-function AddPaymentModal({ booking, onClose, onAdded }) {
-  const [form,   setForm]   = useState({ amount:"", method:"Cash", note:"", paymentDate: new Date().toISOString().slice(0,10) });
+function AddPaymentModal({ booking, onClose, onAdded, showToast }) {
+  const [form,   setForm]   = useState({
+    amount:"", paymentMethod:"Cash", reference:"", notes:"",
+    paymentDate: new Date().toISOString().slice(0,10),
+  });
   const [saving, setSaving] = useState(false);
   const [err,    setErr]    = useState("");
 
@@ -164,15 +158,18 @@ function AddPaymentModal({ booking, onClose, onAdded }) {
     setSaving(true);
     try {
       await bookingService.addPayment(booking.id, {
-        amount:      Number(form.amount),
-        method:      form.method,
-        note:        form.note,
-        paymentDate: form.paymentDate,
+        amount:        Number(form.amount),
+        paymentMethod: form.paymentMethod,
+        paymentDate:   form.paymentDate,
+        reference:     form.reference || undefined,
+        notes:         form.notes || undefined,
       });
+      showToast("Payment recorded.", "success");
       onAdded();
       onClose();
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to record payment.");
+    } catch (error) {
+      if (isAlreadyReported(error)) { onClose(); return; }
+      setErr(getErrorMessage(error, "Failed to record payment."));
     } finally { setSaving(false); }
   };
 
@@ -197,25 +194,31 @@ function AddPaymentModal({ booking, onClose, onAdded }) {
             <input type="number" step="0.01" min="0" value={form.amount}
               onChange={e=>{ setForm(p=>({...p,amount:e.target.value})); setErr(""); }}
               placeholder="e.g. 10000"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-green-400 focus:ring-2 focus:ring-green-50 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none"/>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment Method</label>
-            <select value={form.method} onChange={e=>setForm(p=>({...p,method:e.target.value}))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-green-400 outline-none appearance-none cursor-pointer">
-              {["Cash","Bank Transfer","UPI","Credit Card","Cheque","Online","Other"].map(m=><option key={m}>{m}</option>)}
+            <select value={form.paymentMethod} onChange={e=>setForm(p=>({...p,paymentMethod:e.target.value}))}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none appearance-none cursor-pointer">
+              {["Cash","Card","UPI","Bank Transfer","Cheque","Other"].map(m=><option key={m}>{m}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Payment Date</label>
             <input type="date" value={form.paymentDate} onChange={e=>setForm(p=>({...p,paymentDate:e.target.value}))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-green-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Reference (optional)</label>
+            <input value={form.reference} onChange={e=>setForm(p=>({...p,reference:e.target.value}))}
+              placeholder="e.g. UTR / txn id"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Note (optional)</label>
-            <input value={form.note} onChange={e=>setForm(p=>({...p,note:e.target.value}))}
+            <input value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}
               placeholder="e.g. First instalment"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-green-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -232,24 +235,44 @@ function AddPaymentModal({ booking, onClose, onAdded }) {
 }
 
 /* ─── ASSIGN VENDOR MODAL ────────────────────────────────────── */
-function AssignVendorModal({ booking, service, onClose, onAssigned }) {
-  const [vendorName, setVendorName] = useState(service?.vendorName || "");
-  const [vendorCost, setVendorCost] = useState(service?.vendorCost || "");
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
+function AssignVendorModal({ booking, service, onClose, onAssigned, showToast }) {
+  const [vendors, setVendors]         = useState([]);
+  const [loadingVendors, setLoading]  = useState(true);
+  const [vendorPublicId, setVendorId] = useState(service?.vendorPublicId || "");
+  const [vendorCost, setVendorCost]   = useState(service?.vendorCost ?? "");
+  const [saving, setSaving]           = useState(false);
+  const [err, setErr]                 = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res  = await bookingService.getVendors();
+        const list = res?.data?.data?.content ?? res?.data?.data ?? res?.data ?? [];
+        if (alive) setVendors(Array.isArray(list) ? list : []);
+      } catch (error) {
+        if (!isAlreadyReported(error)) showToast(getErrorMessage(error, "Couldn't load vendors."), "error");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [showToast]);
 
   const handleAssign = async () => {
-    if (!vendorName.trim()) { setErr("Vendor name is required."); return; }
+    if (!vendorPublicId) { setErr("Select a vendor."); return; }
     setSaving(true);
     try {
-      await bookingService.assignVendor(booking.id, service.id, {
-        vendorName: vendorName.trim(),
-        vendorCost: Number(vendorCost) || 0,
+      await bookingService.assignVendor(booking.id, service.publicId, {
+        vendorPublicId,
+        vendorCost: vendorCost === "" ? undefined : Number(vendorCost),
       });
+      showToast("Vendor assigned.", "success");
       onAssigned();
       onClose();
-    } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to assign vendor.");
+    } catch (error) {
+      if (isAlreadyReported(error)) { onClose(); return; }
+      setErr(getErrorMessage(error, "Failed to assign vendor."));
     } finally { setSaving(false); }
   };
 
@@ -258,34 +281,39 @@ function AssignVendorModal({ booking, service, onClose, onAssigned }) {
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}/>
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md z-10 p-6" style={{animation:"popIn .25s ease both"}}>
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-            <FiTruck className="w-5 h-5 text-blue-600"/>
+          <div className="w-10 h-10 rounded-xl bg-gold-100 flex items-center justify-center">
+            <FiTruck className="w-5 h-5 text-gold-700"/>
           </div>
           <div>
             <h3 className="text-base font-extrabold text-slate-800">Assign Vendor</h3>
-            <p className="text-xs text-slate-400">Service: {service?.type || service?.serviceType}</p>
+            <p className="text-xs text-slate-400">Service: {service?.title || service?.serviceType || "—"}</p>
           </div>
           <button onClick={onClose} className="ml-auto w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"><FiX className="w-4 h-4"/></button>
         </div>
         {err && <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-600 font-semibold mb-4">{err}</div>}
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Vendor Name *</label>
-            <input value={vendorName} onChange={e=>{ setVendorName(e.target.value); setErr(""); }}
-              placeholder="e.g. Hotel Everest, Nepal Airlines"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none"/>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Vendor *</label>
+            <select value={vendorPublicId} onChange={e=>{ setVendorId(e.target.value); setErr(""); }}
+              disabled={loadingVendors}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none appearance-none cursor-pointer disabled:opacity-60">
+              <option value="">{loadingVendors ? "Loading vendors…" : "Select a vendor"}</option>
+              {vendors.map(v => (
+                <option key={v.publicId} value={v.publicId}>{v.vendorName ?? v.name ?? "Unnamed vendor"}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5 block">Vendor Cost (₹)</label>
             <input type="number" step="0.01" min="0" value={vendorCost} onChange={e=>setVendorCost(e.target.value)}
               placeholder="0.00"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-blue-400 outline-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium focus:border-gold-400 outline-none"/>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all">Cancel</button>
-          <button onClick={handleAssign} disabled={saving}
-            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2">
+          <button onClick={handleAssign} disabled={saving||loadingVendors}
+            className="flex-1 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2">
             {saving&&<span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>}
             {saving?"Saving…":"Assign Vendor"}
           </button>
@@ -301,61 +329,166 @@ function AssignVendorModal({ booking, service, onClose, onAssigned }) {
 export default function BookingDetails() {
   const { id }    = useParams();
   const navigate  = useNavigate();
+  const { showToast } = useToast();
 
-  const [booking,       setBooking]       = useState(null);
-  const [loading,       setLoading]       = useState(true);
-  const [toast,         setToast]         = useState(null);
-  const [showAddPay,    setShowAddPay]     = useState(false);
-  const [assignSvc,     setAssignSvc]      = useState(null); // service to assign vendor
-  const [deletingPay,   setDeletingPay]    = useState(null);
+  const canUpdate = hasPermission(P.BOOKING_UPDATE);
 
-  const showToast = useCallback((msg, type="success") => setToast({msg,type}), []);
+  const [booking,     setBooking]     = useState(null);
+  const [services,    setServices]    = useState([]);
+  const [payments,    setPayments]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [showAddPay,  setShowAddPay]  = useState(false);
+  const [assignSvc,   setAssignSvc]   = useState(null); // service item to assign vendor
+  const [deletingPay, setDeletingPay] = useState(null);
+  const [downloading, setDownloading] = useState(null); // "invoice" | "voucher" | `svc-<id>`
 
   /* ── FETCH ── */
   const fetchBooking = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
     try {
-      const res  = await bookingService.getById(id);
-      const raw  = res.data?.data ?? res.data;
-      setBooking(normalizeBooking(raw));
-    } catch (err) {
-      showToast(err?.response?.data?.message || "Failed to load booking.", "error");
-    } finally {
-      setLoading(false);
+      const res = await bookingService.getById(id);
+      setBooking(normalizeBooking(unwrap(res)));
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      showToast(getErrorMessage(error, "Failed to load booking."), "error");
     }
   }, [id, showToast]);
 
-  useEffect(() => { fetchBooking(); }, [fetchBooking]);
+  const fetchServices = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res  = await bookingService.getServices(id);
+      const list = unwrap(res);
+      setServices(Array.isArray(list) ? list : []);
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      showToast(getErrorMessage(error, "Couldn't load booking services."), "error");
+    }
+  }, [id, showToast]);
+
+  const fetchPayments = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res  = await bookingService.getPayments(id);
+      const list = unwrap(res);
+      setPayments(Array.isArray(list) ? list : []);
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      showToast(getErrorMessage(error, "Couldn't load payment history."), "error");
+    }
+  }, [id, showToast]);
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([fetchBooking(), fetchServices(), fetchPayments()]);
+    setLoading(false);
+  }, [fetchBooking, fetchServices, fetchPayments]);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
 
   /* ── STATUS UPDATE ── */
   const handleStatusChange = async (newStatus) => {
+    if (!canUpdate) return;
+    const prev = booking.status;
+    setBooking(p => ({ ...p, status: newStatus.toUpperCase() }));
     try {
-      await bookingService.update(booking.id, { status: newStatus });
-      setBooking(p => ({ ...p, status: newStatus.toUpperCase() }));
-      showToast(`Booking status updated to ${titleCase(newStatus)}.`);
-    } catch (e) {
-      showToast("Failed to update status.", "error");
+      await bookingService.updateStatus(booking.id, newStatus);
+      showToast(`Booking status updated to ${titleCase(newStatus)}.`, "success");
+      fetchBooking();
+    } catch (error) {
+      setBooking(p => ({ ...p, status: prev }));
+      if (isAlreadyReported(error)) return;
+      showToast(getErrorMessage(error, "Failed to update status."), "error");
     }
   };
 
   /* ── DELETE PAYMENT ── */
-  const handleDeletePayment = async (payId) => {
+  const handleDeletePayment = async (payPublicId) => {
     try {
-      await bookingService.deletePayment(booking.id, payId);
-      showToast("Payment removed.");
-      fetchBooking();
-    } catch { showToast("Failed to remove payment.", "error"); }
-    setDeletingPay(null);
+      await bookingService.deletePayment(booking.id, payPublicId);
+      showToast("Payment removed.", "success");
+      await Promise.all([fetchPayments(), fetchBooking()]);
+    } catch (error) {
+      if (!isAlreadyReported(error)) showToast(getErrorMessage(error, "Failed to remove payment."), "error");
+    } finally {
+      setDeletingPay(null);
+    }
+  };
+
+  /* ── PDF DOWNLOADS ── */
+  const downloadInvoice = async () => {
+    setDownloading("invoice");
+    try {
+      const res = await bookingService.getInvoice(booking.id);
+      downloadBlob(res.data, `Invoice-${booking.code}.pdf`);
+      showToast("Invoice downloaded.", "success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      await hydrateBlobError(error);
+      showToast(getErrorMessage(error, "Couldn't generate the invoice."), "error");
+    } finally { setDownloading(null); }
+  };
+
+  const downloadVoucher = async () => {
+    setDownloading("voucher");
+    try {
+      const res = await bookingService.getVoucher(booking.id);
+      downloadBlob(res.data, `Voucher-${booking.code}.pdf`);
+      showToast("Voucher downloaded.", "success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      await hydrateBlobError(error);
+      showToast(getErrorMessage(error, "Couldn't generate the voucher."), "error");
+    } finally { setDownloading(null); }
+  };
+
+  const downloadServiceVoucher = async (svc) => {
+    setDownloading(`svc-${svc.publicId}`);
+    try {
+      const res = await bookingService.getServiceVoucher(booking.id, svc.publicId);
+      const safe = String(svc.title || svc.serviceType || "service").replace(/[^\w-]+/g, "_");
+      downloadBlob(res.data, `Voucher-${booking.code}-${safe}.pdf`);
+      showToast("Service voucher downloaded.", "success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      await hydrateBlobError(error);
+      showToast(getErrorMessage(error, "Couldn't generate the service voucher."), "error");
+    } finally { setDownloading(null); }
+  };
+
+  const downloadCreditNote = async () => {
+    setDownloading("credit-note");
+    try {
+      const res = await bookingService.getCreditNote(booking.id);
+      downloadBlob(res.data, `CancellationNote-${booking.code}.pdf`);
+      showToast("Cancellation note downloaded.", "success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      await hydrateBlobError(error);
+      showToast(getErrorMessage(error, "Couldn't generate the cancellation note."), "error");
+    } finally { setDownloading(null); }
+  };
+
+  const downloadRefundVoucher = async () => {
+    setDownloading("refund-voucher");
+    try {
+      const res = await bookingService.getRefundVoucher(booking.id);
+      downloadBlob(res.data, `RefundVoucher-${booking.code}.pdf`);
+      showToast("Refund voucher downloaded.", "success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      await hydrateBlobError(error);
+      showToast(getErrorMessage(error, "No refund voucher yet — it's issued once a refund is disbursed."), "error");
+    } finally { setDownloading(null); }
   };
 
   /* ── LOADING ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center"
         style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
         <div className="text-center">
-          <div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
+          <div className="w-14 h-14 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"/>
           <p className="text-slate-500 font-semibold">Loading booking details…</p>
         </div>
       </div>
@@ -364,13 +497,13 @@ export default function BookingDetails() {
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100 flex items-center justify-center"
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center"
         style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <p className="text-lg font-extrabold text-slate-600 mb-2">Booking Not Found</p>
           <button onClick={()=>navigate("/Allbookings")}
-            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition-all mx-auto">
+            className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-bold text-sm transition-all mx-auto">
             <FiArrowLeft className="w-4 h-4"/> Back to Bookings
           </button>
         </div>
@@ -389,7 +522,7 @@ export default function BookingDetails() {
 
   /* ─── RENDER ──────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100"
       style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
@@ -399,9 +532,12 @@ export default function BookingDetails() {
       `}</style>
 
       {/* Modals */}
-      {toast       && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
-      {showAddPay  && <AddPaymentModal booking={b} onClose={()=>setShowAddPay(false)} onAdded={()=>{ showToast("Payment recorded! ✅"); fetchBooking(); }}/>}
-      {assignSvc   && <AssignVendorModal booking={b} service={assignSvc} onClose={()=>setAssignSvc(null)} onAssigned={()=>{ showToast("Vendor assigned!"); fetchBooking(); }}/>}
+      {showAddPay  && <AddPaymentModal booking={b} showToast={showToast}
+        onClose={()=>setShowAddPay(false)}
+        onAdded={()=>{ fetchPayments(); fetchBooking(); }}/>}
+      {assignSvc   && <AssignVendorModal booking={b} service={assignSvc} showToast={showToast}
+        onClose={()=>setAssignSvc(null)}
+        onAssigned={()=>{ fetchServices(); fetchBooking(); }}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -415,7 +551,7 @@ export default function BookingDetails() {
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="text-lg font-extrabold text-slate-800">Booking Details</h1>
-                  <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-lg">{b.code}</span>
+                  <span className="text-sm font-bold text-gold-700 bg-gold-50 border border-gold-200 px-2.5 py-0.5 rounded-lg">{b.code}</span>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${statusStyle}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${statusDot}`}/>
                     {titleCase(b.status)}
@@ -425,35 +561,43 @@ export default function BookingDetails() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/")}>Home</span>
+                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/")}>Home</span>
                   <span className="mx-1">/</span>
-                  <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/Allbookings")}>Bookings</span>
+                  <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/Allbookings")}>Bookings</span>
                   <span className="mx-1">/</span>
-                  <span className="text-blue-600 font-bold">View</span>
+                  <span className="text-gold-700 font-bold">View</span>
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={fetchBooking}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-blue-300 bg-white text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
+              <button onClick={loadAll}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-gold-300 bg-white text-slate-600 hover:text-gold-700 text-xs font-bold transition-all">
                 <FiRefreshCw className={`w-3.5 h-3.5 ${loading?"animate-spin":""}`}/> Refresh
               </button>
-              <button onClick={()=>navigate(`/EditBooking/${b.id}`)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all">
-                <FiEdit2 className="w-3.5 h-3.5"/> Edit
+              {canUpdate && (
+                <button onClick={()=>navigate(`/EditBooking/${b.id}`)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold shadow-sm transition-all">
+                  <FiEdit2 className="w-3.5 h-3.5"/> Edit
+                </button>
+              )}
+              <button onClick={downloadInvoice} disabled={downloading==="invoice"}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold shadow-sm shadow-gold-200 transition-all disabled:opacity-60">
+                {downloading==="invoice"
+                  ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
+                  : <FaReceipt className="w-3.5 h-3.5"/>}
+                Invoice
               </button>
-              <button onClick={()=>navigate(`/BookingsPage?invoice=${b.id}`)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-600 text-xs font-bold transition-all">
-                <FaReceipt className="w-3.5 h-3.5"/> Invoice
-              </button>
-              <button onClick={()=>navigate(`/BookingsPage?taxinvoice=${b.id}`)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-amber-200 hover:border-amber-300 bg-amber-50 text-amber-700 text-xs font-bold transition-all">
-                <FaReceipt className="w-3.5 h-3.5"/> Tax Invoice
+              <button onClick={downloadVoucher} disabled={downloading==="voucher"}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gold-300 bg-white text-gold-800 hover:bg-gold-50 text-xs font-bold transition-all disabled:opacity-60">
+                {downloading==="voucher"
+                  ? <span className="w-3.5 h-3.5 border-2 border-gold-300 border-t-gold-700 rounded-full animate-spin"/>
+                  : <FiDownload className="w-3.5 h-3.5"/>}
+                Voucher
               </button>
               {b.quotation?.shareToken && (
                 <button onClick={()=>window.open(`/quotation/${b.quotation.shareToken}`,"_blank")}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-green-200 hover:border-green-300 bg-green-50 text-green-700 text-xs font-bold transition-all">
-                  <FiExternalLink className="w-3.5 h-3.5"/> Voucher
+                  <FiExternalLink className="w-3.5 h-3.5"/> Quotation
                 </button>
               )}
             </div>
@@ -471,12 +615,12 @@ export default function BookingDetails() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
               style={{animation:"fadeUp .4s ease both"}}>
               {/* Airplane header */}
-              <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-6 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3">
+              <div className="bg-gradient-to-br from-gold-400 to-gold-600 px-5 py-6 text-center shadow-gold-200">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-3">
                   <FaPlane className="w-8 h-8 text-white"/>
                 </div>
                 <p className="text-2xl font-extrabold text-white tracking-widest">{b.code}</p>
-                <p className="text-slate-300 text-sm mt-1">{b.customer} · {b.destination}</p>
+                <p className="text-white/80 text-sm mt-1">{b.customer} · {b.destination}</p>
               </div>
 
               {/* Status row */}
@@ -485,7 +629,8 @@ export default function BookingDetails() {
                   <span className="text-xs font-bold text-slate-500">Status</span>
                   <select value={b.status}
                     onChange={e=>handleStatusChange(e.target.value)}
-                    className={`text-xs font-bold px-2.5 py-1 rounded-full border appearance-none cursor-pointer outline-none ${statusStyle}`}>
+                    disabled={!canUpdate}
+                    className={`text-xs font-bold px-2.5 py-1 rounded-full border appearance-none cursor-pointer outline-none disabled:cursor-not-allowed disabled:opacity-70 ${statusStyle}`}>
                     {["CONFIRMED","PENDING","CANCELLED","COMPLETED","REFUNDED"].map(s=>(
                       <option key={s} value={s}>{titleCase(s)}</option>
                     ))}
@@ -505,7 +650,7 @@ export default function BookingDetails() {
                   ["Customer Amount", b.customerAmount, "text-slate-700"],
                   ["GST",             b.gst,            "text-slate-500"],
                   ["TCS",             b.tcs,            "text-slate-500"],
-                  ["Total Payable",   b.totalPayable,   "text-blue-700 font-extrabold"],
+                  ["Total Payable",   b.totalPayable,   "text-gold-700 font-extrabold"],
                   ["Paid Amount",     b.paid,           "text-green-600 font-bold"],
                   ["Due Amount",      b.due,            b.due > 0 ? "text-red-600 font-bold" : "text-green-600 font-bold"],
                   ["Vendor Costs",    b.vendorCost,     "text-slate-500"],
@@ -530,49 +675,70 @@ export default function BookingDetails() {
               <div className="px-5 pb-4">
                 <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
                   <span>Payment Progress</span>
-                  <span className={b.payPct===100?"text-green-600 font-bold":"text-blue-600 font-bold"}>{b.payPct}%</span>
+                  <span className={b.payPct===100?"text-green-600 font-bold":"text-gold-700 font-bold"}>{b.payPct}%</span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full transition-all duration-700
-                    ${b.payPct===100?"bg-gradient-to-r from-green-500 to-emerald-400":"bg-gradient-to-r from-blue-500 to-indigo-400"}`}
+                    ${b.payPct===100?"bg-gradient-to-r from-green-500 to-emerald-500":"bg-gradient-to-r from-gold-400 to-gold-600"}`}
                     style={{width:`${b.payPct}%`}}/>
                 </div>
               </div>
 
               {/* Action buttons */}
               <div className="px-5 pb-5 space-y-2">
-                <button onClick={()=>navigate(`/EditBooking/${b.id}`)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-sm">
-                  <FiEdit2 className="w-4 h-4"/> Edit Booking
-                </button>
-                <button onClick={()=>navigate(`/BookingPayments/${b.id}`)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-all shadow-sm">
-                  <MdPayment className="w-4 h-4"/> Payments
-                </button>
-                <button onClick={()=>navigate(`/BookingServices/${b.id}`)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold transition-all shadow-sm">
-                  <MdOutlineAssignment className="w-4 h-4"/> Services
-                </button>
-                <div className="grid grid-cols-3 gap-2">
-                  <button onClick={()=>navigate(`/BookingsPage?invoice=${b.id}`)}
-                    className="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all">
-                    <FaReceipt className="w-3 h-3"/> Invoice
+                {canUpdate && (
+                  <button onClick={()=>navigate(`/EditBooking/${b.id}`)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-sm font-bold transition-all shadow-sm">
+                    <FiEdit2 className="w-4 h-4"/> Edit Booking
                   </button>
-                  <button onClick={()=>navigate(`/BookingsPage?taxinvoice=${b.id}`)}
-                    className="flex items-center justify-center gap-1 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold transition-all">
-                    <FaReceipt className="w-3 h-3"/> Tax
+                )}
+                {canUpdate && (
+                  <button onClick={()=>setShowAddPay(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold transition-all shadow-sm">
+                    <MdPayment className="w-4 h-4"/> Add Payment
                   </button>
-                  <button onClick={()=>navigate(`/BookingsPage?voucher=${b.id}`)}
-                    className="flex items-center justify-center gap-1 py-2 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-xs font-bold transition-all">
-                    <FiPrinter className="w-3 h-3"/> Voucher
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={downloadInvoice} disabled={downloading==="invoice"}
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold transition-all disabled:opacity-60">
+                    {downloading==="invoice"
+                      ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
+                      : <FaReceipt className="w-3 h-3"/>}
+                    Invoice
+                  </button>
+                  <button onClick={downloadVoucher} disabled={downloading==="voucher"}
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gold-300 bg-white text-gold-800 hover:bg-gold-50 text-xs font-bold transition-all disabled:opacity-60">
+                    {downloading==="voucher"
+                      ? <span className="w-3 h-3 border-2 border-gold-300 border-t-gold-700 rounded-full animate-spin"/>
+                      : <FiDownload className="w-3 h-3"/>}
+                    Voucher
                   </button>
                 </div>
+
+                {/* Cancellation documents — only once the booking is cancelled/refunded */}
+                {(b.status==="CANCELLED" || b.status==="REFUNDED") && (
+                  <div className="grid grid-cols-2 gap-2 pt-2 mt-1 border-t border-slate-100">
+                    <button onClick={downloadCreditNote} disabled={downloading==="credit-note"}
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold transition-all disabled:opacity-60">
+                      {downloading==="credit-note"
+                        ? <span className="w-3 h-3 border-2 border-red-300 border-t-red-700 rounded-full animate-spin"/>
+                        : <FaReceipt className="w-3 h-3"/>}
+                      Credit Note
+                    </button>
+                    <button onClick={downloadRefundVoucher} disabled={downloading==="refund-voucher"}
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 text-xs font-bold transition-all disabled:opacity-60">
+                      {downloading==="refund-voucher"
+                        ? <span className="w-3 h-3 border-2 border-green-300 border-t-green-700 rounded-full animate-spin"/>
+                        : <FiDownload className="w-3 h-3"/>}
+                      Refund Voucher
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Customer Information */}
-            <SCard title="Customer Information" icon={<FiUser/>} accent="teal"
-              style={{animation:"fadeUp .4s ease both .1s"}}>
+            <SCard title="Customer Information" icon={<FiUser/>} accent="teal">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center text-teal-700 font-extrabold text-sm flex-shrink-0">
@@ -585,7 +751,7 @@ export default function BookingDetails() {
                 </div>
                 {b.customerPhone && (
                   <a href={`tel:${b.customerPhone}`}
-                    className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold">
+                    className="flex items-center gap-2 text-xs text-gold-700 hover:text-gold-800 font-semibold">
                     <FiPhone className="w-3.5 h-3.5"/> {b.customerPhone}
                   </a>
                 )}
@@ -621,10 +787,10 @@ export default function BookingDetails() {
               <h3 className="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Profit Summary</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label:"Customer Amount", value:fmtINR(b.customerAmount), sub:`Paid: ${fmtINR(b.paid)} · Net: ${fmtINR(b.paid-b.tcs)}`, icon:"₹", bg:"from-cyan-500 to-cyan-600", small:false },
+                  { label:"Customer Amount", value:fmtINR(b.customerAmount), sub:`Paid: ${fmtINR(b.paid)} · Due: ${fmtINR(b.due)}`, icon:"₹", bg:"from-gold-400 to-gold-600", small:false },
                   { label:"Actual Vendor Costs", value:fmtINR(b.vendorCost), sub:`Original: ${fmtINR(b.vendorCost)}`, icon:"🏷️", bg:"from-amber-500 to-orange-500", small:false },
-                  { label:"Net Profit", value:fmtINR(b.netProfit), sub:`Customer Amount - Vendor Costs - GST · (${b.netMargin}% · ${fmtINR(b.paid-b.vendorCost-b.gst)})`, icon:"📈", bg:"from-green-500 to-emerald-600", small:false },
-                  { label:"Profit Margin", value:`${b.netMargin}%`, sub:`Based on Customer Amount`, icon:"📊", bg:"from-blue-600 to-blue-700", small:true },
+                  { label:"Net Profit", value:fmtINR(b.netProfit), sub:`Customer − Vendor − GST · (${b.netMargin}%)`, icon:"📈", bg:"from-green-500 to-emerald-600", small:false },
+                  { label:"Profit Margin", value:`${b.netMargin}%`, sub:`Based on Customer Amount`, icon:"📊", bg:"from-gold-400 to-gold-600", small:true },
                 ].map((card, i) => (
                   <div key={card.label}
                     className={`bg-gradient-to-br ${card.bg} rounded-2xl p-4 text-white shadow-lg relative overflow-hidden`}
@@ -639,7 +805,7 @@ export default function BookingDetails() {
             </div>
 
             {/* ── Travel Information ── */}
-            <SCard title="Travel Information" icon={<FaPlane/>} accent="blue">
+            <SCard title="Travel Information" icon={<FaPlane/>} accent="gold">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <p className="text-xs font-extrabold text-slate-500 uppercase tracking-wide mb-2">Lead Details</p>
@@ -661,43 +827,38 @@ export default function BookingDetails() {
             </SCard>
 
             {/* ── Booking Services ── */}
-            <SCard title="Booking Services" icon={<MdOutlineAssignment/>} accent="slate"
-              action={
-                <button onClick={()=>navigate(`/BookingServices/${b.id}`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">
-                  <FiPlus className="w-3 h-3"/> Assign Vendor
-                </button>
-              }>
-              {(b.bookingServices?.length > 0 || b.services?.length > 0) ? (
+            <SCard title="Booking Services" icon={<MdOutlineAssignment/>} accent="slate">
+              {services.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[500px]">
+                  <table className="w-full text-sm min-w-[560px]">
                     <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
-                        {["Service Type","Vendor","Vendor Cost","Cancellation Charges","Refunded","Status","Reference"].map(h=>(
+                        {["Service","Vendor","Vendor Cost","Cost","Status","Reference","Voucher"].map(h=>(
                           <th key={h} className="px-3 py-2.5 text-left text-[10px] font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {(b.bookingServices?.length > 0 ? b.bookingServices : b.services.map((s,i)=>({
-                        id:i, type:s, serviceType:s,
-                        vendorName:null, vendorCost:0, cancellationCharge:0,
-                        refunded:0, status:"PENDING", reference:null
-                      }))).map((svc, i) => (
-                        <tr key={svc.id||i} className="hover:bg-slate-50/50 transition-colors group">
+                      {services.map((svc) => (
+                        <tr key={svc.publicId} className="hover:bg-gold-50/40 transition-colors group">
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-2">
-                              <span className="text-base">{SVC_ICON[svc.serviceType||svc.type] || "📋"}</span>
-                              <span className="font-semibold text-slate-700 text-sm">{svc.serviceType||svc.type||"—"}</span>
+                              <span className="text-base">{SVC_ICON[svc.serviceType] || SVC_ICON[svc.title] || "📋"}</span>
+                              <div>
+                                <span className="font-semibold text-slate-700 text-sm block">{svc.title || svc.serviceType || "—"}</span>
+                                {svc.serviceType && svc.title && <span className="text-[11px] text-slate-400">{titleCase(svc.serviceType)}</span>}
+                              </div>
                             </div>
                           </td>
                           <td className="px-3 py-3">
                             {svc.vendorName
                               ? <span className="text-sm text-slate-700 font-medium">{svc.vendorName}</span>
-                              : <button onClick={()=>navigate(`/BookingServices/${b.id}`)}
-                                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 hover:underline">
-                                  No vendor assigned
-                                </button>
+                              : canUpdate
+                                ? <button onClick={()=>setAssignSvc(svc)}
+                                    className="text-xs text-gold-700 hover:text-gold-800 font-semibold flex items-center gap-1 hover:underline">
+                                    <FiPlus className="w-3 h-3"/> Assign vendor
+                                  </button>
+                                : <span className="text-xs text-slate-400">No vendor</span>
                             }
                           </td>
                           <td className="px-3 py-3">
@@ -706,10 +867,7 @@ export default function BookingDetails() {
                             </span>
                           </td>
                           <td className="px-3 py-3">
-                            <span className="text-sm text-slate-500">{fmtINR(svc.cancellationCharge||0)}</span>
-                          </td>
-                          <td className="px-3 py-3">
-                            <span className="text-sm text-slate-500">{fmtINR(svc.refunded||0)}</span>
+                            <span className="text-sm text-slate-500">{fmtINR(svc.cost||0)}</span>
                           </td>
                           <td className="px-3 py-3">
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[(svc.status||"PENDING").toUpperCase()] || STATUS_STYLE.PENDING}`}>
@@ -717,7 +875,16 @@ export default function BookingDetails() {
                             </span>
                           </td>
                           <td className="px-3 py-3">
-                            <span className="text-sm text-slate-400">{svc.reference||"N/A"}</span>
+                            <span className="text-sm text-slate-400">{svc.confirmationNumber||"—"}</span>
+                          </td>
+                          <td className="px-3 py-3">
+                            <button onClick={()=>downloadServiceVoucher(svc)} disabled={downloading===`svc-${svc.publicId}`}
+                              title="Download service voucher"
+                              className="w-7 h-7 rounded-lg border border-gold-300 text-gold-700 hover:bg-gold-50 flex items-center justify-center transition-all disabled:opacity-60">
+                              {downloading===`svc-${svc.publicId}`
+                                ? <span className="w-3 h-3 border-2 border-gold-300 border-t-gold-700 rounded-full animate-spin"/>
+                                : <FiFileText className="w-3.5 h-3.5"/>}
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -734,39 +901,42 @@ export default function BookingDetails() {
 
             {/* ── Payment History ── */}
             <SCard title="Payment History" icon={<FiCreditCard/>} accent="green"
-              action={
-                <button onClick={()=>navigate(`/BookingPayments/${b.id}`)}
+              action={ canUpdate &&
+                <button onClick={()=>setShowAddPay(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">
                   <FiPlus className="w-3 h-3"/> Add Payment
                 </button>
               }>
-              {b.payments?.length > 0 ? (
+              {payments.length > 0 ? (
                 <div className="space-y-2">
-                  {b.payments.map((pay, i) => (
-                    <div key={pay.id||i} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 group">
+                  {payments.map((pay) => (
+                    <div key={pay.publicId} className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 group">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
                           <FiCheck className="w-4 h-4 text-green-600"/>
                         </div>
                         <div>
                           <p className="text-sm font-bold text-slate-800">{fmtINR(pay.amount)}</p>
-                          <p className="text-xs text-slate-400">{pay.method} · {fmtDate(pay.paymentDate||pay.createdAt)}</p>
-                          {pay.note && <p className="text-xs text-slate-400 italic">{pay.note}</p>}
+                          <p className="text-xs text-slate-400">
+                            {titleCase(pay.paymentMethod) || "—"} · {fmtDate(pay.paymentDate||pay.createdAt)}
+                            {pay.reference && <span className="ml-1">· {pay.reference}</span>}
+                          </p>
+                          {pay.notes && <p className="text-xs text-slate-400 italic">{pay.notes}</p>}
                         </div>
                       </div>
-                      {deletingPay===pay.id ? (
+                      {canUpdate && (deletingPay===pay.publicId ? (
                         <div className="flex items-center gap-1.5">
-                          <button onClick={()=>handleDeletePayment(pay.id)}
+                          <button onClick={()=>handleDeletePayment(pay.publicId)}
                             className="text-xs font-bold text-red-600 px-2 py-1 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100">Delete</button>
                           <button onClick={()=>setDeletingPay(null)}
                             className="text-xs font-bold text-slate-500 px-2 py-1 rounded-lg bg-white border border-slate-200">Cancel</button>
                         </div>
                       ) : (
-                        <button onClick={()=>setDeletingPay(pay.id)}
+                        <button onClick={()=>setDeletingPay(pay.publicId)}
                           className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
                           <FiTrash2 className="w-3 h-3"/>
                         </button>
-                      )}
+                      ))}
                     </div>
                   ))}
                   {/* Total paid */}
@@ -779,10 +949,12 @@ export default function BookingDetails() {
                 <div className="text-center py-8">
                   <div className="text-3xl mb-2">💳</div>
                   <p className="text-sm text-slate-400 font-medium mb-3">No payments recorded yet</p>
-                  <button onClick={()=>navigate(`/BookingPayments/${b.id}`)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all mx-auto">
-                    <FiPlus className="w-3.5 h-3.5"/> Record Payment
-                  </button>
+                  {canUpdate && (
+                    <button onClick={()=>setShowAddPay(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all mx-auto">
+                      <FiPlus className="w-3.5 h-3.5"/> Record Payment
+                    </button>
+                  )}
                 </div>
               )}
             </SCard>
@@ -817,7 +989,7 @@ export default function BookingDetails() {
                       ["Created", fmtDate(b.quotation.createdAt)],
                       ["Weblink", b.quotation.shareToken
                         ? <a href={`/quotation/${b.quotation.shareToken}`} target="_blank" rel="noreferrer"
-                            className="text-blue-600 hover:underline flex items-center gap-1">
+                            className="text-gold-700 hover:underline flex items-center gap-1">
                             View <FiExternalLink className="w-3 h-3"/>
                           </a>
                         : "—"
@@ -839,13 +1011,7 @@ export default function BookingDetails() {
             </SCard>
 
             {/* ── Booking Reminders ── */}
-            <SCard title="Booking Reminders" icon={<FiBell/>} accent="amber"
-              action={
-                <button onClick={()=>navigate(`/BookingReminders?booking=${b.id}`)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all">
-                  View All <FiExternalLink className="w-3 h-3"/>
-                </button>
-              }>
+            <SCard title="Booking Reminders" icon={<FiBell/>} accent="amber">
               {b.reminders?.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[480px]">
@@ -860,7 +1026,7 @@ export default function BookingDetails() {
                       {b.reminders.map((rem, i) => {
                         const pc = PRIORITY_CFG[rem.priority] || PRIORITY_CFG.Medium;
                         return (
-                          <tr key={rem.id||i} className="hover:bg-slate-50/50">
+                          <tr key={rem.id||i} className="hover:bg-gold-50/40">
                             <td className="px-3 py-3 text-sm font-semibold text-slate-700 whitespace-nowrap">{fmtDateTime(rem.dueDate||rem.reminderDate)}</td>
                             <td className="px-3 py-3 text-sm text-slate-500">{rem.daysBefore ? `${rem.daysBefore} days before` : "—"}</td>
                             <td className="px-3 py-3">

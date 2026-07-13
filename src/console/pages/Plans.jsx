@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Pencil, Loader2, X, CheckCircle2, AlertTriangle, RefreshCw, Users, Layers, Check,
+  CalendarClock, HardDrive,
 } from "lucide-react";
 import { planService, ALL_MODULES } from "../api/planService";
 
@@ -8,6 +9,7 @@ const inputCls =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-heading placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus";
 
 const fmtLimit = (v) => (v == null ? "Unlimited" : Number(v).toLocaleString());
+const fmtStorage = (v) => (v == null ? "Unlimited" : `${Number(v).toLocaleString()} MB`);
 const fmtPrice = (v, ccy) =>
   `${ccy || "INR"} ${Number(v ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
@@ -28,6 +30,8 @@ function PlanEditDrawer({ plan, onClose, onSaved, showToast }) {
     currency: plan.currency ?? "INR",
     maxUsers: plan.maxUsers ?? "", // "" = unlimited
     maxLeads: plan.maxLeads ?? "",
+    maxBookingsPerMonth: plan.maxBookingsPerMonth ?? "",
+    maxStorageMb: plan.maxStorageMb ?? "",
     modules: new Set(plan.modules ?? []),
     active: plan.active ?? true,
   }));
@@ -50,6 +54,8 @@ function PlanEditDrawer({ plan, onClose, onSaved, showToast }) {
         currency: form.currency,
         maxUsers: form.maxUsers === "" ? null : Number(form.maxUsers),
         maxLeads: form.maxLeads === "" ? null : Number(form.maxLeads),
+        maxBookingsPerMonth: form.maxBookingsPerMonth === "" ? null : Number(form.maxBookingsPerMonth),
+        maxStorageMb: form.maxStorageMb === "" ? null : Number(form.maxStorageMb),
         modules: Array.from(form.modules),
         active: form.active,
       });
@@ -97,6 +103,16 @@ function PlanEditDrawer({ plan, onClose, onSaved, showToast }) {
               <Field label="Max leads" hint="Blank = unlimited">
                 <input type="number" min={1} className={inputCls} value={form.maxLeads}
                   onChange={(e) => set("maxLeads", e.target.value)} placeholder="∞" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Max bookings / month" hint="Blank = unlimited">
+                <input type="number" min={1} className={inputCls} value={form.maxBookingsPerMonth}
+                  onChange={(e) => set("maxBookingsPerMonth", e.target.value)} placeholder="∞" />
+              </Field>
+              <Field label="Max storage (MB)" hint="Blank = unlimited">
+                <input type="number" min={1} className={inputCls} value={form.maxStorageMb}
+                  onChange={(e) => set("maxStorageMb", e.target.value)} placeholder="∞" />
               </Field>
             </div>
 
@@ -231,6 +247,14 @@ export default function Plans() {
                 <div className="rounded-lg bg-surface-hover px-3 py-2">
                   <div className="flex items-center gap-1.5 text-xs text-muted"><Layers size={12} /> Leads</div>
                   <div className="font-mono font-semibold text-heading">{fmtLimit(p.maxLeads)}</div>
+                </div>
+                <div className="rounded-lg bg-surface-hover px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted"><CalendarClock size={12} /> Bookings/mo</div>
+                  <div className="font-mono font-semibold text-heading">{fmtLimit(p.maxBookingsPerMonth)}</div>
+                </div>
+                <div className="rounded-lg bg-surface-hover px-3 py-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted"><HardDrive size={12} /> Storage</div>
+                  <div className="font-mono font-semibold text-heading">{fmtStorage(p.maxStorageMb)}</div>
                 </div>
               </div>
 

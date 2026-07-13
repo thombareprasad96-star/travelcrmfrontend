@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, MapPin, Calendar, CheckCircle2, CreditCard, Loader2, AlertTriangle,
+  FileText, Download,
 } from "lucide-react";
 import portalService from "../api/portalService";
 import { money, fmtDate, StatusChip, PayChip, Spinner, EmptyState } from "../components/portalUi";
@@ -15,6 +16,8 @@ export default function PortalBookingDetail() {
   const navigate = useNavigate();
   const [b, setB] = useState(null);
   const [itinerary, setItinerary] = useState(null);
+  const [docs, setDocs] = useState([]);
+  const [docBusy, setDocBusy] = useState(null);
   const [error, setError] = useState("");
   const [paying, setPaying] = useState(false);
   const [payMsg, setPayMsg] = useState("");
@@ -27,7 +30,19 @@ export default function PortalBookingDetail() {
         setError(err?.response?.status === 404 ? "Trip not found." : "Could not load this trip.")
       );
     portalService.itinerary(publicId).then(setItinerary).catch(() => {});
+    portalService.bookingDocuments(publicId).then(setDocs).catch(() => {});
   }, [publicId]);
+
+  const openDoc = async (doc) => {
+    setDocBusy(doc.path);
+    try {
+      await portalService.openBookingDoc(publicId, doc.path);
+    } catch {
+      /* transient; the button re-enables so the traveler can retry */
+    } finally {
+      setDocBusy(null);
+    }
+  };
 
   const pay = async () => {
     setPaying(true);
@@ -111,7 +126,7 @@ export default function PortalBookingDetail() {
         </div>
 
         {/* ── Right column: payment summary (sticky on laptop) ── */}
-        <div className="lg:sticky lg:top-24">
+        <div className="lg:sticky lg:top-24 space-y-5">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[15px] font-bold text-slate-800">Payment summary</h3>
@@ -156,6 +171,36 @@ export default function PortalBookingDetail() {
               </div>
             )}
           </div>
+
+          {/* ── Documents ── */}
+          {docs.length > 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h3 className="text-[15px] font-bold text-slate-800 mb-4">Documents</h3>
+              <div className="space-y-2.5">
+                {docs.map((doc) => (
+                  <button
+                    key={doc.path + doc.type}
+                    onClick={() => openDoc(doc)}
+                    disabled={docBusy === doc.path}
+                    className="w-full flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3.5 py-3 text-left transition disabled:opacity-70"
+                  >
+                    <span className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-600 shrink-0">
+                      <FileText size={17} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13.5px] font-semibold text-slate-800 truncate">{doc.label}</span>
+                      <span className="block text-[11.5px] text-slate-400">PDF · opens in a new tab</span>
+                    </span>
+                    {docBusy === doc.path ? (
+                      <Loader2 size={16} className="animate-spin text-slate-400 shrink-0" />
+                    ) : (
+                      <Download size={16} className="text-slate-400 shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

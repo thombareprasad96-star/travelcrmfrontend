@@ -3,7 +3,26 @@ import { useNavigate } from "react-router-dom";
 import bookingService                from "../api/bookingService";
 import CancelBookingModal            from "../components/CancelBookingModal";
 import { hasPermission, P }          from "@shared/lib/access";
-import { Search as FiSearch, RefreshCw as FiRefreshCw, Filter as FiFilter, Download as FiDownload, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Eye as FiEye, Pen as FiEdit2, Trash2 as FiTrash2, X as FiX, Printer as FiPrinter, Check as FiCheck, CircleAlert as FiAlertCircle, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Plane as FaPlane, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, IndianRupee as FaRupeeSign, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle, ReceiptText as FaFileInvoiceDollar, HandCoins as FaHandHoldingUsd, ReceiptText as MdOutlineReceiptLong } from "lucide-react";
+import { useToast }                  from "@shared/ui/toast";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
+import { downloadBlob, hydrateBlobError }     from "@shared/lib/download";
+import { Search as FiSearch, RefreshCw as FiRefreshCw, Filter as FiFilter, Download as FiDownload, ChevronDown as FiChevronDown, ChevronUp as FiChevronUp, Eye as FiEye, Pen as FiEdit2, Trash2 as FiTrash2, X as FiX, FileText as FiFileText, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Plane as FaPlane, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, IndianRupee as FaRupeeSign, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle, ReceiptText as FaFileInvoiceDollar, HandCoins as FaHandHoldingUsd, ReceiptText as MdOutlineReceiptLong } from "lucide-react";
+
+/* ─── SHARED PDF DOWNLOAD HELPERS ────────────────────────────── */
+async function downloadDoc(kind, booking, showToast) {
+  const label = kind === "invoice" ? "Invoice" : "Voucher";
+  try {
+    const res = kind === "invoice"
+      ? await bookingService.getInvoice(booking.id)
+      : await bookingService.getVoucher(booking.id);
+    downloadBlob(res.data, `${label}-${booking.code || booking.id}.pdf`);
+    showToast(`${label} downloaded.`, "success");
+  } catch (error) {
+    if (isAlreadyReported(error)) return;
+    await hydrateBlobError(error);
+    showToast(getErrorMessage(error, `Couldn't generate the ${label.toLowerCase()}.`), "error");
+  }
+}
 
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
@@ -33,10 +52,10 @@ const STATUS_DOT = {
 };
 
 const STAT_CARDS = [
-  { key:"total",     label:"Total Bookings", icon:<FaPlane/>,             gradient:"from-cyan-500   to-cyan-600",     money:false },
+  { key:"total",     label:"Total Bookings", icon:<FaPlane/>,             gradient:"from-gold-400   to-gold-600",     money:false },
   { key:"confirmed", label:"Confirmed",      icon:<FaCheckCircle/>,       gradient:"from-green-500  to-emerald-600",  money:false },
   { key:"revenue",   label:"Total Revenue",  icon:<FaRupeeSign/>,         gradient:"from-amber-500  to-orange-500",   money:true  },
-  { key:"net",       label:"Net Revenue",    icon:<FaHandHoldingUsd/>,    gradient:"from-blue-600   to-blue-700",     money:true  },
+  { key:"net",       label:"Net Revenue",    icon:<FaHandHoldingUsd/>,    gradient:"from-gold-500   to-gold-700",     money:true  },
   { key:"refunds",   label:"Refunds",        icon:<FaTimesCircle/>,       gradient:"from-rose-500   to-red-600",      money:true  },
   { key:"profit",    label:"Net Profit",     icon:<FaFileInvoiceDollar/>, gradient:"from-slate-600  to-slate-700",    money:true  },
 ];
@@ -69,27 +88,8 @@ function normalizeBooking(b={}) {
 }
 
 const EMPTY = [];
-const selectCls = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all hover:border-slate-300";
-const inputCls  = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 font-medium focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none transition-all hover:border-slate-300";
-
-/* ─── TOAST ──────────────────────────────────────────────────── */
-function Toast({ msg, type, onClose }) {
-  useEffect(()=>{ const t=setTimeout(onClose,3500); return()=>clearTimeout(t); },[onClose]);
-  return (
-    <div className={`fixed top-5 right-5 z-[999] flex items-center gap-3 px-4 py-3.5 rounded-2xl border shadow-2xl max-w-sm
-      ${type==="success"?"bg-green-50 border-green-200 text-green-800":"bg-red-50 border-red-200 text-red-800"}`}
-      style={{animation:"slideIn .3s ease both"}}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-        ${type==="success"?"bg-green-100":"bg-red-100"}`}>
-        {type==="success"?<FiCheck className="w-4 h-4 text-green-600"/>:<FiAlertCircle className="w-4 h-4 text-red-600"/>}
-      </div>
-      <p className="text-sm font-semibold flex-1">{msg}</p>
-      <button onClick={onClose} className="opacity-50 hover:opacity-100 transition-opacity">
-        <FiX className="w-4 h-4"/>
-      </button>
-    </div>
-  );
-}
+const selectCls = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 font-medium focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none appearance-none cursor-pointer transition-all hover:border-slate-300";
+const inputCls  = "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 placeholder-slate-400 font-medium focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none transition-all hover:border-slate-300";
 
 /* ─── STAT CARD with animate counter ────────────────────────── */
 function StatCard({ card, value }) {
@@ -131,11 +131,46 @@ function StatCard({ card, value }) {
 }
 
 /* ─── BOOKING DETAIL MODAL ───────────────────────────────────── */
-function BookingModal({ booking, onClose, onEdit, onCancel }) {
+// Statuses settable from the detail select — Cancelled goes through the Cancel flow, not here.
+const MODAL_STATUSES = ["Confirmed","Pending","Completed","Refunded"];
+
+function BookingModal({ booking, onClose, onEdit, onCancel, onRefresh }) {
+  const { showToast } = useToast();
+  const [downloading, setDownloading]   = useState(null);   // "invoice" | "voucher" | null
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusVal, setStatusVal]       = useState(booking?.status || "");
+
+  useEffect(()=>{ setStatusVal(booking?.status || ""); },[booking?.status]);
+
   if (!booking) return null;
   const canCancel = hasPermission(P.BOOKING_CANCEL) &&
     booking.status!=="Completed" && booking.status!=="Cancelled";
+  const canRead   = hasPermission(P.BOOKING_READ);
+  const canUpdate = hasPermission(P.BOOKING_UPDATE);
   const payPct = booking.totalPayable>0 ? Math.round(booking.paid/booking.totalPayable*100) : 0;
+
+  const runDownload = async kind => {
+    setDownloading(kind);
+    try { await downloadDoc(kind, booking, showToast); }
+    finally { setDownloading(null); }
+  };
+
+  const handleStatusChange = async next => {
+    if (!next || next===booking.status) return;
+    const prev = statusVal;
+    setStatusVal(next);
+    setStatusSaving(true);
+    try {
+      await bookingService.updateStatus(booking.id, next);
+      showToast(`Status updated to ${next}.`, "success");
+      onRefresh?.();
+      onClose();
+    } catch (error) {
+      setStatusVal(prev);
+      if (isAlreadyReported(error)) return;
+      showToast(getErrorMessage(error, "Couldn't update the status."), "error");
+    } finally { setStatusSaving(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -144,11 +179,11 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto"
         style={{animation:"popIn .25s ease both"}}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-500 px-6 py-5 rounded-t-3xl flex items-start justify-between">
+        <div className="bg-gradient-to-r from-gold-400 to-gold-600 px-6 py-5 rounded-t-3xl flex items-start justify-between">
           <div>
-            <p className="text-blue-200 text-[10px] font-extrabold uppercase tracking-widest mb-1">Booking Detail</p>
+            <p className="text-white/80 text-[10px] font-extrabold uppercase tracking-widest mb-1">Booking Detail</p>
             <h2 className="text-white text-xl font-extrabold tracking-tight">{booking.code}</h2>
-            <p className="text-blue-100 text-sm mt-0.5">{booking.customer}</p>
+            <p className="text-white/90 text-sm mt-0.5">{booking.customer}</p>
           </div>
           <button onClick={onClose}
             className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-all">
@@ -156,8 +191,8 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
           </button>
         </div>
         <div className="p-6 space-y-5">
-          {/* Badges */}
-          <div className="flex flex-wrap gap-2">
+          {/* Badges + status control */}
+          <div className="flex flex-wrap items-center gap-2">
             <span className={`px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 ${STATUS_STYLE[booking.status]}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[booking.status]}`}/>{booking.status}
             </span>
@@ -167,6 +202,25 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
             {booking.services?.map(s=>(
               <span key={s} className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">{s}</span>
             ))}
+            {canUpdate && (
+              <div className="ml-auto flex items-center gap-1.5">
+                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wide">Set status</span>
+                <div className="relative">
+                  <select value={statusVal} disabled={statusSaving}
+                    onChange={e=>handleStatusChange(e.target.value)}
+                    className="pl-3 pr-8 py-1.5 rounded-lg border border-gold-300 bg-white text-xs font-bold text-gold-800
+                      focus:border-gold-400 focus:ring-2 focus:ring-gold-100 outline-none appearance-none cursor-pointer
+                      disabled:opacity-50 disabled:cursor-not-allowed">
+                    {(MODAL_STATUSES.includes(statusVal)?MODAL_STATUSES:[statusVal,...MODAL_STATUSES]).map(s=>(
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {statusSaving
+                    ? <FiRefreshCw className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-500 animate-spin pointer-events-none"/>
+                    : <FiChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-500 pointer-events-none"/>}
+                </div>
+              </div>
+            )}
           </div>
           {/* Detail grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -191,12 +245,12 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-extrabold text-slate-600">Payment Progress</p>
-              <p className={`text-sm font-extrabold ${payPct===100?"text-green-600":"text-blue-600"}`}>{payPct}%</p>
+              <p className={`text-sm font-extrabold ${payPct===100?"text-green-600":"text-gold-700"}`}>{payPct}%</p>
             </div>
             <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all duration-700
                 ${payPct===100?"bg-gradient-to-r from-green-500 to-emerald-500"
-                :payPct>0?"bg-gradient-to-r from-blue-500 to-indigo-500":"bg-slate-300"}`}
+                :payPct>0?"bg-gradient-to-r from-gold-400 to-gold-600":"bg-slate-300"}`}
                 style={{width:`${payPct}%`}}/>
             </div>
             <div className="flex justify-between text-xs font-medium text-slate-400">
@@ -222,8 +276,8 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
           <div className="flex flex-wrap gap-2.5 pt-1">
             <button onClick={()=>{onClose();onEdit?.(booking);}}
               className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-2xl
-                bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-700 hover:to-indigo-600
-                text-white text-sm font-bold shadow-md shadow-blue-200 transition-all">
+                bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700
+                text-white text-sm font-bold shadow-md shadow-gold-200 transition-all">
               <FiEdit2 className="w-4 h-4"/> Edit Booking
             </button>
             {canCancel && (
@@ -233,11 +287,30 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
                 <FiX className="w-4 h-4"/> Cancel Booking
               </button>
             )}
-            <button className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-2xl
-              bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-sm font-bold transition-all">
-              <FiPrinter className="w-4 h-4"/> Print
-            </button>
           </div>
+          {/* Documents */}
+          {canRead && (
+            <div className="flex flex-wrap gap-2.5">
+              <button onClick={()=>runDownload("invoice")} disabled={downloading!==null}
+                className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-2xl
+                  bg-gold-600 hover:bg-gold-700 text-white text-sm font-bold shadow-md shadow-gold-200
+                  transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                {downloading==="invoice"
+                  ? <FiRefreshCw className="w-4 h-4 animate-spin"/>
+                  : <FiFileText className="w-4 h-4"/>}
+                Invoice
+              </button>
+              <button onClick={()=>runDownload("voucher")} disabled={downloading!==null}
+                className="flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 rounded-2xl
+                  border border-gold-300 text-gold-800 bg-white hover:bg-gold-50 text-sm font-bold
+                  transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                {downloading==="voucher"
+                  ? <FiRefreshCw className="w-4 h-4 animate-spin"/>
+                  : <MdOutlineReceiptLong className="w-4 h-4"/>}
+                Voucher
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -245,17 +318,19 @@ function BookingModal({ booking, onClose, onEdit, onCancel }) {
 }
 
 /* ─── MOBILE BOOKING CARD ────────────────────────────────────── */
-function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete }) {
+function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete, onInvoice, downloading }) {
   const canCancel = hasPermission(P.BOOKING_CANCEL) && b.status!=="Completed" && b.status!=="Cancelled";
+  const canDelete = hasPermission(P.BOOKING_DELETE);
+  const canRead   = hasPermission(P.BOOKING_READ);
   const payPct = b.totalPayable>0 ? Math.round(b.paid/b.totalPayable*100) : 0;
   return (
     <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-4 space-y-3
-      hover:shadow-md hover:border-blue-200 transition-all duration-200">
-      <div className="h-1 -mx-4 -mt-4 rounded-t-2xl bg-gradient-to-r from-blue-500 to-indigo-500 mb-3"/>
+      hover:shadow-md hover:border-gold-200 transition-all duration-200">
+      <div className="h-1 -mx-4 -mt-4 rounded-t-2xl bg-gradient-to-r from-gold-400 to-gold-600 mb-3"/>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+            <span className="text-xs font-extrabold text-gold-700 bg-gold-50 px-2 py-0.5 rounded-lg border border-gold-200">
               {b.code}
             </span>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 ${STATUS_STYLE[b.status]}`}>
@@ -291,14 +366,14 @@ function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete }) {
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div className={`h-full rounded-full transition-all duration-700
-            ${payPct===100?"bg-green-500":payPct>0?"bg-blue-500":"bg-slate-200"}`}
+            ${payPct===100?"bg-green-500":payPct>0?"bg-gold-400":"bg-slate-200"}`}
             style={{width:`${payPct}%`}}/>
         </div>
       </div>
       {/* 2×2 amount grid */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         {[
-          {label:"Customer Amt",value:fmtINR(b.customerAmount),cls:"text-blue-600 font-bold"},
+          {label:"Customer Amt",value:fmtINR(b.customerAmount),cls:"text-gold-700 font-bold"},
           {label:"Total Payable",value:fmtINR(b.totalPayable),  cls:"text-slate-700 font-bold"},
           {label:"GST + TCS",   value:fmtINR(b.gst+b.tcs),    cls:"text-amber-600 font-bold"},
           {label:"Vendor Cost", value:fmtINR(b.vendorCost),    cls:"text-slate-600 font-bold"},
@@ -309,10 +384,10 @@ function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete }) {
           </div>
         ))}
       </div>
-      <div className="flex gap-2 pt-1">
+      <div className="flex flex-wrap gap-2 pt-1">
         <button onClick={()=>onView(b)}
-          className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-700 hover:to-indigo-600
-            text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-200">
+          className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700
+            text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-gold-200">
           <FiEye className="w-3.5 h-3.5"/> View
         </button>
         <button onClick={()=>onEdit?.(b)}
@@ -320,6 +395,16 @@ function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete }) {
             text-xs font-bold transition-all flex items-center justify-center gap-1.5">
           <FiEdit2 className="w-3.5 h-3.5"/> Edit
         </button>
+        {canRead&&(
+          <button onClick={()=>onInvoice?.(b)} disabled={downloading===`${b.id}:invoice`}
+            className="flex-1 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white
+              text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-gold-200
+              disabled:opacity-60 disabled:cursor-not-allowed">
+            {downloading===`${b.id}:invoice`
+              ? <FiRefreshCw className="w-3.5 h-3.5 animate-spin"/>
+              : <FiFileText className="w-3.5 h-3.5"/>} Invoice
+          </button>
+        )}
         {canCancel&&(
           <button onClick={()=>onCancel?.(b)}
             className="flex-1 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200
@@ -327,11 +412,13 @@ function MobileBookingCard({ b, onView, onEdit, onCancel, onDelete }) {
             <FiX className="w-3.5 h-3.5"/> Cancel
           </button>
         )}
-        <button onClick={()=>onDelete(b.id)}
-          className="w-10 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border border-red-200
-            text-xs font-bold transition-all flex items-center justify-center">
-          <FiTrash2 className="w-3.5 h-3.5"/>
-        </button>
+        {canDelete&&(
+          <button onClick={()=>onDelete(b.id)}
+            className="w-10 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border border-red-200
+              text-xs font-bold transition-all flex items-center justify-center">
+            <FiTrash2 className="w-3.5 h-3.5"/>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -356,11 +443,11 @@ function TH({ label, sKey, sortKey, sortDir, onSort, right }) {
   return (
     <th onClick={sKey?()=>onSort(sKey):undefined}
       className={`px-3 py-3.5 text-left text-[10px] font-extrabold text-slate-500 uppercase tracking-wider
-        whitespace-nowrap select-none ${sKey?"cursor-pointer hover:text-blue-600 transition-colors":""}
+        whitespace-nowrap select-none ${sKey?"cursor-pointer hover:text-gold-700 transition-colors":""}
         ${right?"text-right":""}`}>
       <span className={`inline-flex items-center gap-1 ${right?"justify-end w-full":""}`}>
         {label}
-        {sKey&&<span className={active?"text-blue-500":"opacity-25"}>{active?(sortDir==="asc"?"↑":"↓"):"↕"}</span>}
+        {sKey&&<span className={active?"text-gold-600":"opacity-25"}>{active?(sortDir==="asc"?"↑":"↓"):"↕"}</span>}
       </span>
     </th>
   );
@@ -389,6 +476,7 @@ export default function BookingsPage({
   onRefresh,
 }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [bookings,      setBookings]      = useState(propBookings);
   const [loading,       setLoading]       = useState(propLoading);
   // filters
@@ -407,9 +495,10 @@ export default function BookingsPage({
   const [selected,      setSelected]      = useState(new Set());
   const [modal,         setModal]         = useState(null);
   const [cancelBooking, setCancelBooking] = useState(null);
-  const [toast,         setToast]         = useState(null);
+  const [rowDownloading, setRowDownloading] = useState(null); // `${publicId}:${kind}` of doc downloading
+  const [deletingId,    setDeletingId]    = useState(null);  // publicId of row being deleted
+  const [bulkDeleting,  setBulkDeleting]  = useState(false);
 
-  const showToast = useCallback((msg,type="success")=>setToast({msg,type}),[]);
   const selfManaged = propBookings.length===0;
 
   const fetchBookings = useCallback(async()=>{
@@ -419,7 +508,9 @@ export default function BookingsPage({
       const body=res.data;
       const raw=Array.isArray(body?.data)?body.data:Array.isArray(body)?body:[];
       setBookings(raw.map(normalizeBooking));
-    } catch { showToast("Failed to load bookings.","error"); }
+    } catch (error) {
+      if (!isAlreadyReported(error)) showToast(getErrorMessage(error,"Failed to load bookings."),"error");
+    }
     finally { setLoading(false); }
   },[showToast]);
 
@@ -474,16 +565,44 @@ export default function BookingsPage({
   const openCancel = b => setCancelBooking(b);
   const refreshList = onRefresh||fetchBookings;
 
-  const handleDelete = useCallback(id=>{
-    setBookings(p=>p.filter(b=>b.id!==id));
-    setSelected(s=>{const n=new Set(s);n.delete(id);return n;});
-    showToast("Booking deleted successfully.");
+  const runRowDownload = useCallback(async (kind, b)=>{
+    setRowDownloading(`${b.id}:${kind}`);
+    try { await downloadDoc(kind, b, showToast); }
+    finally { setRowDownloading(null); }
   },[showToast]);
 
-  const handleBulkDelete = () => {
-    setBookings(p=>p.filter(b=>!selected.has(b.id)));
-    showToast(`${selected.size} booking(s) deleted.`);
-    setSelected(new Set());
+  const handleDelete = useCallback(async id=>{
+    if (!hasPermission(P.BOOKING_DELETE)) return;
+    setDeletingId(id);
+    try {
+      await bookingService.delete(id);
+      setBookings(p=>p.filter(b=>b.id!==id));
+      setSelected(s=>{const n=new Set(s);n.delete(id);return n;});
+      showToast("Booking deleted successfully.","success");
+    } catch (error) {
+      if (isAlreadyReported(error)) return;
+      showToast(getErrorMessage(error,"Couldn't delete the booking."),"error");
+    } finally { setDeletingId(null); }
+  },[showToast]);
+
+  const handleBulkDelete = async () => {
+    if (!hasPermission(P.BOOKING_DELETE) || selected.size===0) return;
+    const ids = [...selected];
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.allSettled(ids.map(id=>bookingService.delete(id)));
+      const okIds  = ids.filter((_,i)=>results[i].status==="fulfilled");
+      const failed = results.length - okIds.length;
+      if (okIds.length) {
+        const okSet = new Set(okIds);
+        setBookings(p=>p.filter(b=>!okSet.has(b.id)));
+      }
+      setSelected(new Set());
+      if (failed===0)          showToast(`${okIds.length} booking(s) deleted.`,"success");
+      else if (okIds.length)   showToast(`${okIds.length} deleted, ${failed} failed.`,"warning");
+      else                     showToast(`Couldn't delete ${failed} booking(s).`,"error");
+      refreshList?.();
+    } finally { setBulkDeleting(false); }
   };
 
   const resetFilters = () => {
@@ -522,7 +641,7 @@ export default function BookingsPage({
 
   /* ─── RENDER ──────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100"
       style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
@@ -536,9 +655,8 @@ export default function BookingsPage({
         ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
       `}</style>
 
-      {/* modals + toast */}
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
-      {modal && <BookingModal booking={modal} onClose={()=>setModal(null)} onEdit={openEdit} onCancel={openCancel}/>}
+      {/* modals */}
+      {modal && <BookingModal booking={modal} onClose={()=>setModal(null)} onEdit={openEdit} onCancel={openCancel} onRefresh={refreshList}/>}
       {cancelBooking && <CancelBookingModal booking={cancelBooking} onClose={()=>setCancelBooking(null)} onCancelled={refreshList} onToast={showToast}/>}
 
       {/* ── PAGE HEADER ── */}
@@ -546,23 +664,23 @@ export default function BookingsPage({
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600
-                flex items-center justify-center text-white shadow-lg shadow-blue-200 flex-shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600
+                flex items-center justify-center text-white shadow-lg shadow-gold-200 flex-shrink-0">
                 <FaPlane className="w-5 h-5"/>
               </div>
               <div>
                 <h1 className="text-lg font-extrabold text-slate-800 tracking-tight">Bookings</h1>
                 <p className="text-xs text-slate-400 hidden sm:block">
-                  <span className="hover:text-blue-600 cursor-pointer transition-colors">Home</span>
+                  <span className="hover:text-gold-700 cursor-pointer transition-colors">Home</span>
                   <span className="mx-1 text-slate-300">/</span>
-                  <span className="text-blue-600 font-bold">All Bookings</span>
+                  <span className="text-gold-700 font-bold">All Bookings</span>
                 </p>
               </div>
             </div>
             <button onClick={()=>window.location.href="/allleads"}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl
-                bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-700 hover:to-indigo-600
-                text-white text-sm font-bold shadow-md shadow-blue-200 hover:shadow-lg transition-all self-start sm:self-auto">
+                bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700
+                text-white text-sm font-bold shadow-md shadow-gold-200 hover:shadow-lg transition-all self-start sm:self-auto">
               ＋ Create from Lead
             </button>
           </div>
@@ -583,12 +701,12 @@ export default function BookingsPage({
         {/* ── TAX & PROFIT SUMMARY ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm px-5 py-4 fade-up">
           <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <MdOutlineReceiptLong className="w-3.5 h-3.5 text-blue-500"/>
+            <MdOutlineReceiptLong className="w-3.5 h-3.5 text-gold-500"/>
             Tax &amp; Profit Summary — Current Page ({pageData.length} bookings)
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              {icon:"💵",label:"Total Charges",  value:pageSum.totalPayable, bg:"bg-blue-50",   border:"border-blue-100",   text:"text-blue-700"   },
+              {icon:"💵",label:"Total Charges",  value:pageSum.totalPayable, bg:"bg-gold-50",   border:"border-gold-200",   text:"text-gold-700"   },
               {icon:"📈",label:"Net Profit",     value:pageSum.profit,       bg:"bg-green-50",  border:"border-green-100",  text:"text-green-700"  },
               {icon:"🧾",label:"GST Collected",  value:pageSum.gst,          bg:"bg-amber-50",  border:"border-amber-100",  text:"text-amber-700"  },
               {icon:"📋",label:"TCS Collected",  value:pageSum.tcs,          bg:"bg-purple-50", border:"border-purple-100", text:"text-purple-700" },
@@ -611,7 +729,7 @@ export default function BookingsPage({
               <FiFilter className="w-4 h-4 text-white"/>
               <span className="text-sm font-extrabold text-white">Filters &amp; Search</span>
               {activeFilterCount>0 && (
-                <span className="bg-blue-400 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                <span className="bg-gold-400 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
                   {activeFilterCount} active
                 </span>
               )}
@@ -686,14 +804,16 @@ export default function BookingsPage({
           {/* ── TABLE TOOLBAR ── */}
           <div className="px-5 py-3.5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-extrabold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full border border-blue-200">
+              <span className="text-xs font-extrabold bg-gold-100 text-gold-700 px-2.5 py-1 rounded-full border border-gold-200">
                 {filtered.length} bookings
               </span>
-              {selected.size>0 && (
-                <button onClick={handleBulkDelete}
+              {selected.size>0 && hasPermission(P.BOOKING_DELETE) && (
+                <button onClick={handleBulkDelete} disabled={bulkDeleting}
                   className="flex items-center gap-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600
-                    border border-red-200 font-bold px-3 py-1.5 rounded-xl transition-all">
-                  <FiTrash2 className="w-3 h-3"/> Delete {selected.size} selected
+                    border border-red-200 font-bold px-3 py-1.5 rounded-xl transition-all
+                    disabled:opacity-60 disabled:cursor-not-allowed">
+                  {bulkDeleting ? <FiRefreshCw className="w-3 h-3 animate-spin"/> : <FiTrash2 className="w-3 h-3"/>}
+                  Delete {selected.size} selected
                 </button>
               )}
             </div>
@@ -711,7 +831,7 @@ export default function BookingsPage({
                     <input type="checkbox"
                       checked={pageData.length>0&&selected.size===pageData.length}
                       onChange={toggleAll}
-                      className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"/>
+                      className="w-4 h-4 rounded border-slate-300 text-gold-600 cursor-pointer accent-gold-600"/>
                   </th>
                   <TH label="Booking Code" sKey="code"           {...thProps}/>
                   <TH label="Customer"     sKey="customer"       {...thProps}/>
@@ -739,7 +859,7 @@ export default function BookingsPage({
                         <p className="text-sm text-slate-400 mb-4">Try adjusting your filters.</p>
                         {anyFilter && (
                           <button onClick={resetFilters}
-                            className="px-5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-sm transition-all">
+                            className="px-5 py-2 rounded-xl bg-gold-50 hover:bg-gold-100 text-gold-700 font-bold text-sm transition-all">
                             Reset Filters
                           </button>
                         )}
@@ -750,16 +870,16 @@ export default function BookingsPage({
                     const payPct=b.totalPayable>0?Math.round(b.paid/b.totalPayable*100):0;
                     return (
                       <tr key={b.id}
-                        className="group hover:bg-blue-50/30 hover:shadow-[inset_3px_0_0_#2563eb] transition-all duration-150"
+                        className="group hover:bg-gold-50/40 hover:shadow-[inset_3px_0_0_#b8891f] transition-all duration-150"
                         style={{animation:"fadeUp .35s ease both",animationDelay:`${idx*18}ms`}}>
                         {/* checkbox */}
                         <td className="px-3 py-3.5">
                           <input type="checkbox" checked={selected.has(b.id)} onChange={()=>toggleSelect(b.id)}
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"/>
+                            className="w-4 h-4 rounded border-slate-300 text-gold-600 cursor-pointer accent-gold-600"/>
                         </td>
                         {/* code */}
                         <td className="px-3 py-3.5">
-                          <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                          <span className="text-xs font-extrabold text-gold-700 bg-gold-50 px-2.5 py-1 rounded-lg border border-gold-200">
                             {b.code}
                           </span>
                         </td>
@@ -783,7 +903,7 @@ export default function BookingsPage({
                           {fmtDate(b.travelDate)}
                         </td>
                         {/* customer amount */}
-                        <td className="px-3 py-3.5 text-sm font-bold text-blue-600 text-right whitespace-nowrap">
+                        <td className="px-3 py-3.5 text-sm font-bold text-gold-700 text-right whitespace-nowrap">
                           {fmtINR(b.customerAmount)}
                         </td>
                         {/* gst */}
@@ -798,7 +918,7 @@ export default function BookingsPage({
                         <td className="px-3 py-3.5 text-right">
                           <p className="text-sm font-extrabold text-slate-800 whitespace-nowrap">{fmtINR(b.totalPayable)}</p>
                           <div className="w-full h-1 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
-                            <div className={`h-full rounded-full ${payPct===100?"bg-green-500":payPct>0?"bg-blue-400":"bg-slate-200"}`}
+                            <div className={`h-full rounded-full ${payPct===100?"bg-green-500":payPct>0?"bg-gold-400":"bg-slate-200"}`}
                               style={{width:`${payPct}%`}}/>
                           </div>
                           {b.totalPayable>b.paid&&<p className="text-[10px] text-red-500 font-bold mt-0.5 text-right">Due: {fmtINR(b.totalPayable-b.paid)}</p>}
@@ -824,25 +944,47 @@ export default function BookingsPage({
                         {/* actions (fade in on hover) */}
                         <td className="px-3 py-3.5">
                           <div className="flex items-center gap-1.5 opacity-50 group-hover:opacity-100 transition-opacity duration-150">
-                            {/* // onClick={()=>setModal(b)}  */}
                             <button onClick={()=>navigate(`/BookingDetails/${b.id}`)} title="View"
-                              className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all border border-blue-100">
+                              className="w-8 h-8 rounded-lg bg-gold-50 hover:bg-gold-100 text-gold-700 flex items-center justify-center transition-all border border-gold-200">
                               <FiEye className="w-3.5 h-3.5"/>
                             </button>
                             <button onClick={()=>openEdit(b)} title="Edit"
                               className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition-all border border-slate-200">
                               <FiEdit2 className="w-3.5 h-3.5"/>
                             </button>
+                            {hasPermission(P.BOOKING_READ)&&(
+                              <>
+                                <button onClick={()=>runRowDownload("invoice",b)} title="Download Invoice"
+                                  disabled={rowDownloading===`${b.id}:invoice`}
+                                  className="w-8 h-8 rounded-lg bg-gold-600 hover:bg-gold-700 text-white flex items-center justify-center transition-all shadow-sm shadow-gold-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                                  {rowDownloading===`${b.id}:invoice`
+                                    ? <FiRefreshCw className="w-3.5 h-3.5 animate-spin"/>
+                                    : <FiFileText className="w-3.5 h-3.5"/>}
+                                </button>
+                                <button onClick={()=>runRowDownload("voucher",b)} title="Download Voucher"
+                                  disabled={rowDownloading===`${b.id}:voucher`}
+                                  className="w-8 h-8 rounded-lg border border-gold-300 bg-white hover:bg-gold-50 text-gold-800 flex items-center justify-center transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                                  {rowDownloading===`${b.id}:voucher`
+                                    ? <FiRefreshCw className="w-3.5 h-3.5 animate-spin"/>
+                                    : <MdOutlineReceiptLong className="w-3.5 h-3.5"/>}
+                                </button>
+                              </>
+                            )}
                             {hasPermission(P.BOOKING_CANCEL)&&b.status!=="Completed"&&b.status!=="Cancelled"&&(
                               <button onClick={()=>openCancel(b)} title="Cancel"
                                 className="w-8 h-8 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all border border-amber-100">
                                 <FiX className="w-3.5 h-3.5"/>
                               </button>
                             )}
-                            <button onClick={()=>handleDelete(b.id)} title="Delete"
-                              className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all border border-red-100">
-                              <FiTrash2 className="w-3.5 h-3.5"/>
-                            </button>
+                            {hasPermission(P.BOOKING_DELETE)&&(
+                              <button onClick={()=>handleDelete(b.id)} title="Delete"
+                                disabled={deletingId===b.id}
+                                className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all border border-red-100 disabled:opacity-60 disabled:cursor-not-allowed">
+                                {deletingId===b.id
+                                  ? <FiRefreshCw className="w-3.5 h-3.5 animate-spin"/>
+                                  : <FiTrash2 className="w-3.5 h-3.5"/>}
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -867,12 +1009,13 @@ export default function BookingsPage({
                 <div className="text-center py-16">
                   <FaPlane className="text-5xl text-slate-200 mx-auto mb-3"/>
                   <p className="text-base font-extrabold text-slate-600 mb-1">No Bookings Found</p>
-                  {anyFilter&&<button onClick={resetFilters} className="mt-2 text-sm text-blue-600 hover:underline font-bold">Clear filters</button>}
+                  {anyFilter&&<button onClick={resetFilters} className="mt-2 text-sm text-gold-700 hover:underline font-bold">Clear filters</button>}
                 </div>
               )
               // onView={setModal}
               : pageData.map(b=>(
-                  <MobileBookingCard key={b.id} b={b} onView={b=>navigate(`/BookingDetails/${b.id}`)} onEdit={openEdit} onCancel={openCancel} onDelete={handleDelete}/>
+                  <MobileBookingCard key={b.id} b={b} onView={b=>navigate(`/BookingDetails/${b.id}`)} onEdit={openEdit} onCancel={openCancel} onDelete={handleDelete}
+                    onInvoice={b=>runRowDownload("invoice",b)} downloading={rowDownloading}/>
                 ))
             }
           </div>
@@ -891,12 +1034,12 @@ export default function BookingsPage({
               <div className="flex items-center gap-1.5">
                 <button disabled={page===1} onClick={()=>setPage(1)}
                   className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-                    hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
+                    hover:border-gold-300 hover:text-gold-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
                   <FaAngleDoubleLeft className="text-xs"/>
                 </button>
                 <button disabled={page===1} onClick={()=>setPage(p=>p-1)}
                   className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-                    hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
+                    hover:border-gold-300 hover:text-gold-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
                   <FiChevronLeft className="w-3.5 h-3.5"/>
                 </button>
                 {Array.from({length:totalPages},(_,i)=>i+1)
@@ -907,18 +1050,18 @@ export default function BookingsPage({
                       ?<span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-slate-400">…</span>
                       :<button key={p} onClick={()=>setPage(p)}
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border
-                            ${page===p?"bg-blue-600 border-blue-600 text-white shadow-sm":"bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"}`}>
+                            ${page===p?"bg-gold-600 border-gold-600 text-white shadow-sm":"bg-white border-slate-200 text-slate-600 hover:border-gold-300 hover:text-gold-700"}`}>
                           {p}
                         </button>
                   )}
                 <button disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}
                   className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-                    hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
+                    hover:border-gold-300 hover:text-gold-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
                   <FiChevronRight className="w-3.5 h-3.5"/>
                 </button>
                 <button disabled={page===totalPages} onClick={()=>setPage(totalPages)}
                   className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 text-xs font-bold
-                    hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
+                    hover:border-gold-300 hover:text-gold-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center">
                   <FaAngleDoubleRight className="text-xs"/>
                 </button>
               </div>
