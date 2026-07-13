@@ -332,6 +332,7 @@ export default function BookingDetails() {
   const { showToast } = useToast();
 
   const canUpdate = hasPermission(P.BOOKING_UPDATE);
+  const canRefund = hasPermission(P.BOOKING_REFUND);
 
   const [booking,     setBooking]     = useState(null);
   const [services,    setServices]    = useState([]);
@@ -341,6 +342,7 @@ export default function BookingDetails() {
   const [assignSvc,   setAssignSvc]   = useState(null); // service item to assign vendor
   const [deletingPay, setDeletingPay] = useState(null);
   const [downloading, setDownloading] = useState(null); // "invoice" | "voucher" | `svc-<id>`
+  const [showRefund,  setShowRefund]  = useState(false);
 
   /* ── FETCH ── */
   const fetchBooking = useCallback(async () => {
@@ -538,6 +540,9 @@ export default function BookingDetails() {
       {assignSvc   && <AssignVendorModal booking={b} service={assignSvc} showToast={showToast}
         onClose={()=>setAssignSvc(null)}
         onAssigned={()=>{ fetchServices(); fetchBooking(); }}/>}
+      {showRefund  && <RefundBookingModal booking={b} onToast={showToast}
+        onClose={()=>setShowRefund(false)}
+        onRefunded={()=>{ fetchBooking(); fetchPayments(); }}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -717,7 +722,14 @@ export default function BookingDetails() {
 
                 {/* Cancellation documents — only once the booking is cancelled/refunded */}
                 {(b.status==="CANCELLED" || b.status==="REFUNDED") && (
-                  <div className="grid grid-cols-2 gap-2 pt-2 mt-1 border-t border-slate-100">
+                  <div className="pt-2 mt-1 border-t border-slate-100 space-y-2">
+                  {canRefund && (
+                    <button onClick={()=>setShowRefund(true)}
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-all shadow-sm">
+                      <MdPayment className="w-3.5 h-3.5"/> Record Refund
+                    </button>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
                     <button onClick={downloadCreditNote} disabled={downloading==="credit-note"}
                       className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold transition-all disabled:opacity-60">
                       {downloading==="credit-note"
@@ -732,6 +744,7 @@ export default function BookingDetails() {
                         : <FiDownload className="w-3 h-3"/>}
                       Refund Voucher
                     </button>
+                  </div>
                   </div>
                 )}
               </div>
