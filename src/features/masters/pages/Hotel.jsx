@@ -1193,14 +1193,14 @@ export default function HotelMaster() {
                 </div>
 
                 {/* Trust badge */}
-                <div className="flex items-center gap-2.5 p-3 bg-white border border-slate-200 rounded-xl">
+                {/* <div className="flex items-center gap-2.5 p-3 bg-white border border-slate-200 rounded-xl">
                   <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0">
                     <Shield size={13} className="text-white" />
                   </div>
                   <p className="text-[11px] text-slate-500 font-semibold">
                     All changes are saved securely to Tripotomize.
                   </p>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
