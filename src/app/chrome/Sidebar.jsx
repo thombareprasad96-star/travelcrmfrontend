@@ -1,8 +1,15 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText, CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, User, CreditCard, LogOut, Bell, BellRing, CalendarClock, Trash2, Truck } from 'lucide-react';
 import { isSuperAdmin, hasPermission, hasModule, loadMyEntitlements, P } from "@shared/lib/access";
+import { companyService } from "@features/settings";
+
+// "Nepal Tours And Travels" -> "NT". Shown until the logo loads, and for any tenant
+// that has not uploaded one.
+const initialsOf = (name = "") =>
+  name.trim().split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "CO";
 
 const Sidebar = ({ isExpanded }) => {
   const [openDropdown, setOpenDropdown] = useState('');
@@ -10,6 +17,25 @@ const Sidebar = ({ isExpanded }) => {
   
   const [isHovered, setIsHovered] = useState(false);
   const showSidebar = isExpanded || isHovered;
+
+  // Tenant branding for the header. Reloads on the "company-updated" event the profile
+  // page fires after a save, so a new logo lands here without a page reload.
+  const [company, setCompany] = useState(null);
+  const brandName = company?.name || "TravelCRM";
+
+  useEffect(() => {
+    const loadCompany = () => {
+      if (!localStorage.getItem("token")) return;
+      companyService
+        .get()
+        .then((res) => setCompany(res.data?.data ?? res.data ?? null))
+        .catch(() => setCompany(null)); // header falls back to initials
+    };
+
+    loadCompany();
+    window.addEventListener("company-updated", loadCompany);
+    return () => window.removeEventListener("company-updated", loadCompany);
+  }, []);
 
   // Re-fetch the tenant's module entitlements on mount + whenever the tab regains focus, then
   // re-render. Login also caches them, but a plan/flag change made while the user is already
@@ -54,15 +80,36 @@ const Sidebar = ({ isExpanded }) => {
         showSidebar ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0 w-64 md:w-[72px]'
       }`}
     >
-      {/* Brand Header */}
-      <div className={`h-[72px] flex items-center border-b border-white/10 shrink-0 overflow-hidden whitespace-nowrap transition-all duration-300 ${showSidebar ? 'px-6' : 'px-0 justify-center'}`}>
-        {showSidebar ? (
-          <span className="text-lg font-bold text-white tracking-wide">Nepal Tour And Travels</span>
-        ) : (
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-            <span className="text-base font-bold text-white">NT</span> 
+      {/* Brand Header — company logo + name, both pulled from the company profile */}
+      <div className={`h-[72px] flex items-center border-b border-white/10 shrink-0 overflow-hidden whitespace-nowrap transition-all duration-300 ${showSidebar ? 'px-5' : 'px-0 justify-center'}`}>
+        <div className={`flex items-center min-w-0 ${showSidebar ? 'gap-3' : ''}`}>
+
+          {/* Logo mark — falls back to the company's initials until a logo is uploaded.
+              The white backdrop keeps a transparent-PNG logo legible on the dark rail. */}
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
+            {company?.logoUrl ? (
+              <img
+                src={company.logoUrl}
+                alt={brandName}
+                className="w-full h-full object-contain bg-white p-0.5"
+              />
+            ) : (
+              <span className="text-base font-bold text-white">{initialsOf(company?.name)}</span>
+            )}
           </div>
-        )}
+
+          {/* Name only in the expanded rail — the collapsed rail is 72px, logo only.
+              `truncate` clips a long name to one line with an ellipsis; `title` puts the
+              full name in a hover tooltip so nothing is silently lost. */}
+          {showSidebar && (
+            <p
+              title={brandName}
+              className="text-base font-bold text-white tracking-wide leading-tight truncate min-w-0"
+            >
+              {brandName}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Navigation List */}
@@ -587,3 +634,6 @@ const Sidebar = ({ isExpanded }) => {
 };
 
 export default Sidebar;
+
+
+

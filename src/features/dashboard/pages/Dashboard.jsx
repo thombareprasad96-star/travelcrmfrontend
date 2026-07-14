@@ -254,9 +254,10 @@ function buildAnalytics(leads, bookings) {
   leads.forEach(l => { const s = l.leadSource || "Other"; srcMap[s] = (srcMap[s] || 0) + 1; });
   const SRC_COLORS = ["#f472b6","#60a5fa","#fbbf24","#34d399","#a78bfa","#fb923c"];
   const leadSources = Object.entries(srcMap)
-    .sort((a,b) => b[1]-a[1]).slice(0,5)
+    .sort((a,b) => b[1]-a[1]).slice(0,7)
     .map(([name,value],i) => ({ name, value, color: SRC_COLORS[i] || "#94a3b8" }));
 
+    console.log(leadSources) 
   // Top destinations from bookings
   const destMap = {};
   bookings.forEach(b => {

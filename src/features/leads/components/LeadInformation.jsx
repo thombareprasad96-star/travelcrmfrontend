@@ -7,6 +7,7 @@ const LEAD_SOURCES = [
   "Social Media", "Website", "Google Ads", "Facebook",
   "Instagram", "WhatsApp", "Referral", "Direct Call",
 ];
+
 const LEAD_TYPES  = ["Fresh Lead", "Repeat Customer", "Corporate", "VIP"];
 const LEAD_STAGES = [
   "New Lead", "Contacted", "Follow Up",
