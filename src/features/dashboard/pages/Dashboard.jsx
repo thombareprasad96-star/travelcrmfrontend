@@ -257,7 +257,7 @@ function buildAnalytics(leads, bookings) {
     .sort((a,b) => b[1]-a[1]).slice(0,7)
     .map(([name,value],i) => ({ name, value, color: SRC_COLORS[i] || "#94a3b8" }));
 
-    console.log(leadSources) 
+    // console.log(leadSources) 
   // Top destinations from bookings
   const destMap = {};
   bookings.forEach(b => {
@@ -266,9 +266,13 @@ function buildAnalytics(leads, bookings) {
     destMap[d].bookings++;
     destMap[d].revenue += Number(b.customerAmount) || 0;
   });
+  
+  console.log(bookings)
   const topDestinations = Object.entries(destMap)
-    .sort((a,b) => b[1].revenue - a[1].revenue).slice(0,5)
+    .sort((a,b) => b[1].bookings - a[1].bookings).slice(0,5)
     .map(([name,v]) => ({ name, ...v }));
+
+console.log(topDestinations)
 
   // Revenue timeline (last 6 months)
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -704,7 +708,7 @@ export default function Dashboard() {
             {/* Destination Bar Chart */}
             <SectionCard headerBg="bg-teal-500"
               headerIcon={<FiMapPin className="w-4 h-4"/>}
-              title="Top Destination Inquiries"
+              title="Top 5 Destination Inquiries"
               delay={0}>
               <div className="p-5">
                 <ResponsiveContainer width="100%" height={200}>
