@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Building2,
   CreditCard,
+  ArrowUpCircle,
   Users,
   ToggleLeft,
   Settings2,
@@ -13,13 +15,16 @@ import {
   Palette as PaletteIcon,
   ShieldCheck,
 } from "lucide-react";
+import { upgradeRequestService } from "./api/upgradeRequestService";
 
 // Live items link; future items render disabled with a "soon" tag until their phase ships.
+// `badge: "upgrades"` shows a live pending-count pill (the SuperAdmin's new-request alert).
 const NAV = [
   { to: "/console", label: "Dashboard", Icon: LayoutDashboard, end: true },
   { to: "/console/tenants", label: "Tenants", Icon: Building2 },
   { to: "/console/palette", label: "Design Tokens", Icon: PaletteIcon },
   { to: "/console/plans", label: "Subscriptions", Icon: CreditCard },
+  { to: "/console/upgrade-requests", label: "Upgrade Requests", Icon: ArrowUpCircle, badge: "upgrades" },
   { to: "/console/usage", label: "Usage & Quotas", Icon: Gauge },
   { to: "/console/users", label: "Users", Icon: Users },
   { to: "/console/feature-flags", label: "Feature Flags", Icon: ToggleLeft },
@@ -30,6 +35,23 @@ const NAV = [
 ];
 
 export default function ConsoleSidebar({ collapsed }) {
+  const [pendingUpgrades, setPendingUpgrades] = useState(0);
+
+  // Live pending-upgrade badge: best-effort on mount and whenever the tab regains focus (an operator
+  // returning to the console sees new requests without a full reload).
+  useEffect(() => {
+    let alive = true;
+    const refresh = () =>
+      upgradeRequestService.pendingCount()
+        .then((d) => { if (alive) setPendingUpgrades(Number(d?.count ?? 0)); })
+        .catch(() => {});
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => { alive = false; window.removeEventListener("focus", refresh); };
+  }, []);
+
+  const badgeFor = (item) => (item.badge === "upgrades" ? pendingUpgrades : 0);
+
   return (
     <aside
       className={`${collapsed ? "w-16" : "w-60"} hidden shrink-0 border-r border-border bg-sidebar transition-[width] duration-200 sm:block`}
@@ -81,8 +103,18 @@ export default function ConsoleSidebar({ collapsed }) {
                 }`
               }
             >
-              <item.Icon size={18} className="shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              <span className="relative shrink-0">
+                <item.Icon size={18} />
+                {collapsed && badgeFor(item) > 0 && (
+                  <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-hue-amber ring-2 ring-sidebar" />
+                )}
+              </span>
+              {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+              {!collapsed && badgeFor(item) > 0 && (
+                <span className="rounded-full bg-hue-amber-soft px-1.5 py-0.5 text-[10px] font-bold text-hue-amber">
+                  {badgeFor(item)}
+                </span>
+              )}
             </NavLink>
           )
         )}

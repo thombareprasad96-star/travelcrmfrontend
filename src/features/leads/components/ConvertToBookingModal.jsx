@@ -66,6 +66,8 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
 
   const [form, setForm] = useState({
     customerName:   lead.customerName || '',
+    customerPhone : lead.phone,
+    customerEmail : lead.email,
     destination:    leadDest,
     travelDate:     toDateInput(lead.travelDate),
     bookingDate:    todayStr(),
@@ -74,6 +76,7 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
     paidAmount:     '0',
     services:       Array.isArray(lead.services) ? lead.services : [],
   });
+  console.log(lead)
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   // Load this lead's quotations; default to the newest Approved, else the newest overall.
@@ -185,6 +188,8 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
       const payload = {
         quotationPublicId: selectedQid || null,
         customerName:   form.customerName.trim(),
+        customerPhone : form.customerPhone.trim(),
+        customerEmail : form.customerEmail.trim(),
         destination:    form.destination.trim(),
         travelDate:     form.travelDate,
         bookingDate:    form.bookingDate || null,
@@ -193,6 +198,7 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
         paidAmount:     Number(form.paidAmount) || 0,
         services:       form.services,
       };
+      
       const booking = unwrap(await bookingService.convertFromLead(leadId, payload));
       showToast(`Booking ${booking?.bookingCode || ''} created from lead`, 'success');
       onConverted?.(lead, booking);

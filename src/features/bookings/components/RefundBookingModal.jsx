@@ -62,7 +62,7 @@ export default function RefundBookingModal({ booking, onClose, onRefunded, onToa
     amount !== "" && (Number.isNaN(amountNum) || amountNum <= 0 || amountNum > remaining + 1e-9);
   const canSubmit = summary && remaining > 0 && amount !== "" && !amountInvalid && !submitting;
 
-  const fillRemaining = () => setSummary((s) => (setAmount(String(remaining)), s));
+  const fillRemaining = () => setAmount(String(remaining));
 
   const submit = async () => {
     if (!canSubmit) return;

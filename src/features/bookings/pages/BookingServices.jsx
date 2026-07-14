@@ -19,7 +19,7 @@ import { MdOutlineAssignment } from "react-icons/md";
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const SERVICE_TYPES = ["Hotel","Flight","Transport","Vehicle","Cruise","Sightseeing","Visa","Insurance","Passport","Other"];
 const SVC_ICON = { Hotel:<FaHotel/>, Flight:<FaPlane/>, Transport:<FaCar/>, Vehicle:<FaCar/>, Cruise:<FaShip/>, Sightseeing:<FaUmbrellaBeach/>, Visa:<FaPassport/>, Insurance:"🛡️", Passport:<FaPassport/> };
-const SVC_COLOR = { Hotel:"bg-gold-500", Flight:"bg-gold-600", Transport:"bg-teal-500", Vehicle:"bg-teal-500", Cruise:"bg-purple-500", Sightseeing:"bg-green-500", Visa:"bg-amber-500", Insurance:"bg-slate-500", Passport:"bg-rose-500", Other:"bg-slate-400" };
+const SVC_COLOR = { Hotel:"bg-blue-500", Flight:"bg-blue-600", Transport:"bg-teal-500", Vehicle:"bg-teal-500", Cruise:"bg-purple-500", Sightseeing:"bg-green-500", Visa:"bg-amber-500", Insurance:"bg-slate-500", Passport:"bg-rose-500", Other:"bg-slate-400" };
 const STATUS_STYLE = {
   Paid:"bg-green-100 text-green-700", Partial:"bg-amber-100 text-amber-700",
   Unpaid:"bg-rose-100 text-rose-700", Pending:"bg-amber-100 text-amber-700",
@@ -84,12 +84,12 @@ function ServiceDetailModal({ svc, booking, onClose }) {
           </div>
           {svc.details && <div><p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Service Details</p><p className="text-sm text-slate-700 bg-slate-50 rounded-xl p-3 border border-slate-100">{svc.details}</p></div>}
           {svc.notes && <div><p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Notes</p><p className="text-sm text-slate-700 bg-slate-50 rounded-xl p-3 border border-slate-100">{svc.notes}</p></div>}
-          <div className="bg-gold-50 border border-gold-200 rounded-xl p-4">
-            <p className="text-xs font-extrabold text-gold-700 mb-2">Profit Calculation:</p>
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+            <p className="text-xs font-extrabold text-blue-600 mb-2">Profit Calculation:</p>
             <div className="space-y-1 text-sm">
-              <p className="text-gold-800">Service Amount: <span className="font-bold">{fmtINR(base)}</span></p>
-              <p className="text-gold-800">Vendor Cost: <span className="font-bold">{fmtINR(svc.vendorCost)}</span></p>
-              <p className="text-gold-800 font-extrabold">Profit: {fmtINR(profit)} ({profitPct}%)</p>
+              <p className="text-blue-700">Service Amount: <span className="font-bold">{fmtINR(base)}</span></p>
+              <p className="text-blue-700">Vendor Cost: <span className="font-bold">{fmtINR(svc.vendorCost)}</span></p>
+              <p className="text-blue-700 font-extrabold">Profit: {fmtINR(profit)} ({profitPct}%)</p>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ function PaymentHistoryModal({ svc, onClose }) {
               </div>
             ))}</div>
           ) : (
-            <div className="bg-gold-50 border border-gold-200 text-gold-700 rounded-xl px-4 py-3 text-sm font-semibold">No payments recorded for this service. Record payments from the booking payment ledger.</div>
+            <div className="bg-blue-50 border border-blue-100 text-blue-600 rounded-xl px-4 py-3 text-sm font-semibold">No payments recorded for this service. Record payments from the booking payment ledger.</div>
           )}
         </div>
       </div>
@@ -221,12 +221,12 @@ function ServiceForm({ booking, editSvc, onClose, onSaved, showToast }) {
     } finally { setSaving(false); }
   };
 
-  const inputCls = err => `w-full px-3.5 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all ${err?"border-red-300 bg-red-50":"border-slate-200 bg-white focus:border-gold-400 focus:ring-2 focus:ring-gold-100 hover:border-slate-300"}`;
+  const inputCls = err => `w-full px-3.5 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all ${err?"border-red-300 bg-red-50":"border-slate-200 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 hover:border-slate-300"}`;
   const selectCls = err => inputCls(err)+" appearance-none cursor-pointer pr-9";
 
   return(
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" style={{animation:"fadeUp .3s ease both"}}>
-      <div className="bg-gradient-to-r from-gold-500 to-gold-700 px-5 py-3.5 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-700 to-indigo-600 px-5 py-3.5 flex items-center justify-between">
         <h3 className="text-sm font-extrabold text-white flex items-center gap-2"><FiPlus className="w-4 h-4"/> {isEdit?"Edit Service":"Add New Service"}</h3>
         <button onClick={onClose} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center"><FiX className="w-3.5 h-3.5"/></button>
       </div>
@@ -311,7 +311,7 @@ function ServiceForm({ booking, editSvc, onClose, onSaved, showToast }) {
           <textarea value={form.notes} onChange={e=>set("notes",e.target.value)} rows={2} placeholder="Internal notes (optional)..." className={inputCls(false)+" resize-none"}/>
         </div>
         <button onClick={handleSave} disabled={saving}
-          className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl bg-gold-600 hover:bg-gold-700 text-white font-extrabold text-sm shadow-md shadow-gold-200 transition-all disabled:opacity-60">
+          className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md shadow-blue-200 transition-all disabled:opacity-60">
           {saving?<><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>{isEdit?"Updating…":"Adding…"}</>:<><FiPlus className="w-4 h-4"/>{isEdit?"Update Service":"Add Service"}</>}
         </button>
       </div>
@@ -404,13 +404,13 @@ export default function BookingServices() {
   const toggleAll = () => { if(allSelected){setSelected(new Set())}else{setSelected(new Set(services.map(s=>s.id)))} };
 
   if(loading) return(
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100 flex items-center justify-center" style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
-      <div className="text-center"><div className="w-14 h-14 border-4 border-gold-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"/><p className="text-slate-500 font-semibold">Loading services…</p></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 flex items-center justify-center" style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
+      <div className="text-center"><div className="w-14 h-14 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"/><p className="text-slate-500 font-semibold">Loading services…</p></div>
     </div>
   );
 
   return(
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50/40 to-slate-100" style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100" style={{fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -430,7 +430,7 @@ export default function BookingServices() {
             <div>
               <h1 className="text-lg font-extrabold text-slate-800">Booking Services</h1>
               <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/")}>Home</span> / <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate("/Allbookings")}>Bookings</span> / <span className="cursor-pointer hover:text-gold-700" onClick={()=>navigate(`/BookingDetails/${id}`)}>View Booking</span> / <span className="text-gold-700 font-bold">Services</span>
+                <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/")}>Home</span> / <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate("/Allbookings")}>Bookings</span> / <span className="cursor-pointer hover:text-blue-600" onClick={()=>navigate(`/BookingDetails/${id}`)}>View Booking</span> / <span className="text-blue-600 font-bold">Services</span>
               </p>
             </div>
           </div>
@@ -441,24 +441,24 @@ export default function BookingServices() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5 space-y-5">
 
         {/* ── BOOKING INFO BAR ── */}
-        <div className="bg-gradient-to-r from-gold-500 to-gold-700 rounded-2xl px-5 py-4 shadow-lg shadow-gold-200" style={{animation:"fadeUp .4s ease both"}}>
+        <div className="bg-gradient-to-r from-blue-700 to-indigo-600 rounded-2xl px-5 py-4 shadow-lg shadow-blue-200" style={{animation:"fadeUp .4s ease both"}}>
           <div className="flex items-center gap-2 mb-2"><FiAlertCircle className="w-4 h-4 text-white/80"/><h2 className="text-sm font-extrabold text-white">Booking Information</h2></div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-6">
             <div><p className="text-white/80 text-xs">Booking Code: <span className="font-extrabold text-white">{booking?.code}</span></p><p className="text-white/80 text-xs">Title: <span className="font-bold text-white">{booking?.title}</span></p></div>
             <div><p className="text-white/80 text-xs">Customer: <span className="font-bold text-white">{booking?.customer}</span></p><p className="text-white/80 text-xs">Status: <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${booking?.status==="CONFIRMED"?"bg-green-400 text-white":"bg-amber-400 text-white"}`}>{titleCase(booking?.status)}</span></p></div>
-            <div><p className="text-white/80 text-xs">Customer Amount: <span className="font-extrabold text-white">{fmtINR(booking?.customerAmount)}</span></p><p className="text-white/80 text-xs">Vendor Costs: <span className="font-bold text-white">{fmtINR(totalVendorCost)}</span></p><p className="text-white/80 text-xs">GST (0%): <span className="font-bold text-gold-100">{fmtINR(booking?.gst)}</span></p></div>
+            <div><p className="text-white/80 text-xs">Customer Amount: <span className="font-extrabold text-white">{fmtINR(booking?.customerAmount)}</span></p><p className="text-white/80 text-xs">Vendor Costs: <span className="font-bold text-white">{fmtINR(totalVendorCost)}</span></p><p className="text-white/80 text-xs">GST (0%): <span className="font-bold text-blue-100">{fmtINR(booking?.gst)}</span></p></div>
             <div><p className="text-white/80 text-xs">Travel Dates: <span className="font-bold text-white">{fmtDate(booking?.travelDate)} to {fmtDate(booking?.travelEndDate)}</span></p></div>
           </div>
         </div>
 
         {/* ── ACTION BAR ── */}
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h3 className="text-sm font-extrabold text-slate-700 flex items-center gap-2"><MdOutlineAssignment className="w-4 h-4 text-gold-600"/> Booking Services</h3>
+          <h3 className="text-sm font-extrabold text-slate-700 flex items-center gap-2"><MdOutlineAssignment className="w-4 h-4 text-blue-600"/> Booking Services</h3>
           <div className="flex items-center gap-2 flex-wrap">
-            {canUpdate && <button onClick={()=>{setEditSvc(null);setShowForm(true)}} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-xs font-bold shadow-sm transition-all"><FiPlus className="w-3.5 h-3.5"/> Add New Service</button>}
-            {canUpdate && <button onClick={()=>showToast("Import from Quotation is coming soon.", "info")} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gold-300 bg-white text-gold-800 text-xs font-bold transition-all hover:bg-gold-50"><FiDownload className="w-3.5 h-3.5"/> Import from Quotation</button>}
+            {canUpdate && <button onClick={()=>{setEditSvc(null);setShowForm(true)}} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all"><FiPlus className="w-3.5 h-3.5"/> Add New Service</button>}
+            {canUpdate && <button onClick={()=>showToast("Import from Quotation is coming soon.", "info")} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-blue-200 bg-white text-blue-700 text-xs font-bold transition-all hover:bg-blue-50"><FiDownload className="w-3.5 h-3.5"/> Import from Quotation</button>}
             {/* Summary badges */}
-            <span className="text-xs font-bold bg-gold-100 text-gold-700 px-3 py-1.5 rounded-full">Customer: {fmtINR(booking?.customerAmount)}</span>
+            <span className="text-xs font-bold bg-blue-100 text-blue-600 px-3 py-1.5 rounded-full">Customer: {fmtINR(booking?.customerAmount)}</span>
             <span className="text-xs font-bold bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full">Vendor: {fmtINR(totalVendorCost)}</span>
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${totalProfit>=0?"bg-green-100 text-green-700":"bg-red-100 text-red-700"}`}>Profit: {fmtINR(totalProfit)}</span>
           </div>
@@ -477,7 +477,7 @@ export default function BookingServices() {
                 <table className="w-full text-sm min-w-[900px]">
                   <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
-                      <th className="px-3 py-3 w-10"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 rounded border-slate-300 text-gold-600 cursor-pointer"/></th>
+                      <th className="px-3 py-3 w-10"><input type="checkbox" checked={allSelected} onChange={toggleAll} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"/></th>
                       {["Seq","Service Type","Service Details","Vendor","Vendor Cost","Service Amount","Balance Due","Service Date","Status","Confirmation #","Actions"].map(h=>(
                         <th key={h} className="px-3 py-3 text-left text-[10px] font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                       ))}
@@ -489,8 +489,8 @@ export default function BookingServices() {
                       const svcType = svc.serviceType||"Other";
                       const statusLabel = titleCase(svc.status);
                       return(
-                        <tr key={svc.id||i} className="hover:bg-gold-50/40 group transition-colors" style={{animation:`fadeUp .3s ease both ${i*25}ms`}}>
-                          <td className="px-3 py-3"><input type="checkbox" checked={selected.has(svc.id)} onChange={()=>{const n=new Set(selected);selected.has(svc.id)?n.delete(svc.id):n.add(svc.id);setSelected(n)}} className="w-4 h-4 rounded border-slate-300 text-gold-600 cursor-pointer"/></td>
+                        <tr key={svc.id||i} className="hover:bg-blue-50/40 group transition-colors" style={{animation:`fadeUp .3s ease both ${i*25}ms`}}>
+                          <td className="px-3 py-3"><input type="checkbox" checked={selected.has(svc.id)} onChange={()=>{const n=new Set(selected);selected.has(svc.id)?n.delete(svc.id):n.add(svc.id);setSelected(n)}} className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"/></td>
                           <td className="px-3 py-3 text-center"><span className="text-xs text-slate-500 font-medium">{svc.sequence||i+1}</span></td>
                           <td className="px-3 py-3"><span className={`text-xs font-bold text-white px-2.5 py-1 rounded-lg ${SVC_COLOR[svcType]||SVC_COLOR.Other}`}>{svcType}</span></td>
                           <td className="px-3 py-3 max-w-[220px]"><p className="text-xs text-slate-700 font-semibold truncate">{svc.title||"—"}</p>{svc.description && <p className="text-[11px] text-slate-400 truncate">{svc.description}</p>}</td>
@@ -504,14 +504,14 @@ export default function BookingServices() {
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1">
                               {/* Per-service voucher (gold outline, with loading state) */}
-                              <button title="Download Voucher" disabled={downloading===svc.publicId} onClick={()=>downloadVoucher(svc)} className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border border-gold-300 bg-white text-gold-800 hover:bg-gold-50 transition-all disabled:opacity-60">
-                                {downloading===svc.publicId ? <span className="w-3 h-3 border-2 border-gold-400/40 border-t-gold-600 rounded-full animate-spin"/> : <FiDownload className="w-3 h-3"/>}
+                              <button title="Download Voucher" disabled={downloading===svc.publicId} onClick={()=>downloadVoucher(svc)} className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 transition-all disabled:opacity-60">
+                                {downloading===svc.publicId ? <span className="w-3 h-3 border-2 border-blue-500/40 border-t-blue-600 rounded-full animate-spin"/> : <FiDownload className="w-3 h-3"/>}
                                 Voucher
                               </button>
                               {/* WhatsApp vendor */}
                               {svc.vendorName && <a href={`https://wa.me/?text=${encodeURIComponent(`Booking ${booking?.code} - ${svcType} service details`)}`} target="_blank" rel="noreferrer" title="WhatsApp" className="w-7 h-7 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 flex items-center justify-center border border-green-200 transition-all"><FaWhatsapp className="w-3 h-3"/></a>}
                               {/* View details */}
-                              <button onClick={()=>setDetailSvc(svc)} title="View Details" className="w-7 h-7 rounded-lg bg-gold-50 hover:bg-gold-100 text-gold-700 flex items-center justify-center border border-gold-200 transition-all"><FiEye className="w-3 h-3"/></button>
+                              <button onClick={()=>setDetailSvc(svc)} title="View Details" className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-100 transition-all"><FiEye className="w-3 h-3"/></button>
                               {/* Payment history */}
                               <button onClick={()=>setPayHistSvc(svc)} title="Payment History" className="w-7 h-7 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-600 flex items-center justify-center border border-cyan-200 transition-all"><FiCreditCard className="w-3 h-3"/></button>
                               {/* Edit */}
@@ -538,7 +538,7 @@ export default function BookingServices() {
                 <div className="text-4xl mb-3">🗂️</div>
                 <p className="text-base font-extrabold text-slate-600 mb-2">No services added yet</p>
                 <p className="text-sm text-slate-400 mb-4">Click "Add New Service" to get started</p>
-                {canUpdate && <button onClick={()=>{setEditSvc(null);setShowForm(true)}} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-600 hover:bg-gold-700 text-white text-sm font-bold mx-auto transition-all"><FiPlus className="w-4 h-4"/> Add New Service</button>}
+                {canUpdate && <button onClick={()=>{setEditSvc(null);setShowForm(true)}} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold mx-auto transition-all"><FiPlus className="w-4 h-4"/> Add New Service</button>}
               </div>
             )}
           </div>

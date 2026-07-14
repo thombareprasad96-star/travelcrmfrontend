@@ -102,6 +102,7 @@ const ConsoleHome    = lazyPage(consoleFeature, "ConsoleHome");
 const ConsolePalette = lazyPage(consoleFeature, "ConsolePalette");
 const ConsoleTenants = lazyPage(consoleFeature, "ConsoleTenants");
 const ConsolePlans   = lazyPage(consoleFeature, "ConsolePlans");
+const ConsoleUpgradeRequests = lazyPage(consoleFeature, "ConsoleUpgradeRequests");
 const ConsoleUsage   = lazyPage(consoleFeature, "ConsoleUsage");
 const ConsoleUsers   = lazyPage(consoleFeature, "ConsoleUsers");
 const ConsoleFeatureFlags = lazyPage(consoleFeature, "ConsoleFeatureFlags");
@@ -187,6 +188,7 @@ const AppRouter = () => {
           <Route index element={<ConsoleHome />} />
           <Route path="tenants" element={<ConsoleTenants />} />
           <Route path="plans" element={<ConsolePlans />} />
+          <Route path="upgrade-requests" element={<ConsoleUpgradeRequests />} />
           <Route path="usage" element={<ConsoleUsage />} />
           <Route path="users" element={<ConsoleUsers />} />
           <Route path="feature-flags" element={<ConsoleFeatureFlags />} />

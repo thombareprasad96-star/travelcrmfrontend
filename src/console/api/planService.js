@@ -6,6 +6,8 @@ export const planService = {
   update: (publicId, payload) =>
     ConsoleAPI.put(`/super-admin/plans/${publicId}`, payload).then(unwrap),
   runExpiry: () => ConsoleAPI.post("/super-admin/subscriptions/run-expiry").then(unwrap),
+  // Invoice-dunning sweep: ACTIVE→PAST_DUE (overdue) and PAST_DUE→EXPIRED (past grace).
+  runDunning: () => ConsoleAPI.post("/super-admin/subscriptions/run-dunning").then(unwrap),
 };
 
 /** Canonical module keys a plan can unlock (display/edit only this phase; enforced in Feature Flags). */
