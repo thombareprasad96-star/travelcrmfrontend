@@ -49,7 +49,16 @@ const Layout = () => { // 2. Yahan se { children } hata diya gaya hai
       </div>
       </div>
 
-      {/* Floating internal AI assistant — available on every authenticated page. */}
+      {/* Floating internal AI assistant — available on every authenticated page.
+          Parked: the AI assistant is not part of this sprint's release, and the backend
+          ships with disha.enabled=false, so /ai/chat 404s.
+
+          When re-enabling, do NOT just uncomment — gate it on the server flag, so the
+          widget can never come back before the backend that answers it:
+            const { disha } = await getFeatures();   // GET /api/me/features
+            {disha && <DishaWidget />}
+          The same disha.enabled property drives both that response and whether the
+          backend's ChatController exists at all, so the two cannot drift. */}
       {/* <DishaWidget /> */}
     </div>
   );

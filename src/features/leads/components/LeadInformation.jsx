@@ -239,7 +239,7 @@ export default function LeadInformation({
         {/* Phone Search */}
         <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
           <p className="text-xs font-semibold text-blue-700 mb-2.5 flex items-center gap-1.5">
-            <FiSearch className="w-3.5 h-3.5" /> Search Existing Lead by Phone
+            <FiSearch className="w-3.5 h-3.5" /> Search Existing Lead by Phone or email
           </p>
           <div className="flex gap-2">
             <input

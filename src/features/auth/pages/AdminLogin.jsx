@@ -866,9 +866,11 @@ const Login = ({ setIsAuthenticated }) => {
 
       if (token && typeof token === 'string') {
         // 3. Persist session (unchanged)
+        // Only ever a TENANT token: this form authenticates against auth/user/login alone.
+        // The platform SuperAdmin signs in at /superadmin/login, which writes "sa_token".
         localStorage.setItem('token', token);
-        // LoginService always stamps a role (real tenant role, or "super_admin"), so this
-        // fallback is defensive only — default to the least-privileged value.
+        // LoginService stamps the real tenant role, so this fallback is defensive only —
+        // default to the least-privileged value.
         const roleToSave = responseData?.role || 'user';
         localStorage.setItem('userRole', roleToSave);
         localStorage.setItem('userEmail', email);

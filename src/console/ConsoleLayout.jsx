@@ -5,6 +5,7 @@ import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import ConsoleThemeProvider from "./theme/ConsoleThemeProvider";
 import ThemeToggle from "./theme/ThemeToggle";
 import ConsoleSidebar from "./ConsoleSidebar";
+import ConsoleNotificationBell from "./components/ConsoleNotificationBell";
 import ConsoleAPI, { unwrap } from "./api/consoleHttp";
 import {
   isConsoleAuthed,
@@ -62,6 +63,7 @@ export default function ConsoleLayout() {
             </button>
 
             <div className="flex items-center gap-3">
+              <ConsoleNotificationBell />
               <ThemeToggle />
               <div className="hidden flex-col items-end leading-tight sm:flex">
                 <span className="text-sm font-semibold text-heading">{me.name}</span>
