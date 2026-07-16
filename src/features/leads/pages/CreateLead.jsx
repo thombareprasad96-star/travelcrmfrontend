@@ -208,6 +208,7 @@ export default function CreateLead() {
             {/* Left Column */}
             <div className="flex-1 min-w-0 space-y-6">
               <LeadInformation
+                mode="create"
                 register={register}
                 errors={errors}
                 watch={watch}

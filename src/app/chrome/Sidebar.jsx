@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText, CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, User, CreditCard, LogOut, Bell, BellRing, CalendarClock, Trash2, Truck } from 'lucide-react';
-import { isSuperAdmin, hasPermission, hasModule, loadMyEntitlements, P } from "@shared/lib/access";
+import { LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText, CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, User, CreditCard, LogOut, Bell, BellRing, CalendarClock, CalendarCheck, Trash2, Truck, Network, HandCoins, Landmark, Receipt, Megaphone } from 'lucide-react';
+import { isSuperAdmin, isTenantAdmin, isSubAgent, hasPermission, hasAnyPermission, hasModule, loadMyEntitlements, clearMyPermissions, clearMyEntitlements, P } from "@shared/lib/access";
 
 const Sidebar = ({ isExpanded }) => {
   const [openDropdown, setOpenDropdown] = useState('');
@@ -42,7 +42,9 @@ const Sidebar = ({ isExpanded }) => {
       localStorage.removeItem('token');
       localStorage.removeItem('userRole');
       localStorage.removeItem('userEmail');
-      window.location.href = '/login'; 
+      clearMyPermissions();     // drop cached effective permissions (no stale set on a shared browser)
+      clearMyEntitlements();    // drop cached module entitlements
+      window.location.href = '/login';
     }
   };
 
@@ -69,9 +71,10 @@ const Sidebar = ({ isExpanded }) => {
       <nav className="flex-1 overflow-y-auto py-5 custom-scrollbar overflow-x-hidden">
         <ul className="space-y-1.5 px-3">
           
+          {!isSubAgent() && (
           <li>
-            <Link 
-              to="/Dashboard" 
+            <Link
+              to="/Dashboard"
               onClick={() => handleLinkClick('Dashboard')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Dashboard' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
@@ -81,6 +84,23 @@ const Sidebar = ({ isExpanded }) => {
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Dashboard</span>}
             </Link>
           </li>
+          )}
+
+          {/* --- Calendar (Task & Team Calendar) --- */}
+          {hasPermission(P.TASK_READ) && (
+          <li>
+            <Link
+              to="/calendar"
+              onClick={() => handleLinkClick('Calendar')}
+              className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
+                activeTab === 'Calendar' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <CalendarCheck size={20} strokeWidth={activeTab === 'Calendar' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Calendar' ? 'text-white' : 'text-fuchsia-400'}`} />
+              {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Calendar</span>}
+            </Link>
+          </li>
+          )}
 
           {/* --- Leads Dropdown --- */}
           {hasPermission(P.LEAD_READ) && hasModule("LEADS") && (
@@ -297,6 +317,33 @@ const Sidebar = ({ isExpanded }) => {
           </li>
           )}
 
+          {/* --- Marketing & Campaigns Dropdown --- */}
+          {hasPermission(P.MARKETING_READ) && (
+          <li>
+            <button
+              onClick={() => handleMenuClick('Marketing')}
+              className={`w-full flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'justify-between px-4' : 'justify-center px-0'} ${
+                activeTab === 'Marketing' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <div className={`flex items-center ${showSidebar ? 'gap-3.5' : ''}`}>
+                <Megaphone size={20} strokeWidth={activeTab === 'Marketing' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Marketing' ? 'text-white' : 'text-yellow-400'}`} />
+                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Marketing</span>}
+              </div>
+              {showSidebar && <ChevronDown size={16} className={`transition-transform duration-200 opacity-70 ${openDropdown === 'Marketing' ? 'rotate-180' : ''}`} />}
+            </button>
+            {showSidebar && openDropdown === 'Marketing' && (
+              <ul className="mt-1 space-y-1 mb-2">
+                <li><Link to="/marketing" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-yellow-400/50" /><span>Overview</span></Link></li>
+                <li><Link to="/marketing/segments" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-yellow-400/50" /><span>Segments</span></Link></li>
+                <li><Link to="/marketing/campaigns" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-yellow-400/50" /><span>Campaigns</span></Link></li>
+                <li><Link to="/marketing/drips" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-yellow-400/50" /><span>Drip Sequences</span></Link></li>
+                <li><Link to="/marketing/automations" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-yellow-400/50" /><span>Automations</span></Link></li>
+              </ul>
+            )}
+          </li>
+          )}
+
           {/* --- Vendors Dropdown --- */}
           {hasPermission(P.VENDOR_READ) && hasModule("VENDORS") && (
           <li>
@@ -342,6 +389,43 @@ const Sidebar = ({ isExpanded }) => {
                 <li><Link to="/fleet/vehicles" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Vehicles</span></Link></li>
                 <li><Link to="/fleet/drivers" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Drivers</span></Link></li>
                 <li><Link to="/fleet/trips" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-sky-400/50" /><span>Trips</span></Link></li>
+              </ul>
+            )}
+          </li>
+          )}
+
+          {/* --- Accounting / GST Dropdown (ACCOUNTANT/MANAGER + TENANT_ADMIN) --- */}
+          {hasAnyPermission(P.ACCOUNTING_INVOICE_READ, P.ACCOUNTING_TDS_READ) && (
+          <li>
+            <button
+              onClick={() => handleMenuClick('Accounting')}
+              className={`w-full flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'justify-between px-4' : 'justify-center px-0'} ${
+                activeTab === 'Accounting' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <div className={`flex items-center ${showSidebar ? 'gap-3.5' : ''}`}>
+                <Landmark size={20} strokeWidth={activeTab === 'Accounting' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Accounting' ? 'text-white' : 'text-lime-400'}`} />
+                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Accounting</span>}
+              </div>
+              {showSidebar && <ChevronDown size={16} className={`transition-transform duration-200 opacity-70 ${openDropdown === 'Accounting' ? 'rotate-180' : ''}`} />}
+            </button>
+            {showSidebar && openDropdown === 'Accounting' && (
+              <ul className="mt-1 space-y-1 mb-2">
+                {hasPermission(P.ACCOUNTING_INVOICE_READ) && (
+                  <li><Link to="/accounting" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><LayoutDashboard size={14} className="text-lime-400/60" /><span>Dashboard</span></Link></li>
+                )}
+                {hasPermission(P.ACCOUNTING_INVOICE_READ) && (
+                  <li><Link to="/accounting/invoices" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><FileText size={14} className="text-lime-400/60" /><span>Invoices</span></Link></li>
+                )}
+                {hasPermission(P.ACCOUNTING_TDS_READ) && (
+                  <li><Link to="/accounting/vendor-bills" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Receipt size={14} className="text-lime-400/60" /><span>Vendor Bills &amp; TDS</span></Link></li>
+                )}
+                {hasPermission(P.ACCOUNTING_INVOICE_READ) && (
+                  <li><Link to="/accounting/reports" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><BarChart3 size={14} className="text-lime-400/60" /><span>Reports</span></Link></li>
+                )}
+                {hasPermission(P.ACCOUNTING_SETTINGS_MANAGE) && (
+                  <li><Link to="/accounting/settings" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Settings size={14} className="text-lime-400/60" /><span>GST Settings</span></Link></li>
+                )}
               </ul>
             )}
           </li>
@@ -450,6 +534,30 @@ const Sidebar = ({ isExpanded }) => {
           </li> */} 
 
 
+          {/* --- Travel Partners (B2B franchise) Dropdown — TENANT_ADMIN only --- */}
+          {isTenantAdmin() && (
+          <li>
+            <button
+              onClick={() => handleMenuClick('SubAgents')}
+              className={`w-full flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'justify-between px-4' : 'justify-center px-0'} ${
+                activeTab === 'SubAgents' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <div className={`flex items-center ${showSidebar ? 'gap-3.5' : ''}`}>
+                <Network size={20} strokeWidth={activeTab === 'SubAgents' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'SubAgents' ? 'text-white' : 'text-indigo-400'}`} />
+                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Travel Partners</span>}
+              </div>
+              {showSidebar && <ChevronDown size={16} className={`transition-transform duration-200 opacity-70 ${openDropdown === 'SubAgents' ? 'rotate-180' : ''}`} />}
+            </button>
+            {showSidebar && openDropdown === 'SubAgents' && (
+              <ul className="mt-1 space-y-1 mb-2">
+                <li><Link to="/subagents" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-indigo-400/50" /><span>Manage</span></Link></li>
+                <li><Link to="/subagents/rollup" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><HandCoins size={14} className="text-indigo-400/60" /><span>Roll-up &amp; Commissions</span></Link></li>
+              </ul>
+            )}
+          </li>
+          )}
+
 {/* --- Platform Console (SUPERADMIN / platform owner only) --- */}
 {/* Organization/tenant management now lives in the dedicated SuperAdmin console at /console
     (separate realm + login). This is the bridge link from the tenant app. */}
@@ -511,15 +619,32 @@ const Sidebar = ({ isExpanded }) => {
           </li>
           )}
 
+          {/* --- My Commission (SUB_AGENT self view) --- */}
+          {isSubAgent() && (
+          <li>
+            <Link
+              to="/my-commission"
+              onClick={() => handleLinkClick('MyCommission')}
+              className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
+                activeTab === 'MyCommission' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <HandCoins size={20} strokeWidth={activeTab === 'MyCommission' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'MyCommission' ? 'text-white' : 'text-emerald-400'}`} />
+              {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">My Commission</span>}
+            </Link>
+          </li>
+          )}
+
           {/* Divider */}
           <li className="py-2 px-2">
             <div className="h-px bg-white/10 w-full rounded-full"></div>
           </li>
 
           {/* Settings & Bottom links */}
+          {hasPermission(P.SETTINGS_MANAGE) && (
           <li>
-            <Link 
-              to="/CompanySettings" 
+            <Link
+              to="/CompanySettings"
               onClick={() => handleLinkClick('Settings')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Settings' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
@@ -529,10 +654,12 @@ const Sidebar = ({ isExpanded }) => {
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Settings</span>}
             </Link>
           </li>
+          )}
 
+          {!isSubAgent() && (
           <li>
-            <Link 
-              to="/account" 
+            <Link
+              to="/account"
               onClick={() => handleLinkClick('Account')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Account' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
@@ -542,10 +669,28 @@ const Sidebar = ({ isExpanded }) => {
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Account</span>}
             </Link>
           </li>
+          )}
 
+          {/* --- My Profile (personal — shown to SUB_AGENT, who has no company profile access) --- */}
+          {isSubAgent() && (
           <li>
-            <Link 
-              to="/CompanyProfile" 
+            <Link
+              to="/my-profile"
+              onClick={() => handleLinkClick('MyProfile')}
+              className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
+                activeTab === 'MyProfile' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <CircleUser size={20} strokeWidth={activeTab === 'MyProfile' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'MyProfile' ? 'text-white' : 'text-slate-400'}`} />
+              {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">My Profile</span>}
+            </Link>
+          </li>
+          )}
+
+          {!isSubAgent() && (
+          <li>
+            <Link
+              to="/CompanyProfile"
               onClick={() => handleLinkClick('Profile')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
@@ -555,10 +700,12 @@ const Sidebar = ({ isExpanded }) => {
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Profile</span>}
             </Link>
           </li>
+          )}
 
+          {!isSubAgent() && (
           <li>
-            <Link 
-              to="/SubscriptionInfo" 
+            <Link
+              to="/SubscriptionInfo"
               onClick={() => handleLinkClick('Subscription')}
               className={`flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'px-4 gap-3.5' : 'justify-center px-0'} ${
                 activeTab === 'Subscription' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
@@ -568,6 +715,7 @@ const Sidebar = ({ isExpanded }) => {
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Subscription Info</span>}
             </Link>
           </li>
+          )}
 
           {/* 👉 SIRF YAHAN CHANGE KIYA HAI: <Link> ko <button> banaya aur onClick lagaya */}
           <li className="pb-4 pt-2">

@@ -297,6 +297,7 @@ export default function EditLead() {
               {/* Left Column */}
               <div className="flex-1 min-w-0 space-y-6">
                 <LeadInformation
+                  mode="edit"
                   register={register}
                   errors={errors}
                   watch={watch}

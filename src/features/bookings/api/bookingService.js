@@ -156,6 +156,18 @@ const bookingService = {
 
   // send-voucher (email) remains a backend stub; the PDF endpoints above are the real deliverables.
   sendVoucher: (bookingId) => API.post(`/bookings/${bookingId}/send-voucher`),
+
+  // ── GST invoice (the SAME accounting invoice the accountant issues) ──────────
+  // Bridge endpoints under the booking; generation is tenant-admin + accountant only
+  // (backend gate ACCOUNTING_INVOICE_MANAGE), listing/PDF need only BOOKING_READ.
+  getGstInvoices: (bookingId) =>
+    API.get(`/bookings/${bookingId}/gst-invoices`),
+  issueGstInvoice: (bookingId, data) =>
+    API.post(`/bookings/${bookingId}/gst-invoices`, data),
+  gstInvoicePdf: (bookingId, invoiceId) =>
+    API.get(`/bookings/${bookingId}/gst-invoices/${invoiceId}/pdf`, { responseType: "blob" }),
+  cancelGstInvoice: (bookingId, invoiceId, reason) =>
+    API.post(`/bookings/${bookingId}/gst-invoices/${invoiceId}/cancel`, { reason }),
 };
 
 export default bookingService;

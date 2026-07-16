@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { upgradeRequestService } from "./api/upgradeRequestService";
+import { subAgentLicenseService } from "./api/subAgentLicenseService";
 
 // Live items link; future items render disabled with a "soon" tag until their phase ships.
 // `badge: "upgrades"` shows a live pending-count pill (the SuperAdmin's new-request alert).
@@ -24,7 +25,7 @@ const NAV = [
   { to: "/console/tenants", label: "Tenants", Icon: Building2 },
   { to: "/console/palette", label: "Design Tokens", Icon: PaletteIcon },
   { to: "/console/plans", label: "Subscriptions", Icon: CreditCard },
-  { to: "/console/upgrade-requests", label: "Upgrade Requests", Icon: ArrowUpCircle, badge: "upgrades" },
+  { to: "/console/upgrade-requests", label: "Subscription & Add-ons", Icon: ArrowUpCircle, badge: "upgrades" },
   { to: "/console/usage", label: "Usage & Quotas", Icon: Gauge },
   { to: "/console/users", label: "Users", Icon: Users },
   { to: "/console/feature-flags", label: "Feature Flags", Icon: ToggleLeft },
@@ -37,14 +38,18 @@ const NAV = [
 export default function ConsoleSidebar({ collapsed }) {
   const [pendingUpgrades, setPendingUpgrades] = useState(0);
 
-  // Live pending-upgrade badge: best-effort on mount and whenever the tab regains focus (an operator
-  // returning to the console sees new requests without a full reload).
+  // Live pending badge: plan upgrades + Travel Partner seat licenses, so the one queue's pill reflects
+  // both. Best-effort on mount and whenever the tab regains focus (an operator returning to the console
+  // sees new requests without a full reload).
   useEffect(() => {
     let alive = true;
     const refresh = () =>
-      upgradeRequestService.pendingCount()
-        .then((d) => { if (alive) setPendingUpgrades(Number(d?.count ?? 0)); })
-        .catch(() => {});
+      Promise.all([
+        upgradeRequestService.pendingCount().catch(() => ({ count: 0 })),
+        subAgentLicenseService.pendingCount().catch(() => ({ count: 0 })),
+      ]).then(([u, s]) => {
+        if (alive) setPendingUpgrades(Number(u?.count ?? 0) + Number(s?.count ?? 0));
+      });
     refresh();
     window.addEventListener("focus", refresh);
     return () => { alive = false; window.removeEventListener("focus", refresh); };

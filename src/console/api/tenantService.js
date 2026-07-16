@@ -21,6 +21,14 @@ export const tenantService = {
   changePlan: (publicId, plan) =>
     ConsoleAPI.post(`/super-admin/tenants/${publicId}/plan`, { plan }).then(unwrap),
 
+  // Sub-agent seat fee. GET returns { effectiveRate, usingPlatformDefault, overrideRate,
+  // activeSeats, monthlyTotal }. PUT { monthlySeatFee } sets the per-tenant override;
+  // monthlySeatFee=null clears it (revert to the platform-flat default).
+  getSeatFee: (publicId) =>
+    ConsoleAPI.get(`/super-admin/tenants/${publicId}/seat-fee`).then(unwrap),
+  setSeatFee: (publicId, payload) =>
+    ConsoleAPI.put(`/super-admin/tenants/${publicId}/seat-fee`, payload).then(unwrap),
+
   suspend: (publicId) => ConsoleAPI.post(`/super-admin/tenants/${publicId}/suspend`),
   reactivate: (publicId) => ConsoleAPI.post(`/super-admin/tenants/${publicId}/reactivate`),
   remove: (publicId) => ConsoleAPI.delete(`/super-admin/tenants/${publicId}`),

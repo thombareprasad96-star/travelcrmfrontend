@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { X, Loader2, Plus, CheckCircle2, RotateCcw, Receipt } from "lucide-react";
+import { X, Loader2, Plus, CheckCircle2, RotateCcw, Receipt, Network } from "lucide-react";
 import { billingService } from "../api/billingService";
 import { planService } from "../api/planService";
+import { tenantService } from "../api/tenantService";
 
 const inputCls =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-heading placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-focus";
@@ -38,6 +39,16 @@ export default function BillingDrawer({ tenant, onClose, onChanged, showToast })
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ amount: "", currency: "INR", dueDate: "", notes: "" });
+  // The recurring invoice = plan price + sub-agent seat fee. It's billed "plan-derived" (amount left
+  // null) so the backend folds in the current seat fee; a custom amount is taken verbatim (no seat fee).
+  const [planPrice, setPlanPrice] = useState(null);
+  const [customAmount, setCustomAmount] = useState(false);
+
+  // Sub-agent seat fee (per-tenant override vs platform default).
+  const [seatInfo, setSeatInfo] = useState(null);
+  const [seatInput, setSeatInput] = useState("");
+  const [seatLoading, setSeatLoading] = useState(true);
+  const [seatSaving, setSeatSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,10 +68,44 @@ export default function BillingDrawer({ tenant, onClose, onChanged, showToast })
     planService.list()
       .then((plans) => {
         const p = (plans || []).find((x) => x.code === tenant.plan);
-        if (p) setForm((f) => ({ ...f, amount: p.monthlyPrice ?? "", currency: p.currency || "INR" }));
+        if (p) {
+          setPlanPrice(p.monthlyPrice ?? null);
+          setForm((f) => ({ ...f, currency: p.currency || "INR" }));
+        }
       })
       .catch(() => {});
   }, [tenant.plan]);
+
+  // Load the tenant's sub-agent seat-fee position.
+  const loadSeatFee = useCallback(async () => {
+    setSeatLoading(true);
+    try {
+      const info = await tenantService.getSeatFee(tenant.publicId);
+      setSeatInfo(info);
+      setSeatInput(info?.overrideRate != null ? String(info.overrideRate) : "");
+    } catch {
+      setSeatInfo(null);
+    } finally {
+      setSeatLoading(false);
+    }
+  }, [tenant.publicId]);
+  useEffect(() => { loadSeatFee(); }, [loadSeatFee]);
+
+  const saveSeatFee = async () => {
+    setSeatSaving(true);
+    try {
+      const monthlySeatFee = seatInput.trim() === "" ? null : Number(seatInput);
+      const info = await tenantService.setSeatFee(tenant.publicId, { monthlySeatFee });
+      setSeatInfo(info);
+      setSeatInput(info?.overrideRate != null ? String(info.overrideRate) : "");
+      showToast("success", monthlySeatFee == null ? "Reverted to platform default" : "Seat fee updated");
+      onChanged?.();
+    } catch (e2) {
+      showToast("error", e2?.response?.data?.message || "Could not update seat fee");
+    } finally {
+      setSeatSaving(false);
+    }
+  };
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -69,7 +114,9 @@ export default function BillingDrawer({ tenant, onClose, onChanged, showToast })
     setSaving(true);
     try {
       await billingService.create(tenant.publicId, {
-        amount: form.amount === "" ? null : Number(form.amount),
+        // Plan-derived (null) → backend charges plan price + sub-agent seat fee. A custom amount is
+        // billed verbatim (seat fee NOT auto-added), matching BillingServiceImpl.create.
+        amount: customAmount ? (form.amount === "" ? null : Number(form.amount)) : null,
         currency: form.currency || null,
         dueDate: form.dueDate || null,
         notes: form.notes || null,
@@ -99,6 +146,10 @@ export default function BillingDrawer({ tenant, onClose, onChanged, showToast })
     }
   };
 
+  const seatTotal = Number(seatInfo?.monthlyTotal || 0);
+  const planBase = Number(planPrice || 0);
+  const grandTotal = planBase + seatTotal;
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-slate-950/50" onClick={onClose} />
@@ -115,6 +166,53 @@ export default function BillingDrawer({ tenant, onClose, onChanged, showToast })
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* ── Sub-agent seat fee ── */}
+          <div className="mb-4 rounded-xl border border-border bg-surface-hover/40 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Network size={15} className="text-accent" />
+              <h3 className="text-sm font-bold text-heading">Sub-agent seat fee</h3>
+            </div>
+            {seatLoading ? (
+              <div className="py-4 text-center text-muted"><Loader2 size={16} className="mx-auto animate-spin" /></div>
+            ) : !seatInfo ? (
+              <p className="text-xs text-muted">Seat-fee info unavailable.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-surface px-2 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted">Active seats</div>
+                    <div className="font-mono text-sm font-bold text-heading">{seatInfo.activeSeats}</div>
+                  </div>
+                  <div className="rounded-lg bg-surface px-2 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted">Rate / seat</div>
+                    <div className="font-mono text-sm font-bold text-heading">{money(seatInfo.effectiveRate)}</div>
+                  </div>
+                  <div className="rounded-lg bg-surface px-2 py-2">
+                    <div className="text-[10px] uppercase tracking-wide text-muted">Monthly</div>
+                    <div className="font-mono text-sm font-bold text-heading">{money(seatInfo.monthlyTotal)}</div>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs font-semibold text-body">Override rate / seat</label>
+                    <input type="number" min={0} step="0.01" className={inputCls} value={seatInput}
+                      onChange={(e) => setSeatInput(e.target.value)}
+                      placeholder={`Default ${money(seatInfo.effectiveRate)}`} />
+                  </div>
+                  <button onClick={saveSeatFee} disabled={seatSaving}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-60">
+                    {seatSaving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Save
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-muted">
+                  {seatInfo.usingPlatformDefault
+                    ? "Using the platform-default rate. Enter a value to override for this tenant."
+                    : "Per-tenant override active. Clear the field and Save to revert to the platform default."}
+                </p>
+              </>
+            )}
+          </div>
+
           {!showForm && (
             <div className="mb-3 flex justify-end">
               <button onClick={() => setShowForm(true)}
@@ -126,17 +224,48 @@ export default function BillingDrawer({ tenant, onClose, onChanged, showToast })
 
           {showForm && (
             <form onSubmit={issue} className="mb-4 space-y-3 rounded-xl border border-border bg-surface-hover p-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-body">Amount</label>
-                  <input type="number" min={0} step="0.01" className={inputCls} value={form.amount}
-                    onChange={(e) => set("amount", e.target.value)} placeholder="Plan default" />
+              {!customAmount ? (
+                <div className="rounded-lg border border-border bg-surface p-3 text-sm">
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-body">Plan · <span className="font-mono">{tenant.plan}</span></span>
+                    <span className="font-mono font-semibold text-heading">{money(planBase, form.currency)}</span>
+                  </div>
+                  {seatTotal > 0 && seatInfo && (
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-body">
+                        Sub-agent seats
+                        <span className="text-muted"> · {seatInfo.activeSeats} × {money(seatInfo.effectiveRate, form.currency)}</span>
+                      </span>
+                      <span className="font-mono font-semibold text-heading">+ {money(seatTotal, form.currency)}</span>
+                    </div>
+                  )}
+                  <div className="mt-1 flex items-center justify-between border-t border-border pt-2">
+                    <span className="font-semibold text-heading">Total due</span>
+                    <span className="font-mono text-base font-bold text-accent">{money(grandTotal, form.currency)}</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-body">Currency</label>
-                  <input className={inputCls} value={form.currency} onChange={(e) => set("currency", e.target.value)} />
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-body">Custom amount</label>
+                    <input type="number" min={0} step="0.01" className={inputCls} value={form.amount}
+                      onChange={(e) => set("amount", e.target.value)} placeholder="Plan default" />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-body">Currency</label>
+                    <input className={inputCls} value={form.currency} onChange={(e) => set("currency", e.target.value)} />
+                  </div>
                 </div>
-              </div>
+              )}
+              <label className="flex items-center gap-2 text-xs font-medium text-body">
+                <input type="checkbox" checked={customAmount}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.checked);
+                    if (e.target.checked && form.amount === "" && planPrice != null) set("amount", String(planPrice));
+                  }}
+                  className="h-4 w-4 rounded border-border-strong accent-violet-600" />
+                Set a custom amount (sub-agent seat fee not auto-added)
+              </label>
               <div>
                 <label className="mb-1 block text-xs font-semibold text-body">
                   Due date <span className="font-normal text-muted">(blank = +15 days)</span>

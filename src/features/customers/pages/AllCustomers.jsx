@@ -3,6 +3,10 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import customerService from "../api/customerService";
 import { Users as FaUsers, UserCheck as FaUserCheck, Crown as FaCrown, IndianRupee as FaRupeeSign, Plane as FaPlane, RotateCw as FaRedoAlt, SquarePen as FaEdit, Trash2 as FaTrash, Eye as FaEye, Search as FaSearch, X as FaTimes, Download as FaDownload, UserPlus as FaUserPlus, ArrowUpDown as FaSort, ChevronUp as FaSortUp, ChevronDown as FaSortDown, MapPin as FaMapMarkerAlt, Mail as FaEnvelope, Smartphone as FaMobileAlt, Calendar as FaCalendarAlt, ChevronLeft as FaChevronLeft, ChevronRight as FaChevronRight, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, History as FaHistory, StickyNote as FaStickyNote, Share2 as FaShareAlt, Building as MdLocationCity } from "lucide-react";
 import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
+import { GridStyles, GridHead, GridRow, Cell, Avatar, GridSkeleton, GridEmpty } from "@shared/ui/gridTable";
+
+// Leads-directory grid columns (Customer, Contact, City, Type, Loyalty, Bookings, Spent, Status, Actions)
+const CUST_COLS = "1.7fr 1.3fr 0.8fr 0.7fr 0.95fr 0.6fr 1fr 0.85fr 150px";
 
 
 /* ─── BOOKING HISTORY MOCK (keep until backend booking history API ready) ── */
@@ -425,6 +429,7 @@ export default function Customers() {
         @keyframes popIn   { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
         .fade-up { animation: fadeUp .4s ease both; }
       `}</style>
+      <GridStyles/>
 
       {/* Modals + Toast */}
       {toast        && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)}/>}
@@ -514,146 +519,93 @@ export default function Customers() {
             </div>
           </div>
 
-          {/* ── DESKTOP TABLE ── */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full min-w-[1000px]">
-              <thead className="bg-slate-50/80 border-b border-slate-100">
-                <tr>
-                  {[
-                    { label:"Customer",    key:"name" },
-                    { label:"Contact",     key:null   },
-                    { label:"City",        key:"city" },
-                    { label:"Type",        key:"type" },
-                    { label:"Loyalty",     key:"tier" },
-                    { label:"Bookings",    key:"bookings" },
-                    { label:"Total Spent", key:"spent" },
-                    { label:"Status",      key:"status" },
-                    { label:"Actions",     key:null   },
-                  ].map(({ label, key }) => (
-                    <th key={label} onClick={key ? () => handleSort(key) : undefined}
-                      className={`px-4 py-3.5 text-left text-xs font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap
-                        ${key ? "cursor-pointer hover:text-blue-600 select-none" : ""}`}>
-                      {label}{key && <SortIcon k={key}/>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {loading
-                  ? [...Array(6)].map((_, i) => <SkeletonRow key={i}/>)
-                  : pageData.length === 0
-                  ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-24">
-                        <div className="text-6xl mb-4">👥</div>
-                        <p className="text-lg font-extrabold text-slate-600 mb-1">No Customers Found</p>
-                        <p className="text-sm text-slate-400 mb-5">
-                          {anyFilter ? "Try adjusting your search or filters." : "Start by adding your first customer."}
-                        </p>
-                        {anyFilter
-                          ? <button onClick={resetFilters} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
-                          : <button onClick={() => navigate("/Createcustomer")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 mx-auto">
-                              <FaUserPlus/> Add First Customer
-                            </button>
-                        }
-                      </td>
-                    </tr>
-                  )
-                  : pageData.map((c, idx) => {
-                    const tc  = TIER_CONFIG[c.tier]    || TIER_CONFIG.Bronze;
-                    const tyc = TYPE_CONFIG[c.type]    || TYPE_CONFIG.Regular;
-                    const sc  = STATUS_CONFIG[c.status]|| STATUS_CONFIG.Inactive;
-                    const grad = avatarGrad(c.id);
-                    return (
-                      <tr key={c.id} className="group transition-all duration-150 hover:bg-blue-50/40 hover:shadow-[inset_3px_0_0_#2563eb]"
-                        style={{ animation:"fadeUp .35s ease both", animationDelay:`${idx * 30}ms` }}>
-                        {/* Customer */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0 shadow-sm`}>
-                              {initials(c.name)}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-sm font-bold text-slate-800">{c.name}</p>
-                                {c.type === "VIP" && <FaCrown className="w-3 h-3 text-amber-500"/>}
-                              </div>
-                              <p className="text-xs text-blue-600 font-bold">{c.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        {/* Contact */}
-                        <td className="px-4 py-3.5">
-                          <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><FaMobileAlt className="text-slate-400"/> {c.phone}</p>
-                          <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]">{c.email}</p>
-                        </td>
-                        {/* City */}
-                        <td className="px-4 py-3.5">
-                          <p className="text-sm font-semibold text-slate-600">{c.city}</p>
-                          <p className="text-xs text-slate-400">{c.state}</p>
-                        </td>
-                        {/* Type */}
-                        <td className="px-4 py-3.5">
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${tyc.border} ${tyc.bg} ${tyc.text}`}>{c.type}</span>
-                        </td>
-                        {/* Tier */}
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${tc.border} ${tc.bg} ${tc.text}`}>
-                            {tc.icon} {c.tier}
-                          </span>
-                        </td>
-                        {/* Bookings */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-extrabold text-slate-700">{c.bookings || 0}</span>
-                            <div className="flex gap-0.5">
-                              {[...Array(Math.min(5, c.bookings || 0))].map((_, i) => (
-                                <div key={i} className={`w-1.5 rounded-sm ${(c.bookings||0) >= 10 ? "bg-blue-500" : (c.bookings||0) >= 5 ? "bg-teal-400" : "bg-slate-300"}`}
-                                  style={{ height:`${8 + i * 3}px` }}/>
-                              ))}
-                            </div>
-                          </div>
-                        </td>
-                        {/* Spent */}
-                        <td className="px-4 py-3.5">
-                          <p className="text-sm font-extrabold text-slate-800">{fmtINR(c.spent)}</p>
-                          <p className="text-xs text-slate-400">Last: {fmtDate(c.lastBooking)}</p>
-                        </td>
-                        {/* Status */}
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-full ${sc.bg} ${sc.text}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>
-                            {c.status}
-                          </span>
-                        </td>
-                        {/* Actions */}
-                        <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
-                            {/* View */}
-                            <button onClick={() => navigate(`/CustomerDetails/${c.id}`)} title="View"
-                              className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all text-sm">
-                              <FaEye/>
-                            </button>
-                            {/* Edit → navigate to /EditCustomer/:id */}
-                            <button onClick={() => handleNavigateEdit(c.id)} title="Edit"
-                              className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all text-sm">
-                              <FaEdit/>
-                            </button>
-                            <a href={`https://wa.me/${(c.phone || "").replace(/\D/g, "")}`} target="_blank" rel="noreferrer" title="WhatsApp"
-                              className="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 flex items-center justify-center transition-all text-sm">
-                              <FaWhatsapp/>
-                            </a>
-                            <button onClick={() => setDelTarget(c)} title="Delete"
-                              className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all text-sm">
-                              <FaTrash/>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+          {/* ── DESKTOP GRID (Leads-directory style, no expandable) ── */}
+          <GridHead cols={CUST_COLS} bp="lg">
+            {[
+              { label:"Customer",    key:"name",     first:true },
+              { label:"Contact",     key:null   },
+              { label:"City",        key:"city" },
+              { label:"Type",        key:"type" },
+              { label:"Loyalty",     key:"tier" },
+              { label:"Bookings",    key:"bookings", right:true },
+              { label:"Total Spent", key:"spent",    right:true },
+              { label:"Status",      key:"status" },
+              { label:"Actions",     key:null,       right:true },
+            ].map(({ label, key, first, right }) => (
+              <Cell key={label} first={first} right={right} className={key ? "cursor-pointer hover:text-blue-600 select-none" : ""}>
+                <span onClick={key ? () => handleSort(key) : undefined}>{label}{key && <SortIcon k={key}/>}</span>
+              </Cell>
+            ))}
+          </GridHead>
+
+          <div className="hidden lg:block">
+            {loading
+              ? <GridSkeleton cols={CUST_COLS} rows={6} />
+              : pageData.length === 0
+              ? <GridEmpty icon={FaUsers} title="No Customers Found"
+                  hint={anyFilter ? "Try adjusting your search or filters." : "Start by adding your first customer."}
+                  action={anyFilter
+                    ? <button onClick={resetFilters} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition-all">Clear Filters</button>
+                    : <button onClick={() => navigate("/Createcustomer")} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-200 hover:bg-blue-700 transition-all inline-flex items-center gap-2"><FaUserPlus/> Add First Customer</button>}/>
+              : pageData.map((c, idx) => {
+                const tc  = TIER_CONFIG[c.tier]    || TIER_CONFIG.Bronze;
+                const tyc = TYPE_CONFIG[c.type]    || TYPE_CONFIG.Regular;
+                const sc  = STATUS_CONFIG[c.status]|| STATUS_CONFIG.Inactive;
+                const grad = avatarGrad(c.id);
+                return (
+                  <GridRow key={c.id} cols={CUST_COLS} bp="lg" index={idx}>
+                    {/* Customer */}
+                    <Cell first>
+                      <Avatar initials={initials(c.name)} gradient={grad}/>
+                      <div className="ml-3 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-slate-800 truncate">{c.name}</p>
+                          {c.type === "VIP" && <FaCrown className="w-3 h-3 text-amber-500 flex-shrink-0"/>}
+                        </div>
+                        <p className="text-xs text-blue-600 font-bold">{c.id}</p>
+                      </div>
+                    </Cell>
+                    {/* Contact */}
+                    <Cell>
+                      <div className="min-w-0 w-full">
+                        <p className="text-xs font-semibold text-slate-600 flex items-center gap-1 justify-center"><FaMobileAlt className="text-slate-400 flex-shrink-0"/> {c.phone}</p>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate text-center">{c.email}</p>
+                      </div>
+                    </Cell>
+                    {/* City */}
+                    <Cell>
+                      <div className="text-center min-w-0">
+                        <p className="text-sm font-semibold text-slate-600 truncate">{c.city || "—"}</p>
+                        <p className="text-xs text-slate-400 truncate">{c.state}</p>
+                      </div>
+                    </Cell>
+                    {/* Type */}
+                    <Cell><span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${tyc.border} ${tyc.bg} ${tyc.text}`}>{c.type}</span></Cell>
+                    {/* Tier */}
+                    <Cell><span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${tc.border} ${tc.bg} ${tc.text}`}>{tc.icon} {c.tier}</span></Cell>
+                    {/* Bookings */}
+                    <Cell right><span className="text-sm font-extrabold text-slate-700">{c.bookings || 0}</span></Cell>
+                    {/* Spent */}
+                    <Cell right>
+                      <div className="text-right">
+                        <p className="text-sm font-extrabold text-slate-800">{fmtINR(c.spent)}</p>
+                        <p className="text-[11px] text-slate-400">Last: {fmtDate(c.lastBooking)}</p>
+                      </div>
+                    </Cell>
+                    {/* Status */}
+                    <Cell><span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-full ${sc.bg} ${sc.text}`}><span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`}/>{c.status}</span></Cell>
+                    {/* Actions */}
+                    <Cell right>
+                      <div className="flex items-center justify-end gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => navigate(`/CustomerDetails/${c.id}`)} title="View" className="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-all text-sm"><FaEye/></button>
+                        <button onClick={() => handleNavigateEdit(c.id)} title="Edit" className="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition-all text-sm"><FaEdit/></button>
+                        <a href={`https://wa.me/${(c.phone || "").replace(/\D/g, "")}`} target="_blank" rel="noreferrer" title="WhatsApp" className="w-8 h-8 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 flex items-center justify-center transition-all text-sm"><FaWhatsapp/></a>
+                        <button onClick={() => setDelTarget(c)} title="Delete" className="w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all text-sm"><FaTrash/></button>
+                      </div>
+                    </Cell>
+                  </GridRow>
+                );
+              })}
           </div>
 
           {/* ── MOBILE / TABLET CARDS ── */}

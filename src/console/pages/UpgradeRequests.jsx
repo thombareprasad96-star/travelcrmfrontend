@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowUpCircle, ArrowRight, Loader2, Check, X, RefreshCw, CreditCard, Landmark,
-  FileText, Clock, ShieldCheck, Ban,
+  FileText, Clock, ShieldCheck, Ban, Network, Users,
 } from "lucide-react";
 import { toast } from "@shared/ui/toast";
 import { getErrorMessage } from "@shared/api/apiError";
 import { upgradeRequestService } from "../api/upgradeRequestService";
+import { subAgentLicenseService } from "../api/subAgentLicenseService";
+
+// The queue merges two request kinds. `serviceFor` routes approve/reject to the right backend.
+const serviceFor = (req) => (req._kind === "SEAT" ? subAgentLicenseService : upgradeRequestService);
+const isSeat = (req) => req._kind === "SEAT";
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -92,14 +97,19 @@ function DecisionModal({ req, type, onClose, onDone }) {
   const [err, setErr] = useState("");
   const isReject = type === "reject";
 
+  const seat = isSeat(req);
   const submit = async () => {
     if (isReject && !reason.trim()) { setErr("A rejection reason is required."); return; }
     setBusy(true);
     setErr("");
     try {
-      if (isReject) await upgradeRequestService.reject(req.publicId, reason.trim());
-      else await upgradeRequestService.approve(req.publicId);
-      toast.success(isReject ? "Request rejected." : `Plan upgraded to ${req.requestedPlanName || req.requestedPlan}.`);
+      const svc = serviceFor(req);
+      if (isReject) await svc.reject(req.publicId, reason.trim());
+      else await svc.approve(req.publicId);
+      toast.success(
+        isReject ? "Request rejected."
+          : seat ? `Seat licensed — ${req.subAgentName || "partner"} activated.`
+          : `Plan upgraded to ${req.requestedPlanName || req.requestedPlan}.`);
       onDone();
     } catch (e) {
       const msg = getErrorMessage(e, isReject ? "Could not reject the request." : "Could not approve the request.");
@@ -115,10 +125,14 @@ function DecisionModal({ req, type, onClose, onDone }) {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-base font-bold text-heading">
-              {isReject ? "Reject upgrade request" : "Approve & activate plan"}
+              {isReject
+                ? (seat ? "Reject seat-license request" : "Reject upgrade request")
+                : (seat ? "Approve & license seat" : "Approve & activate plan")}
             </h3>
             <p className="mt-0.5 text-xs text-body">
-              {req.tenantName} · {req.currentPlanName || req.currentPlan} → {req.requestedPlanName || req.requestedPlan}
+              {seat
+                ? `${req.tenantName} · ${req.quantity || 1} Travel Partner seat${(req.quantity || 1) === 1 ? "" : "s"} · ${req.subAgentName || ""}`
+                : `${req.tenantName} · ${req.currentPlanName || req.currentPlan} → ${req.requestedPlanName || req.requestedPlan}`}
             </p>
           </div>
           <button onClick={onClose} disabled={busy}
@@ -146,7 +160,9 @@ function DecisionModal({ req, type, onClose, onDone }) {
               </span>
             </div>
             <p className="pt-1 text-[11px] text-muted">
-              Approving activates the new plan's limits and features for this tenant immediately.
+              {seat
+                ? "Approving raises the tenant's Travel Partner seat cap and activates the pending partner immediately."
+                : "Approving activates the new plan's limits and features for this tenant immediately."}
             </p>
           </div>
         )}
@@ -183,18 +199,41 @@ function RequestCard({ req, onApprove, onReject }) {
           <div className="font-semibold text-heading">{req.tenantName}</div>
           <div className="font-mono text-[11px] text-muted">{req.tenantCode}</div>
         </div>
-        <Chip text={req.status} cls={REQ_STATUS_CLS[req.status] || "bg-surface-hover text-muted"} />
+        <div className="flex items-center gap-1.5">
+          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+            isSeat(req) ? "bg-hue-indigo-soft text-hue-indigo" : "bg-hue-sky-soft text-hue-sky"}`}>
+            {isSeat(req) ? <><Network size={11} /> Partner seat</> : <><ArrowUpCircle size={11} /> Plan upgrade</>}
+          </span>
+          <Chip text={req.status} cls={REQ_STATUS_CLS[req.status] || "bg-surface-hover text-muted"} />
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="sm:col-span-2">
-          <div className="text-[11px] font-medium text-muted">Plan change</div>
-          <div className="mt-1.5 flex items-center gap-2">
-            <Chip text={req.currentPlanName || req.currentPlan} cls={PLAN_CLS[req.currentPlan] || "bg-surface-hover text-muted"} />
-            <ArrowRight size={14} className="text-muted" />
-            <Chip text={req.requestedPlanName || req.requestedPlan} cls={PLAN_CLS[req.requestedPlan] || "bg-surface-hover text-muted"} />
-          </div>
-          <div className="mt-2 font-mono text-lg font-bold text-heading">{money(req.amount, req.currency)}</div>
+          {isSeat(req) ? (
+            <>
+              <div className="text-[11px] font-medium text-muted">Travel Partner seat</div>
+              <div className="mt-1.5 flex items-center gap-2 text-sm font-semibold text-heading">
+                <Users size={14} className="text-hue-indigo" />
+                {req.subAgentName || "—"}
+                <span className="text-[11px] font-medium text-muted">
+                  · {req.quantity || 1} seat{(req.quantity || 1) === 1 ? "" : "s"}
+                </span>
+              </div>
+              {req.subAgentEmail && <div className="mt-0.5 font-mono text-[11px] text-muted">{req.subAgentEmail}</div>}
+              <div className="mt-2 font-mono text-lg font-bold text-heading">{money(req.amount, req.currency)}</div>
+            </>
+          ) : (
+            <>
+              <div className="text-[11px] font-medium text-muted">Plan change</div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <Chip text={req.currentPlanName || req.currentPlan} cls={PLAN_CLS[req.currentPlan] || "bg-surface-hover text-muted"} />
+                <ArrowRight size={14} className="text-muted" />
+                <Chip text={req.requestedPlanName || req.requestedPlan} cls={PLAN_CLS[req.requestedPlan] || "bg-surface-hover text-muted"} />
+              </div>
+              <div className="mt-2 font-mono text-lg font-bold text-heading">{money(req.amount, req.currency)}</div>
+            </>
+          )}
         </div>
 
         <div className="sm:col-span-2">
@@ -255,9 +294,18 @@ export default function UpgradeRequests() {
     setLoading(true);
     setError("");
     try {
-      setRows(await upgradeRequestService.list(tab));
+      // Merge both request kinds into one queue (no separate seat-license screen), newest first.
+      const [ups, seats] = await Promise.all([
+        upgradeRequestService.list(tab).catch(() => []),
+        subAgentLicenseService.list(tab).catch(() => []),
+      ]);
+      const merged = [
+        ...(ups || []).map((r) => ({ ...r, _kind: "UPGRADE" })),
+        ...(seats || []).map((r) => ({ ...r, _kind: "SEAT" })),
+      ].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setRows(merged);
     } catch (e) {
-      setError(getErrorMessage(e, "Failed to load upgrade requests."));
+      setError(getErrorMessage(e, "Failed to load requests."));
     } finally {
       setLoading(false);
     }
@@ -275,10 +323,11 @@ export default function UpgradeRequests() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-heading">
-            <ArrowUpCircle size={22} className="text-accent" /> Upgrade Requests
+            <ArrowUpCircle size={22} className="text-accent" /> Subscription &amp; Add-on Requests
           </h1>
           <p className="mt-1 text-sm text-body">
-            Review tenant plan-upgrade requests. Approving activates the new plan; rejecting keeps them on their current plan.
+            Review tenant plan upgrades and Travel Partner seat-license purchases. Approving activates the plan or
+            grants the seat; rejecting keeps the tenant where they are.
           </p>
         </div>
         <button onClick={load}
@@ -311,7 +360,7 @@ export default function UpgradeRequests() {
         <div className="py-24 text-center text-red-500">{error}</div>
       ) : rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-surface py-16 text-center text-sm text-muted">
-          No {tab ? tab.toLowerCase() : ""} upgrade requests.
+          No {tab ? tab.toLowerCase() : ""} requests.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
