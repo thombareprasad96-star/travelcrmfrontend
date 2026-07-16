@@ -42,7 +42,7 @@ export const leadService = {
     API.post("/leads", transformFormData(formData, services, itinerary)),
 
   // ── GET ALL ───────────────────────────────────────────────
-  getAllLeads: (page = 0, size = 100) =>
+  getAllLeads: (page = 0, size =100) =>
     API.get(`/leads?page=${page}&size=${size}`),
 
   // ── GET BY PUBLIC ID ──────────────────────────────────────
