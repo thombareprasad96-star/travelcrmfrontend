@@ -20,6 +20,7 @@ export const ROLES = {
   TRAVEL_AGENT: "TRAVEL_AGENT",
   STAFF:        "STAFF",
   ACCOUNTANT:   "ACCOUNTANT",
+  SUB_AGENT:    "SUB_AGENT",      // B2B franchise broker — sees only its OWN rows (backend row-scoped)
 };
 
 // Wildcard — TENANT_ADMIN holds every tenant permission.
@@ -37,12 +38,21 @@ export const P = {
   QUOTATION_READ: "QUOTATION_READ", QUOTATION_CREATE: "QUOTATION_CREATE", QUOTATION_UPDATE: "QUOTATION_UPDATE", QUOTATION_DELETE: "QUOTATION_DELETE",
   VENDOR_READ: "VENDOR_READ", VENDOR_CREATE: "VENDOR_CREATE", VENDOR_UPDATE: "VENDOR_UPDATE", VENDOR_DELETE: "VENDOR_DELETE",
   REMINDER_READ: "REMINDER_READ", REMINDER_CREATE: "REMINDER_CREATE", REMINDER_UPDATE: "REMINDER_UPDATE", REMINDER_DELETE: "REMINDER_DELETE",
+  TASK_READ: "TASK_READ", TASK_CREATE: "TASK_CREATE", TASK_UPDATE: "TASK_UPDATE", TASK_DELETE: "TASK_DELETE",
   MASTER_READ: "MASTER_READ", MASTER_MANAGE: "MASTER_MANAGE",
   USER_READ: "USER_READ", USER_CREATE: "USER_CREATE", USER_UPDATE: "USER_UPDATE", USER_DELETE: "USER_DELETE",
   REPORT_VIEW: "REPORT_VIEW",
   SETTINGS_MANAGE: "SETTINGS_MANAGE",
   TRASH_VIEW: "TRASH_VIEW", TRASH_RESTORE: "TRASH_RESTORE", TRASH_DELETE: "TRASH_DELETE",
   FLEET_READ: "FLEET_READ", FLEET_CREATE: "FLEET_CREATE", FLEET_UPDATE: "FLEET_UPDATE", FLEET_DELETE: "FLEET_DELETE",
+  // Accounting / GST — invoices + tax masters, vendor bills + TDS/TCS, GST settings.
+  ACCOUNTING_INVOICE_READ: "ACCOUNTING_INVOICE_READ", ACCOUNTING_INVOICE_MANAGE: "ACCOUNTING_INVOICE_MANAGE",
+  ACCOUNTING_TDS_READ: "ACCOUNTING_TDS_READ", ACCOUNTING_TDS_MANAGE: "ACCOUNTING_TDS_MANAGE",
+  ACCOUNTING_SETTINGS_MANAGE: "ACCOUNTING_SETTINGS_MANAGE",
+  // Marketing & Campaigns — segments, broadcasts, drip sequences, auto-triggers.
+  // MARKETING_SEND is the high-privilege "pull the trigger" gate (broadcast / activate a drip / fire a test).
+  MARKETING_READ: "MARKETING_READ", MARKETING_CREATE: "MARKETING_CREATE", MARKETING_UPDATE: "MARKETING_UPDATE",
+  MARKETING_DELETE: "MARKETING_DELETE", MARKETING_SEND: "MARKETING_SEND",
 };
 
 // Role → default permission keys. Mirrors backend Permission.defaultsFor(Role).
@@ -62,8 +72,11 @@ const ROLE_PERMISSIONS = {
     P.QUOTATION_READ, P.QUOTATION_CREATE, P.QUOTATION_UPDATE, P.QUOTATION_DELETE,
     P.VENDOR_READ, P.VENDOR_CREATE, P.VENDOR_UPDATE,
     P.REMINDER_READ, P.REMINDER_CREATE, P.REMINDER_UPDATE, P.REMINDER_DELETE,
+    P.TASK_READ, P.TASK_CREATE, P.TASK_UPDATE, P.TASK_DELETE,
     P.MASTER_READ, P.MASTER_MANAGE, P.REPORT_VIEW, P.USER_READ,
     P.FLEET_READ, P.FLEET_CREATE, P.FLEET_UPDATE, P.FLEET_DELETE,
+    P.ACCOUNTING_INVOICE_READ, P.ACCOUNTING_TDS_READ,
+    P.MARKETING_READ, P.MARKETING_CREATE, P.MARKETING_UPDATE, P.MARKETING_DELETE, P.MARKETING_SEND,
   ],
 
   // Travel Agent and Staff share the same access (matches backend).
@@ -74,8 +87,10 @@ const ROLE_PERMISSIONS = {
     P.QUOTATION_READ, P.QUOTATION_CREATE, P.QUOTATION_UPDATE,
     P.VENDOR_READ,
     P.REMINDER_READ, P.REMINDER_CREATE, P.REMINDER_UPDATE,
+    P.TASK_READ, P.TASK_CREATE, P.TASK_UPDATE,
     P.MASTER_READ, P.REPORT_VIEW,
     P.FLEET_READ, P.FLEET_CREATE, P.FLEET_UPDATE,
+    P.MARKETING_READ,
   ],
 
   [ROLES.ACCOUNTANT]: [
@@ -83,8 +98,26 @@ const ROLE_PERMISSIONS = {
     P.CUSTOMER_READ,
     P.QUOTATION_READ,
     P.VENDOR_READ, P.VENDOR_UPDATE,
+    P.TASK_READ, P.TASK_CREATE, P.TASK_UPDATE,
     P.REPORT_VIEW, P.MASTER_READ,
     P.FLEET_READ,
+    // Accounting is the accountant's core surface: full invoice + TDS/TCS + tax config.
+    P.ACCOUNTING_INVOICE_READ, P.ACCOUNTING_INVOICE_MANAGE,
+    P.ACCOUNTING_TDS_READ, P.ACCOUNTING_TDS_MANAGE, P.ACCOUNTING_SETTINGS_MANAGE,
+  ],
+
+  // B2B franchise broker: works ONLY on its own leads/quotes/bookings/customers/reminders
+  // (backend row-scopes every read to the owner). Mirrors backend Permission.defaultsFor(SUB_AGENT).
+  // NO USER_*, NO CRM_FULL, NO reports/settings — this is only the pre-cache fallback; the real
+  // effective keys come from /permissions/me.
+  [ROLES.SUB_AGENT]: [
+    P.LEAD_READ, P.LEAD_CREATE, P.LEAD_UPDATE, P.LEAD_DELETE,
+    P.QUOTATION_READ, P.QUOTATION_CREATE, P.QUOTATION_UPDATE, P.QUOTATION_DELETE,
+    P.BOOKING_READ, P.BOOKING_CREATE, P.BOOKING_UPDATE,
+    P.CUSTOMER_READ, P.CUSTOMER_CREATE, P.CUSTOMER_UPDATE,
+    P.REMINDER_READ, P.REMINDER_CREATE, P.REMINDER_UPDATE,
+    P.TASK_READ, P.TASK_CREATE, P.TASK_UPDATE,
+    P.MASTER_READ,
   ],
 };
 // STAFF is deny-by-default — no permissions until a TENANT_ADMIN grants them. This is only
@@ -106,12 +139,15 @@ export function getRole() {
     TRAVEL_AGENT: ROLES.TRAVEL_AGENT, AGENT: ROLES.TRAVEL_AGENT,
     STAFF: ROLES.STAFF, USER: ROLES.STAFF,
     ACCOUNTANT: ROLES.ACCOUNTANT, ACCOUNT: ROLES.ACCOUNTANT,
+    SUB_AGENT: ROLES.SUB_AGENT, SUBAGENT: ROLES.SUB_AGENT,
   };
   return aliases[raw] || raw || ROLES.STAFF;
 }
 
 export function isSuperAdmin()  { return getRole() === ROLES.SUPERADMIN; }
 export function isTenantAdmin() { return getRole() === ROLES.TENANT_ADMIN; }
+export function isManager()     { return getRole() === ROLES.MANAGER; }
+export function isSubAgent()    { return getRole() === ROLES.SUB_AGENT; }
 
 const PERMS_KEY = "userPermissions";
 const MODULES_KEY = "tenantModules";
@@ -241,4 +277,4 @@ export function hasAnyPermission(...keys) {
   return keys.some((k) => hasPermission(k));
 }
 
-export default { ROLES, P, getRole, isSuperAdmin, isTenantAdmin, hasPermission, hasAnyPermission, hasModule, loadMyPermissions, clearMyPermissions, loadMyEntitlements, clearMyEntitlements, primeSessionCaches };
+export default { ROLES, P, getRole, isSuperAdmin, isTenantAdmin, isManager, isSubAgent, hasPermission, hasAnyPermission, hasModule, loadMyPermissions, clearMyPermissions, loadMyEntitlements, clearMyEntitlements, primeSessionCaches };

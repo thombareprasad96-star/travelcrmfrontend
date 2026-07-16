@@ -12,9 +12,23 @@ import { Search as FiSearch, RefreshCw as FiRefreshCw, Filter as FiFilter, Downl
 async function downloadDoc(kind, booking, showToast) {
   const label = kind === "invoice" ? "Invoice" : "Voucher";
   try {
-    const res = kind === "invoice"
-      ? await bookingService.getInvoice(booking.id)
-      : await bookingService.getVoucher(booking.id);
+    // Invoice = the accounting GST invoice (same doc the accountant issues). Download the latest
+    // ISSUED one; if none exists yet, point the user to generate it from the booking.
+    if (kind === "invoice") {
+      const listRes = await bookingService.getGstInvoices(booking.id);
+      const invoices = Array.isArray(listRes?.data?.data) ? listRes.data.data : [];
+      const issued = invoices.find((i) => i.status === "ISSUED");
+      if (!issued) {
+        showToast("No GST invoice yet — open the booking to generate one.", "info");
+        return;
+      }
+      const res = await bookingService.gstInvoicePdf(booking.id, issued.publicId);
+      const name = (issued.invoiceNumber || booking.code || booking.id).replace(/\//g, "_");
+      downloadBlob(res.data, `GST-Invoice-${name}.pdf`);
+      showToast("GST invoice downloaded.", "success");
+      return;
+    }
+    const res = await bookingService.getVoucher(booking.id);
     downloadBlob(res.data, `${label}-${booking.code || booking.id}.pdf`);
     showToast(`${label} downloaded.`, "success");
   } catch (error) {

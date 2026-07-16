@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User as FiUser, Phone as FiPhone, Mail as FiMail, Search as FiSearch, ChevronDown as FiChevronDown, Calendar as FiCalendar, Tag as FiTag, Layers as FiLayers, UserCheck as FiUserCheck, IndianRupee as FaRupeeSign } from "lucide-react";
+import { User as FiUser, Phone as FiPhone, Mail as FiMail, Search as FiSearch, ChevronDown as FiChevronDown, Calendar as FiCalendar, Tag as FiTag, Layers as FiLayers, UserCheck as FiUserCheck, IndianRupee as FaRupeeSign, Sparkles as FiSparkles } from "lucide-react";
 
 import { leadService } from "../api/leadService";
 
@@ -109,30 +109,39 @@ export default function LeadInformation({
   setValue,
   onPhoneSearch,
   searching,
+  // "create" → intelligent assignment (load-based recommendation or forced self).
+  // "edit"   → keep the assignee already on the lead; plain user dropdown, no recommendation.
+  mode = "create",
 }) {
   const [searchPhone,  setSearchPhone]  = useState("");
   const [users,        setUsers]        = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError,   setUsersError]   = useState(false);
 
-  // ── Fetch users from backend for Assign To dropdown ──────
+  // Intelligent-assignment state (create mode only)
+  const [forcedSelf,      setForcedSelf]      = useState(false);
+  const [selfUser,        setSelfUser]        = useState(null);   // {publicId, name}
+  const [recommendedId,   setRecommendedId]   = useState(null);   // publicId of the recommended assignee
+  const [strategyLabel,   setStrategyLabel]   = useState("");     // e.g. "Load-Based Assignment"
+
+  // ── Load the Assign To control ──────────────────────────────────────────────
   useEffect(() => {
-    const fetchUsers = async () => {
-      setUsersLoading(true);
-      setUsersError(false);
+    let cancelled = false;
+
+    // Plain user list (edit mode, and the create-mode resilience fallback). Mirrors the original
+    // behaviour: fetch /users and auto-select the logged-in user when nothing is chosen yet.
+    const loadUsersFallback = async () => {
       try {
         const res  = await leadService.getUsers();
         const list = Array.isArray(res.data)
           ? res.data
           : Array.isArray(res.data?.data) ? res.data.data : [];
+        if (cancelled) return;
         setUsers(list);
 
-        // ── AUTO-SELECT: logged-in user ko Assign To mein default set karo ──
-        // (sirf tab jab user ne pehle se kuch select nahi kiya ho)
         if (!watch("assignedUserId") && list.length > 0) {
           const me   = getLoggedInIdentity();
           const norm = (s) => (s || "").toString().trim().toLowerCase();
-
           const match = list.find((u) =>
             (me.publicId && (u.publicId === me.publicId || u.id === me.publicId)) ||
             (me.username && (
@@ -141,24 +150,69 @@ export default function LeadInformation({
               norm(u.fullName) === norm(me.username)
             ))
           );
-
           if (match) {
             setValue("assignedUserId", match.publicId || match.id, { shouldValidate: true });
           } else if (list.length === 1) {
-            // Solo user tenant — ek hi option hai toh wahi select kar do
             setValue("assignedUserId", list[0].publicId || list[0].id, { shouldValidate: true });
           }
         }
       } catch {
-        setUsersError(true);
-        setUsers([]);
-      } finally {
-        setUsersLoading(false);
+        if (!cancelled) { setUsersError(true); setUsers([]); }
       }
     };
-    fetchUsers();
+
+    // Create mode: ask the backend how to assign this lead.
+    const loadRecommendation = async () => {
+      try {
+        const res = await leadService.getAssignmentRecommendation();
+        const rec = res.data?.data ?? res.data ?? {};
+        if (cancelled) return;
+
+        if (rec.forcedSelf) {
+          // Agents / staff / sub-agents: hide the dropdown, force-assign to self.
+          const self = rec.self || {};
+          setForcedSelf(true);
+          setSelfUser({ publicId: self.id, name: self.name });
+          setStrategyLabel(rec.strategyLabel || "Self Assignment");
+          if (self.id) setValue("assignedUserId", self.id, { shouldValidate: true });
+          setUsers([]);
+          return;
+        }
+
+        // Tenant admin / manager: editable dropdown from the eligible pool + a pre-filled
+        // load-based recommendation (only when nothing is chosen yet).
+        setForcedSelf(false);
+        const pool = Array.isArray(rec.eligibleUsers) ? rec.eligibleUsers : [];
+        setUsers(pool.map((u) => ({
+          publicId: u.id, name: u.name, email: u.email, activeLeads: u.activeLeads,
+        })));
+        setRecommendedId(rec.recommendedUserId || null);
+        setStrategyLabel(rec.strategyLabel || "Load-Based Assignment");
+        if (!watch("assignedUserId") && rec.recommendedUserId) {
+          setValue("assignedUserId", rec.recommendedUserId, { shouldValidate: true });
+        }
+      } catch {
+        // Resilience: if the recommendation endpoint is unavailable, fall back to the plain list
+        // so an admin still gets a usable dropdown.
+        if (!cancelled) await loadUsersFallback();
+      }
+    };
+
+    const load = async () => {
+      setUsersLoading(true);
+      setUsersError(false);
+      if (mode === "create") {
+        await loadRecommendation();
+      } else {
+        await loadUsersFallback();
+      }
+      if (!cancelled) setUsersLoading(false);
+    };
+
+    load();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mode]);
 
   const handleSearch = async () => {
     if (!searchPhone.trim()) return;
@@ -323,42 +377,71 @@ export default function LeadInformation({
             icon={FiUserCheck}
             error={errors.assignedUserId?.message}
           >
-            <div className="relative">
-              <FiUserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              <select
-                className={`w-full pl-9 pr-8 py-2.5 rounded-xl border bg-white text-sm text-slate-700
-                  focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all
-                  ${errors.assignedUserId ? "border-red-300 bg-red-50" : "border-slate-200"}
-                  ${usersLoading ? "opacity-60 cursor-not-allowed" : ""}`}
-                disabled={usersLoading}
-                {...register("assignedUserId", {
-                  required: "Assigned user is required",
-                })}
-              >
-                <option value="">
-                  {usersLoading
-                    ? "Loading users..."
-                    : usersError
-                    ? "Failed to load — retry"
-                    : "Select team member"}
-                </option>
-                {users.map(user => (
-                  <option
-                    key={user.publicId || user.id}
-                    value={user.publicId || user.id}
+            {forcedSelf ? (
+              /* Agents / staff / sub-agents: the lead is assigned to them — no dropdown to pick
+                 someone else. A registered hidden field keeps the value in the submitted form. */
+              <>
+                <input type="hidden" {...register("assignedUserId", { required: "Assigned user is required" })} />
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                  <FiUserCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span className="text-sm font-semibold text-slate-700 truncate">
+                    {selfUser?.name || "You"}
+                  </span>
+                  <span className="ml-auto text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 rounded-full px-2 py-0.5 whitespace-nowrap">
+                    Assigned to you
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Load-Based Assignment badge — shown only while the current pick IS the
+                    recommendation; it disappears the moment an admin/manager overrides it. */}
+                {mode === "create" && recommendedId && watch("assignedUserId") === recommendedId && (
+                  <div className="mb-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold
+                    bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 w-fit">
+                    <FiSparkles className="w-3 h-3" />
+                    Recommended by {strategyLabel || "Load-Based Assignment"}
+                  </div>
+                )}
+                <div className="relative">
+                  <FiUserCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <select
+                    className={`w-full pl-9 pr-8 py-2.5 rounded-xl border bg-white text-sm text-slate-700
+                      focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer transition-all
+                      ${errors.assignedUserId ? "border-red-300 bg-red-50" : "border-slate-200"}
+                      ${usersLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+                    disabled={usersLoading}
+                    {...register("assignedUserId", {
+                      required: "Assigned user is required",
+                    })}
                   >
-                    {user.fullName || user.name || user.username}
-                  </option>
-                ))}
-              </select>
-              <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
-            {/* Error state retry hint */}
-            {usersError && (
-              <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
-                <span className="w-1 h-1 rounded-full bg-amber-500 inline-block" />
-                Could not load team members. Check your connection.
-              </p>
+                    <option value="">
+                      {usersLoading
+                        ? "Loading users..."
+                        : usersError
+                        ? "Failed to load — retry"
+                        : "Select team member"}
+                    </option>
+                    {users.map(user => (
+                      <option
+                        key={user.publicId || user.id}
+                        value={user.publicId || user.id}
+                      >
+                        {user.fullName || user.name || user.username}
+                        {typeof user.activeLeads === "number" ? ` · ${user.activeLeads} active` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+                {/* Error state retry hint */}
+                {usersError && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                    <span className="w-1 h-1 rounded-full bg-amber-500 inline-block" />
+                    Could not load team members. Check your connection.
+                  </p>
+                )}
+              </>
             )}
           </FieldWrapper>
 

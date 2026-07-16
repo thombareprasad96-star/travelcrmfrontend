@@ -21,6 +21,7 @@ import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 import { downloadBlob, hydrateBlobError } from "@shared/lib/download";
 import { hasPermission, P } from "@shared/lib/access";
 import RefundBookingModal from "../components/RefundBookingModal";
+import BookingInvoiceModal from "../components/BookingInvoiceModal";
 import {
   FiArrowLeft, FiEdit2, FiTrash2, FiCheck, FiX, FiAlertCircle,
   FiPlus, FiExternalLink, FiRefreshCw, FiCreditCard, FiUser,
@@ -343,6 +344,7 @@ export default function BookingDetails() {
   const [deletingPay, setDeletingPay] = useState(null);
   const [downloading, setDownloading] = useState(null); // "invoice" | "voucher" | `svc-<id>`
   const [showRefund,  setShowRefund]  = useState(false);
+  const [gstOpen,     setGstOpen]     = useState(false); // GST invoice modal (accounting bridge)
 
   /* ── FETCH ── */
   const fetchBooking = useCallback(async () => {
@@ -417,19 +419,9 @@ export default function BookingDetails() {
     }
   };
 
-  /* ── PDF DOWNLOADS ── */
-  const downloadInvoice = async () => {
-    setDownloading("invoice");
-    try {
-      const res = await bookingService.getInvoice(booking.id);
-      downloadBlob(res.data, `Invoice-${booking.code}.pdf`);
-      showToast("Invoice downloaded.", "success");
-    } catch (error) {
-      if (isAlreadyReported(error)) return;
-      await hydrateBlobError(error);
-      showToast(getErrorMessage(error, "Couldn't generate the invoice."), "error");
-    } finally { setDownloading(null); }
-  };
+  /* ── PDF DOWNLOADS ──
+     Invoice is now the accounting GST invoice, handled by <BookingInvoiceModal/>
+     (the "GST Invoice" button). Voucher stays a booking document below. */
 
   const downloadVoucher = async () => {
     setDownloading("voucher");
@@ -543,6 +535,8 @@ export default function BookingDetails() {
       {showRefund  && <RefundBookingModal booking={b} onToast={showToast}
         onClose={()=>setShowRefund(false)}
         onRefunded={()=>{ fetchBooking(); fetchPayments(); }}/>}
+      {gstOpen     && <BookingInvoiceModal bookingId={b.id} bookingCode={b.code}
+        onClose={()=>setGstOpen(false)}/>}
 
       {/* ── PAGE HEADER ── */}
       <div className="bg-white/70 backdrop-blur-md border-b border-slate-100">
@@ -585,12 +579,9 @@ export default function BookingDetails() {
                   <FiEdit2 className="w-3.5 h-3.5"/> Edit
                 </button>
               )}
-              <button onClick={downloadInvoice} disabled={downloading==="invoice"}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-200 transition-all disabled:opacity-60">
-                {downloading==="invoice"
-                  ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
-                  : <FaReceipt className="w-3.5 h-3.5"/>}
-                Invoice
+              <button onClick={()=>setGstOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-200 transition-all">
+                <FaReceipt className="w-3.5 h-3.5"/> GST Invoice
               </button>
               <button onClick={downloadVoucher} disabled={downloading==="voucher"}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 text-xs font-bold transition-all disabled:opacity-60">
@@ -704,12 +695,9 @@ export default function BookingDetails() {
                   </button>
                 )}
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={downloadInvoice} disabled={downloading==="invoice"}
-                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all disabled:opacity-60">
-                    {downloading==="invoice"
-                      ? <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
-                      : <FaReceipt className="w-3 h-3"/>}
-                    Invoice
+                  <button onClick={()=>setGstOpen(true)}
+                    className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all">
+                    <FaReceipt className="w-3 h-3"/> GST Invoice
                   </button>
                   <button onClick={downloadVoucher} disabled={downloading==="voucher"}
                     className="flex items-center justify-center gap-1.5 py-2 rounded-xl border border-blue-200 bg-white text-blue-700 hover:bg-blue-50 text-xs font-bold transition-all disabled:opacity-60">

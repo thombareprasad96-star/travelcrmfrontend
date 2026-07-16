@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./Layout";
 import PageLoader from "./PageLoader";
 import RouteErrorBoundary from "./RouteErrorBoundary";
-import { hasPermission, P } from "@shared/lib/access";
+import { hasPermission, isTenantAdmin, isSubAgent, P } from "@shared/lib/access";
 
 /* ── Lazy route chunks (Phase 5b) ─────────────────────────────
    Each feature's pages load on first navigation, one chunk per feature.
@@ -93,6 +93,7 @@ const WhatsAppConfiguration = lazyPage(settings, "WhatsAppConfiguration");
 const SubscriptionInfo = lazyPage(() => import("@features/subscription"), "SubscriptionInfo");
 const Dashboard        = lazyPage(() => import("@features/dashboard"), "Dashboard");
 const TrashPage        = lazyPage(() => import("@features/trash"), "TrashPage");
+const Calendar         = lazyPage(() => import("@features/calendar"), "Calendar");
 
 // ── Platform SuperAdmin Console — SEPARATE realm (own token "sa_token", violet/dark theme) ──
 const consoleFeature = () => import("@/console");
@@ -120,6 +121,12 @@ const PortalPayments      = lazyPage(portal, "PortalPayments");
 const PortalDocuments     = lazyPage(portal, "PortalDocuments");
 const PortalHelp          = lazyPage(portal, "PortalHelp");
 
+const subagents = () => import("@features/subagents");
+const SubAgents      = lazyPage(subagents, "SubAgents");
+const SubAgentRollup = lazyPage(subagents, "SubAgentRollup");
+const MyProfile      = lazyPage(subagents, "MyProfile");
+const MyCommission   = lazyPage(subagents, "MyCommission");
+
 const fleet = () => import("@features/fleet");
 const FleetDashboard     = lazyPage(fleet, "FleetDashboard");
 const FleetVehicles      = lazyPage(fleet, "FleetVehicles");
@@ -130,6 +137,20 @@ const FleetDriverForm    = lazyPage(fleet, "FleetDriverForm");
 const FleetTrips         = lazyPage(fleet, "FleetTrips");
 const FleetTripForm      = lazyPage(fleet, "FleetTripForm");
 const FleetTripDetail    = lazyPage(fleet, "FleetTripDetail");
+
+const accounting = () => import("@features/accounting");
+const AccountingDashboard = lazyPage(accounting, "AccountingDashboard");
+const Invoices            = lazyPage(accounting, "Invoices");
+const VendorBills         = lazyPage(accounting, "VendorBills");
+const AccountingReports    = lazyPage(accounting, "AccountingReports");
+const AccountingSettings  = lazyPage(accounting, "AccountingSettings");
+
+const marketing = () => import("@features/marketing");
+const MarketingDashboard = lazyPage(marketing, "MarketingDashboard");
+const Segments      = lazyPage(marketing, "Segments");
+const Campaigns     = lazyPage(marketing, "Campaigns");
+const DripSequences = lazyPage(marketing, "DripSequences");
+const Automations   = lazyPage(marketing, "Automations");
 
 
 // Route-level guard (defense-in-depth; backend is the real gate, menus already hide these).
@@ -229,7 +250,9 @@ const AppRouter = () => {
           <Route path="AllVendors" element={<AllVendors/>}/>
           <Route path="CreateVendor" element={<CreateVendor/>}/>
           <Route path="Reminders" element={<Reminders/>}/>
-         
+          {/* Task & Team Calendar (gated by TASK_READ; sub-agents get a row-scoped personal calendar) */}
+          <Route path="calendar" element={<Guard allow={hasPermission(P.TASK_READ)}><Calendar/></Guard>}/>
+
           <Route path="createquotation"  element={<CreateQuotation/>}/>
           {/* Package templates — gated by QUOTATION_* (page also self-checks). */}
           <Route path="quotations/templates" element={<Guard allow={hasPermission(P.QUOTATION_READ)}><PackageTemplates/></Guard>}/>
@@ -239,7 +262,7 @@ const AppRouter = () => {
           <Route path="BookingReminders" element={<BookingReminders/>}/>
           <Route path="Notifications" element={<Notifications/>}/>
           <Route path="NotificationSettings" element={<NotificationSettings/>}/>
-          <Route path="CompanyProfile" element={<CompanyProfile/>}/>
+          <Route path="CompanyProfile" element={<Guard allow={!isSubAgent()}><CompanyProfile/></Guard>}/>
           <Route path="ChangePassword" element={<ChangePassword/>}/>
           <Route path="Users" element={<Guard allow={hasPermission(P.USER_READ)}><Users/></Guard>}/>
           <Route path="CreateUser" element={<Guard allow={hasPermission(P.USER_CREATE)}><CreateUser/></Guard>}/>
@@ -260,11 +283,11 @@ const AppRouter = () => {
           <Route path="LeadLogs" element={<LeadLogs/>}/>
           <Route path="AddLeadLog" element={<AddLeadLog/>}/>
           <Route path="AllLeadLogs" element={<AllLeadLogs/>}/>
-          <Route path="CompanySettings" element={<CompanySettings/>}/>
-          <Route path="EmailConfiguration" element={<EmailConfiguration/>}/>
-          <Route path="WhatsAppConfiguration" element={<WhatsAppConfiguration/>}/>
-          <Route path="SubscriptionInfo" element={<SubscriptionInfo/>}/>
-          <Route path="Dashboard" element={<Dashboard/>}/>
+          <Route path="CompanySettings" element={<Guard allow={hasPermission(P.SETTINGS_MANAGE)}><CompanySettings/></Guard>}/>
+          <Route path="EmailConfiguration" element={<Guard allow={hasPermission(P.SETTINGS_MANAGE)}><EmailConfiguration/></Guard>}/>
+          <Route path="WhatsAppConfiguration" element={<Guard allow={hasPermission(P.SETTINGS_MANAGE)}><WhatsAppConfiguration/></Guard>}/>
+          <Route path="SubscriptionInfo" element={<Guard allow={!isSubAgent()}><SubscriptionInfo/></Guard>}/>
+          <Route path="Dashboard" element={<Guard allow={!isSubAgent()}><Dashboard/></Guard>}/>
           <Route path="trash" element={<Guard allow={hasPermission(P.TRASH_VIEW)}><TrashPage/></Guard>}/>
           <Route path="/EditVendor/:id" element={<EditVendor />}/>
           <Route path="/EditCustomer/:id" element={<EditCustomer />}/>
@@ -285,6 +308,29 @@ const AppRouter = () => {
           <Route path="fleet/trips/new" element={<Guard allow={hasPermission(P.FLEET_CREATE)}><FleetTripForm/></Guard>}/>
           <Route path="fleet/trips/:publicId" element={<Guard allow={hasPermission(P.FLEET_READ)}><FleetTripDetail/></Guard>}/>
           <Route path="fleet/trips/:publicId/edit" element={<Guard allow={hasPermission(P.FLEET_UPDATE)}><FleetTripForm/></Guard>}/>
+
+          {/* ── Accounting / GST (guarded by ACCOUNTING_* permissions; TENANT_ADMIN sees all) ── */}
+          <Route path="accounting" element={<Guard allow={hasPermission(P.ACCOUNTING_INVOICE_READ)}><AccountingDashboard/></Guard>}/>
+          <Route path="accounting/invoices" element={<Guard allow={hasPermission(P.ACCOUNTING_INVOICE_READ)}><Invoices/></Guard>}/>
+          <Route path="accounting/vendor-bills" element={<Guard allow={hasPermission(P.ACCOUNTING_TDS_READ)}><VendorBills/></Guard>}/>
+          <Route path="accounting/reports" element={<Guard allow={hasPermission(P.ACCOUNTING_INVOICE_READ)}><AccountingReports/></Guard>}/>
+          <Route path="accounting/settings" element={<Guard allow={hasPermission(P.ACCOUNTING_SETTINGS_MANAGE)}><AccountingSettings/></Guard>}/>
+
+          {/* ── Marketing & Campaigns (guarded by MARKETING_* permissions; TENANT_ADMIN sees all) ── */}
+          <Route path="marketing" element={<Guard allow={hasPermission(P.MARKETING_READ)}><MarketingDashboard/></Guard>}/>
+          <Route path="marketing/dashboard" element={<Guard allow={hasPermission(P.MARKETING_READ)}><MarketingDashboard/></Guard>}/>
+          <Route path="marketing/segments" element={<Guard allow={hasPermission(P.MARKETING_READ)}><Segments/></Guard>}/>
+          <Route path="marketing/campaigns" element={<Guard allow={hasPermission(P.MARKETING_READ)}><Campaigns/></Guard>}/>
+          <Route path="marketing/drips" element={<Guard allow={hasPermission(P.MARKETING_READ)}><DripSequences/></Guard>}/>
+          <Route path="marketing/automations" element={<Guard allow={hasPermission(P.MARKETING_READ)}><Automations/></Guard>}/>
+
+          {/* ── Sub-Agents (B2B franchise) — TENANT_ADMIN only ── */}
+          <Route path="subagents" element={<Guard allow={isTenantAdmin()}><SubAgents/></Guard>}/>
+          <Route path="subagents/rollup" element={<Guard allow={isTenantAdmin()}><SubAgentRollup/></Guard>}/>
+
+          {/* ── Self-service: personal profile (any user) + a sub-agent's own commission ── */}
+          <Route path="my-profile" element={<MyProfile/>}/>
+          <Route path="my-commission" element={<Guard allow={isSubAgent()}><MyCommission/></Guard>}/>
 
           <Route path="BookingDetails/:id" element={<BookingDetails/>}/>
           <Route path="/BookingPayments/:id" element={<BookingPayments/>}/>

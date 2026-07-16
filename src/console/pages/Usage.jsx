@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Building2, Users, CalendarClock, HardDrive, AlertTriangle,
-  Loader2, SlidersHorizontal, RotateCcw, X, Lock,
+  Loader2, SlidersHorizontal, RotateCcw, X, Lock, Network,
 } from "lucide-react";
 import { usageService } from "../api/usageService";
 
@@ -82,12 +82,12 @@ function UsageBar({ usedText, limitText, percent, over, near }) {
   );
 }
 
-function Field({ label, hint, value, onChange, placeholder }) {
+function Field({ label, hint, value, onChange, placeholder, min = "1" }) {
   return (
     <label className="block">
       <span className="text-xs font-medium text-body">{label}</span>
       <input
-        type="number" min="1" value={value} placeholder={placeholder}
+        type="number" min={min} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-heading outline-none focus:ring-2 focus:ring-focus"
       />
@@ -100,6 +100,7 @@ function OverrideModal({ tenant, onClose, onSaved }) {
   const [users, setUsers] = useState(tenant.maxUsers ?? "");
   const [bookings, setBookings] = useState(tenant.maxBookingsPerMonth ?? "");
   const [storage, setStorage] = useState(tenant.maxStorageMb ?? "");
+  const [subAgents, setSubAgents] = useState(tenant.maxSubAgents ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -108,6 +109,7 @@ function OverrideModal({ tenant, onClose, onSaved }) {
     if (String(users) !== "") payload.maxUsers = Number(users);
     if (String(bookings) !== "") payload.maxBookingsPerMonth = Number(bookings);
     if (String(storage) !== "") payload.maxStorageMb = Number(storage);
+    if (String(subAgents) !== "") payload.maxSubAgents = Number(subAgents);
     if (Object.keys(payload).length === 0) {
       setErr("Enter at least one limit, or use “Revert to plan”.");
       return;
@@ -130,7 +132,7 @@ function OverrideModal({ tenant, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={busy ? undefined : onClose}>
       <div
         className="w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-[var(--sa-card-shadow)]"
         onClick={(e) => e.stopPropagation()}
@@ -140,7 +142,7 @@ function OverrideModal({ tenant, onClose, onSaved }) {
             <h3 className="text-base font-bold text-heading">Adjust quota</h3>
             <p className="mt-0.5 text-xs text-body">{tenant.organizationName}</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-surface-hover hover:text-heading">
+          <button onClick={onClose} disabled={busy} className="rounded-lg p-1 text-muted hover:bg-surface-hover hover:text-heading disabled:opacity-40">
             <X size={18} />
           </button>
         </div>
@@ -149,6 +151,8 @@ function OverrideModal({ tenant, onClose, onSaved }) {
           <Field label="Max users" value={users} onChange={setUsers} placeholder="e.g. 20" />
           <Field label="Max bookings / month" value={bookings} onChange={setBookings} placeholder="e.g. 500" />
           <Field label="Max storage (MB)" value={storage} onChange={setStorage} placeholder="e.g. 5120" />
+          <Field label="Max sub-agents" value={subAgents} onChange={setSubAgents} placeholder="e.g. 5"
+            min="0" hint="Gated capability · 0 disables sub-agents for this tenant" />
           <p className="text-[11px] text-muted">
             Overriding pins these limits so a later plan change won’t reset them. Blank fields are left
             unchanged.
@@ -249,12 +253,13 @@ export default function Usage() {
                 <th className="px-4 py-3 font-medium">Users</th>
                 <th className="px-4 py-3 font-medium">Bookings (mo)</th>
                 <th className="px-4 py-3 font-medium">Storage</th>
+                <th className="px-4 py-3 font-medium">Sub-agents</th>
                 <th className="px-4 py-3 font-medium text-right">Quota</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-muted">No tenants yet.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted">No tenants yet.</td></tr>
               )}
               {rows.map((r) => (
                 <tr key={r.tenantPublicId} className="border-b border-border/60 last:border-0 hover:bg-surface-hover/50">
@@ -287,6 +292,16 @@ export default function Usage() {
                     <UsageBar usedText={formatBytes(r.storageUsedBytes)}
                       limitText={r.maxStorageMb != null ? `${r.maxStorageMb} MB` : ""}
                       percent={r.storagePercent} over={r.storageOverLimit} near={r.storageNearLimit} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {r.maxSubAgents ? (
+                      <UsageBar usedText={r.subAgents} limitText={r.maxSubAgents}
+                        percent={r.subAgentsPercent} over={r.subAgentsOverLimit} near={r.subAgentsNearLimit} />
+                    ) : (
+                      <span className="text-[11px] font-medium text-muted">
+                        {r.subAgents > 0 ? `${r.subAgents} · disabled` : "Disabled"}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button

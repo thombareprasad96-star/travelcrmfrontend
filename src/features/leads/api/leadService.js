@@ -103,6 +103,14 @@ export const leadService = {
   getUsers: () =>
     API.get("/users"),
 
+  // ── ASSIGNMENT RECOMMENDATION (create form) ───────────────
+  // GET /api/leads/assignment/recommendation — gated on LEAD_CREATE (so agents/sub-agents
+  // reach it too, unlike /users which needs USER_READ). Returns either forcedSelf (agents/
+  // staff/sub-agents → assign to self, hide dropdown) or a load-based recommendation with the
+  // eligible pool (admins/managers → pre-fill + editable dropdown + badge).
+  getAssignmentRecommendation: () =>
+    API.get("/leads/assignment/recommendation"),
+
   // ── STATISTICS ───────────────────────────────────────────
   getUserWorkload: () =>
     API.get("/leads/stats/workload"),
