@@ -450,7 +450,6 @@
 
 
 
-
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -578,7 +577,8 @@ const IlloFunnelImg = () => (
   <img src={FUNNEL_IMG} alt="Leads flowing into a pipeline" className="tlc-illoImg" />
 );
 
-/* Exact right-panel artwork (dark navy + wave + dots) — used as the showcase background. */
+/* Exact right-panel artwork (dark navy + wave + dots) — kept for the stacked mobile layout;
+   on desktop the full-width curve canvas below paints the scene. */
 const PANEL_BG = "data:image/webp;base64,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";
 
 /* Feature carousel content — a real sequence, so numbering carries meaning. */
@@ -750,10 +750,13 @@ const FeatureCarousel = () => {
 
 /* ---------- Right-hand showcase (dark, decorated, mouse-parallax) ---------- */
 const Showcase = () => (
-  <aside
-    className="relative flex flex-col justify-center overflow-hidden bg-[#030B22] px-6 py-14 sm:px-10 lg:px-14 lg:py-16 xl:px-20"
-    style={{ backgroundImage: `url("${PANEL_BG}")`, backgroundSize: 'cover', backgroundPosition: 'top right', backgroundRepeat: 'no-repeat' }}
-  >
+  <aside className="relative flex flex-col justify-center overflow-hidden bg-[#030B22] px-6 py-14 sm:px-10 lg:bg-transparent lg:px-14 lg:py-16 xl:px-20">
+    {/* mobile keeps the flat artwork; on desktop the full-width curved canvas paints the scene */}
+    <div
+      className="pointer-events-none absolute inset-0 lg:hidden"
+      style={{ backgroundImage: `url("${PANEL_BG}")`, backgroundSize: 'cover', backgroundPosition: 'top right', backgroundRepeat: 'no-repeat' }}
+      aria-hidden="true"
+    />
     {/* subtle left fade so text over the artwork stays crisp */}
     <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#030B22]/55 via-transparent to-transparent" />
 
@@ -912,6 +915,9 @@ const Login = ({ setIsAuthenticated }) => {
       >
         <style>{styles}</style>
 
+        {/* Full-bleed dark canvas glows behind both halves (desktop only) */}
+        <div className="tlc-canvas" aria-hidden="true" />
+
         {/* ── Sign-in half (LEFT, 40%) ─────────────────────────────── */}
         <div className="relative z-10 flex min-h-screen items-center justify-center bg-white px-6 py-12 sm:px-10 lg:bg-transparent">
           {/* soft radial blue glow behind the logo */}
@@ -924,7 +930,7 @@ const Login = ({ setIsAuthenticated }) => {
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.12, ease: EASE }}
               className="text-center text-[25px] font-extrabold tracking-tight text-slate-900 sm:text-[28px]"
             >
-              Nepal Tours &amp; Travels
+              Nepal Tours & Travels
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
@@ -1049,15 +1055,33 @@ const Login = ({ setIsAuthenticated }) => {
         {/* ── Showcase half (RIGHT, 60%) ───────────────────────────── */}
         <Showcase />
 
-        {/* Curved organic seam — white panel overlaps into the dark (desktop only) */}
+        {/* Curved organic canvas (desktop only) — navy wave across the whole top, one big
+            smooth white sweep, and a gradient ribbon hugging its shoulder. */}
         <svg className="tlc-seam" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
           <defs>
-            <linearGradient id="tlcSeamStroke" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#3B82F6" /><stop offset="0.5" stopColor="#6366F1" /><stop offset="1" stopColor="#8B5CF6" />
+            <linearGradient id="tlcSeamWave" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#16204B" />
+              <stop offset="0.45" stopColor="#262F68" />
+              <stop offset="1" stopColor="#0E1839" />
+            </linearGradient>
+            <linearGradient id="tlcSeamRibbon" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#C4CCFB" />
+              <stop offset="0.18" stopColor="#8E9CF6" />
+              <stop offset="0.45" stopColor="#5E68EC" />
+              <stop offset="0.75" stopColor="#4747DF" />
+              <stop offset="1" stopColor="#4038C8" />
             </linearGradient>
           </defs>
-          <path d="M0 0 L344 0 C 366 100, 405 210, 417 312 C 414 440, 402 560, 391 620 C 382 680, 373 720, 372 750 C 371 820, 405 930, 446 1000 L0 1000 Z" fill="#ffffff" />
-          <path d="M344 0 C 366 100, 405 210, 417 312 C 414 440, 402 560, 391 620 C 382 680, 373 720, 372 750 C 371 820, 405 930, 446 1000" fill="none" stroke="url(#tlcSeamStroke)" strokeWidth="2" strokeOpacity="0.6" vectorEffect="non-scaling-stroke" />
+          {/* navy wave sweeping the whole top */}
+          <path d="M233 0 C280 48 312 90 350 96 C425 107 480 55 545 40 C625 24 700 26 770 38 C850 52 930 58 1000 52 L1000 0 Z" fill="url(#tlcSeamWave)" />
+          {/* white sweep — one big smooth bulge */}
+          <path d="M0 0 L239 0 C245 55 280 100 341 117 C382 128 392 330 392 480 C392 610 380 700 362 776 C344 852 320 926 299 1000 L0 1000 Z" fill="#ffffff" />
+          {/* gradient ribbon riding the white shoulder */}
+          <path d="M256 51 C282 78 312 98 346 103 C420 115 470 60 545 44 C606 29 668 28 726 37 C793 47 850 56 1000 62 L1000 96 C860 92 800 80 726 68 C664 60 620 58 560 78 C500 98 452 146 372 150 C324 152 288 116 256 51 Z" fill="url(#tlcSeamRibbon)" />
+          {/* sparkles on the dark side */}
+          <circle cx="545" cy="130" r="1.8" fill="#F59E0B" opacity=".85" />
+          <circle cx="742" cy="118" r="2.2" fill="#93C5FD" opacity=".8" />
+          <circle cx="920" cy="140" r="1.7" fill="#A78BFA" opacity=".75" />
         </svg>
       </div>
     </MotionConfig>
@@ -1068,7 +1092,7 @@ const Login = ({ setIsAuthenticated }) => {
  * Only what Tailwind/Framer can't express cleanly lives here:
  *  • the logo + orbiting car (motion PRESERVED, byte-for-byte)
  *  • the floating-label input system (needs :placeholder-shown states)
- *  • the dark-panel grid + curved seam positioning
+ *  • the dark-panel grid + curved canvas positioning
  * ------------------------------------------------------------------- */
 const styles = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
@@ -1135,10 +1159,12 @@ const styles = `
 /* ---- Dark-panel grid ---- */
 .tlc-grid{background-image:linear-gradient(rgba(148,163,184,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.02) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(120% 95% at 80% 15%,#000,transparent 68%);mask-image:radial-gradient(120% 95% at 80% 15%,#000,transparent 68%)}
 
-/* ---- Curved seam (desktop only; sits at the 40% split, bleeds into the dark) ---- */
+/* ---- Curved canvas (desktop only; full-width wave + white sweep + ribbon) ---- */
+.tlc-canvas{display:none}
 .tlc-seam{display:none}
 @media (min-width:1024px){
-  .tlc-seam{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+  .tlc-canvas{display:block;position:absolute;inset:0;pointer-events:none;background:radial-gradient(52% 46% at 74% 26%,rgba(37,99,235,.13),transparent 70%),radial-gradient(40% 38% at 92% 80%,rgba(79,70,229,.11),transparent 72%),radial-gradient(46% 40% at 56% 90%,rgba(30,58,138,.16),transparent 75%)}
+  .tlc-seam{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;filter:drop-shadow(10px 0 28px rgba(2,8,35,.55)) drop-shadow(0 4px 14px rgba(2,8,35,.3))}
 }
 
 @media (prefers-reduced-motion:reduce){

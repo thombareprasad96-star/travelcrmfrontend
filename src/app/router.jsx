@@ -177,7 +177,7 @@ const AppRouter = () => {
           path="/login"
           element={
             isAuthenticated ? (
-              <Navigate to="/allleads" replace />
+              <Navigate to="/Dashboard" replace />
             ) : (
               <AdminLogin setIsAuthenticated={setIsAuthenticated} />
             )
@@ -231,6 +231,10 @@ const AppRouter = () => {
             )
           }
         >
+
+          <Route index element={<Dashboard/>}/>
+
+
           <Route path="allleads" element={<AllLeads />} />
 
           {/* Create Lead Route */}
