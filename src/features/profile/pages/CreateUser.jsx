@@ -53,7 +53,9 @@ const AVATAR_GRADS = [
   "from-blue-500 to-blue-600","from-indigo-500 to-indigo-600",
   "from-teal-500 to-teal-600","from-purple-500 to-purple-600",
 ];
-const initials = (n="") => n.trim().split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"U";
+// (n || "") — NOT a `= ""` default: a default only fires on `undefined`, so a null name from the API
+// would hit null.trim() and crash the page.
+const initials = (n) => (n || "").trim().split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"U";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {

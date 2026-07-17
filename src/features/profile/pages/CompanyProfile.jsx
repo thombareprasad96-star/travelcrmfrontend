@@ -46,8 +46,10 @@ const TABS = [
 ];
 
 /* ─── HELPERS ────────────────────────────────────────────────── */
-const initials = (name="") =>
-  name.trim().split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"CO";
+// (name || "") — NOT a `= ""` default: a default only fires on `undefined`, and this page is exactly
+// where a company name is still null, because it is the page you open to set it.
+const initials = (name) =>
+  (name || "").trim().split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"CO";
 
 /* ─── TOAST ──────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
