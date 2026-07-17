@@ -7,7 +7,7 @@ import {
   Briefcase, MapPin, DollarSign, XCircle, Pencil,
 } from "lucide-react";
 import { leadService } from "@features/leads";
-import reportsDashboardService from "../api/reportsDashboardService";
+import followupReportService from "../api/followupReportService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const VIEW_TYPES      = ["All","Upcoming","Overdue","Due Today","Completed"];
@@ -551,8 +551,8 @@ export default function FollowupReports() {
 
   /* ── FETCH REAL DATA ────────────────────────────────────────── */
   /* Strategy (in order):
-     1. GET /api/reports/followup  — dedicated backend endpoint (preferred)
-     2. GET /api/leads             — extract lead.reminders[] / lead.leadLogs[]
+     1. GET /api/reports/followup/tasks — dedicated backend endpoint (preferred)
+     2. GET /api/leads                  — extract lead.reminders[] / lead.leadLogs[]
      Both results are normalised into the same task shape via mapToTask().  */
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -600,29 +600,22 @@ export default function FollowupReports() {
         };
       };
 
-      /* ── 1. Try /api/reports/followup (dedicated backend endpoint) ── */
+      /* ── 1. Try /api/reports/followup/tasks (dedicated backend endpoint) ── */
       try {
-        // Was: `await leadService.getFollowupReport ? leadService.getFollowupReport() : fetch(...)`.
-        // Three bugs in one line: leadService has no getFollowupReport, so the ternary always took
-        // the fetch branch; that branch read localStorage["authToken"], a key nothing ever writes,
-        // so it sent `Bearer null`; and `await` binds tighter than `?:`, so neither branch was ever
-        // awaited — `res` was a Promise and `res?.data` was always undefined. The block failed
-        // silently and fell through to the client-side fallback below every single time.
-        const res   = await reportsDashboardService.getFollowupReport("month");
-
-        const body  = res?.data;
-        /* Backend returns { followups:[...] } or { data:{ followups:[...] } } */
-        const list  = body?.followups  ||
-                      body?.data?.followups ||
-                      (Array.isArray(body?.data) ? body.data : null) ||
-                      (Array.isArray(body)       ? body       : null);
+        // Fetch the whole set unfiltered: this page narrows rows, computes its six stat cards
+        // and builds the CSV client-side off one flat `tasks` array. viewType "All" is the only
+        // view that keeps completed rows, which the "Completed" filter needs. perPage 500 is the
+        // backend's hard cap (FollowupReportService clamps it) — the default of 25 would silently
+        // truncate the stats to the first page.
+        const res  = await followupReportService.getTasks({ viewType: "All", perPage: 500, page: 1 });
+        const list = res?.data?.tasks;
 
         if (Array.isArray(list) && list.length > 0) {
           tasks = list.map((r, idx) => mapToTask(r, idx, null));
-          console.log("[FollowupReports] loaded", tasks.length, "tasks from /api/reports/followup");
+          console.log("[FollowupReports] loaded", tasks.length, "tasks from /api/reports/followup/tasks");
         }
       } catch (err1) {
-        console.warn("[FollowupReports] /api/reports/followup failed:", err1?.message);
+        console.warn("[FollowupReports] /api/reports/followup/tasks failed:", err1?.message);
       }
 
       /* ── 2. Fallback: GET /api/leads and extract embedded reminders/logs ── */
