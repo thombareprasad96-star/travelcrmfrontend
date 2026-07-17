@@ -104,7 +104,9 @@ function normalizeBooking(b = {}) {
     infants:         b.infants  || 0,
     leadName:        b.leadName || b.customerNameSnapshot || b.customerName || "—",
     leadPhone:       b.leadPhone || b.customerPhone || b.phone || "",
-    assignedUser:    b.assignedUser?.fullName || b.assignedUser?.name || b.assignedTo || "—",
+    // assignedUserName is what the server actually sends (a flat string beside assignedUserId);
+    // the object shapes are kept as fallbacks for any caller passing a pre-normalised booking.
+    assignedUser:    b.assignedUserName || b.assignedUser?.fullName || b.assignedUser?.name || b.assignedTo || "—",
     customerAmount,  vendorCost, gst, tcs, totalPayable, paid, due, netProfit, netMargin, payPct,
     status:          (b.status || "PENDING").toUpperCase(),
     payStatus:       (b.paymentStatus || b.payStatus || "UNPAID").toUpperCase(),

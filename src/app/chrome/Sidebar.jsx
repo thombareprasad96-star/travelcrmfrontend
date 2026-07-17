@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText, CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, User, CreditCard, LogOut, Bell, BellRing, CalendarClock, CalendarCheck, Trash2, Truck, Network, HandCoins, Landmark, Receipt, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Users, Database, ChevronDown, Circle, Plane, FileText, CalendarDays, UserCheck, Store, UserCog, BarChart3, Settings, CircleUser, User, CreditCard, LogOut, Bell, BellRing, CalendarClock, CalendarCheck, Trash2, Truck, Network, HandCoins, Landmark, Receipt, Megaphone, Plug } from 'lucide-react';
 import { isSuperAdmin, isTenantAdmin, isSubAgent, hasPermission, hasAnyPermission, hasModule, loadMyEntitlements, clearMyPermissions, clearMyEntitlements, P } from "@shared/lib/access";
 import { companyService } from "@features/settings";
 
@@ -700,6 +700,35 @@ const Sidebar = ({ isExpanded }) => {
               <Settings size={20} strokeWidth={activeTab === 'Settings' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Settings' ? 'text-white' : 'text-slate-400'}`} />
               {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Settings</span>}
             </Link>
+          </li>
+          )}
+
+          {/* --- Integrations Dropdown ---
+              Groups every "connect an external service" screen under one roof: leads come IN here,
+              messages go OUT there, and all three are the same job — hand a provider our credentials.
+              Icon is Plug, deliberately NOT Network: Network is already rendered for Sub-Agents (:594),
+              and two menu items with the same glyph read as the same thing. */}
+          {hasPermission(P.SETTINGS_MANAGE) && (
+          <li>
+            <button
+              onClick={() => handleMenuClick('Integrations')}
+              className={`w-full flex items-center py-3 rounded-xl transition-all duration-200 ${showSidebar ? 'justify-between px-4' : 'justify-center px-0'} ${
+                activeTab === 'Integrations' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 font-semibold' : 'hover:bg-white/5 hover:text-white font-medium'
+              }`}
+            >
+              <div className={`flex items-center ${showSidebar ? 'gap-3.5' : ''}`}>
+                <Plug size={20} strokeWidth={activeTab === 'Integrations' ? 2.5 : 2} className={`shrink-0 ${activeTab === 'Integrations' ? 'text-white' : 'text-emerald-400'}`} />
+                {showSidebar && <span className="text-[14px] whitespace-nowrap tracking-wide">Integrations</span>}
+              </div>
+              {showSidebar && <ChevronDown size={16} className={`transition-transform duration-200 opacity-70 ${openDropdown === 'Integrations' ? 'rotate-180' : ''}`} />}
+            </button>
+            {showSidebar && openDropdown === 'Integrations' && (
+              <ul className="mt-1 space-y-1 mb-2">
+                <li><Link to="/LeadSources" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-emerald-400/50" /><span>Lead Sources</span></Link></li>
+                <li><Link to="/WhatsAppConfiguration" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-emerald-400/50" /><span>WhatsApp</span></Link></li>
+                <li><Link to="/EmailConfiguration" className="flex items-center gap-3 px-4 py-2.5 pl-11 text-[13.5px] font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg whitespace-nowrap transition-colors"><Circle size={6} className="fill-current text-emerald-400/50" /><span>Email</span></Link></li>
+              </ul>
+            )}
           </li>
           )}
 

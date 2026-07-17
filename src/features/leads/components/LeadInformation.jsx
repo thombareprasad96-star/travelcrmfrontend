@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { User as FiUser, Phone as FiPhone, Mail as FiMail, Search as FiSearch, ChevronDown as FiChevronDown, Calendar as FiCalendar, Tag as FiTag, Layers as FiLayers, UserCheck as FiUserCheck, IndianRupee as FaRupeeSign, Sparkles as FiSparkles } from "lucide-react";
 
 import { leadService } from "../api/leadService";
+import { useLeadSources } from "../lib/useLeadSources";
 
-const LEAD_SOURCES = [
-  "Social Media", "Website", "Google Ads", "Facebook",
-  "Instagram", "WhatsApp", "Referral", "Direct Call",
-];
+// LEAD_SOURCES used to be a hardcoded array here. It listed 8 strings against a 9-constant backend
+// enum (now 25), so any lead carrying an unlisted source rendered as a blank select — inviting the
+// user to overwrite a source that was already correct. The list now comes from
+// GET /api/leads/meta/sources, derived from LeadSource.values(); see useLeadSources.
+// Do not reintroduce a local copy, including as a fetch-failure fallback.
 
 const LEAD_TYPES  = ["Fresh Lead", "Repeat Customer", "Corporate", "VIP"];
 const LEAD_STAGES = [
@@ -113,6 +115,12 @@ export default function LeadInformation({
   // "edit"   → keep the assignee already on the lead; plain user dropdown, no recommendation.
   mode = "create",
 }) {
+  const {
+    withCurrent: sourceOptionsFor,
+    loading: sourcesLoading,
+    error: sourcesError,
+  } = useLeadSources();
+
   const [searchPhone,  setSearchPhone]  = useState("");
   const [users,        setUsers]        = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -316,7 +324,11 @@ export default function LeadInformation({
 
         {/* Lead Source + Lead Type */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FieldWrapper label="Lead Source" icon={FiTag}>
+          <FieldWrapper
+            label="Lead Source"
+            icon={FiTag}
+            error={sourcesError ? "Couldn't load lead sources — showing the current value only." : undefined}
+          >
             <div className="relative">
               <FiTag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <select
@@ -325,7 +337,13 @@ export default function LeadInformation({
                 {...register("leadSource")}
               >
                 <option value="">Select lead source</option>
-                {LEAD_SOURCES.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {/* The lead's own value is always present, even while the catalog is still loading
+                    and even if it isn't manually selectable — otherwise the select renders blank on
+                    a lead whose source is fine and the user overwrites it. */}
+                {sourceOptionsFor(watch("leadSource")).map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+                {sourcesLoading && <option value="" disabled>Loading sources…</option>}
               </select>
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>

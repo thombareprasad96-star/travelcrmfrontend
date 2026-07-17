@@ -29,6 +29,10 @@ const bookingService = {
   convertFromLead: (leadPublicId, payload) =>
     API.post(`/leads/${leadPublicId}/convert-to-booking`, payload),
 
+  // Staff selectable in the "Assigned To" dropdown on the create + convert forms. Requires
+  // BOOKING_CREATE; a user without it never sees the control, so a 403 here is not expected.
+  getEligibleAssignees: () => API.get("/bookings/assignment/eligible-users"),
+
   update: (publicId, bookingData) => API.put(`/bookings/${publicId}`, bookingData),
 
   // Booking status: backend enum is UPPERCASE (CONFIRMED | PENDING | COMPLETED | REFUNDED).

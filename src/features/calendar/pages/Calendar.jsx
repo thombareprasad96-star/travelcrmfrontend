@@ -109,9 +109,16 @@ function WorkloadView({ reloadKey }) {
   }, [reloadKey]);
 
   if (loading) return <div className="flex justify-center py-20 text-slate-400"><Loader2 className="animate-spin" /></div>;
-  // Scale the bars against the busiest total load (tasks + active leads) so lead-heavy members
-  // don't render as an empty row.
-  const maxLoad = Math.max(1, ...rows.map((r) => r.total + (r.activeLeads || 0)));
+  // Scale against the busiest WORKLOAD SCORE — todo + inProgress + activeLeads + openReminders, sent
+  // by the backend (UserWorkload.score()) and the exact number the load-based lead assignment picks
+  // the minimum of. The rows arrive already sorted by it.
+  //
+  // This deliberately no longer scales by `total + activeLeads`. `total` counts DONE tasks, so
+  // finishing work made someone's bar LONGER and pushed them up this list, while auto-assignment —
+  // which never counted DONE — kept sending them leads. The two views disagreed, and the harder
+  // someone worked the more this screen misrepresented them.
+  const scoreOf = (r) => r.workloadScore ?? ((r.todo || 0) + (r.inProgress || 0) + (r.activeLeads || 0) + (r.openReminders || 0));
+  const maxLoad = Math.max(1, ...rows.map(scoreOf));
 
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -122,20 +129,27 @@ function WorkloadView({ reloadKey }) {
         <div className="space-y-3">
           {rows.map((r) => {
             const leads = r.activeLeads || 0;
+            const reminders = r.openReminders || 0;
+            const score = scoreOf(r);
             return (
               <div key={r.assigneePublicId || "unassigned"} className="flex items-center gap-4">
                 <div className="w-40 shrink-0 truncate text-sm font-semibold text-slate-700">{r.assigneeName}</div>
+                {/* The bar shows only what the SCORE is made of. `done` is reported as a chip but is
+                    deliberately absent here — completed work is not load, and drawing it as load is
+                    what made the busiest-looking person the one who had finished the most. */}
                 <div className="flex h-6 flex-1 overflow-hidden rounded-lg bg-slate-100"
-                     title={`${r.total} tasks · ${leads} active leads`}>
+                     title={`Workload ${score} = ${r.todo} to-do + ${r.inProgress} in progress + ${leads} active leads + ${reminders} open reminders`}>
                   <div className="bg-slate-400" style={{ width: `${(r.todo / maxLoad) * 100}%` }} />
                   <div className="bg-blue-500" style={{ width: `${(r.inProgress / maxLoad) * 100}%` }} />
-                  <div className="bg-emerald-500" style={{ width: `${(r.done / maxLoad) * 100}%` }} />
                   <div className="bg-indigo-500" style={{ width: `${(leads / maxLoad) * 100}%` }} />
+                  <div className="bg-amber-500" style={{ width: `${(reminders / maxLoad) * 100}%` }} />
                 </div>
-                <div className="flex w-64 shrink-0 flex-wrap items-center justify-end gap-1.5 text-[11px] font-semibold">
+                <div className="flex w-72 shrink-0 flex-wrap items-center justify-end gap-1.5 text-[11px] font-semibold">
+                  <span className="rounded bg-slate-900 px-1.5 py-0.5 text-white" title="Workload score — new leads go to the lowest">{score}</span>
                   <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-indigo-700">{leads} leads</span>
                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">{r.todo} to-do</span>
                   <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-700">{r.inProgress} wip</span>
+                  {reminders > 0 && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-700">{reminders} rem</span>}
                   <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700">{r.done} done</span>
                   {r.overdue > 0 && <span className="rounded bg-rose-100 px-1.5 py-0.5 text-rose-700">{r.overdue}!</span>}
                 </div>
@@ -146,7 +160,8 @@ function WorkloadView({ reloadKey }) {
             <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-indigo-500" />Active Leads</span>
             <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-400" />To Do</span>
             <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" />In Progress</span>
-            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Done</span>
+            <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />Open Reminders</span>
+            <span className="ml-auto">New leads are auto-assigned to the lowest workload.</span>
           </div>
         </div>
       )}

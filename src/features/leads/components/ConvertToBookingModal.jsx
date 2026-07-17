@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  X, ArrowRightLeft, FileText, CheckCircle, AlertTriangle,
+  X, ArrowRightLeft, FileText, CheckCircle, AlertTriangle, UserCheck,
 } from 'lucide-react';
 import { bookingService } from "@features/bookings";
 import { quotationService } from "@features/quotation";
@@ -60,6 +60,11 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
   const [submitting, setSubmitting]     = useState(false);
   const [errors, setErrors]             = useState({});
 
+  // "Assigned To" pool. The default (the lead's own assignee) does not depend on this list
+  // loading — see `assigneeOptions`, which folds the lead's assignee in even if it isn't a
+  // member (a lead assigned to a sub-agent is the normal case there).
+  const [assignees, setAssignees] = useState([]);
+
   // Toasts go straight to the shared store — no `onToast` prop, so this modal no longer
   // depends on whichever page happened to render it.
   const { showToast } = useToast();
@@ -75,8 +80,11 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
     vendorCost:     '',
     paidAmount:     '0',
     services:       Array.isArray(lead.services) ? lead.services : [],
+    // Default: whoever owns the LEAD keeps the customer — not whoever is clicking Convert.
+    // Mirrors the server's own default, so an untouched form and an absent field agree.
+    assignedUserId: lead.assignedUser?.publicId || '',
   });
-  console.log(lead)
+
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   // Load this lead's quotations; default to the newest Approved, else the newest overall.
@@ -106,6 +114,37 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
     return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leadId]);
+
+  // Load the assignable pool. Best-effort: the default assignee is already in the form, so a
+  // failure here costs the ability to CHANGE the assignee, not the ability to convert.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await bookingService.getEligibleAssignees();
+        const list = unwrap(res);
+        if (active && Array.isArray(list)) setAssignees(list);
+      } catch (e) {
+        if (!active || isAlreadyReported(e)) return;
+        showToast(getErrorMessage(e, "Couldn't load the staff list. The booking will stay with the lead's owner."), 'error');
+      }
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Options = the eligible pool, plus the lead's own assignee if they're not in it. That fold-in
+  // is the normal path, not an edge case: the pool excludes sub-agents, and a sub-agent's lead
+  // must still be convertible without silently reassigning the customer to someone else.
+  const assigneeOptions = useMemo(() => {
+    const owner = lead.assignedUser;
+    if (!owner?.publicId) return assignees;
+    if (assignees.some((u) => u.id === owner.publicId)) return assignees;
+    // Same defensive name chain the leads list uses (AllLeads.jsx) — the assignedUser shape
+    // varies by which endpoint the lead came from.
+    const name = owner.fullName || owner.name || owner.username || owner.email || 'Lead owner';
+    return [{ id: owner.publicId, name, email: owner.email, role: owner.role }, ...assignees];
+  }, [assignees, lead.assignedUser]);
 
   // Prefill amount / dates / destination / services from a chosen quotation.
   const applyQuotation = async (qid, list = quotes) => {
@@ -197,6 +236,8 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
         vendorCost:     Number(form.vendorCost),
         paidAmount:     Number(form.paidAmount) || 0,
         services:       form.services,
+        // Omitted (null) → the server applies the same default this form shows.
+        assignedUserId: form.assignedUserId || null,
       };
       
       const booking = unwrap(await bookingService.convertFromLead(leadId, payload));
@@ -341,6 +382,31 @@ export default function ConvertToBookingModal({ lead, onClose, onConverted }) {
                 onChange={(e) => set('paidAmount', e.target.value)}
                 placeholder="0" className={inputCls('paidAmount')} />
               {errors.paidAmount && <p className="text-[11px] text-red-500 mt-1">{errors.paidAmount}</p>}
+            </div>
+
+            {/* ── Assigned To — defaults to the lead's owner, editable ── */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-500 mb-1.5">Assigned To</label>
+              <div className="relative">
+                <UserCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <select
+                  value={form.assignedUserId}
+                  onChange={(e) => set('assignedUserId', e.target.value)}
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700
+                    focus:border-blue-400 focus:ring-2 focus:ring-blue-50 outline-none appearance-none cursor-pointer">
+                  <option value="">— Unassigned —</option>
+                  {assigneeOptions.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}{u.email ? ` · ${u.email}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {lead.assignedUser?.publicId && form.assignedUserId === lead.assignedUser.publicId
+                  ? "Carried over from the lead — the person who nurtured this deal keeps the customer."
+                  : "Overriding the lead's owner for this booking."}
+              </p>
             </div>
           </div>
 

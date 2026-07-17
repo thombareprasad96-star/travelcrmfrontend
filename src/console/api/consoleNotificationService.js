@@ -44,9 +44,13 @@ const consoleNotificationService = {
 
   /**
    * Live push. EventSource can't set an Authorization header, so the JWT rides in the query
-   * string — which means the browser's built-in auto-reconnect would replay a STALE token
-   * forever once it expires (endless 401s). So reconnection is self-managed: on a permanently
-   * CLOSED connection, rebuild with a FRESH token read from storage, backing off between tries.
+   * string — and the browser's built-in auto-reconnect would replay that same URL forever. So
+   * reconnection is self-managed: on a permanently CLOSED connection, rebuild by re-reading the
+   * token, backing off between tries.
+   *
+   * Re-reading storage picks up a token that ANOTHER tab refreshed or re-logged-in with. It does
+   * not, by itself, make an expired token valid — so repeated failures eventually probe the
+   * session rather than loop on a dead token (see probeSession).
    *
    * Returns the same { close() } handle the caller unmounts with.
    */
@@ -54,17 +58,36 @@ const consoleNotificationService = {
     let es = null;
     let stopped = false;
     let retryTimer = null;
+    let failures = 0;
     let backoff = 3000; // doubles per failure, capped
     const MAX_BACKOFF = 30000;
+    const FAILURES_BEFORE_PROBE = 6; // ~2 min of backoff before we question the session itself
 
     const cleanup = () => {
       if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
       if (es) { try { es.close(); } catch { /* noop */ } es = null; }
     };
 
+    /**
+     * EventSource reports "it broke" and never "why" — a 401 from an expired token is
+     * indistinguishable from the server being down. Left alone, an expired console session
+     * 401-loops here every 30s forever while the UI still looks signed in, because a console
+     * parked on a static page issues no other request to trip ConsoleAPI's 401 interceptor.
+     * One real request hands the question to the auth realm that already owns the answer
+     * (clear sa_token → /superadmin/login). If the session is alive and the server was merely
+     * down, this is a cheap no-op and reconnection carries on.
+     */
+    const probeSession = () => {
+      ConsoleAPI.get(`${BASE}/unread-count`)
+        .then(() => { failures = 0; })
+        .catch(() => { /* a 401 is handled by the interceptor; anything else keeps retrying */ });
+    };
+
     const scheduleReconnect = () => {
       if (stopped || retryTimer) return;
       if (!getConsoleToken()) { cleanup(); return; } // signed out — nothing to reconnect with
+      failures += 1;
+      if (failures === FAILURES_BEFORE_PROBE) probeSession();
       retryTimer = setTimeout(() => { retryTimer = null; connect(); }, backoff);
       backoff = Math.min(backoff * 2, MAX_BACKOFF);
     };
@@ -87,7 +110,7 @@ const consoleNotificationService = {
         }
       });
 
-      es.onopen = () => { backoff = 3000; };
+      es.onopen = () => { backoff = 3000; failures = 0; };
 
       es.onerror = (err) => {
         onError?.(err);

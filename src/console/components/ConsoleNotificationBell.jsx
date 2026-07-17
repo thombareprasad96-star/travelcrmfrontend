@@ -93,8 +93,24 @@ export default function ConsoleNotificationBell() {
 
     setLoading(true);
     try {
-      const { content } = await consoleNotificationService.getNotifications({ page: 0, size: 10 });
-      setItems(content);
+      // Re-sync the badge against the server on every open. The count is otherwise only ever
+      // mutated locally (+1 per push, -1 per read), so it drifts for the life of the mount —
+      // and a console is left open all day. Anything created while the stream was down (up to
+      // 30s of reconnect backoff, longer with an expired token), or a mark-all-read whose write
+      // failed, would leave the badge permanently wrong. Opening the panel is the natural
+      // reconciliation point: it is exactly when a stale number gets looked at.
+      const [{ content }, freshCount] = await Promise.all([
+        consoleNotificationService.getNotifications({ page: 0, size: 10 }),
+        consoleNotificationService.getUnreadCount(),
+      ]);
+      setCount(freshCount);
+      setItems((live) => {
+        // A push that landed while this fetch was in flight isn't in `content` yet — keep it
+        // rather than letting the slower response overwrite the newer event.
+        const fetched = new Set(content.map((i) => i.publicId));
+        const missed = live.filter((i) => !fetched.has(i.publicId));
+        return [...missed, ...content].slice(0, 10);
+      });
     } catch {
       /* 401 redirects via the interceptor; anything else leaves the last-known list in place */
     } finally {
