@@ -1110,7 +1110,11 @@ const typeDot = (type = "") =>
   Object.entries(TYPE_DOT).find(([k]) => type.includes(k))?.[1] ?? "bg-slate-400";
 
 // ─── Bell data helpers (notifications + reminders share the same bell) ─────────
-const API_BASE = import.meta.env.VITE_API_URL || "";
+// Same convention as shared/api/http.js: VITE_API_URL already ENDS in /api, so the
+// paths below must not repeat it. This used to be `|| ""` with `/api/...` appended,
+// which only worked while VITE_API_URL was unset — setting it for a real deploy
+// produced https://host/api/api/reminders/overdue and 404'd the whole bell.
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 const bellAuthHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1120,8 +1124,8 @@ const bellAuthHeaders = () => ({
 async function fetchReminderAlerts() {
   try {
     const [ovRes, dtRes] = await Promise.all([
-      fetch(`${API_BASE}/api/reminders/overdue`, { headers: bellAuthHeaders() }),
-      fetch(`${API_BASE}/api/reminders/due-today`, { headers: bellAuthHeaders() }),
+      fetch(`${API_BASE}/reminders/overdue`, { headers: bellAuthHeaders() }),
+      fetch(`${API_BASE}/reminders/due-today`, { headers: bellAuthHeaders() }),
     ]);
     const overdue = ovRes.ok ? await ovRes.json() : [];
     const dueToday = dtRes.ok ? await dtRes.json() : [];
@@ -1150,7 +1154,7 @@ async function fetchReminderAlerts() {
 /** Mark a single notification read by its numeric id (new Long-id endpoint). */
 async function markNotificationReadById(id) {
   // fetch resolves on 4xx/5xx — check explicitly, or a failed write reads as a success.
-  const res = await fetch(`${API_BASE}/api/notifications/${id}/read`, {
+  const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
     method: "PUT",
     headers: bellAuthHeaders(),
   });

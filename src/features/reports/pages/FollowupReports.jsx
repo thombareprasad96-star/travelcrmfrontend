@@ -7,6 +7,7 @@ import {
   Briefcase, MapPin, DollarSign, XCircle, Pencil,
 } from "lucide-react";
 import { leadService } from "@features/leads";
+import reportsDashboardService from "../api/reportsDashboardService";
 
 /* ─── CONSTANTS ──────────────────────────────────────────────── */
 const VIEW_TYPES      = ["All","Upcoming","Overdue","Due Today","Completed"];
@@ -601,9 +602,13 @@ export default function FollowupReports() {
 
       /* ── 1. Try /api/reports/followup (dedicated backend endpoint) ── */
       try {
-        const res   = await leadService.getFollowupReport
-          ? leadService.getFollowupReport()
-          : fetch("/api/reports/followup",{headers:{Authorization:`Bearer ${localStorage.getItem("authToken")}`}}).then(r=>r.json()).then(d=>({data:d}));
+        // Was: `await leadService.getFollowupReport ? leadService.getFollowupReport() : fetch(...)`.
+        // Three bugs in one line: leadService has no getFollowupReport, so the ternary always took
+        // the fetch branch; that branch read localStorage["authToken"], a key nothing ever writes,
+        // so it sent `Bearer null`; and `await` binds tighter than `?:`, so neither branch was ever
+        // awaited — `res` was a Promise and `res?.data` was always undefined. The block failed
+        // silently and fell through to the client-side fallback below every single time.
+        const res   = await reportsDashboardService.getFollowupReport("month");
 
         const body  = res?.data;
         /* Backend returns { followups:[...] } or { data:{ followups:[...] } } */

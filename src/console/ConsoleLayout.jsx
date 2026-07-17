@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
-import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { KeyRound, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import ConsoleThemeProvider from "./theme/ConsoleThemeProvider";
 import ThemeToggle from "./theme/ThemeToggle";
 import ConsoleSidebar from "./ConsoleSidebar";
 import ConsoleNotificationBell from "./components/ConsoleNotificationBell";
+import ChangePasswordModal from "./components/ChangePasswordModal";
 import ConsoleAPI, { unwrap } from "./api/consoleHttp";
 import {
   isConsoleAuthed,
@@ -23,6 +24,7 @@ export default function ConsoleLayout() {
   const nav = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [me, setMe] = useState(getConsoleIdentity());
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!isConsoleAuthed()) return;
@@ -71,6 +73,14 @@ export default function ConsoleLayout() {
               </div>
               <button
                 type="button"
+                onClick={() => setChangingPassword(true)}
+                title="Change password"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <KeyRound size={18} />
+              </button>
+              <button
+                type="button"
                 onClick={logout}
                 title="Sign out"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-hover hover:text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
@@ -85,6 +95,8 @@ export default function ConsoleLayout() {
           </main>
         </div>
       </div>
+
+      {changingPassword && <ChangePasswordModal onClose={() => setChangingPassword(false)} />}
     </ConsoleThemeProvider>
   );
 }

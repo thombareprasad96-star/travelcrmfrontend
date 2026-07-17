@@ -89,7 +89,12 @@
 // src/services/notificationService.js
 // Connects to NotificationController REST endpoints + SSE stream
 
-const BASE = '/api/notifications';
+// Built off VITE_API_URL (which already ends in /api), same convention as
+// shared/api/http.js. This was a bare relative '/api/notifications', which only
+// resolves when the API shares an origin with the SPA. On a split-origin deploy
+// (SPA on crm.*, API on api.*) it hit nginx's SPA root, got index.html back, and
+// killed both the bell and the SSE stream below.
+const BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/notifications`;
 
 const authHeaders = () => ({
   'Content-Type': 'application/json',
