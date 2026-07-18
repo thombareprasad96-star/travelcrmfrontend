@@ -1,66 +1,15 @@
 import API from "@shared/api/http";
-
-// ============================================================
-// ☁️ CLOUDINARY DIRECT UPLOAD
-//
-// Browser se seedha Cloudinary pe image upload hoti hai (backend
-// pe load nahi). Sirf secure_url (https link) wapas milta hai jo
-// imagePath ke roop mein backend ko bheja jaata hai.
-//
-// .env mein yeh hona chahiye (HotelMaster ke liye already set):
-//   VITE_CLOUDINARY_CLOUD_NAME=dfjawtgv6
-//   VITE_CLOUDINARY_UPLOAD_PRESET=<your_unsigned_preset>
-// ============================================================
-const CLOUD_NAME    = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+import { uploadImageViaApi } from "./imageUpload";
 
 /**
- * Image ko directly Cloudinary pe upload karta hai.
+ * Sightseeing image upload — backend-proxied (quota-enforced + metered).
+ * Naam legacy hai; signature same rakhi hai taaki koi caller na toote.
  * @param {File} file        - upload karne wali image file
  * @param {Function} onProgress - (optional) progress % callback (0-100)
- * @returns {Promise<string>} secure_url (Cloudinary https link)
+ * @returns {Promise<string>} secure_url — yahi imagePath banega
  */
 export function uploadSightseeingImageToCloudinary(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    if (!CLOUD_NAME || !UPLOAD_PRESET) {
-      reject(new Error(
-        "Cloudinary config missing. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your .env, then restart the dev server."
-      ));
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
-
-    // Progress tracking
-    if (onProgress) {
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const res = JSON.parse(xhr.responseText);
-          resolve(res.secure_url);   // ← yahi imagePath banega
-        } catch {
-          reject(new Error("Failed to parse Cloudinary response."));
-        }
-      } else {
-        reject(new Error("Cloudinary upload failed. Check your upload preset (must be unsigned)."));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Network error during image upload."));
-    xhr.send(formData);
-  });
+  return uploadImageViaApi("/sightseeings/upload-image", file, onProgress);
 }
 
 // ============================================================

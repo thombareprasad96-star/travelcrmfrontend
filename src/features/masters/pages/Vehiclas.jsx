@@ -110,7 +110,7 @@ export default function VehicleMaster() {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
-  // ── 2. Image upload — direct browser → Cloudinary ──────────
+  // ── 2. Image upload — multipart to our backend, which forwards to Cloudinary ──
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -127,7 +127,7 @@ export default function VehicleMaster() {
     };
     reader.readAsDataURL(file);
 
-    // Cloudinary pe upload karo — backend pe nahi
+    // Backend /vehicles/upload-image pe bhejo (quota-enforced + metered)
     setImageUploading(true);
     try {
       const secureUrl = await uploadImageToCloudinary(file, (percent) => {
@@ -144,7 +144,7 @@ export default function VehicleMaster() {
       }));
       setErrors(prev => ({ ...prev, image: null }));
     } catch (err) {
-      console.error("Cloudinary upload failed:", err);
+      console.error("Image upload failed:", err);
       setFormData(prev => ({ ...prev, image: null, imagePath: null }));
       // Not `err.message || fallback` — axios always sets .message, so the fallback was dead code and
       // the user saw "Request failed with status code 413".

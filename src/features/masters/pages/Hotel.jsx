@@ -208,7 +208,7 @@ export default function HotelMaster() {
   // Mobile modal tab — "info" ya "rooms"
   const [mobileTab,        setMobileTab]        = useState("info");
 
-  // ── Cloudinary image upload handler ──
+  // ── Image upload handler (backend-proxied) ──
   const handleHotelImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -223,7 +223,7 @@ export default function HotelMaster() {
       const secureUrl = await uploadHotelImageToCloudinary(file);
       setForm(f => ({ ...f, imagePath: secureUrl }));   // form mein save
     } catch (err) {
-      console.error("Cloudinary upload failed:", err);
+      console.error("Image upload failed:", err);
       setSaveError(getErrorMessage(err, "Image upload failed."));
       setHotelImageFile(null);
     } finally {
@@ -957,7 +957,7 @@ export default function HotelMaster() {
                       placeholder="e.g. The Grand Palace"
                       value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
 
-                    {/* ── Image Upload — Cloudinary with preview ── */}
+                    {/* ── Image Upload — backend-proxied, with preview ── */}
                     <div className="sm:col-span-2">
                       <label className="text-xs font-semibold text-slate-600 block mb-1.5">
                         Hotel Image

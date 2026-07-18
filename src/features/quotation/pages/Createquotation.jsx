@@ -947,6 +947,7 @@ import InclusionsExclusionsTab from "../components/InclusionsExclusionsTab";
 import SummaryPricingTab       from "../components/SummaryPricingTab";
 
 import { Input, Label }     from "../components/Ui";
+import QuotationStyleModal from "../components/QuotationStyleModal";
 import { quotationService } from "../api/quotationService";
 import { leadService } from "@features/leads";
 
@@ -1012,8 +1013,16 @@ const SERVICE_COLORS = {
   Visa:        { bg: '#FBEAF0', text: '#4B1528' },
   Passport:    { bg: '#F1EFE8', text: '#2C2C2A' },
   Sightseeing: { bg: '#FAEEDA', text: '#412402' },
+  Insurance:   { bg: '#E4F2F1', text: '#0B3B38' },
 };
-const serviceColor = (svc) => SERVICE_COLORS[svc] || { bg: '#F1F5F9', text: '#334155' };
+// Backend services lowercase bhejta hai ('hotel','flight') par ye keys Capitalized hain — bina
+// normalize kiye HAR chip grey default pe gir jaata tha. Ab lookup aur label dono normalized
+// value pe chalte hain, aur `insurance` (jiski key hi missing thi) ab match karta hai.
+const serviceLabel = (svc) => {
+  const s = String(svc ?? "").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+};
+const serviceColor = (svc) => SERVICE_COLORS[serviceLabel(svc)] || { bg: '#F1F5F9', text: '#334155' };
 
 /* ─── TOAST ──────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
@@ -1049,6 +1058,7 @@ export default function CreateQuotation() {
   const [quotationId, setQuotationId] = useState(editId || null);
   const [saving,      setSaving]      = useState(false);
   const [pdfLoading,  setPdfLoading]  = useState(false);
+  const [stylePickOpen, setStylePickOpen] = useState(false);   // Export-PDF design dialog
   const [toast,       setToast]       = useState(null);
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
@@ -1058,6 +1068,15 @@ export default function CreateQuotation() {
   // edit-mode me purana quotation prefill ho raha hota hai, taaki wo change na gina jaaye.
   const [isDirty, setIsDirty] = useState(false);
   const hydratingRef = useRef(!!editId);
+
+  // ── Public weblink template — CLASSIC (default) | MODERN ──
+  // Seeded from the Classic/Modern chooser popup on AllLeads (?templateStyle=). WHITELISTED — the
+  // URL is user-editable, so anything that is not exactly MODERN falls to CLASSIC. Edit mode still
+  // overrides this with the stored value once the quotation loads.
+  const [templateStyle, setTemplateStyle] = useState(() => {
+    const fromUrl = searchParams.get("templateStyle");
+    return fromUrl === "MODERN" || fromUrl === "PREMIUM" ? fromUrl : "CLASSIC";
+  });
 
   const [leadData,    setLeadData]    = useState(null);
   const [leadLoading, setLeadLoading] = useState(false);
@@ -1136,6 +1155,7 @@ export default function CreateQuotation() {
         const res  = await quotationService.getQuotationById(editId);
         const data = res.data?.data || res.data || {};
         setQtTitle(data.title || "");
+        setTemplateStyle(data.templateStyle || "CLASSIC");
         if (data.flight)      setFlightData(data.flight);
         if (data.hotel)       setHotelData(data.hotel);
         if (data.sightseeing) setSightseeingData(data.sightseeing);
@@ -1170,17 +1190,21 @@ export default function CreateQuotation() {
     title:   qtTitle || "Quotation",
     version,
     stage,
-    flightIncluded:      flightData.included ?? true,
+    templateStyle,
+    // `?? true` fail-open tha: jis tab pe user gaya hi nahi uska `included` undefined rehta
+    // hai, aur section lead ke against bhi ON chala jaata tha. Fallback ab lead-derived gate
+    // hai. User ka explicit tick (included === true) hamesha jeetta hai — kahin clamp nahi.
+    flightIncluded:      flightData.included ?? svcOn("Flight"),
     flightTitle:         flightData.title    || "Flight Details",
     flightAmount:        flightData.amount   || 0,
     journey:             flightData.journey  || "Round Trip",
     segments:            flightData.segments || [],
-    hotelIncluded:       hotelData.included  ?? true,
+    hotelIncluded:       hotelData.included  ?? svcOn("Hotel"),
     hotelTitle:          hotelData.title     || "Hotel Details",
     hotelAmount:         hotelData.amount    || 0,
     hotelNotes:          hotelData.notes     || "",
     hotels:              hotelData.hotels    || [],
-    sightseeingIncluded: sightseeingData.included ?? true,
+    sightseeingIncluded: sightseeingData.included ?? svcOn("Sightseeing"),
     sightseeingTitle:    sightseeingData.title    || "Sightseeing",
     sightseeingAmount:   sightseeingData.amount   || 0,
     sightseeingNotes:    sightseeingData.notes    || "",
@@ -1189,7 +1213,7 @@ export default function CreateQuotation() {
     cruiseTitle:         cruiseData.title    || "Cruise Details",
     cruiseAmount:        cruiseData.amount   || 0,
     cruises:             cruiseData.cruises  || [],
-    vehicleIncluded:     vehicleData.included ?? true,
+    vehicleIncluded:     vehicleData.included ?? svcOn("Vehicle"),
     vehicleTitle:        vehicleData.title    || "Vehicle Details",
     vehicleAmount:       vehicleData.amount   || 0,
     vehicles:            vehicleData.vehicles || [],
@@ -1206,7 +1230,9 @@ export default function CreateQuotation() {
     discType: summaryData.discType || "Fixed",
     tax:      summaryData.tax      || 18,
     markup:   summaryData.markup   || 0,
-  }), [leadId, qtTitle, version, stage,
+  // leadData bhi dep hai — svcOn() isi se derive hota hai, warna lead aane ke baad bhi
+  // ye callback purane (sab-ON) gate ke saath memoized reh jaata.
+  }), [leadId, leadData, qtTitle, version, stage, templateStyle,
        flightData, hotelData, sightseeingData, cruiseData,
        vehicleData, addonData, inclusionsData, summaryData]);
 
@@ -1249,12 +1275,20 @@ export default function CreateQuotation() {
     }
   };
 
-  /* ── PDF ── */
-  const handlePdf = async () => {
+  /* ── PDF ──
+     The builder has its own Export PDF button, separate from the one in the leads list. It opens the
+     same Classic/Modern/Premium dialog and passes the pick straight through as a one-off override —
+     nothing is saved, so exporting a Premium copy does not change the quotation's own design. */
+  const handlePdf = () => {
     if (!quotationId) { showToast("Please save the quotation first.", "error"); return; }
+    setStylePickOpen(true);
+  };
+
+  const exportPdfAs = async (style) => {
+    setStylePickOpen(false);
     try {
       setPdfLoading(true);
-      const res = await quotationService.generatePdf(quotationId);
+      const res = await quotationService.generatePdf(quotationId, style);
       const url = URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
       const a   = document.createElement("a");
       a.href    = url;
@@ -1285,31 +1319,76 @@ export default function CreateQuotation() {
   // Backend services lowercase bhejta hai ('hotel','flight'), isliye yahin normalize kar lo.
   const leadServices = (Array.isArray(leadData?.services) ? leadData.services : [])
     .map(s => String(s).toLowerCase());
+
+  // servicesKnown — kya hum SURE hain ki is lead ne services choose ki hain?
+  // Pehle `leadServices.length === 0` hi gate tha, jo fail-OPEN karta tha: lead abhi fetch ho
+  // raha hota tab bhi list khali hoti, to sab tabs ON dikh jaate the aur lead aane ke baad
+  // silently badal jaate the. Ab tri-state:
+  //   (a) leadId hi nahi (create mode)            → false → sab ON (purana behavior)
+  //   (b) leadId hai par lead abhi in-flight      → false → sab ON, lead aate hi resolve
+  //   (c) lead aa gaya par services blank         → false → sab ON (deliberate fail-open —
+  //       ingested leads kabhi services set nahi karte, unhe khaali quotation nahi dena)
+  //   (d) lead aa gaya services ke saath          → true  → sirf chosen ON
+  // NOTE: `leadLoading` yahan bharosemand nahi — fetch effect `if (!leadId) return` pe bina
+  // flag set kiye nikal jaata hai. In-flight ka reliable test `leadId && !leadData` hai.
+  const servicesKnown = Boolean(leadId && leadData && leadServices.length > 0);
+
+  // svcOn ko STABLE rehna chahiye — ye neeche tab remount keys feed karta hai, isliye lead
+  // resolve hone ke baad ye zyada se zyada EK baar flip hota hai.
+  const svcOn = (name) => !servicesKnown || leadServices.includes(name.toLowerCase());
+
+  // Manual override — user ne khud "Include X in Quotation" tick kiya to wo tab dobara
+  // navigable ho jaana chahiye (owner decision: lead ka choice default hai, lock nahi).
+  // Koi naya channel nahi banaya: har service tab pehle se apna `included` onDataChange me
+  // bhejta hai, wahi single source of truth hai. Untick karte hi tab wapas disabled.
+  const manualOn = {
+    flight:      flightData.included      === true,
+    hotel:       hotelData.included       === true,
+    sightseeing: sightseeingData.included === true,
+    cruise:      cruiseData.included      === true,
+    vehicle:     vehicleData.included     === true,
+  };
+
   // Reorder: chosen service tabs pehle → non-chosen service tabs → addons/inclusions/summary (end).
   // Lead na ho (create mode, ya services blank) → order original hi rehta hai.
+  // Saath hi har tab pe `enabled` stamp karo — strip, dots, counter aur prev/next sab EK hi
+  // list se chalein, teen jagah alag-alag logic na rahe.
   const orderedTabs = (() => {
     const chosen = [], notChosen = [], other = [];
     for (const t of TABS) {
       const svc = SERVICE_TAB_MAP[t.id];
-      if (!svc) other.push(t);                              // non-service → hamesha end
-      else if (leadServices.includes(svc.toLowerCase())) chosen.push(t);  // chosen service → pehle
-      else notChosen.push(t);                               // non-chosen service → baad me
+      // non-service tab (addons/inclusions/summary) hamesha ON — inka koi lead service nahi.
+      const tab = { ...t, enabled: !svc || svcOn(svc) || manualOn[t.id] === true };
+      if (!svc) other.push(tab);                                 // non-service → hamesha end
+      else if (leadServices.includes(svc.toLowerCase())) chosen.push(tab);  // chosen → pehle
+      else notChosen.push(tab);                                  // non-chosen → baad me
     }
     return [...chosen, ...notChosen, ...other];
   })();
-  // svcOn: lead-service info nahi (create mode) → sab ON (purana behavior). Warna sirf chosen ON.
-  const svcOn = (name) => leadServices.length === 0 || leadServices.includes(name.toLowerCase());
 
-  const activeIdx = orderedTabs.findIndex(t => t.id === activeTab);
+  // Navigable list — footer counter, dots aur prev/next isi pe chalte hain.
+  // Navigation chalti hai POORE reordered sequence pe (chosen pehle, phir baaki) — disabled tab
+  // ko nav se hataya NAHI jaata. Wajah: "Include X in Quotation" toggle hi wo jagah hai jahan se
+  // user ek non-chosen service ON karta hai, aur wo toggle us tab ke ANDAR hai. Tab ko nav/click
+  // se block kar dein to enable karne ka koi raasta hi nahi bachta. Disabled sirf VISUAL hai
+  // (greyed + panel ke fields Include tick hone tak locked).
+  const navTabs = orderedTabs;
 
-  // Lead load hote hi active tab ko pehle chosen service pe le jao (sirf ek baar).
+  // -1 tab milta hai jab active tab disabled ho (page `useState("flight")` se khulta hai, jo
+  // lead ke hisaab se disabled ho sakta hai; ya user apne hi tab ka Include untick kar de).
+  // Pehle Prev/Next seedha orderedTabs[activeIdx ± 1].id deref karte the → hard crash. Guard.
+  const activeIdx = navTabs.findIndex(t => t.id === activeTab);
+  const onNavigableTab = activeIdx !== -1;
+
+  // Lead resolve hote hi active tab ko pehle navigable tab pe le jao (sirf ek baar).
+  // Ye `useState("flight")` ko bhi cover karta hai jab flight is lead pe chosen nahi hai.
   const activeInitRef = useRef(false);
   useEffect(() => {
-    if (activeInitRef.current || leadServices.length === 0) return;
-    setActiveTab(orderedTabs[0].id);
+    if (activeInitRef.current || !servicesKnown || navTabs.length === 0) return;
+    setActiveTab(navTabs[0].id);
     activeInitRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leadServices]);
+  }, [servicesKnown]);
 
   const travelers = leadData
     ? [
@@ -1584,7 +1663,7 @@ export default function CreateQuotation() {
                   const c = serviceColor(s);
                   return (
                     <span key={i} style={{ background: c.bg, color: c.text }}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold">{s}</span>
+                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold">{serviceLabel(s)}</span>
                   );
                 })}
               </div>
@@ -1592,8 +1671,8 @@ export default function CreateQuotation() {
 
             {leadData && <div className="border-t border-slate-100" />}
 
-            {/* ── Quotation Title / Version / Stage ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {/* ── Quotation Title / Version / Stage / Template ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="sm:col-span-2 lg:col-span-1">
                 <Label required>Quotation Title</Label>
                 <Input value={qtTitle} onChange={e => { setQtTitle(e.target.value); if (!hydratingRef.current) setIsDirty(true); }} placeholder="e.g. Nepal Adventure Premium" />
@@ -1614,6 +1693,10 @@ export default function CreateQuotation() {
                   </span>
                 </div>
               </div>
+              {/* No template picker here by design — the design is chosen at DOWNLOAD time
+                  (see the PDF dialog in AllLeads). templateStyle is still tracked in this form's
+                  state and round-tripped on save so an existing quotation's saved design survives
+                  an edit; it just isn't something the builder asks about. */}
             </div>
 
           </div>
@@ -1629,19 +1712,30 @@ export default function CreateQuotation() {
               {orderedTabs.map((tab) => {
                 const Icon   = tab.icon;
                 const active = activeTab === tab.id;
+                const off    = !tab.enabled;   // lead pe ye service chuni nahi gayi
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
+                    title={off ? "Lead pe ye service select nahi hai — is tab me 'Include' tick karke ON karein" : undefined}
+                    // HTML `disabled` yahan JAAN-BOOJHKAR nahi lagaya. Ye tab greyed zaroor hai,
+                    // par khulna chahiye: iske andar hi wo "Include X in Quotation" toggle hai
+                    // jisse user is service ko ON karta hai. Button disable karte hi enable karne
+                    // ka raasta hi band ho jaata (dot, prev/next, click — sab isi ke peeche hain).
+                    // Greying LAYOUT-NEUTRAL hai — sirf opacity badalti hai, box-model
+                    // (px/py/border-b-2/whitespace-nowrap) waisa ka waisa, warna strip width shift.
                     className={`qt-tab-btn relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-3 sm:py-4
                       text-[12px] sm:text-[13px] font-bold whitespace-nowrap border-b-2 focus:outline-none group
+                      ${off ? "opacity-40" : ""}
                       ${active
                         ? TAB_ACTIVE[tab.color]
-                        : "text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50"
+                        : off
+                          ? "text-slate-400 border-transparent"
+                          : "text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50"
                       }`}
                   >
                     <span className={`flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-lg transition-all flex-shrink-0
-                        ${active ? ICON_BG[tab.color] : "bg-slate-100 group-hover:bg-slate-200"}`}>
+                        ${active ? ICON_BG[tab.color] : off ? "bg-slate-100" : "bg-slate-100 group-hover:bg-slate-200"}`}>
                       <Icon size={11} strokeWidth={active ? 2.5 : 2} />
                     </span>
                     {/* Hide label on very small screens for some tabs */}
@@ -1674,13 +1768,16 @@ export default function CreateQuotation() {
 
           {/* Tab footer */}
           <div className="flex items-center justify-between px-3 sm:px-5 py-3 bg-slate-50/80 border-t border-slate-100">
+            {/* Counter/dots/prev-next — sab `navTabs` pe, taaki disabled tab ko na to
+                ginta hai na uspe navigate karata hai. activeIdx -1 ho (active tab disabled)
+                to step number chhupa do, galat "Step 0" na dikhe. */}
             <p className="text-[11px] text-slate-400 font-semibold">
-              Step <span className="text-slate-700 font-extrabold">{activeIdx + 1}</span> of {orderedTabs.length}
+              Step <span className="text-slate-700 font-extrabold">{onNavigableTab ? activeIdx + 1 : "–"}</span> of {navTabs.length}
             </p>
             {/* Progress dots — hidden on mobile, shown sm+ */}
             <div className="hidden sm:flex items-center gap-1.5">
-              {orderedTabs.map((t, i) => {
-                const done    = i < activeIdx;
+              {navTabs.map((t, i) => {
+                const done    = onNavigableTab && i < activeIdx;
                 const current = i === activeIdx;
                 return (
                   <button key={t.id} onClick={() => setActiveTab(t.id)} title={t.label}
@@ -1692,12 +1789,12 @@ export default function CreateQuotation() {
               })}
             </div>
             <div className="flex items-center gap-1">
-              <button disabled={activeIdx === 0} onClick={() => setActiveTab(orderedTabs[activeIdx - 1].id)}
+              <button disabled={!onNavigableTab || activeIdx === 0} onClick={() => setActiveTab(navTabs[activeIdx - 1].id)}
                 className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-[12px] font-bold text-slate-500
                   hover:text-slate-800 hover:bg-slate-100 rounded-lg disabled:opacity-25 transition-all">
                 <ChevronRight size={12} className="rotate-180" /> Prev
               </button>
-              <button disabled={activeIdx === orderedTabs.length - 1} onClick={() => setActiveTab(orderedTabs[activeIdx + 1].id)}
+              <button disabled={!onNavigableTab || activeIdx === navTabs.length - 1} onClick={() => setActiveTab(navTabs[activeIdx + 1].id)}
                 className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-[12px] font-bold text-blue-600
                   hover:text-blue-800 hover:bg-blue-50 rounded-lg disabled:opacity-25 transition-all">
                 Next <ChevronRight size={12} />
@@ -1868,6 +1965,15 @@ export default function CreateQuotation() {
         </div>
 
       </div>
+
+      {/* Export PDF → pick a design. One-off: the quotation's own design is untouched. */}
+      {stylePickOpen && (
+        <QuotationStyleModal
+          savedStyle={templateStyle}
+          onSelect={exportPdfAs}
+          onClose={() => setStylePickOpen(false)}
+        />
+      )}
     </div>
   );
 }
