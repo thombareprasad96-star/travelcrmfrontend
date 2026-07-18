@@ -12,4 +12,6 @@ export { quotationService } from "./api/quotationService";
 export { default as PackageTemplates } from "./pages/PackageTemplates";
 export { default as TemplateBuilder } from "./pages/TemplateBuilder";
 export { default as SuggestPackagesModal } from "./components/SuggestPackagesModal";
+// "Download as Classic / Modern / Premium" dialog — consumed by the leads feature's quotation list.
+export { default as QuotationStyleModal } from "./components/QuotationStyleModal";
 export { templateService } from "./api/templateService";

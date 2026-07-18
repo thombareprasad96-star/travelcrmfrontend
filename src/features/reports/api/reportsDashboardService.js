@@ -115,32 +115,10 @@ const reportsDashboardService = {
     });
   },
 
-  // ── GET FOLLOW-UP REPORTS ──────────────────────────────────
-  // GET /api/reports/followup?period=month
-  // @GetMapping("/api/reports/followup")
-  // public ResponseEntity<FollowupReportDTO> getFollowupReport(
-  //     @RequestParam(defaultValue = "month") String period)
-  //
-  // Response:
-  // {
-  //   totalFollowups:    50,
-  //   upcomingFollowups: 20,
-  //   overdueFollowups:  8,
-  //   completedFollowups:22,
-  //   followups: [
-  //     {
-  //       id: 1, leadName: "Ramesh Kumar", phone: "+91 98765 43210",
-  //       dueDate: "Jun 23, 2026 10:00 AM", status: "Pending",
-  //       assignedTo: "Shreyash_Shahi", priority: "High"
-  //     },
-  //     ...
-  //   ]
-  // }
-  getFollowupReport: (period = "month", customFrom, customTo) => {
-    return api.get("/reports/followup", {
-      params: buildPeriodParams(period, customFrom, customTo),
-    });
-  },
+  // ── FOLLOW-UP REPORTS ──────────────────────────────────────
+  // No getFollowupReport here: the backend serves no bare GET /api/reports/followup.
+  // FollowupReportController only maps /tasks, /summary, /tasks/{publicId}/complete,
+  // /tasks/bulk-complete and /export/csv. Use followupReportService instead.
 
   // ── GET BOOKING REVENUE ANALYSIS ───────────────────────────
   // GET /api/reports/revenue?period=month

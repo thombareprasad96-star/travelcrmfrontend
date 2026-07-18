@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getErrorMessage } from "@shared/api/apiError";
+import ModernWebView from "../components/ModernWebView";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
@@ -113,6 +114,8 @@ export default function QuotationWebView({ publicId }) {
   if (error)   return <Centered><ErrBox msg={error} /></Centered>;
   if (!q)      return <Centered>Quotation not found.</Centered>;
 
+  if (q.templateStyle === "MODERN") return <ModernWebView data={q} pdfUrl={`${API}/public/quotations/${publicId}/pdf`} />;
+
   const c = q.customer || {};
   const company = q.company || q.organization || {};
   const totals = q.totals || {};
@@ -123,6 +126,12 @@ export default function QuotationWebView({ publicId }) {
   const companyPhone = company.phone || company.contactNumber || q.companyPhone || "";
   const companyEmail = company.email || q.companyEmail || "";
 
+  // "What's Included" manifest. Har chip ka ✓ sirf tab jab section included HO aur uski list
+  // non-empty ho — wahi rule jo detail sections (:371, :468, :516) aur price breakdown follow
+  // karte hain, taaki teeno kabhi ek doosre se disagree na karein.
+  // KNOWN GAP: is Classic view me flight/cruise/add-on ke DETAIL sections abhi hain hi nahi,
+  // sirf chip aur price line hai. Chips isliye nahi hataye ki tab breakdown se desync ho jaata
+  // (paisa dikhta, service nahi) — asli fix wo teen sections add karna hai.
   const services = [
     { label:"Flights",     icon:"✈️", on: !!(q.flight?.included && q.flight?.segments?.length) },
     { label:"Hotels",      icon:"🏨", on: !!(q.hotel?.included && q.hotel?.hotels?.length) },
@@ -580,12 +589,21 @@ export default function QuotationWebView({ publicId }) {
           <SectionTitle sub="Transparent, no hidden costs">Price Breakdown</SectionTitle>
           <div style={{ maxWidth:540, margin:"0 auto", background:"#fff", borderRadius:24, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.08)", border:"1px solid #eef2ff" }}>
             <div style={{ padding:"28px 30px" }}>
-              {totals.flightAmount      > 0 && <PLine label="✈️ Flights"     val={inr(totals.flightAmount)} />}
-              {totals.hotelAmount       > 0 && <PLine label="🏨 Hotels"      val={inr(totals.hotelAmount)} />}
-              {totals.sightseeingAmount > 0 && <PLine label="🗺️ Sightseeing" val={inr(totals.sightseeingAmount)} />}
-              {totals.cruiseAmount      > 0 && <PLine label="🚢 Cruise"      val={inr(totals.cruiseAmount)} />}
-              {totals.vehicleAmount     > 0 && <PLine label="🚗 Transport"   val={inr(totals.vehicleAmount)} />}
-              {totals.addonAmount       > 0 && <PLine label="✨ Add-ons"     val={inr(totals.addonAmount)} />}
+              {/* Do baatein yahan galat thi:
+                  1. Ye rows `totals.flightAmount`-type fields padhte the jo public Totals DTO pe
+                     EXIST hi nahi karte (wo sirf subtotal/discount/tax/grandTotal/perAdult deta
+                     hai) — isliye poora breakdown chupchaap gayab tha. Per-section amount SECTION
+                     object pe hota hai (q.flight.amount, q.hotel.amount, …), waise hi jaise
+                     ModernWebView padhta hai.
+                  2. Koi bhi row `included` check nahi karti thi — ek excluded section ka paisa bhi
+                     customer ke saamne line item ban ke aa jaata (cruise wali line pakki culprit).
+                  Ab dono: included AND amount > 0. */}
+              {q.flight?.included      && q.flight.amount      > 0 && <PLine label="✈️ Flights"     val={inr(q.flight.amount)} />}
+              {q.hotel?.included       && q.hotel.amount       > 0 && <PLine label="🏨 Hotels"      val={inr(q.hotel.amount)} />}
+              {q.sightseeing?.included && q.sightseeing.amount > 0 && <PLine label="🗺️ Sightseeing" val={inr(q.sightseeing.amount)} />}
+              {q.cruise?.included      && q.cruise.amount      > 0 && <PLine label="🚢 Cruise"      val={inr(q.cruise.amount)} />}
+              {q.vehicle?.included     && q.vehicle.amount     > 0 && <PLine label="🚗 Transport"   val={inr(q.vehicle.amount)} />}
+              {q.addons?.included      && q.addons.amount      > 0 && <PLine label="✨ Add-ons"     val={inr(q.addons.amount)} />}
               {totals.subtotal != null && (
                 <>
                   <div style={{ height:1, background:"linear-gradient(90deg,transparent,#e2e8f0,transparent)", margin:"16px 0" }} />

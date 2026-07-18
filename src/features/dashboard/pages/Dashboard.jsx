@@ -358,8 +358,11 @@ const unwrapRes = (r) =>
   (r?.data && typeof r.data === "object" && "data" in r.data) ? r.data.data : r?.data;
 
 /* Initials from a name, e.g. "Nepal Tours And Travels" → "NT" */
-const initials = (name = "") =>
-  name.trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "—";
+// (name || "") — NOT a `= ""` default parameter. A default only fires on `undefined`, so a null
+// company.name (a tenant that has not filled its profile yet — i.e. every fresh deployment) reached
+// null.trim() and took the whole Dashboard down through RouteErrorBoundary.
+const initials = (name) =>
+  (name || "").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "—";
 
 function buildOperations({ users, company, subscription, activity }) {
   const usersList   = Array.isArray(users) ? users : [];

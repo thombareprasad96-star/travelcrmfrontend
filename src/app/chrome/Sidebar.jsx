@@ -827,8 +827,10 @@ import { companyService } from "@features/settings";
 
 // "Nepal Tours And Travels" -> "NT". Shown until the logo loads, and for any tenant
 // that has not uploaded one.
-const initialsOf = (name = "") =>
-  name.trim().split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "CO";
+// (name || "") — NOT a `= ""` default: a default only fires on `undefined`, so a null company name
+// (any tenant that has not filled its profile) would hit null.trim() and crash the whole shell.
+const initialsOf = (name) =>
+  (name || "").trim().split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "CO";
 
 const Sidebar = ({ isExpanded, setExpanded }) => {
   const [openDropdown, setOpenDropdown] = useState('');
