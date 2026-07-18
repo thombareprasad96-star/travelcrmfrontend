@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { QuotationWebView } from "@features/quotation";
 import { WeblinkAnalyticsModal } from "@features/quotation";
 import { SuggestPackagesModal } from "@features/quotation";
+import { QuotationStyleModal } from "@features/quotation";
 import ConvertToBookingModal from "../components/ConvertToBookingModal";
 import {
   useReactTable, getCoreRowModel, getSortedRowModel,
@@ -770,7 +771,8 @@ function LeadRow({ lead, index, isOpen, onToggle, onView, onEditNavigate, onDele
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda9225', color: '#7a5a00', fontSize: '10px', fontWeight: 700, border: '1px solid #eeda92', cursor: 'pointer' }}>
                       <Eye size={11} /> View Quotations
                     </button>
-                    {/* …and still allow creating a fresh one */}
+                    {/* …and still allow creating a fresh one. No design chooser here on purpose —
+                        the design is picked at DOWNLOAD time, not while building. */}
                     <Link to={`/createquotation?leadId=${lead.publicId || lead.id}`}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 11px', borderRadius: '7px', background: '#eeda92', color: '#3d2a00', fontSize: '10px', fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px #eeda9266' }}>
                       <FileText size={11} /> Create New Quotation ↗
@@ -818,6 +820,8 @@ function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [downloadingId, setDownloading] = useState(null);
+  const [stylePickFor, setStylePickFor] = useState(null);   // quotation whose PDF design is being picked
+  const [sharePickFor, setSharePickFor] = useState(null);   // quotation whose SHARE design is being picked
   const [emailingId, setEmailing] = useState(null);
   const [webViewQ, setWebViewQ] = useState(null);   // quotation shown in the web view overlay
   const [copied, setCopied] = useState(false);
@@ -865,10 +869,14 @@ function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
     return () => { active = false; };
   }, [leadId]);
 
-  const downloadPdf = async (q) => {
+  // Style is chosen in the download dialog and passed straight through as a one-off override —
+  // deliberately NOT saved on the quotation, so downloading a Premium copy does not change what the
+  // customer sees on the share link.
+  const downloadPdf = async (q, style) => {
     try {
+      setStylePickFor(null);
       setDownloading(q.publicId);
-      const res = await quotationService.generatePdf(q.publicId);
+      const res = await quotationService.generatePdf(q.publicId, style);
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
@@ -900,6 +908,25 @@ function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
     } catch {
       // navigator.clipboard, not axios — a denied permission or an insecure origin. No envelope.
       showToast('Could not copy the link.', 'error');
+    }
+  };
+
+  // Share on WhatsApp, in a chosen design. The style is SAVED first (the customer opens the link
+  // later, so the server must already know what to render), THEN wa.me opens — never the other way
+  // round, or the agent sends a link that still shows the old design.
+  const shareWhatsAppWithStyle = async (q, style) => {
+    try {
+      setSharePickFor(null);
+      if (style && style !== (q.templateStyle || 'CLASSIC')) {
+        await quotationService.setTemplateStyle(q.publicId, style);
+        setList(prev => prev.map(x => x.publicId === q.publicId ? { ...x, templateStyle: style } : x));
+      }
+      shareWhatsApp(q);
+    } catch (e) {
+      // The link was NOT opened — sharing a design we failed to save would show the customer the
+      // old one with no sign anything went wrong.
+      if (isAlreadyReported(e)) return;
+      showToast(getErrorMessage(e, 'Could not set the design. Nothing was shared.'), 'error');
     }
   };
 
@@ -989,12 +1016,12 @@ function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
                     {/* Edit → opens CreateQuotation in edit mode (quotationId in the URL) */}
                    
 
-                    <button onClick={() => downloadPdf(q)} disabled={downloadingId === q.publicId}
+                    <button onClick={() => setStylePickFor(q)} disabled={downloadingId === q.publicId}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all disabled:opacity-50">
                       <DownloadCloud size={13} /> {downloadingId === q.publicId ? 'Downloading…' : 'PDF'}
                     </button>
                     {/* Share — icon only */}
-                    <button onClick={() => shareWhatsApp(q)} title="Share on WhatsApp"
+                    <button onClick={() => setSharePickFor(q)} title="Share on WhatsApp"
                       className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 transition-all">
                       <FaWhatsapp size={15} />
                     </button>
@@ -1045,7 +1072,7 @@ function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-600 text-xs font-bold transition-all">
                 <Copy size={13} /> {copied ? 'Copied!' : 'Copy link'}
               </button>
-              <button onClick={() => shareWhatsApp(webViewQ)} title="Share on WhatsApp"
+              <button onClick={() => setSharePickFor(webViewQ)} title="Share on WhatsApp"
                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 transition-all">
                 <FaWhatsapp size={15} />
               </button>
@@ -1060,6 +1087,21 @@ function QuotationsModal({ lead, onClose, canDelete, canEdit }) {
       )}
 
       {analyticsQ && <WeblinkAnalyticsModal quotation={analyticsQ} onClose={() => setAnalyticsQ(null)} />}
+      {stylePickFor && (
+        <QuotationStyleModal
+          savedStyle={stylePickFor.templateStyle}
+          onSelect={(style) => downloadPdf(stylePickFor, style)}
+          onClose={() => setStylePickFor(null)}
+        />
+      )}
+      {sharePickFor && (
+        <QuotationStyleModal
+          mode="share"
+          savedStyle={sharePickFor.templateStyle}
+          onSelect={(style) => shareWhatsAppWithStyle(sharePickFor, style)}
+          onClose={() => setSharePickFor(null)}
+        />
+      )}
     </div>
   );
 }

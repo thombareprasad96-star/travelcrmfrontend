@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 import { sightseeingService, transformSightseeingResponse } from "../api/SightseeingService";
 import { geographyService } from "@shared/api/geographyService";
-import { getErrorMessage } from "@shared/api/apiError";
+import { getErrorMessage, isAlreadyReported } from "@shared/api/apiError";
 import { toast } from "@shared/ui/toast";
 
 // The page-local toast system that used to live here has been deleted in favour of @shared/ui/toast.
@@ -197,12 +197,18 @@ function AddSightseeingModal({ isOpen, onClose, prefillDestination, editingItem,
       setForm((prev) => ({ ...prev, image: file, imagePreview: ev.target.result }));
     reader.readAsDataURL(file);
 
-    // ☁️ Cloudinary pe upload — secure_url (string) wapas aata hai
+    // Backend /upload-image pe bhejo — secure_url (string) wapas aata hai
     setImageUploading(true);
     try {
       const url = await sightseeingService.uploadSightseeingImage(file);
       setForm((prev) => ({ ...prev, imagePath: url, imagePreview: url }));
     } catch (err) {
+      // Drop the optimistic preview — otherwise the user keeps looking at a photo
+      // that was never stored, while imagePath still holds the old value.
+      setForm((prev) => ({ ...prev, image: null, imagePreview: prev.imagePath || null }));
+      // Uploads go through the shared client now, so the interceptor already
+      // toasted 403 (quota) / 429 / network / 5xx — don't say it twice.
+      if (isAlreadyReported(err)) return;
       toast.error(getErrorMessage(err, "Image upload failed."));
     } finally {
       setImageUploading(false);

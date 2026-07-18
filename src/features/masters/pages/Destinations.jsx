@@ -107,7 +107,7 @@
 //     if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: '' }));
 //   };
 
-//   // ── Cloudinary upload ───────────────────────────────────────────────────
+//   // ── Image upload (backend-proxied) ───────────────────────────────────────
 //   const handleFileChange = async (e) => {
 //     const file = e.target.files?.[0];
 //     e.target.value = '';
@@ -134,7 +134,7 @@
 //       setFormData(prev => ({ ...prev, imagePath: secureUrl }));
 //       setImagePreview(secureUrl);
 //     } catch (err) {
-//       console.error('Cloudinary upload failed:', err);
+//       console.error("Image upload failed:", err);
 //       setUploadError(getErrorMessage(err, 'Image upload failed. Please try again.'));
 //       setImagePreview(null);
 //       setFormData(prev => ({ ...prev, imagePath: '' }));
@@ -855,7 +855,7 @@ const DestinationMaster = () => {
     if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  // ── Cloudinary upload ───────────────────────────────────────────────────
+  // ── Image upload (backend-proxied) ───────────────────────────────────────
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -882,7 +882,7 @@ const DestinationMaster = () => {
       setFormData(prev => ({ ...prev, imagePath: secureUrl }));
       setImagePreview(secureUrl);
     } catch (err) {
-      console.error('Cloudinary upload failed:', err);
+      console.error("Image upload failed:", err);
       setUploadError(getErrorMessage(err, 'Image upload failed. Please try again.'));
       setImagePreview(null);
       setFormData(prev => ({ ...prev, imagePath: '' }));

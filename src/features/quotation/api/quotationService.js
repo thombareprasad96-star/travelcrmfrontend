@@ -11,23 +11,30 @@ export function buildQuotationPayload({
   title        = "Quotation",
   version      = "v1.0",
   stage        = "Draft",
+  templateStyle = "CLASSIC",   // public weblink template: "CLASSIC" | "MODERN"
+
+  // Section `*Included` defaults ab sab FALSE hain (pehle flight/hotel/sightseeing/vehicle
+  // `true` the). Ye builder ke gate ke baad DOOSRI fail-open layer thi: caller agar flag
+  // chhod deta to section chupke se ON ho jaata, chahe lead ne wo service chuni hi na ho.
+  // Ab default = off; on karne ke liye explicit `true` bhejna padega — jo collectAllData()
+  // hamesha bhejta hai. Ye clamp NAHI hai: bheja hua `true` jaisa ka waisa jaata hai.
 
   // Tab 1 — Flight
-  flightIncluded = true,
+  flightIncluded = false,
   flightTitle    = "Flight Details",
   flightAmount   = 0,
   journey        = "Round Trip",
   segments       = [],
 
   // Tab 2 — Hotel
-  hotelIncluded = true,
+  hotelIncluded = false,
   hotelTitle    = "Hotel Details",
   hotelAmount   = 0,
   hotelNotes    = "",
   hotels        = [],
 
   // Tab 3 — Sightseeing
-  sightseeingIncluded = true,
+  sightseeingIncluded = false,
   sightseeingTitle    = "Sightseeing",
   sightseeingAmount   = 0,
   sightseeingNotes    = "",
@@ -40,7 +47,7 @@ export function buildQuotationPayload({
   cruises        = [],
 
   // Tab 5 — Vehicle
-  vehicleIncluded = true,
+  vehicleIncluded = false,
   vehicleTitle    = "Vehicle Details",
   vehicleAmount   = 0,
   vehicles        = [],
@@ -70,6 +77,7 @@ export function buildQuotationPayload({
     title,
     version,
     stage,
+    templateStyle,
 
     // ── Flight ───────────────────────────────────────────────
     flight: {
@@ -271,11 +279,23 @@ export const quotationService = {
     return API.post(`/quotations/${id}/duplicate`);
   },
 
-  // 9. GENERATE PDF — GET /quotations/{id}/pdf
-  generatePdf: (id) => {
+  // 9. GENERATE PDF — GET /quotations/{id}/pdf[?style=CLASSIC|MODERN|PREMIUM]
+  //
+  // `style` is a ONE-OFF design override chosen in the download dialog. It is not saved: the
+  // quotation keeps whatever design its share link shows. Omit it to get the saved one.
+  generatePdf: (id, style) => {
     return API.get(`/quotations/${id}/pdf`, {
       responseType: "blob",
+      params: style ? { style } : undefined,
     });
+  },
+
+  // 9b. SET TEMPLATE STYLE — PATCH /quotations/{id}/template-style?style=
+  //
+  // PERSISTS the design. Used by the share dialog, because the weblink is rendered from the stored
+  // style whenever the customer opens it — unlike generatePdf's ?style=, which saves nothing.
+  setTemplateStyle: (id, style) => {
+    return API.patch(`/quotations/${id}/template-style`, null, { params: { style } });
   },
 
   // 10. SEND EMAIL — POST /quotations/{id}/send-email

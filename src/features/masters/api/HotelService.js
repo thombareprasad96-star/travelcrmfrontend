@@ -1,48 +1,14 @@
 import API from "@shared/api/http";
-
-// ==========================================================
-// CLOUDINARY CONFIG — .env mein yeh do values daalo:
-//   VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
-//   VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
-// ==========================================================
-const CLOUDINARY_CLOUD_NAME    = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+import { uploadImageViaApi } from "./imageUpload";
 
 /**
- * Direct browser → Cloudinary upload
+ * Hotel image upload — backend-proxied (quota-enforced + metered).
+ * Naam legacy hai (image aakhir Cloudinary pe hi jaati hai, bas backend ke through);
+ * signature same rakhi hai taaki koi caller na toote.
  * Returns: secure_url (string) — yeh URL hotel ke imagePath mein save hota hai
  */
 export function uploadHotelImageToCloudinary(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    if (!file) { reject(new Error("No file selected.")); return; }
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      reject(new Error("Cloudinary not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env"));
-      return;
-    }
-    const url      = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-    const formData = new FormData();
-    formData.append("file",          file);
-    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.upload.onprogress = (e) => {
-      if (typeof onProgress === "function" && e.lengthComputable) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
-      }
-    };
-    xhr.onload = () => {
-      let payload;
-      try { payload = JSON.parse(xhr.responseText); } catch { payload = null; }
-      if (xhr.status >= 200 && xhr.status < 300 && payload?.secure_url) {
-        resolve(payload.secure_url);
-      } else {
-        reject(new Error(payload?.error?.message || `Upload failed (status ${xhr.status}).`));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during upload."));
-    xhr.send(formData);
-  });
+  return uploadImageViaApi("/hotels/upload-image", file, onProgress);
 }
 
 // ==========================================================
@@ -183,15 +149,6 @@ export const hotelService = {
   // 7. SET DEFAULT HOTEL FOR DESTINATION
   setDefaultHotel: (destinationId, hotelId) => {
     return API.patch(`/hotels/${hotelId}/set-default`, { destinationId });
-  },
-
-  // 8. (LEGACY) UPLOAD HOTEL IMAGE — ab use nahi hota, Cloudinary use karo
-  uploadHotelImage: (imageFile) => {
-    const formData = new FormData();
-    formData.append("file", imageFile);
-    return API.post("/hotels/upload-image", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
   },
 
   // --------------------------------------------------------
