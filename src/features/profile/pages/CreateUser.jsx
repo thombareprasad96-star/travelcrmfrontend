@@ -466,11 +466,16 @@ export default function CreateUser() {
                           </select>
                           <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"/>
                         </div>
-                        <p className="mt-1.5 text-xs text-amber-500 font-medium">
-                          No templates available.{" "}
-                          <span className="text-blue-500 cursor-pointer hover:underline">Create templates</span>
-                          {" "}to streamline user setup.
-                        </p>
+                         <p className="mt-1.5 text-xs text-amber-500 font-medium">
+                            No templates available.{" "}
+                          <span
+                            className="text-blue-500 cursor-pointer hover:underline"
+                            onClick={() => navigate("/CreatePermissionTemplate")}
+                           >
+                            Create templates
+                          </span>
+                             {" "}to streamline user setup.
+                          </p>
                       </div>
 
                       {/* Account Status Toggle — matches screenshot exactly */}
