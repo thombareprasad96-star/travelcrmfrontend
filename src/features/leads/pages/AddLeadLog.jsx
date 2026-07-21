@@ -43,6 +43,7 @@ export default function AddLeadLog() {
   const [errs,       setErrs]       = useState({});
   const [saving,     setSaving]     = useState(false);
 
+  console.log(AddLeadLog)
   // Centralized toaster: <ToastHost/> (mounted beside the router in App.jsx) renders it.
   const { showToast } = useToast();
 

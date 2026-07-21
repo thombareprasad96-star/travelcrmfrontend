@@ -131,5 +131,5 @@ export const toLocalInput = (iso) => {
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
 };
 
-/** <input type="datetime-local"> value → ISO instant (UTC). */
+/** <input type="datetime-local"> value → ISO instant (UTC). */ 
 export const fromLocalInput = (val) => (val ? new Date(val).toISOString() : null);
