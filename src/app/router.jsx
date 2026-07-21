@@ -1,6 +1,6 @@
 import { useState, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-
+import ScrollToTop from './ScrollToTop';
 import Layout from "./Layout";
 import PageLoader from "./PageLoader";
 import RouteErrorBoundary from "./RouteErrorBoundary";
@@ -153,6 +153,19 @@ const Campaigns     = lazyPage(marketing, "Campaigns");
 const DripSequences = lazyPage(marketing, "DripSequences");
 const Automations   = lazyPage(marketing, "Automations");
 
+// ── Hotel Management module (self-contained feature) ──
+const hotels = () => import("@features/hotels");
+const HotelDashboard    = lazyPage(hotels, "HotelDashboard");
+const HotelList         = lazyPage(hotels, "HotelList");
+const HotelDetails      = lazyPage(hotels, "HotelDetails");
+const HotelRoomTypes    = lazyPage(hotels, "RoomTypes");
+const HotelInventory    = lazyPage(hotels, "InventoryCalendar");
+const HotelBookings     = lazyPage(hotels, "HotelBookings");
+const HotelPricing      = lazyPage(hotels, "HotelPricing");
+const HotelAmenities    = lazyPage(hotels, "HotelAmenities");
+const HotelHousekeeping = lazyPage(hotels, "Housekeeping");
+const HotelReports      = lazyPage(hotels, "HotelReports");
+
 
 // Route-level guard (defense-in-depth; backend is the real gate, menus already hide these).
 function Guard({ allow, children }) {
@@ -169,6 +182,7 @@ const AppRouter = () => {
 
   return (
     <BrowserRouter>
+    <ScrollToTop />
       <RouteErrorBoundary>
       <Suspense fallback={<PageLoader />}>
       <Routes>
@@ -329,6 +343,18 @@ const AppRouter = () => {
           <Route path="marketing/campaigns" element={<Guard allow={hasPermission(P.MARKETING_READ)}><Campaigns/></Guard>}/>
           <Route path="marketing/drips" element={<Guard allow={hasPermission(P.MARKETING_READ)}><DripSequences/></Guard>}/>
           <Route path="marketing/automations" element={<Guard allow={hasPermission(P.MARKETING_READ)}><Automations/></Guard>}/>
+
+          {/* ── Hotel Management module (self-contained; open to logged-in staff) ── */}
+          <Route path="hotels" element={<HotelList/>}/>
+          <Route path="hotels/dashboard" element={<HotelDashboard/>}/>
+          <Route path="hotels/room-types" element={<HotelRoomTypes/>}/>
+          <Route path="hotels/inventory" element={<HotelInventory/>}/>
+          <Route path="hotels/bookings" element={<HotelBookings/>}/>
+          <Route path="hotels/pricing" element={<HotelPricing/>}/>
+          <Route path="hotels/amenities" element={<HotelAmenities/>}/>
+          <Route path="hotels/housekeeping" element={<HotelHousekeeping/>}/>
+          <Route path="hotels/reports" element={<HotelReports/>}/>
+          <Route path="hotels/:id" element={<HotelDetails/>}/>
 
           {/* ── Sub-Agents (B2B franchise) — TENANT_ADMIN only ── */}
           <Route path="subagents" element={<Guard allow={isTenantAdmin()}><SubAgents/></Guard>}/>

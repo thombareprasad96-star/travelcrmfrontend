@@ -449,7 +449,6 @@
 
 
 
-
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -701,7 +700,7 @@ const FeatureCarousel = () => {
                   <p className="mt-2 text-[13.5px] leading-relaxed text-slate-400">{s.copy}</p>
                 </div>
                 <motion.div
-                  className="flex w-full shrink-0 items-center justify-center sm:w-auto"
+                  className="tlc-illoStage mx-auto flex shrink-0 items-center justify-center sm:mx-0"
                   initial={{ scale: 1.14, opacity: 0.6 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.6, ease: EASE }}
@@ -750,7 +749,7 @@ const FeatureCarousel = () => {
 
 /* ---------- Right-hand showcase (dark, decorated, mouse-parallax) ---------- */
 const Showcase = () => (
-  <aside className="relative flex flex-col justify-center overflow-hidden bg-[#030B22] px-6 py-14 sm:px-10 lg:bg-transparent lg:px-14 lg:py-16 xl:px-20">
+  <aside className="relative flex flex-col justify-center overflow-hidden bg-[#030B22] px-6 py-14 sm:px-10 lg:bg-transparent lg:px-14 lg:pb-16 lg:pt-24 xl:px-20">
     {/* mobile keeps the flat artwork; on desktop the full-width curved canvas paints the scene */}
     <div
       className="pointer-events-none absolute inset-0 lg:hidden"
@@ -760,7 +759,7 @@ const Showcase = () => (
     {/* subtle left fade so text over the artwork stays crisp */}
     <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#030B22]/55 via-transparent to-transparent" />
 
-    <div className="relative z-10 mx-auto w-full max-w-[480px]">
+    <div className="relative z-10 mx-auto w-full max-w-[480px] xl:max-w-[560px]">
       <motion.p
         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
         className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300/85"
@@ -866,11 +865,9 @@ const Login = ({ setIsAuthenticated }) => {
 
       if (token && typeof token === 'string') {
         // 3. Persist session (unchanged)
-        // Only ever a TENANT token: this form authenticates against auth/user/login alone.
-        // The platform SuperAdmin signs in at /superadmin/login, which writes "sa_token".
         localStorage.setItem('token', token);
-        // LoginService stamps the real tenant role, so this fallback is defensive only —
-        // default to the least-privileged value.
+        // LoginService always stamps a role (real tenant role, or "super_admin"), so this
+        // fallback is defensive only — default to the least-privileged value.
         const roleToSave = responseData?.role || 'user';
         localStorage.setItem('userRole', roleToSave);
         localStorage.setItem('userEmail', email);
@@ -1062,9 +1059,15 @@ const Login = ({ setIsAuthenticated }) => {
         <svg className="tlc-seam" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <linearGradient id="tlcSeamWave" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#16204B" />
-              <stop offset="0.45" stopColor="#262F68" />
-              <stop offset="1" stopColor="#0E1839" />
+              <stop offset="0" stopColor="#101A40" />
+              <stop offset="0.32" stopColor="#1C2657" />
+              <stop offset="0.62" stopColor="#2B356F" />
+              <stop offset="1" stopColor="#131E48" />
+            </linearGradient>
+            <linearGradient id="tlcSeamEdge" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#60A5FA" />
+              <stop offset="0.4" stopColor="#6366F1" />
+              <stop offset="1" stopColor="#8B5CF6" stopOpacity="0.45" />
             </linearGradient>
             <linearGradient id="tlcSeamRibbon" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" stopColor="#C4CCFB" />
@@ -1078,6 +1081,9 @@ const Login = ({ setIsAuthenticated }) => {
           <path d="M233 0 C280 48 312 90 350 96 C425 107 480 55 545 40 C625 24 700 26 770 38 C850 52 930 58 1000 52 L1000 0 Z" fill="url(#tlcSeamWave)" />
           {/* white sweep — one big smooth bulge */}
           <path d="M0 0 L239 0 C245 55 280 100 341 117 C382 128 392 330 392 480 C392 610 380 700 362 776 C344 852 320 926 299 1000 L0 1000 Z" fill="#ffffff" />
+          {/* gradient rim light hugging the sweep, like the reference */}
+          <path d="M239 0 C245 55 280 100 341 117 C382 128 392 330 392 480 C392 610 380 700 362 776 C344 852 320 926 299 1000" fill="none" stroke="url(#tlcSeamEdge)" strokeWidth="9" strokeOpacity="0.16" vectorEffect="non-scaling-stroke" />
+          <path d="M239 0 C245 55 280 100 341 117 C382 128 392 330 392 480 C392 610 380 700 362 776 C344 852 320 926 299 1000" fill="none" stroke="url(#tlcSeamEdge)" strokeWidth="2.4" strokeOpacity="0.75" vectorEffect="non-scaling-stroke" />
           {/* gradient ribbon riding the white shoulder */}
           <path d="M256 51 C282 78 312 98 346 103 C420 115 470 60 545 44 C606 29 668 28 726 37 C793 47 850 56 1000 62 L1000 96 C860 92 800 80 726 68 C664 60 620 58 560 78 C500 98 452 146 372 150 C324 152 288 116 256 51 Z" fill="url(#tlcSeamRibbon)" />
           {/* sparkles on the dark side */}
@@ -1152,11 +1158,11 @@ const styles = `
 .tlc-pop{animation:tlcPop .45s cubic-bezier(.68,-.55,.27,1.55)}
 @keyframes tlcPop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
 
-/* ---- Illustration sizing ---- */
-.tlc-illoSvg{width:150px;height:auto;display:block;filter:drop-shadow(0 14px 26px rgba(0,0,0,.5))}
-@media (max-width:640px){ .tlc-illoSvg{width:150px;margin:0 auto} }
-.tlc-illoImg{width:252px;max-width:100%;height:auto;display:block;filter:drop-shadow(0 18px 34px rgba(0,0,0,.5))}
-@media (max-width:640px){ .tlc-illoImg{width:210px;margin:0 auto} }
+/* ---- Illustration sizing — one fixed stage so EVERY slide's art is the same size ---- */
+.tlc-illoStage{width:220px;height:192px}
+.tlc-illoSvg{width:100%;height:100%;display:block;filter:drop-shadow(0 14px 26px rgba(0,0,0,.5))}
+.tlc-illoImg{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 18px 34px rgba(0,0,0,.5))}
+@media (max-width:640px){ .tlc-illoStage{width:186px;height:162px} }
 
 /* ---- Dark-panel grid ---- */
 .tlc-grid{background-image:linear-gradient(rgba(148,163,184,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.02) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(120% 95% at 80% 15%,#000,transparent 68%);mask-image:radial-gradient(120% 95% at 80% 15%,#000,transparent 68%)}

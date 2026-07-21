@@ -1,65 +1,16 @@
 import API from "@shared/api/http";
-
-// ============================================================
-// CLOUDINARY CONFIG — .env se aata hai
-// ============================================================
-const CLOUDINARY_CLOUD_NAME    = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+import { uploadImageViaApi } from "./imageUpload";
 
 /**
- * Direct browser → Cloudinary upload (unsigned preset)
- * Backend ko sirf secure_url bhejo — file kabhi backend pe nahi jaati
+ * Vehicle image upload — backend-proxied (quota-enforced + metered).
+ * Naam legacy hai; signature same rakhi hai taaki koi caller na toote.
  *
  * @param {File} file
  * @param {(percent: number) => void} [onProgress]
  * @returns {Promise<string>} secure_url
  */
 export function uploadImageToCloudinary(file, onProgress) {
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      reject(new Error("No file selected."));
-      return;
-    }
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-      reject(new Error(
-        "Cloudinary not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env"
-      ));
-      return;
-    }
-
-    const url      = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-    const formData = new FormData();
-    formData.append("file",           file);
-    formData.append("upload_preset",  CLOUDINARY_UPLOAD_PRESET);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-
-    // Progress callback
-    xhr.upload.onprogress = (event) => {
-      if (typeof onProgress === "function" && event.lengthComputable) {
-        onProgress(Math.round((event.loaded / event.total) * 100));
-      }
-    };
-
-    xhr.onload = () => {
-      let payload;
-      try { payload = JSON.parse(xhr.responseText); } catch { payload = null; }
-
-      if (xhr.status >= 200 && xhr.status < 300 && payload?.secure_url) {
-        resolve(payload.secure_url);
-      } else {
-        reject(new Error(
-          payload?.error?.message || `Upload failed (status ${xhr.status}). Try again.`
-        ));
-      }
-    };
-
-    xhr.onerror = () => reject(new Error("Network error during upload."));
-    xhr.onabort = () => reject(new Error("Upload cancelled."));
-
-    xhr.send(formData);
-  });
+  return uploadImageViaApi("/vehicles/upload-image", file, onProgress);
 }
 
 // ============================================================
