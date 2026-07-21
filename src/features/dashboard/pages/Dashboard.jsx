@@ -531,7 +531,7 @@ export default function Dashboard() {
       {/* ══════════════════════════════════════════════════
           PAGE HEADER  (sticky)
       ══════════════════════════════════════════════════ */}
-      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-30 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between gap-4">
 
