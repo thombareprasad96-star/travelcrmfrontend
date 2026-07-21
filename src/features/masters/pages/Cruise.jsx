@@ -488,7 +488,7 @@ export default function CruiseMaster() {
       `}</style>
 
       {/* ── HEADER ── */}
-      <header className="bg-white/80 backdrop-blur-xl px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm border-b border-slate-200/60 sticky top-0 z-30 gap-3 sm:gap-4 flex-wrap">
+      <header className="bg-white/80 backdrop-blur-xl px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm border-b border-slate-200/60 gap-3 sm:gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-200 overflow-hidden flex-shrink-0">
             <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/25 to-transparent opacity-60" />
