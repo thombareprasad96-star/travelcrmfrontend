@@ -158,7 +158,7 @@ export default function SubAgentRollup() {
 
       {ledgerAgent && <LedgerDrawer agent={ledgerAgent} onClose={() => setLedgerAgent(null)} />}
 
-      <div className="bg-white/70 backdrop-blur-md border-b border-slate-100 sticky top-0 z-30">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
           <Link to="/subagents" className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50">
             <ArrowLeft size={17} />

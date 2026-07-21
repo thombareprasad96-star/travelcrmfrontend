@@ -131,6 +131,11 @@ const Navbar = memo(function Navbar({
 
   const badgeCount = unreadCount + reminderCount;
   const [company, setCompany] = useState(null);
+  const menuItems = [
+  { icon: User, label: "My Profile", path: "/CompanyProfile" },
+  { icon: Settings, label: "Settings", path: "/CompanySettings" },
+  { icon: HelpCircle, label: "Help & Support", path: "#" },
+];
 
   useEffect(() => {
     const loadCompany = () => {
@@ -423,10 +428,13 @@ const Navbar = memo(function Navbar({
               </div>
 
               {/* Footer */}
-              <div className="px-4 py-2.5 border-t border-slate-100 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
-                <span className="text-xs text-blue-600 font-semibold">
-                  View all notifications
-                </span>
+              <div
+                onClick={() => navigate("/Notifications")}
+                className="px-4 py-2.5 border-t border-slate-100 text-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer"
+               >
+              <span className="text-xs text-blue-600 font-semibold">
+                 View all notifications
+              </span>
               </div>
             </div>
           )}
@@ -469,21 +477,20 @@ const Navbar = memo(function Navbar({
               </div>
 
               {/* Menu Links */}
-              <div className="py-2">
-                {[
-                  { icon: User,       label: "My Profile" },
-                  { icon: Settings,   label: "Settings" },
-                  { icon: HelpCircle, label: "Help & Support" },
-                ].map(({ icon: Icon, label }) => (
-                  <button
-                    key={label}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors text-left"
-                  >
-                    <Icon size={16} className="text-slate-400" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              
+
+<div className="py-2">
+  {menuItems.map(({ icon: Icon, label, path }) => (
+    <button
+      key={label}
+      onClick={() => navigate(path)}
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors text-left"
+    >
+      <Icon size={16} className="text-slate-400" />
+      <span>{label}</span>
+    </button>
+  ))}
+</div>
 
               {/* Logout Button */}
               <div className="border-t border-slate-100 py-2">
