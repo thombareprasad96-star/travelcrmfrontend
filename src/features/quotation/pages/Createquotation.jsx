@@ -1080,6 +1080,8 @@ export default function CreateQuotation() {
 
   const [leadData,    setLeadData]    = useState(null);
   const [leadLoading, setLeadLoading] = useState(false);
+  const [destinationId, setDestinationId] = useState(null);
+
 
   const [flightData,      setFlightData]      = useState({});
   const [hotelData,       setHotelData]       = useState({});
@@ -1129,6 +1131,11 @@ export default function CreateQuotation() {
         const res  = await leadService.getLeadById(leadId);
         const data = res.data?.data || res.data || {};
         setLeadData(data);
+        setDestinationId(
+          data.itinerary?.[0]?.Id ||
+          data.itinerary?.[0]?.id ||
+          null
+        );
         if (!qtTitle) {
           const dest     = data.itinerary?.[0]?.destination || "";
           const nights   = data.itinerary?.[0]?.nights || "";
@@ -1187,6 +1194,7 @@ export default function CreateQuotation() {
   /* ── Collect all data ─ */
   const collectAllData = useCallback(() => ({
     leadId,
+    destinationId,
     title:   qtTitle || "Quotation",
     version,
     stage,
@@ -1232,7 +1240,7 @@ export default function CreateQuotation() {
     markup:   summaryData.markup   || 0,
   // leadData bhi dep hai — svcOn() isi se derive hota hai, warna lead aane ke baad bhi
   // ye callback purane (sab-ON) gate ke saath memoized reh jaata.
-  }), [leadId, leadData, qtTitle, version, stage, templateStyle,
+  }), [leadId,destinationId, leadData, qtTitle, version, stage, templateStyle,
        flightData, hotelData, sightseeingData, cruiseData,
        vehicleData, addonData, inclusionsData, summaryData]);
 

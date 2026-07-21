@@ -8,6 +8,7 @@ import API from "@shared/api/http";
 export function buildQuotationPayload({
   // Basic Info
   leadId       = null,
+  destinationId = null,
   title        = "Quotation",
   version      = "v1.0",
   stage        = "Draft",
@@ -74,6 +75,7 @@ export function buildQuotationPayload({
 } = {}) {  // ← default empty object — prevents crash if called with no args
   return {
     leadId,
+    destinationId,
     title,
     version,
     stage,

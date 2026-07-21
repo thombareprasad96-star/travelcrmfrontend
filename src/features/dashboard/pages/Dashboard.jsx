@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { leadService } from "@features/leads";
 import { bookingService } from "@features/bookings";
+import dashboardService from "../api/dashboardService";
 import { profileUserService as userService } from "@features/profile";
 import { companyService } from "@features/settings";
 import { activityReportsService } from "@features/reports";
@@ -27,7 +28,14 @@ const EMPTY_O = {
   recentUsers:[], recentActivity:[],
 };
 
-const PERIODS = ["Today","Weekly","Monthly","Yearly"];
+const DEFAULT_PERIOD = "month";
+const periodOptions = [
+  { label: "Today", value: "today" },
+  { label: "Weekly", value: "week" },
+  { label: "Monthly", value: "month" },
+  { label: "Yearly", value: "year" },
+  { label: "Custom", value: "custom" },
+];
 const TIER = { gold:"🥇", silver:"🥈", bronze:"🥉" };
 const fmtINR = n => `₹${Number(n).toLocaleString("en-IN")}`;
 
@@ -234,20 +242,86 @@ function OperationsSkeleton() {
    MAIN DASHBOARD COMPONENT
 ═════════════════════════════════════════════════════════════ */
 /* ─── DATA BUILDER HELPERS ──────────────────────────────────── */
+const toToken = (value) =>
+  String(value || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+
+const parseValidDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const startOfDay = (date) => {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+};
+
+const endOfDay = (date) => {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
+  return next;
+};
+
+const getDateRange = (period, fromDate, toDate) => {
+  const now = new Date();
+
+  if (period === "custom") {
+    const from = parseValidDate(fromDate);
+    const to = parseValidDate(toDate);
+    return {
+      from: from ? startOfDay(from) : null,
+      to: to ? endOfDay(to) : null,
+    };
+  }
+
+  const to = endOfDay(now);
+  const from = startOfDay(now);
+
+  if (period === "week") from.setDate(from.getDate() - 6);
+  if (period === "month") from.setDate(1);
+  if (period === "year") {
+    from.setMonth(0);
+    from.setDate(1);
+  }
+
+  return { from, to };
+};
+
+const rowDate = (row, fields) => {
+  for (const field of fields) {
+    const date = parseValidDate(row?.[field]);
+    if (date) return date;
+  }
+  return null;
+};
+
+const withinRange = (date, from, to) =>
+  !!date && (!from || date >= from) && (!to || date <= to);
+
+function filterDashboardData(leads, bookings, period, fromDate, toDate) {
+  const { from, to } = getDateRange(period, fromDate, toDate);
+  return {
+    leads: leads.filter(l => withinRange(rowDate(l, ["createdAt", "travelDate"]), from, to)),
+    bookings: bookings.filter(b => withinRange(rowDate(b, ["bookingDate", "createdAt", "travelDate"]), from, to)),
+  };
+}
+
 function buildAnalytics(leads, bookings) {
   const total     = leads.length;
-  const converted = leads.filter(l => l.leadStage === "Converted" || l.leadStage === "Ready to Book").length;
-  const hotLeads  = leads.filter(l => l.leadType === "Hot").length;
+  const converted = leads.filter(l => ["CONVERTED", "READY_TO_BOOK"].includes(toToken(l.leadStage))).length;
+  const hotLeads  = leads.filter(l => ["HOT", "VIP"].includes(toToken(l.leadType))).length;
   const rate      = total > 0 ? +((converted / total) * 100).toFixed(2) : 0;
+  const activeBookings = bookings.filter(b => !["CANCELLED", "REFUNDED"].includes(toToken(b.status)));
 
   // Revenue / profit from bookings
-  const revenue = bookings.reduce((s, b) => s + (Number(b.customerAmount) || 0), 0);
-  const profit  = bookings.reduce((s, b) => s + (Number(b.netProfit)      || 0), 0);
-  const refunds = bookings.filter(b => b.status === "Refunded")
+  const revenue = activeBookings.reduce((s, b) => s + (Number(b.customerAmount) || 0), 0);
+  const profit  = activeBookings.reduce((s, b) => s + (Number(b.netProfit)      || 0), 0);
+  const refunds = bookings.filter(b => toToken(b.status) === "REFUNDED")
                           .reduce((s, b) => s + (Number(b.totalPayable) || 0), 0);
   const netMargin = revenue > 0 ? +((profit / revenue) * 100).toFixed(1) : 0;
-  const wins      = bookings.filter(b => b.status === "Confirmed" || b.status === "Completed").length;
-  const winRate   = bookings.length > 0 ? +((wins / bookings.length) * 100).toFixed(2) : 0;
+  const wins      = activeBookings.filter(b => ["CONFIRMED", "COMPLETED"].includes(toToken(b.status))).length;
+  const winRate   = activeBookings.length > 0 ? +((wins / activeBookings.length) * 100).toFixed(2) : 0;
 
   // Lead sources
   const srcMap = {};
@@ -256,28 +330,23 @@ function buildAnalytics(leads, bookings) {
   const leadSources = Object.entries(srcMap)
     .sort((a,b) => b[1]-a[1]).slice(0,7)
     .map(([name,value],i) => ({ name, value, color: SRC_COLORS[i] || "#94a3b8" }));
-
-    // console.log(leadSources) 
   // Top destinations from bookings
   const destMap = {};
-  bookings.forEach(b => {
+  activeBookings.forEach(b => {
     const d = b.destinationSnapshot || b.destination || "Other";
     if (!destMap[d]) destMap[d] = { bookings:0, revenue:0 };
     destMap[d].bookings++;
     destMap[d].revenue += Number(b.customerAmount) || 0;
   });
-  
-  console.log(bookings)
+
   const topDestinations = Object.entries(destMap)
     .sort((a,b) => b[1].bookings - a[1].bookings).slice(0,5)
     .map(([name,v]) => ({ name, ...v }));
 
-console.log(topDestinations)
-
   // Revenue timeline (last 6 months)
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const timeMap = {};
-  bookings.forEach(b => {
+  activeBookings.forEach(b => {
     const d = new Date(b.bookingDate || b.createdAt || Date.now());
     const k = MONTHS[d.getMonth()];
     if (!timeMap[k]) timeMap[k] = { month:k, revenue:0, bookings:0 };
@@ -297,10 +366,10 @@ console.log(topDestinations)
     const u = l.assignedUser?.fullName || l.assignedUser?.name || l.assignTo || "Unassigned";
     if (!perfMap[u]) perfMap[u] = { name:u, leads:0, conversions:0, revenue:0, profit:0 };
     perfMap[u].leads++;
-    if (l.leadStage === "Converted") perfMap[u].conversions++;
+    if (toToken(l.leadStage) === "CONVERTED") perfMap[u].conversions++;
   });
-  bookings.forEach(b => {
-    const u = b.assignedUser?.fullName || b.assignedUser?.name || "Unassigned";
+  activeBookings.forEach(b => {
+    const u = b.assignedUserName || b.assignedUser?.fullName || b.assignedUser?.name || "Unassigned";
     if (!perfMap[u]) perfMap[u] = { name:u, leads:0, conversions:0, revenue:0, profit:0 };
     perfMap[u].revenue += Number(b.customerAmount) || 0;
     perfMap[u].profit  += Number(b.netProfit)      || 0;
@@ -316,7 +385,7 @@ console.log(topDestinations)
   // Priority followups — leads with upcoming travel dates or overdue reminders
   const today = new Date(); today.setHours(0,0,0,0);
   const priorityFollowups = leads
-    .filter(l => l.leadStage !== "Converted" && l.leadStage !== "Lost")
+    .filter(l => !["CONVERTED", "LOST"].includes(toToken(l.leadStage)))
     .filter(l => l.leadLogs?.some(log => log.followUpDate && new Date(log.followUpDate) <= today))
     .slice(0, 5)
     .map(l => {
@@ -339,7 +408,7 @@ console.log(topDestinations)
                travelDate: travel.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}),
                stage:l.leadStage, daysLeft:diff };
     })
-    .filter(l => l.daysLeft >= 0 && l.daysLeft <= 30)
+    .filter(l => l.daysLeft >= 0 && l.daysLeft <= 10)
     .sort((a,b) => a.daysLeft - b.daysLeft)
     .slice(0, 5);
 
@@ -356,6 +425,60 @@ console.log(topDestinations)
    falling back to the raw body for endpoints that return it unwrapped. */
 const unwrapRes = (r) =>
   (r?.data && typeof r.data === "object" && "data" in r.data) ? r.data.data : r?.data;
+
+const metricNumber = (value) => Number(value) || 0;
+const asArray = (value) => Array.isArray(value) ? value : [];
+const numberFields = (item = {}, fields = []) => {
+  const base = item && typeof item === "object" ? item : {};
+  return fields.reduce((acc, field) => ({ ...acc, [field]: metricNumber(acc[field]) }), { ...base });
+};
+
+const normalizeDashboardAnalytics = (data = {}) => {
+  const next = { ...EMPTY_D, ...(data || {}) };
+  return {
+    ...next,
+    totalLeads: metricNumber(next.totalLeads),
+    convertedLeads: metricNumber(next.convertedLeads),
+    conversionRate: metricNumber(next.conversionRate),
+    revenue: metricNumber(next.revenue),
+    profit: metricNumber(next.profit),
+    netMargin: metricNumber(next.netMargin),
+    refunds: metricNumber(next.refunds),
+    winRate: metricNumber(next.winRate),
+    hotLeads: metricNumber(next.hotLeads),
+    leadSources: asArray(next.leadSources).map(item => numberFields(item, ["value"])),
+    topDestinations: asArray(next.topDestinations).map(item => numberFields(item, ["bookings", "revenue"])),
+    revenueTimeline: asArray(next.revenueTimeline).map(item => numberFields(item, ["revenue", "bookings"])),
+    topPerformersConv: asArray(next.topPerformersConv).map(item =>
+      numberFields(item, ["rank", "leads", "conversions", "revenue", "profit", "rate"])),
+    topPerformersProfit: asArray(next.topPerformersProfit).map(item =>
+      numberFields(item, ["rank", "leads", "conversions", "revenue", "profit", "margin", "converted"])),
+    priorityFollowups: asArray(next.priorityFollowups),
+    nearTravelDates: asArray(next.nearTravelDates).map(item => numberFields(item, ["daysLeft"])),
+  };
+};
+
+async function fetchClientAnalytics({ period = DEFAULT_PERIOD, from = "", to = "" } = {}) {
+  const [leadsRes, bookingsRes] = await Promise.all([
+    leadService.getAllLeads(),
+    bookingService.getAll(0, 500),
+  ]);
+
+  const leadsRaw = leadsRes.data?.data ?? leadsRes.data ?? [];
+  const leads = Array.isArray(leadsRaw?.content) ? leadsRaw.content
+              : Array.isArray(leadsRaw) ? leadsRaw : [];
+
+  const bookRaw = bookingsRes.data?.data ?? bookingsRes.data ?? [];
+  const bookings = Array.isArray(bookRaw?.content) ? bookRaw.content
+                 : Array.isArray(bookRaw) ? bookRaw : [];
+
+  const filtered = filterDashboardData(leads, bookings, period, from, to);
+  return {
+    leads,
+    bookings,
+    analytics: buildAnalytics(filtered.leads, filtered.bookings),
+  };
+}
 
 /* Initials from a name, e.g. "Nepal Tours And Travels" → "NT" */
 // (name || "") — NOT a `= ""` default parameter. A default only fires on `undefined`, so a null
@@ -417,12 +540,17 @@ function buildOperations({ users, company, subscription, activity }) {
 export default function Dashboard() {
   const navigate   = useNavigate();
   const [tab,      setTab]     = useState("analytics");
-  const [period,   setPeriod]  = useState("Yearly");
+  const [period,   setPeriod]  = useState(DEFAULT_PERIOD);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [greeting, setGreeting] = useState("");
+
 
   // Real data state
   const [D,       setD]       = useState(EMPTY_D);
   const [O,       setO]       = useState(EMPTY_O);
+  const [allLeads, setAllLeads] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opsLoaded, setOpsLoaded] = useState(false);
   const [opsLoading, setOpsLoading] = useState(true);
@@ -442,31 +570,65 @@ export default function Dashboard() {
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const [leadsRes, bookingsRes] = await Promise.all([
-        leadService.getAllLeads(),
-        bookingService.getAll(0, 500),
-      ]);
-
-      // Normalise leads
-      const leadsRaw  = leadsRes.data?.data ?? leadsRes.data ?? [];
-      const leads     = Array.isArray(leadsRaw?.content) ? leadsRaw.content
-                      : Array.isArray(leadsRaw) ? leadsRaw : [];
-
-      // Normalise bookings
-      const bookRaw   = bookingsRes.data?.data ?? bookingsRes.data ?? [];
-      const bookings  = Array.isArray(bookRaw?.content) ? bookRaw.content
-                      : Array.isArray(bookRaw) ? bookRaw : [];
-
-      setD(buildAnalytics(leads, bookings));
-    } catch (err) {
-      console.error("Dashboard fetch error:", err);
-      setToast({ msg:"Failed to load dashboard data.", type:"error" });
+      const analytics = await dashboardService.getAnalytics({ period: DEFAULT_PERIOD });
+      setD(normalizeDashboardAnalytics(analytics));
+      setAllLeads([]);
+      setAllBookings([]);
+    } catch {
+      try {
+        const fallback = await fetchClientAnalytics({ period: DEFAULT_PERIOD });
+        setAllLeads(fallback.leads);
+        setAllBookings(fallback.bookings);
+        setD(normalizeDashboardAnalytics(fallback.analytics));
+      } catch (fallbackErr) {
+        console.error("Dashboard fetch error:", fallbackErr);
+        setToast({ msg:"Failed to load dashboard data.", type:"error" });
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+
+  const applyCurrentFilter = useCallback(async () => {
+    if (period === "custom") {
+      const from = parseValidDate(fromDate);
+      const to = parseValidDate(toDate);
+
+      if (!from || !to) {
+        setToast({ msg:"Please select both custom dates.", type:"error" });
+        return;
+      }
+      if (from > to) {
+        setToast({ msg:"From date cannot be after to date.", type:"error" });
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const analytics = await dashboardService.getAnalytics({ period, from: fromDate, to: toDate });
+      setD(normalizeDashboardAnalytics(analytics));
+    } catch {
+      try {
+        if (allLeads.length || allBookings.length) {
+          const filtered = filterDashboardData(allLeads, allBookings, period, fromDate, toDate);
+          setD(normalizeDashboardAnalytics(buildAnalytics(filtered.leads, filtered.bookings)));
+        } else {
+          const fallback = await fetchClientAnalytics({ period, from: fromDate, to: toDate });
+          setAllLeads(fallback.leads);
+          setAllBookings(fallback.bookings);
+          setD(normalizeDashboardAnalytics(fallback.analytics));
+        }
+      } catch (fallbackErr) {
+        console.error("Dashboard filter error:", fallbackErr);
+        setToast({ msg:"Failed to apply dashboard filter.", type:"error" });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [allLeads, allBookings, period, fromDate, toDate]);
 
   /* ── FETCH OPERATIONS DATA (users · company · subscription · activity) ── */
   const fetchOperations = useCallback(async () => {
@@ -501,6 +663,8 @@ export default function Dashboard() {
       fetchOperations();
     }
   }, [tab, opsLoaded, fetchOperations]);
+
+  const selectedPeriodLabel = periodOptions.find(p => p.value === period)?.label || "Monthly";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100"
@@ -609,10 +773,18 @@ export default function Dashboard() {
               <span className="font-bold text-slate-600">Period:</span>
               <select value={period} onChange={e=>setPeriod(e.target.value)}
                 className="bg-transparent text-slate-700 font-bold text-sm outline-none cursor-pointer pl-1">
-                {PERIODS.map(p=><option key={p}>{p}</option>)}
+                {periodOptions.map(p=><option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+            {period === "custom" && (
+              <>
+                <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200/60 bg-white/80 text-sm font-bold text-slate-700 outline-none shadow-sm" />
+                <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-slate-200/60 bg-white/80 text-sm font-bold text-slate-700 outline-none shadow-sm" />
+              </>
+            )}
+            <button onClick={applyCurrentFilter} className="flex items-center gap-2 px-4 py-2.5 rounded-xl
               bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold
               shadow-md shadow-blue-200 hover:shadow-lg transition-all">
               <FiFilter className="w-3.5 h-3.5"/> Apply Filter
@@ -624,7 +796,7 @@ export default function Dashboard() {
 
           {/* ── Row 1: 4 Hero Cards ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <HeroCard icon={<FaUsers/>}      label="Total Leads"     value={D.totalLeads}     sub="Yearly overview"      from="from-blue-600"   to="to-indigo-700"  delay={0}   trend={12}/>
+            <HeroCard icon={<FaUsers/>}      label="Total Leads"     value={D.totalLeads}     sub={`${selectedPeriodLabel} overview`}      from="from-blue-600"   to="to-indigo-700"  delay={0}   trend={12}/>
             <HeroCard icon={<FaCheckCircle/>} label="Converted Leads" value={D.convertedLeads} sub={`${D.conversionRate}% rate`} from="from-green-500" to="to-emerald-700" delay={60}  trend={0}/>
             <HeroCard icon={<FaRupeeSign/>}  label="Agency Revenue"  value={D.revenue}        sub="Total bookings value" from="from-teal-500"   to="to-cyan-700"    delay={120} isINR trend={28}/>
             <HeroCard icon={<FaChartLine/>}  label="Net Profit"      value={D.profit}         sub={`${D.netMargin}% margin`}  from="from-amber-500" to="to-orange-700"  delay={180} isINR trend={15}/>
