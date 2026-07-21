@@ -40,6 +40,7 @@ export default function CreateLead() {
     },
   });
 
+  console.log(handleSubmit)
   const [selectedServices, setSelectedServices] = useState(["hotel"]);
   const [itinerary, setItinerary] = useState([{ id: nextId++, destination: "", city: "", nights: 2 }]);
   const [submitting, setSubmitting] = useState(false);

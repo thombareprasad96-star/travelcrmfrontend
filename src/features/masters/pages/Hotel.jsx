@@ -589,7 +589,7 @@ export default function HotelMaster() {
       )}
 
       {/* ── Page Header ── */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-20 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
 

@@ -288,6 +288,7 @@ export default function PermissionTemplates() {
               </div>
             </div>
             <button
+              onClick={() => navigate("/SubscriptionInfo")}
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold shadow-md shadow-teal-200 transition-all">
               <FiExternalLink className="w-3.5 h-3.5" /> View Subscription Details
             </button>
