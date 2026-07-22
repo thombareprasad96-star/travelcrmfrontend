@@ -5,14 +5,7 @@ import { Activity,ArrowLeft,BarChart3,Check,ChevronRight,Copy,Globe2,Inbox,Link2
 
 import leadSourceService from "../api/leadSourceService";
 
-/* -------------------------------------------------------------------------- */
-/* Presentation                                                               */
-/* -------------------------------------------------------------------------- */
-/* Every channel gets ONE accent used consistently: a small gradient icon chip
-   (cards, drawer headers, buttons) plus a soft badge/ring/shadow tint. Nothing
-   paints an entire card or header in saturated color anymore — the accent is a
-   detail, not the background, which is what keeps the "premium" cards (stat
-   cards, channel cards) calm and readable instead of a rainbow grid. */
+
 
 const CHANNEL_UI = {
   WEBSITE_FORM: {
