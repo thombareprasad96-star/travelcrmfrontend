@@ -16,7 +16,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus, Search, Pen as Edit2, Trash2, X, CheckCircle, AlertTriangle, Network,
-  PauseCircle, PlayCircle, ChevronRight, Percent, IndianRupee, Palette, Users,
+  PauseCircle, PlayCircle, ChevronRight, ChevronDown,
+  ChevronUp, Percent, IndianRupee, Palette, Users,
   Clock, CreditCard, Banknote, Wallet,
 } from "lucide-react";
 import subAgentService from "../api/subAgentService";
@@ -464,6 +465,8 @@ export default function SubAgents() {
   const [deleting, setDeleting] = useState(false);
   const [busyId, setBusyId] = useState(null);
 
+  const [subAgentStatsOpen, setSubAgentStatsOpen] = useState(false);
+
   const load = () => {
     setLoading(true);
     Promise.all([
@@ -599,11 +602,94 @@ export default function SubAgents() {
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* stats */}
-        <div className="grid grid-cols-3 gap-4">
+        {/* <div className="grid grid-cols-3 gap-4">
           <StatCard gradient="from-blue-500 to-blue-600" icon={Users} label="Total" value={stats.total} />
           <StatCard gradient="from-emerald-500 to-emerald-600" icon={CheckCircle} label="Active" value={stats.active} />
           <StatCard gradient="from-amber-500 to-amber-600" icon={Clock} label="Awaiting license" value={stats.pending} />
+        </div> */}
+
+        {/* ── COLLAPSIBLE TRAVEL PARTNER ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() =>
+      setSubAgentStatsOpen((previous) => !previous)
+    }
+    aria-expanded={subAgentStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <Network size={16} className="text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Travel Partner Analytics
+        </span>
+      </div>
+
+      {/* Compact values shown when cards are closed */}
+      {!subAgentStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            {stats.total} Total
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+            {stats.active} Active
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+            {stats.pending} Awaiting License
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {subAgentStatsOpen ? (
+        <ChevronUp size={16} />
+      ) : (
+        <ChevronDown size={16} />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      subAgentStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 pt-1">
+        <StatCard
+          gradient="from-blue-500 to-blue-600"
+          icon={Users}
+          label="Total"
+          value={stats.total}
+        />
+
+        <StatCard
+          gradient="from-emerald-500 to-emerald-600"
+          icon={CheckCircle}
+          label="Active"
+          value={stats.active}
+        />
+
+        <StatCard
+          gradient="from-amber-500 to-amber-600"
+          icon={Clock}
+          label="Awaiting License"
+          value={stats.pending}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* list card */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

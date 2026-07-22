@@ -1998,6 +1998,46 @@ function CommonPagination({ pageIndex, pageSize, totalElements, totalPages, goTo
 }
 
 /* ─── STAT CARD ──────────────────────────────────────── */
+// function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }) {
+//   const [displayed, setDisplayed] = useState(0);
+//   useEffect(() => {
+//     let start = 0;
+//     const target = typeof value === 'number' ? value : 0;
+//     if (target === 0) { setDisplayed(0); return; }
+//     const step = Math.ceil(target / 60);
+//     const interval = setInterval(() => {
+//       start = Math.min(start + step, target);
+//       setDisplayed(start);
+//       if (start >= target) clearInterval(interval);
+//     }, 16);
+//     return () => clearInterval(interval);
+//   }, [value]);
+
+//   return (
+//     <div
+//       className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-5 sm:p-6 text-white
+//         shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-pointer group fade-up`}
+//       style={{ animationDelay: `${delay}ms` }}
+//     >
+//       {/* Decorative overlapping circles — same treatment as the Vendors cards */}
+//       <span className="pointer-events-none absolute -right-6 -bottom-12 w-40 h-40 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors" />
+//       <span className="pointer-events-none absolute right-6 bottom-2 w-20 h-20 rounded-full bg-white/10" />
+//       <span className="pointer-events-none absolute -right-8 -top-8 w-28 h-28 rounded-full bg-white/5" />
+
+//       <div className="relative z-10">
+//         <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/20 group-hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all mb-4 sm:mb-5">
+//           <Icon size={22} strokeWidth={2.2} />
+//         </div>
+//         <p className="text-3xl sm:text-4xl font-extrabold leading-none tracking-tight mb-1.5">
+//           {displayed.toLocaleString('en-IN')}{suffix}
+//         </p>
+//         <p className="text-xs font-bold uppercase tracking-widest text-white/80">{label}</p>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }) {
   const [displayed, setDisplayed] = useState(0);
   useEffect(() => {
@@ -2019,7 +2059,6 @@ function StatCard({ icon: Icon, label, value, suffix = '', gradient, delay = 0 }
         shadow-lg hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-pointer group fade-up`}
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* Decorative overlapping circles — same treatment as the Vendors cards */}
       <span className="pointer-events-none absolute -right-6 -bottom-12 w-40 h-40 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors" />
       <span className="pointer-events-none absolute right-6 bottom-2 w-20 h-20 rounded-full bg-white/10" />
       <span className="pointer-events-none absolute -right-8 -top-8 w-28 h-28 rounded-full bg-white/5" />
@@ -3163,6 +3202,8 @@ const Leads = () => {
 
   const [expanded, setExpanded] = useState({});   // TanStack expansion (kept single-open below)
 
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+
   const [viewLead, setViewLead] = useState(null);
   // ── editLead state removed — Edit now navigates to /EditLead/:id ──
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -3444,12 +3485,54 @@ const Leads = () => {
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={Users} label="Total Leads" value={safeLeads.length} gradient="from-cyan-400 via-teal-500 to-teal-600" delay={0} />
           <StatCard icon={Trophy} label="Bookings" value={stats.bookings} gradient="from-emerald-400 via-green-500 to-green-600" delay={60} />
           <StatCard icon={PieChart} label="Conversion" value={stats.conversion} suffix="%" gradient="from-amber-400 via-orange-500 to-orange-600" delay={120} />
           <StatCard icon={TrendingUp} label="Win Rate" value={stats.winRate} suffix="%" gradient="from-rose-400 via-red-500 to-red-600" delay={180} />
-        </div>
+        </div> */}
+
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+  {/* Collapsed/expanded toggle bar — always visible */}
+  <button
+    onClick={() => setAnalyticsOpen(o => !o)}
+    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors text-left"
+  >
+    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+      <BarChart3 size={16} />
+    </div>
+    <span className="text-sm font-extrabold text-slate-700 flex-shrink-0">Analytics</span>
+
+    {/* Summary pills — only shown when collapsed, exactly like reference bar */}
+    {!analyticsOpen && (
+      <div className="flex items-center gap-2 flex-wrap ml-1">
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-100 text-teal-700 border border-teal-200">{safeLeads.length} Leads</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">{stats.bookings} Booked</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">{stats.conversion}% Conv.</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">{stats.winRate}% Win</span>
+      </div>
+    )}
+
+    <ChevronDown
+      size={16}
+      className="text-slate-400 ml-auto flex-shrink-0 transition-transform duration-300"
+      style={{ transform: analyticsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    />
+  </button>
+
+  {/* Full gradient cards — only rendered when open */}
+  {analyticsOpen && (
+    <div
+      className="grid grid-cols-2 md:grid-cols-4 gap-4 px-5 pb-5"
+      style={{ animation: 'fadeIn .25s ease both' }}
+    >
+      <StatCard icon={Users} label="Total Leads" value={safeLeads.length} gradient="from-cyan-400 via-teal-500 to-teal-600" delay={0} />
+      <StatCard icon={Trophy} label="Bookings" value={stats.bookings} gradient="from-emerald-400 via-green-500 to-green-600" delay={60} />
+      <StatCard icon={PieChart} label="Conversion" value={stats.conversion} suffix="%" gradient="from-amber-400 via-orange-500 to-orange-600" delay={120} />
+      <StatCard icon={TrendingUp} label="Win Rate" value={stats.winRate} suffix="%" gradient="from-rose-400 via-red-500 to-red-600" delay={180} />
+    </div>
+  )}
+</div>
 
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
 

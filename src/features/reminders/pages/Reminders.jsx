@@ -1953,6 +1953,8 @@ export default function Reminders() {
   const [toast,     setToast]     = useState(null);
   const [view,      setView]      = useState("grid");
 
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+
   const showToast = useCallback((msg, type = "success") => setToast({ msg, type }), []);
 
   /* ── FETCH REAL DATA ── */
@@ -2167,6 +2169,7 @@ export default function Reminders() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn  { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
         @keyframes popIn   { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
         .fade-up { animation:fadeUp .4s ease both; }
         select { -webkit-appearance:none; appearance:none; }
@@ -2209,7 +2212,7 @@ export default function Reminders() {
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {STAT_CARDS.map(({ gradient, icon, label, value }, i) => (
             <div key={label}
               className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300`}
@@ -2221,7 +2224,55 @@ export default function Reminders() {
               </div>
             </div>
           ))}
+        </div> */}
+
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+  {/* Collapsed/expanded toggle bar — default closed */}
+  <button
+    onClick={() => setAnalyticsOpen(o => !o)}
+    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors text-left"
+  >
+    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+      <FiBell className="w-4 h-4" />
+    </div>
+    <span className="text-sm font-extrabold text-slate-700 flex-shrink-0">Analytics</span>
+
+    {/* Summary pills — only shown when collapsed */}
+    {!analyticsOpen && (
+      <div className="flex items-center gap-2 flex-wrap ml-1">
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 border border-cyan-200">{stats.total} Total</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">{stats.active} Active</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200">{stats.overdue} Overdue</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">{stats.completed} Completed</span>
+      </div>
+    )}
+
+    <FiChevronDown
+      className="w-4 h-4 text-slate-400 ml-auto flex-shrink-0 transition-transform duration-300"
+      style={{ transform: analyticsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    />
+  </button>
+
+  {/* Full gradient cards — only rendered when open */}
+  {analyticsOpen && (
+    <div
+      className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-5 pb-5"
+      style={{ animation: "fadeIn .25s ease both" }}
+    >
+      {STAT_CARDS.map(({ gradient, icon, label, value }, i) => (
+        <div key={label}
+          className={`bg-gradient-to-br ${gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300`}
+          style={{ animation:"fadeUp .4s ease both", animationDelay:`${i*60}ms` }}>
+          <div className="absolute -right-3 -bottom-3 text-white/20 text-7xl pointer-events-none">{icon}</div>
+          <div className="relative z-10">
+            <p className="text-3xl font-extrabold">{value}</p>
+            <p className="text-xs font-bold uppercase tracking-widest opacity-85 mt-1">{label}</p>
+          </div>
         </div>
+      ))}
+    </div>
+  )}
+</div>
 
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm p-4">
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-wrap">

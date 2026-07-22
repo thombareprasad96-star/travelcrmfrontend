@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
-import { Search, Plus, Eye, Pencil, Trash2, X, Upload, Home, Star, CheckCircle, XCircle, Users, MessageSquare, ArrowUp, ArrowDown, ChevronDown, Inbox } from "lucide-react";
+import { Search, Plus, Eye, Pencil, Trash2, X, Upload, Home, Star, CheckCircle, XCircle, Users, MessageSquare, ArrowUp, ArrowDown, ChevronDown, ChevronUp, Inbox } from "lucide-react";
 
 /* ─── PAGINATION ─────────────────────────────────────────── */
 function buildPageNumbers(totalPages, pageIndex) {
@@ -464,6 +464,9 @@ export default function TestimonialsPage() {
   const [sortOrder,    setSortOrder]    = useState("desc");
   const [modal,        setModal]        = useState(null);
   const [loading,      setLoading]      = useState(false);
+
+  const [testimonialStatsOpen, setTestimonialStatsOpen] = useState(false);
+
   const nextId = useRef(INITIAL_TESTIMONIALS.length + 1);
 
   // Pagination
@@ -582,7 +585,7 @@ export default function TestimonialsPage() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* STAT CARDS */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {[
             { icon: MessageSquare, label: "Total Testimonials", value: testimonials.length, gradient: "from-cyan-500 to-cyan-600",     delay: 0   },
             { icon: CheckCircle,   label: "Active",              value: activeCount,          gradient: "from-green-500 to-emerald-600", delay: 60  },
@@ -605,7 +608,133 @@ export default function TestimonialsPage() {
               </div>
             </div>
           ))}
+        </div> */}
+
+
+        {/* ── COLLAPSIBLE TESTIMONIAL ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden fade-up">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() =>
+      setTestimonialStatsOpen((previous) => !previous)
+    }
+    aria-expanded={testimonialStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <MessageSquare size={16} className="text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Testimonial Analytics
+        </span>
+      </div>
+
+      {/* Small values displayed when cards are closed */}
+      {!testimonialStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-700 text-[11px] font-bold">
+            {testimonials.length} Testimonials
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+            {activeCount} Active
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold">
+            {visibleCount} Visible
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {testimonialStatsOpen ? (
+        <ChevronUp size={16} />
+      ) : (
+        <ChevronDown size={16} />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      testimonialStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 p-4 pt-1">
+        {[
+          {
+            icon: MessageSquare,
+            label: "Total Testimonials",
+            value: testimonials.length,
+            gradient: "from-cyan-500 to-cyan-600",
+            delay: 0,
+          },
+          {
+            icon: CheckCircle,
+            label: "Active",
+            value: activeCount,
+            gradient: "from-green-500 to-emerald-600",
+            delay: 60,
+          },
+          {
+            icon: Users,
+            label: "Visible on Website",
+            value: visibleCount,
+            gradient: "from-violet-500 to-violet-600",
+            delay: 120,
+          },
+        ].map(
+          ({
+            icon: Icon,
+            label,
+            value,
+            gradient,
+            delay,
+          }) => (
+            <div
+              key={label}
+              className={`bg-gradient-to-br ${gradient}
+                rounded-2xl p-5 text-white shadow-lg relative
+                overflow-hidden group hover:-translate-y-1
+                hover:shadow-xl transition-all duration-300 fade-up`}
+              style={{
+                animationDelay: `${delay}ms`,
+              }}
+            >
+              <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
+
+              <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-300" />
+
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all">
+                    <Icon size={20} strokeWidth={2.2} />
+                  </div>
+                </div>
+
+                <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
+                  {value}
+                </p>
+
+                <p className="text-xs font-bold uppercase tracking-widest opacity-80">
+                  {label}
+                </p>
+              </div>
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* MAIN CARD */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

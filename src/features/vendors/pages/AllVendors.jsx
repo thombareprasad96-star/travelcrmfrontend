@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import vendorService from "../api/vendorService";
-import { Search as FiSearch, Plus as FiPlus, Pen as FiEdit2, Trash2 as FiTrash2, Eye as FiEye, Download as FiDownload, Phone as FiPhone, Mail as FiMail, MapPin as FiMapPin, Star as FiStar, CircleCheck as FiCheckCircle, Hotel as FaHotel, Plane as FaPlane, Bus as FaBus, MapPinned as FaMapMarkedAlt, Handshake as FaHandshake, Percent as FaPercentage, Star as FaStar, Banknote as FaMoneyBillWave, Star as FaRegStar, BadgeCheck as MdVerified, Sparkles as HiSparkles } from "lucide-react";
+import { Search as FiSearch, Plus as FiPlus, Pen as FiEdit2, Trash2 as FiTrash2, Eye as FiEye, Download as FiDownload, Phone as FiPhone, Mail as FiMail, MapPin as FiMapPin, Star as FiStar, ChevronDown as FiChevronDown,
+         ChevronUp as FiChevronUp, CircleCheck as FiCheckCircle, Hotel as FaHotel, Plane as FaPlane, Bus as FaBus, MapPinned as FaMapMarkedAlt, Handshake as FaHandshake, Percent as FaPercentage, Star as FaStar, Banknote as FaMoneyBillWave, Star as FaRegStar, BadgeCheck as MdVerified, Sparkles as HiSparkles } from "lucide-react";
 import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
 
 
@@ -465,6 +466,9 @@ export default function Vendors() {
   const [sortKey,  setSortKey]  = useState("id");
   const [sortDir,  setSortDir]  = useState("asc");
   const [page,     setPage]     = useState(1);
+
+  const [vendorStatsOpen, setVendorStatsOpen] = useState(false);
+
   const PER = 8;
 
   const [viewV,    setView]     = useState(null);
@@ -644,7 +648,7 @@ export default function Vendors() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5 space-y-5">
 
         {/* ── STAT CARDS ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { gradient:"from-cyan-500 to-cyan-600",    icon:FaHandshake,    label:"Total Vendors",    value:stats.total,    money:false, delay:0   },
             { gradient:"from-green-500 to-emerald-600",icon:FiCheckCircle,  label:"Active Vendors",   value:stats.active,   money:false, delay:60  },
@@ -655,7 +659,118 @@ export default function Vendors() {
               <StatCard {...c}/>
             </div>
           ))}
+        </div> */}
+
+        {/* ── COLLAPSIBLE VENDOR ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden fade-up">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() =>
+      setVendorStatsOpen((previous) => !previous)
+    }
+    aria-expanded={vendorStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <FaHandshake className="w-4 h-4 text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Vendor Analytics
+        </span>
+      </div>
+
+      {/* Compact values shown while cards are closed */}
+      {!vendorStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-700 text-[11px] font-bold">
+            {stats.total} Vendors
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+            {stats.active} Active
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+            Cost {fmtINR(stats.cost)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">
+            Rating {stats.avgRating.toFixed(1)}
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {vendorStatsOpen ? (
+        <FiChevronUp className="w-4 h-4" />
+      ) : (
+        <FiChevronDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      vendorStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 pt-1">
+        {[
+          {
+            gradient: "from-cyan-500 to-cyan-600",
+            icon: FaHandshake,
+            label: "Total Vendors",
+            value: stats.total,
+            money: false,
+            delay: 0,
+          },
+          {
+            gradient: "from-green-500 to-emerald-600",
+            icon: FiCheckCircle,
+            label: "Active Vendors",
+            value: stats.active,
+            money: false,
+            delay: 60,
+          },
+          {
+            gradient: "from-amber-500 to-orange-500",
+            icon: FaMoneyBillWave,
+            label: "Total Vendor Costs",
+            value: stats.cost,
+            money: true,
+            delay: 120,
+          },
+          {
+            gradient: "from-rose-500 to-red-500",
+            icon: FiStar,
+            label: "Avg. Rating",
+            value: Math.round(stats.avgRating * 10) / 10,
+            money: false,
+            delay: 180,
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="fade-up"
+            style={{
+              animationDelay: `${card.delay}ms`,
+            }}
+          >
+            <StatCard {...card} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* ── VENDOR DISTRIBUTION ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm p-5 fade-up">

@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { UserPlus as FiUserPlus, Search as FiSearch, Pen as FiEdit2, Trash2 as FiTrash2, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Shield as FiShield, Users as FaUsers, UserCheck as FaUserCheck, UserX as FaUserTimes, ShieldUser as FaUserShield, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight } from "lucide-react";
+import { UserPlus as FiUserPlus, Search as FiSearch, Pen as FiEdit2, Trash2 as FiTrash2, ChevronLeft as FiChevronLeft, ChevronRight as FiChevronRight, Shield as FiShield, Users as FaUsers, UserCheck as FaUserCheck, UserX as FaUserTimes, ShieldUser as FaUserShield, ChevronsLeft as FaAngleDoubleLeft, ChevronsRight as FaAngleDoubleRight, ChevronDown as FiChevronDown,
+ChevronUp as FiChevronUp } from "lucide-react";
 
 
 import userService from "../api/profileUserService";
@@ -136,7 +137,12 @@ export default function Users() {
   const [loading,    setLoading]    = useState(true);
   const [toast,      setToast]      = useState(null);
   const [page,       setPage]       = useState(1);
+
+  const [userStatsOpen, setUserStatsOpen] = useState(false);
+
   const perPage = 8;
+
+
 
   // Only delete + reset modals remain inline
   const [deleteUser, setDeleteUser] = useState(null);
@@ -270,7 +276,7 @@ export default function Users() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* ── STAT CARDS ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { icon:FaUsers,      label:"Total Users",    value:stats.total,    gradient:"from-cyan-500 to-cyan-600",     delay:0   },
             { icon:FaUserCheck,  label:"Active Users",   value:stats.active,   gradient:"from-green-500 to-emerald-600", delay:60  },
@@ -281,7 +287,114 @@ export default function Users() {
               <StatCard {...c}/>
             </div>
           ))}
+        </div> */}
+
+        {/* ── COLLAPSIBLE USER ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden fade-up">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() =>
+      setUserStatsOpen((previous) => !previous)
+    }
+    aria-expanded={userStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <FaUsers className="w-4 h-4 text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          User Analytics
+        </span>
+      </div>
+
+      {/* Compact values displayed when cards are closed */}
+      {!userStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-700 text-[11px] font-bold">
+            {stats.total} Users
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+            {stats.active} Active
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+            {stats.inactive} Inactive
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 text-[11px] font-bold">
+            {stats.admins} Admins
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {userStatsOpen ? (
+        <FiChevronUp className="w-4 h-4" />
+      ) : (
+        <FiChevronDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      userStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 pt-1">
+        {[
+          {
+            icon: FaUsers,
+            label: "Total Users",
+            value: stats.total,
+            gradient: "from-cyan-500 to-cyan-600",
+            delay: 0,
+          },
+          {
+            icon: FaUserCheck,
+            label: "Active Users",
+            value: stats.active,
+            gradient: "from-green-500 to-emerald-600",
+            delay: 60,
+          },
+          {
+            icon: FaUserTimes,
+            label: "Inactive Users",
+            value: stats.inactive,
+            gradient: "from-slate-500 to-slate-600",
+            delay: 120,
+          },
+          {
+            icon: FaUserShield,
+            label: "Admins",
+            value: stats.admins,
+            gradient: "from-purple-500 to-purple-600",
+            delay: 180,
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="fade-up"
+            style={{
+              animationDelay: `${card.delay}ms`,
+            }}
+          >
+            <StatCard {...card} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* ── USER LIST CARD ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

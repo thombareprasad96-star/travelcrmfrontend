@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";                     
 import { useNavigate } from "react-router-dom";
-import { Save as FiSave, RefreshCw as FiRefreshCw, Info as FiInfo, ChevronDown as FiChevronDown, CircleAlert as FiAlertCircle, Bell as FaBell, UserPlus as FaUserPlus, Phone as FaPhoneAlt, UserCheck as FaUserCheck, ReceiptText as FaFileInvoiceDollar, Handshake as FaHandshake, Banknote as FaMoneyBillWave, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle } from "lucide-react";
+import { Save as FiSave, RefreshCw as FiRefreshCw, Info as FiInfo, ChevronDown as FiChevronDown, CircleAlert as FiAlertCircle, Bell as FaBell, UserPlus as FaUserPlus, Phone as FaPhoneAlt, UserCheck as FaUserCheck, ReceiptText as FaFileInvoiceDollar, Handshake as FaHandshake, Banknote as FaMoneyBillWave, CircleCheck as FaCheckCircle, CircleX as FaTimesCircle, ChevronUp as FiChevronUp,
+BarChart3 as FiBarChart3, } from "lucide-react";
 
 import notificationSettingsService from "../api/notificationSettingsService";
 
@@ -211,6 +212,7 @@ export default function NotificationSettings() {
   const [toast,   setToast]   = useState(null);
 
   const showToast = useCallback((msg, type = "success") => setToast({ msg, type }), []);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   /* ── LOAD from backend ── */
   useEffect(() => {
@@ -350,7 +352,7 @@ export default function NotificationSettings() {
         </div>
 
         {/* SUMMARY STATS */}
-        {!loading && (
+        {/* {!loading && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {SUMMARY.map((s, i) => (
               <div key={s.label}
@@ -368,7 +370,106 @@ export default function NotificationSettings() {
               </div>
             ))}
           </div>
+        )} */}
+
+        {/* SUMMARY STATS */}
+{!loading && (
+  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+    {/* Open/close header */}
+    <button
+      type="button"
+      onClick={() => setSummaryOpen((previous) => !previous)}
+      aria-expanded={summaryOpen}
+      className="w-full px-4 py-3 flex items-center justify-between gap-3
+        hover:bg-slate-50 transition-colors"
+    >
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <FiBarChart3 className="w-4 h-4 text-blue-600" />
+
+          <span className="text-sm font-extrabold text-slate-700">
+            Settings Summary
+          </span>
+        </div>
+
+        {/* Small badges shown when cards are closed */}
+        {!summaryOpen && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+              {stages.length} Total
+            </span>
+
+            <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+              {activeCount} Active
+            </span>
+
+            <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+              {highCount} High Priority
+            </span>
+
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+              {disabledCount} Disabled
+            </span>
+          </div>
         )}
+      </div>
+
+      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+        {summaryOpen ? (
+          <FiChevronUp className="w-4 h-4" />
+        ) : (
+          <FiChevronDown className="w-4 h-4" />
+        )}
+      </div>
+    </button>
+
+    {/* Expandable cards */}
+    <div
+      className={`grid transition-all duration-300 ease-in-out ${
+        summaryOpen
+          ? "grid-rows-[1fr] opacity-100"
+          : "grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-4 pt-1">
+          {SUMMARY.map((s, i) => (
+            <div
+              key={s.label}
+              className={`bg-gradient-to-br ${s.grad}
+                rounded-2xl p-4 text-white relative overflow-hidden
+                shadow-md hover:shadow-lg hover:-translate-y-0.5
+                transition-all duration-200 ring-1 ring-white/10`}
+              style={{
+                animation: "fadeUp .4s ease both",
+                animationDelay: `${i * 50}ms`,
+              }}
+            >
+              <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold leading-none">
+                    {s.value}
+                  </p>
+
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest opacity-80 mt-1.5">
+                    {s.label}
+                  </p>
+                </div>
+
+                <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+                  {s.icon}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* SKELETON */}
         {loading && (
