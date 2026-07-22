@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Map, ChevronDown, ChevronRight, Search, Plus, Eye, X, Clock, Building2, Globe, Hash, Info, UploadCloud, Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, List, ListOrdered, Eraser, MapPin, AlertTriangle, Pencil, Trash2, Sparkles, Navigation } from "lucide-react";
+import { Map, ChevronDown, ChevronUp, ChevronRight, Search, Plus, Eye, X, Clock, Building2, Globe, Hash, Info, UploadCloud, Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, List, ListOrdered, Eraser, MapPin, AlertTriangle, Pencil, Trash2, Sparkles, Navigation } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { sightseeingService, transformSightseeingResponse } from "../api/SightseeingService";
@@ -757,6 +757,8 @@ export default function SightseeingMaster() {
   const [filterDest,  setFilterDest]  = useState("");
   const [filterCity,  setFilterCity]  = useState("");
 
+  const [sightseeingStatsOpen, setSightseeingStatsOpen] = useState(false);
+
   // Save ke baad rows ko refresh trigger karne ke liye
   const [refreshSignal, setRefreshSignal] = useState(0);
 
@@ -765,6 +767,7 @@ export default function SightseeingMaster() {
   const [viewDest,      setViewDest]      = useState(null);
   const [viewItems,     setViewItems]     = useState([]);
   const [viewLoading,   setViewLoading]   = useState(false);
+
 
   const openView = (dest, items, loading) => {
     setViewDest(dest);
@@ -891,25 +894,152 @@ export default function SightseeingMaster() {
       </div>
 
       {/* STATS ROW — colorful gradient cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        {[
-          { label: "Destinations",      value: destinations.length,                                        icon: Globe,    grad: "from-blue-500 to-blue-600",       glow: "shadow-blue-500/30" },
-          { label: "Total Attractions", value: destinations.reduce((a, d) => a + getAttractionsCount(d), 0), icon: Sparkles, grad: "from-emerald-500 to-teal-600",    glow: "shadow-emerald-500/30" },
-          { label: "Cities Covered",    value: destinations.reduce((a, d) => a + getCitiesCount(d), 0),      icon: Building2, grad: "from-violet-500 to-fuchsia-600", glow: "shadow-violet-500/30" },
-        ].map(({ label, value, icon: Icon, grad, glow }) => (
-          <div key={label} className={`relative bg-gradient-to-br ${grad} rounded-2xl p-5 shadow-lg ${glow} overflow-hidden text-white hover:shadow-xl hover:-translate-y-0.5 transition-all group`}>
-            {/* decorative circles — dashboard jaise */}
-            <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 group-hover:bg-white/15 transition-colors" />
-            <div className="absolute -bottom-10 -right-2 w-20 h-20 rounded-full bg-white/5" />
-            {/* icon watermark */}
-            <Icon size={60} className="absolute right-4 bottom-3 text-white/15" strokeWidth={2} />
-            <div className="relative">
-              <p className="text-[11px] font-bold text-white/80 uppercase tracking-wider m-0">{label}</p>
-              <p className="text-3xl font-black m-0 mt-2 leading-none">{destLoading ? "…" : value}</p>
-            </div>
-          </div>
-        ))}
+      
+      {/* ── COLLAPSIBLE SIGHTSEEING ANALYTICS ── */}
+<div className="mb-6 sm:mb-8 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+  {/* Open/close header */}
+  <button
+    type="button"
+    onClick={() =>
+      setSightseeingStatsOpen((previous) => !previous)
+    }
+    aria-expanded={sightseeingStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <Map size={16} className="text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Sightseeing Analytics
+        </span>
       </div>
+
+      {/* Small values shown when cards are closed */}
+      {!sightseeingStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            {destLoading ? "…" : destinations.length} Destinations
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+            {destLoading
+              ? "…"
+              : destinations.reduce(
+                  (total, destination) =>
+                    total + getAttractionsCount(destination),
+                  0
+                )}{" "}
+            Attractions
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold">
+            {destLoading
+              ? "…"
+              : destinations.reduce(
+                  (total, destination) =>
+                    total + getCitiesCount(destination),
+                  0
+                )}{" "}
+            Cities
+          </span>
+        </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {sightseeingStatsOpen ? (
+        <ChevronUp size={16} />
+      ) : (
+        <ChevronDown size={16} />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      sightseeingStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 p-4 pt-1">
+        {[
+          {
+            label: "Destinations",
+            value: destinations.length,
+            icon: Globe,
+            grad: "from-blue-500 to-blue-600",
+            glow: "shadow-blue-500/30",
+          },
+          {
+            label: "Total Attractions",
+            value: destinations.reduce(
+              (total, destination) =>
+                total + getAttractionsCount(destination),
+              0
+            ),
+            icon: Sparkles,
+            grad: "from-emerald-500 to-teal-600",
+            glow: "shadow-emerald-500/30",
+          },
+          {
+            label: "Cities Covered",
+            value: destinations.reduce(
+              (total, destination) =>
+                total + getCitiesCount(destination),
+              0
+            ),
+            icon: Building2,
+            grad: "from-violet-500 to-fuchsia-600",
+            glow: "shadow-violet-500/30",
+          },
+        ].map(
+          ({
+            label,
+            value,
+            icon: Icon,
+            grad,
+            glow,
+          }) => (
+            <div
+              key={label}
+              className={`relative bg-gradient-to-br ${grad}
+                rounded-2xl p-5 shadow-lg ${glow}
+                overflow-hidden text-white hover:shadow-xl
+                hover:-translate-y-0.5 transition-all group`}
+            >
+              <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10 group-hover:bg-white/15 transition-colors" />
+
+              <div className="absolute -bottom-10 -right-2 w-20 h-20 rounded-full bg-white/5" />
+
+              <Icon
+                size={60}
+                className="absolute right-4 bottom-3 text-white/15"
+                strokeWidth={2}
+              />
+
+              <div className="relative">
+                <p className="text-[11px] font-bold text-white/80 uppercase tracking-wider m-0">
+                  {label}
+                </p>
+
+                <p className="text-3xl font-black m-0 mt-2 leading-none">
+                  {destLoading ? "…" : value}
+                </p>
+              </div>
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+      
 
       {/* MAIN CARD */}
       <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

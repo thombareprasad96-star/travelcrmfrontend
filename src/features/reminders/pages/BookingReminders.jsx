@@ -8,7 +8,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send as FiSend, Clock as FiClock, CircleCheck as FiCheckCircle, Filter as FiFilter, RefreshCw as FiRefreshCw, Trash2 as FiTrash2, Eye as FiEye, Phone as FiPhone, Calendar as FiCalendar, MapPin as FiMapPin, Plane as FaPlane, BookUser as FaPassport, Banknote as FaMoneyBillWave, PlaneTakeoff as FaPlaneDeparture, ReceiptText as FaFileInvoiceDollar, Luggage as FaSuitcaseRolling, PlaneTakeoff as MdOutlineFlightTakeoff } from "lucide-react";
+import { Send as FiSend, Clock as FiClock, CircleCheck as FiCheckCircle, Filter as FiFilter, RefreshCw as FiRefreshCw, Trash2 as FiTrash2, Eye as FiEye, Phone as FiPhone, Calendar as FiCalendar, MapPin as FiMapPin, Plane as FaPlane, BookUser as FaPassport, Banknote as FaMoneyBillWave, PlaneTakeoff as FaPlaneDeparture, ReceiptText as FaFileInvoiceDollar, Luggage as FaSuitcaseRolling, PlaneTakeoff as MdOutlineFlightTakeoff ,ChevronDown as FiChevronDown} from "lucide-react";
 import { WhatsAppIcon as FaWhatsapp } from "@shared/ui/WhatsAppIcon";
 
 
@@ -316,6 +316,7 @@ export default function BookingReminders() {
   const [toast,     setToast]     = useState(null);
   const [viewItem,  setViewItem]  = useState(null);
   const [delItem,   setDelItem]   = useState(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   useEffect(() => {
   setLoading(true);
@@ -451,6 +452,7 @@ export default function BookingReminders() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         @keyframes slideIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn  { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
         @keyframes popIn   { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
         .fade-up { animation: fadeUp .4s ease both; }
         select { -webkit-appearance:none; appearance:none; }
@@ -496,7 +498,7 @@ export default function BookingReminders() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* ── STAT CARDS ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {STAT_CARDS.map((card, i) => (
             <div key={card.label}
               className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
@@ -515,7 +517,63 @@ export default function BookingReminders() {
               </div>
             </div>
           ))}
+        </div> */}
+
+
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 shadow-sm overflow-hidden fade-up">
+  {/* Collapsed/expanded toggle bar — default closed */}
+  <button
+    onClick={() => setAnalyticsOpen(o => !o)}
+    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-slate-50/60 transition-colors text-left"
+  >
+    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+      <FaPlane className="w-4 h-4" />
+    </div>
+    <span className="text-sm font-extrabold text-slate-700 flex-shrink-0">Analytics</span>
+
+    {/* Summary pills — only shown when collapsed */}
+    {!analyticsOpen && (
+      <div className="flex items-center gap-2 flex-wrap ml-1">
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-cyan-100 text-cyan-700 border border-cyan-200">{stats.total} Total</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">{stats.pending} Pending</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">{stats.sent} Sent</span>
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">{stats.completed} Completed</span>
+      </div>
+    )}
+
+    <FiChevronDown
+      className="w-4 h-4 text-slate-400 ml-auto flex-shrink-0 transition-transform duration-300"
+      style={{ transform: analyticsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+    />
+  </button>
+
+  {/* Full gradient cards — only rendered when open */}
+  {analyticsOpen && (
+    <div
+      className="grid grid-cols-2 sm:grid-cols-4 gap-4 px-5 pb-5"
+      style={{ animation: "fadeIn .25s ease both" }}
+    >
+      {STAT_CARDS.map((card, i) => (
+        <div key={card.label}
+          className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
+            hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer fade-up`}
+          style={{ animationDelay: `${i * 60}ms` }}>
+          <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform" />
+          <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10" />
+          <div className="relative z-10">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">{card.icon}</div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
+              <AnimNum target={card.value} />
+            </p>
+            <p className="text-xs font-bold uppercase tracking-widest opacity-80">{card.label}</p>
+          </div>
         </div>
+      ))}
+    </div>
+  )}
+</div>
 
         {/* ── FILTER BAR ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-100 shadow-sm px-5 py-4">

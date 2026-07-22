@@ -324,6 +324,8 @@ export default function Customers() {
   const [loading, setLoading]        = useState(true);
   const [toast, setToast]            = useState(null);
 
+  const [customerStatsOpen, setCustomerStatsOpen] = useState(false);
+
   const showToast = useCallback((msg, type = "success") => setToast({ msg, type }), []);
 
   /* ── Load customers ── */
@@ -471,7 +473,7 @@ export default function Customers() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* ── STAT CARDS ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
           {[
             { icon:FaUsers,     label:"Total Customers", value:stats.total,    gradient:"from-cyan-500 to-cyan-600",    delay:0   },
             { icon:FaUserCheck, label:"Active Customers",value:stats.active,   gradient:"from-green-500 to-emerald-600",delay:60  },
@@ -484,7 +486,134 @@ export default function Customers() {
               <StatCard {...c}/>
             </div>
           ))}
+        </div> */}
+
+        {/* ── COLLAPSIBLE CUSTOMER ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden fade-up">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() => setCustomerStatsOpen((previous) => !previous)}
+    aria-expanded={customerStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3
+      hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <FaUsers className="w-4 h-4 text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Customer Analytics
+        </span>
+      </div>
+
+      {/* Compact values visible when cards are closed */}
+      {!customerStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-700 text-[11px] font-bold">
+            {stats.total} Customers
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+            {stats.active} Active
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+            {stats.vip} VIP
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            Revenue {fmtINR(stats.revenue)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold">
+            {stats.bookings} Bookings
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">
+            {stats.repeat} Repeat
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {customerStatsOpen ? (
+        <FaSortUp className="w-4 h-4" />
+      ) : (
+        <FaSortDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable six cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      customerStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 p-4 pt-1">
+        {[
+          {
+            icon: FaUsers,
+            label: "Total Customers",
+            value: stats.total,
+            gradient: "from-cyan-500 to-cyan-600",
+            delay: 0,
+          },
+          {
+            icon: FaUserCheck,
+            label: "Active Customers",
+            value: stats.active,
+            gradient: "from-green-500 to-emerald-600",
+            delay: 60,
+          },
+          {
+            icon: FaCrown,
+            label: "VIP Customers",
+            value: stats.vip,
+            gradient: "from-amber-500 to-orange-500",
+            delay: 120,
+          },
+          {
+            icon: FaRupeeSign,
+            label: "Total Revenue",
+            value: stats.revenue,
+            gradient: "from-blue-600 to-blue-700",
+            delay: 180,
+          },
+          {
+            icon: FaPlane,
+            label: "Total Bookings",
+            value: stats.bookings,
+            gradient: "from-indigo-500 to-indigo-600",
+            delay: 240,
+          },
+          {
+            icon: FaRedoAlt,
+            label: "Repeat Customers",
+            value: stats.repeat,
+            gradient: "from-rose-500 to-pink-600",
+            delay: 300,
+            sub: "3+ trips",
+          },
+        ].map((c) => (
+          <div
+            key={c.label}
+            className="fade-up"
+            style={{ animationDelay: `${c.delay}ms` }}
+          >
+            <StatCard {...c} />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* ── CUSTOMER LIST CARD ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

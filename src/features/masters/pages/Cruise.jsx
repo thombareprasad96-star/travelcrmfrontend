@@ -446,6 +446,8 @@ export default function CruiseMaster() {
   const [viewingCruise, setViewingCruise]= useState(null);
   const [deletingCruise,setDeletingCruise]=useState(null);
   const [hoveredRow,    setHoveredRow]   = useState(null);
+
+  const [cruiseStatsOpen, setCruiseStatsOpen] = useState(false);
   const nextId = useRef(SEED.length + 1);
 
   const filtered = cruises.filter(
@@ -520,7 +522,7 @@ export default function CruiseMaster() {
       {/* ── MAIN ── */}
       <main className="max-w-7xl mx-auto p-4 sm:p-6 pb-16">
         {/* stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
             { label: "Total Cruises",    value: cruises.length,  gradient: "from-blue-500 to-indigo-600",   icon: "🚢" },
             { label: "Total Room Types", value: totalRooms,      gradient: "from-amber-500 to-orange-600",  icon: "🛏️" },
@@ -538,7 +540,121 @@ export default function CruiseMaster() {
               </div>
             </div>
           ))}
+        </div> */}
+
+
+        {/* ── COLLAPSIBLE CRUISE ANALYTICS ── */}
+<div className="mb-6 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() => setCruiseStatsOpen((previous) => !previous)}
+    aria-expanded={cruiseStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3
+      hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <span className="text-base">🚢</span>
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Cruise Analytics
+        </span>
+      </div>
+
+      {/* Small values visible when cards are closed */}
+      {!cruiseStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            {cruises.length} Cruises
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold">
+            {totalRooms} Room Types
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+            Avg. {fmt(avgPrice)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-[11px] font-bold">
+            {filtered.length} Results
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0 text-xs font-black">
+      {cruiseStatsOpen ? "▲" : "▼"}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      cruiseStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-4 pt-1">
+        {[
+          {
+            label: "Total Cruises",
+            value: cruises.length,
+            gradient: "from-blue-500 to-indigo-600",
+            icon: "🚢",
+          },
+          {
+            label: "Total Room Types",
+            value: totalRooms,
+            gradient: "from-amber-500 to-orange-600",
+            icon: "🛏️",
+          },
+          {
+            label: "Avg. Room Price",
+            value: fmt(avgPrice),
+            gradient: "from-emerald-500 to-green-600",
+            icon: "💰",
+          },
+          {
+            label: "Search Results",
+            value: filtered.length,
+            gradient: "from-rose-500 to-red-600",
+            icon: "🔍",
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient}
+              rounded-2xl p-4 sm:p-5 shadow-lg ring-1 ring-white/10
+              hover:-translate-y-0.5 transition-transform`}
+          >
+            <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+
+            <div className="relative flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center text-xl shadow-inner flex-shrink-0">
+                {stat.icon}
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-xl sm:text-2xl font-black text-white leading-none truncate">
+                  {stat.value}
+                </p>
+
+                <p className="text-[10px] sm:text-xs text-white/70 mt-1 font-semibold uppercase tracking-wider">
+                  {stat.label}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* table */}
         <div className="bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm">

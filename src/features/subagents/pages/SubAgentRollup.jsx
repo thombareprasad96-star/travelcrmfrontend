@@ -7,7 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, Users, CalendarDays, Wallet, HandCoins, TrendingUp,
-  X, Loader2, ReceiptText, ArrowUpRight, ArrowDownRight,
+  X, Loader2, ReceiptText, ArrowUpRight, ArrowDownRight, ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import subAgentService from "../api/subAgentService";
 import { toast } from "@shared/ui/toast";
@@ -130,6 +131,8 @@ export default function SubAgentRollup() {
   const [loading, setLoading] = useState(true);
   const [ledgerAgent, setLedgerAgent] = useState(null);
 
+  const [rollupStatsOpen, setRollupStatsOpen] = useState(false);
+
   useEffect(() => {
     setLoading(true);
     subAgentService.getRollup()
@@ -175,13 +178,118 @@ export default function SubAgentRollup() {
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard gradient="from-blue-500 to-blue-600" icon={Users} label="Travel Partners" text={rows.length} />
           <StatCard gradient="from-indigo-500 to-indigo-600" icon={CalendarDays} label="Bookings" text={totals.bookings} />
           <StatCard gradient="from-sky-500 to-sky-600" icon={TrendingUp} label="Revenue" text={fmtINR(totals.revenue)} />
           <StatCard gradient="from-teal-500 to-teal-600" icon={Wallet} label="Collected" text={fmtINR(totals.collected)} />
           <StatCard gradient="from-amber-500 to-amber-600" icon={HandCoins} label="Commission" text={fmtINR(totals.commission)} />
+        </div> */}
+
+        {/* ── COLLAPSIBLE ROLL-UP ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() =>
+      setRollupStatsOpen((previous) => !previous)
+    }
+    aria-expanded={rollupStatsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <TrendingUp size={16} className="text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Roll-up & Commission Analytics
+        </span>
+      </div>
+
+      {/* Compact values visible when cards are closed */}
+      {!rollupStatsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            {rows.length} Partners
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold">
+            {totals.bookings} Bookings
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-sky-100 text-sky-700 text-[11px] font-bold">
+            Revenue {fmtINR(totals.revenue)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-teal-100 text-teal-700 text-[11px] font-bold">
+            Collected {fmtINR(totals.collected)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+            Commission {fmtINR(totals.commission)}
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {rollupStatsOpen ? (
+        <ChevronUp size={16} />
+      ) : (
+        <ChevronDown size={16} />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      rollupStatsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 p-4 pt-1">
+        <StatCard
+          gradient="from-blue-500 to-blue-600"
+          icon={Users}
+          label="Travel Partners"
+          text={rows.length}
+        />
+
+        <StatCard
+          gradient="from-indigo-500 to-indigo-600"
+          icon={CalendarDays}
+          label="Bookings"
+          text={totals.bookings}
+        />
+
+        <StatCard
+          gradient="from-sky-500 to-sky-600"
+          icon={TrendingUp}
+          label="Revenue"
+          text={fmtINR(totals.revenue)}
+        />
+
+        <StatCard
+          gradient="from-teal-500 to-teal-600"
+          icon={Wallet}
+          label="Collected"
+          text={fmtINR(totals.collected)}
+        />
+
+        <StatCard
+          gradient="from-amber-500 to-amber-600"
+          icon={HandCoins}
+          label="Commission"
+          text={fmtINR(totals.commission)}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* table */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

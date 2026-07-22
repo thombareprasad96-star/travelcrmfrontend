@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Download, RefreshCw, FileSpreadsheet, Receipt } from "lucide-react";
+import { BarChart3, Download, RefreshCw, FileSpreadsheet, Receipt, ChevronDown,
+  ChevronUp, } from "lucide-react";
 import { useToast } from "@shared/ui/toast";
 import { isAlreadyReported, getErrorMessage } from "@shared/api/apiError";
 import { downloadBlob, hydrateBlobError } from "@shared/lib/download";
@@ -20,6 +21,8 @@ export default function AccountingReports() {
   const [pnl, setPnl] = useState(null);
   const [gst, setGst] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [reportStatsOpen, setReportStatsOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,24 +61,166 @@ export default function AccountingReports() {
 
       <Pills options={TABS} value={tab} onChange={setTab} />
 
-      {loading ? <Panel><Loading label="Loading reports…" /></Panel>
-        : tab === "pnl" ? <PnlView data={pnl} /> : <GstView data={gst} />}
+      {loading ? (
+  <Panel>
+    <Loading label="Loading reports…" />
+  </Panel>
+) : tab === "pnl" ? (
+  <PnlView
+    data={pnl}
+    statsOpen={reportStatsOpen}
+    setStatsOpen={setReportStatsOpen}
+  />
+) : (
+  <GstView
+    data={gst}
+    statsOpen={reportStatsOpen}
+    setStatsOpen={setReportStatsOpen}
+  />
+)}
     </Page>
   );
 }
 
-function PnlView({ data }) {
+function PnlView({ data, statsOpen, setStatsOpen }) {
   if (!data) return <Panel><EmptyBlock icon={BarChart3} title="No P&L data" hint="Issue invoices and raise bills to populate the P&L." /></Panel>;
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         <Hero label="Taxable Revenue" value={data.taxableRevenue} money gradient="from-emerald-500 to-green-600" icon={<BarChart3 className="w-5 h-5" />} delay={0} />
         <Hero label="Vendor Cost (net)" value={data.vendorCostNet} money gradient="from-amber-500 to-orange-500" icon={<FileSpreadsheet className="w-5 h-5" />} delay={50} />
         <Hero label="Gross Margin" value={data.grossMargin} money sub={pct(data.grossMarginPct)} gradient="from-violet-500 to-purple-600" icon={<BarChart3 className="w-5 h-5" />} delay={100} />
         <Hero label="Net GST Payable" value={data.netGstPayable} money gradient="from-rose-500 to-red-600" icon={<Receipt className="w-5 h-5" />} delay={150} />
         <Hero label="TCS Collected" value={data.tcsCollected} money gradient="from-teal-500 to-cyan-600" icon={<Receipt className="w-5 h-5" />} delay={200} />
         <Hero label="TDS Deducted" value={data.tdsDeducted} money gradient="from-blue-500 to-indigo-600" icon={<Receipt className="w-5 h-5" />} delay={250} />
+      </div> */}
+
+      {/* ── COLLAPSIBLE P&L ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() => setStatsOpen((previous) => !previous)}
+    aria-expanded={statsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <BarChart3 className="w-4 h-4 text-emerald-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Profit & Loss Analytics
+        </span>
       </div>
+
+      {/* Compact values displayed while closed */}
+      {!statsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+            Revenue {inr(data.taxableRevenue)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+            Cost {inr(data.vendorCostNet)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold">
+            Margin {inr(data.grossMargin)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">
+            GST {inr(data.netGstPayable)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-teal-100 text-teal-700 text-[11px] font-bold">
+            TCS {inr(data.tcsCollected)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            TDS {inr(data.tdsDeducted)}
+          </span>
+        </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {statsOpen ? (
+        <ChevronUp className="w-4 h-4" />
+      ) : (
+        <ChevronDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      statsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 p-4 pt-1">
+        <Hero
+          label="Taxable Revenue"
+          value={data.taxableRevenue}
+          money
+          gradient="from-emerald-500 to-green-600"
+          icon={<BarChart3 className="w-5 h-5" />}
+          delay={0}
+        />
+
+        <Hero
+          label="Vendor Cost (net)"
+          value={data.vendorCostNet}
+          money
+          gradient="from-amber-500 to-orange-500"
+          icon={<FileSpreadsheet className="w-5 h-5" />}
+          delay={50}
+        />
+
+        <Hero
+          label="Gross Margin"
+          value={data.grossMargin}
+          money
+          sub={pct(data.grossMarginPct)}
+          gradient="from-violet-500 to-purple-600"
+          icon={<BarChart3 className="w-5 h-5" />}
+          delay={100}
+        />
+
+        <Hero
+          label="Net GST Payable"
+          value={data.netGstPayable}
+          money
+          gradient="from-rose-500 to-red-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={150}
+        />
+
+        <Hero
+          label="TCS Collected"
+          value={data.tcsCollected}
+          money
+          gradient="from-teal-500 to-cyan-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={200}
+        />
+
+        <Hero
+          label="TDS Deducted"
+          value={data.tdsDeducted}
+          money
+          gradient="from-blue-500 to-indigo-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={250}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 
       <Panel className="p-5">
         <div className="mb-4 flex items-center justify-between">
@@ -122,18 +267,144 @@ function PnlView({ data }) {
   );
 }
 
-function GstView({ data }) {
+function GstView({ data, statsOpen, setStatsOpen }) {
   if (!data) return <Panel><EmptyBlock icon={Receipt} title="No GST data" hint="Issue GST tax invoices to populate the summary." /></Panel>;
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         <Hero label="Total Taxable" value={data.totalTaxable} money gradient="from-blue-500 to-indigo-600" icon={<Receipt className="w-5 h-5" />} delay={0} />
         <Hero label="CGST" value={data.totalCgst} money gradient="from-emerald-500 to-green-600" icon={<Receipt className="w-5 h-5" />} delay={50} />
         <Hero label="SGST" value={data.totalSgst} money gradient="from-teal-500 to-cyan-600" icon={<Receipt className="w-5 h-5" />} delay={100} />
         <Hero label="IGST" value={data.totalIgst} money gradient="from-violet-500 to-purple-600" icon={<Receipt className="w-5 h-5" />} delay={150} />
         <Hero label="Input GST (ITC)" value={data.inputGst} money gradient="from-amber-500 to-orange-500" icon={<Receipt className="w-5 h-5" />} delay={200} />
         <Hero label="Net GST Payable" value={data.netGstPayable} money gradient="from-rose-500 to-red-600" icon={<Receipt className="w-5 h-5" />} delay={250} />
+      </div> */}
+
+      {/* ── COLLAPSIBLE GST ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() => setStatsOpen((previous) => !previous)}
+    aria-expanded={statsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <Receipt className="w-4 h-4 text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          GST Analytics
+        </span>
       </div>
+
+      {/* Compact values displayed while closed */}
+      {!statsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            Taxable {inr(data.totalTaxable)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+            CGST {inr(data.totalCgst)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-teal-100 text-teal-700 text-[11px] font-bold">
+            SGST {inr(data.totalSgst)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold">
+            IGST {inr(data.totalIgst)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[11px] font-bold">
+            ITC {inr(data.inputGst)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold">
+            Payable {inr(data.netGstPayable)}
+          </span>
+        </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {statsOpen ? (
+        <ChevronUp className="w-4 h-4" />
+      ) : (
+        <ChevronDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      statsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 p-4 pt-1">
+        <Hero
+          label="Total Taxable"
+          value={data.totalTaxable}
+          money
+          gradient="from-blue-500 to-indigo-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={0}
+        />
+
+        <Hero
+          label="CGST"
+          value={data.totalCgst}
+          money
+          gradient="from-emerald-500 to-green-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={50}
+        />
+
+        <Hero
+          label="SGST"
+          value={data.totalSgst}
+          money
+          gradient="from-teal-500 to-cyan-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={100}
+        />
+
+        <Hero
+          label="IGST"
+          value={data.totalIgst}
+          money
+          gradient="from-violet-500 to-purple-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={150}
+        />
+
+        <Hero
+          label="Input GST (ITC)"
+          value={data.inputGst}
+          money
+          gradient="from-amber-500 to-orange-500"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={200}
+        />
+
+        <Hero
+          label="Net GST Payable"
+          value={data.netGstPayable}
+          money
+          gradient="from-rose-500 to-red-600"
+          icon={<Receipt className="w-5 h-5" />}
+          delay={250}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="blue">B2B: {data.b2bInvoiceCount}</Badge>

@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell as FiBell, Mail as FiMail, Clock as FiClock, TriangleAlert as FiAlertTriangle, Check as FiCheck, Trash2 as FiTrash2, RefreshCw as FiRefreshCw, BellOff as FiBellOff, Banknote as FaMoneyBillWave, BookUser as FaPassport, CircleAlert as FaExclamationCircle, MailCheck as MdOutlineMarkEmailRead } from "lucide-react";
+import { Bell as FiBell, Mail as FiMail, Clock as FiClock, TriangleAlert as FiAlertTriangle, Check as FiCheck, Trash2 as FiTrash2, RefreshCw as FiRefreshCw, BellOff as FiBellOff, Banknote as FaMoneyBillWave, BookUser as FaPassport, CircleAlert as FaExclamationCircle, MailCheck as MdOutlineMarkEmailRead,ChevronDown as FiChevronDown,
+ChevronUp as FiChevronUp,
+BarChart3 as FiBarChart3, } from "lucide-react";
 
 
 import notificationService from "../api/notificationService";
@@ -223,6 +225,7 @@ export default function Notifications() {
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
   const [delItem,  setDelItem]  = useState(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -311,12 +314,39 @@ export default function Notifications() {
 
   const resetFilters = () => setFilter("All Notifications");
 
+  // const STAT_CARDS = [
+  //   { gradient:"from-cyan-500 to-cyan-600",  icon:<FiBell className="w-5 h-5"/>,            label:"Total Notifications", value:stats.total       },
+  //   { gradient:"from-amber-500 to-orange-500",icon:<FiMail className="w-5 h-5"/>,           label:"Unread",              value:stats.unread      },
+  //   { gradient:"from-blue-500 to-blue-600",  icon:<FiClock className="w-5 h-5"/>,           label:"Reminder Alerts",     value:stats.reminders   },
+  //   { gradient:"from-red-500 to-red-600",    icon:<FiAlertTriangle className="w-5 h-5"/>,   label:"Escalations",         value:stats.escalations },
+  // ];
+
   const STAT_CARDS = [
-    { gradient:"from-cyan-500 to-cyan-600",  icon:<FiBell className="w-5 h-5"/>,            label:"Total Notifications", value:stats.total       },
-    { gradient:"from-amber-500 to-orange-500",icon:<FiMail className="w-5 h-5"/>,           label:"Unread",              value:stats.unread      },
-    { gradient:"from-blue-500 to-blue-600",  icon:<FiClock className="w-5 h-5"/>,           label:"Reminder Alerts",     value:stats.reminders   },
-    { gradient:"from-red-500 to-red-600",    icon:<FiAlertTriangle className="w-5 h-5"/>,   label:"Escalations",         value:stats.escalations },
-  ];
+  {
+    gradient: "from-cyan-500 to-cyan-600",
+    icon: <FiBell className="w-5 h-5" />,
+    label: "Total Notifications",
+    value: stats.total,
+  },
+  {
+    gradient: "from-amber-500 to-orange-500",
+    icon: <FiMail className="w-5 h-5" />,
+    label: "Unread",
+    value: stats.unread,
+  },
+  {
+    gradient: "from-blue-500 to-blue-600",
+    icon: <FiClock className="w-5 h-5" />,
+    label: "Reminder Alerts",
+    value: stats.reminders,
+  },
+  {
+    gradient: "from-red-500 to-red-600",
+    icon: <FiAlertTriangle className="w-5 h-5" />,
+    label: "Escalations",
+    value: stats.escalations,
+  },
+];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-100"
@@ -387,7 +417,7 @@ export default function Notifications() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* ── STAT CARDS ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {STAT_CARDS.map((card, i) => (
             <div key={card.label}
               className={`bg-gradient-to-br ${card.gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
@@ -406,7 +436,103 @@ export default function Notifications() {
               </div>
             </div>
           ))}
+        </div> */}
+
+        {/* ── COLLAPSIBLE ANALYTICS SECTION ── */}
+<div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+  {/* Analytics toggle header */}
+  <button
+    type="button"
+    onClick={() => setAnalyticsOpen((previous) => !previous)}
+    aria-expanded={analyticsOpen}
+    className="w-full px-4 py-3 flex items-center justify-between
+      hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2">
+        <FiBarChart3 className="w-4 h-4 text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Analytics
+        </span>
+      </div>
+
+      {/* Compact counts visible when closed */}
+      {!analyticsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-700 text-xs font-bold">
+            {stats.total} Notifications
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold">
+            {stats.unread} Unread
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+            {stats.reminders} Reminders
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+            {stats.escalations} Escalations
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center">
+      {analyticsOpen ? (
+        <FiChevronUp className="w-4 h-4" />
+      ) : (
+        <FiChevronDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable four cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      analyticsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 pt-1">
+        {STAT_CARDS.map((card, i) => (
+          <div
+            key={card.label}
+            className={`bg-gradient-to-br ${card.gradient}
+              rounded-2xl p-5 text-white shadow-lg relative overflow-hidden group
+              hover:-translate-y-1 hover:shadow-xl
+              transition-all duration-300 fade-up`}
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 group-hover:scale-110 transition-transform" />
+
+            <div className="absolute -right-3 -bottom-8 w-32 h-32 rounded-full bg-white/10" />
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  {card.icon}
+                </div>
+              </div>
+
+              <p className="text-2xl sm:text-3xl font-extrabold leading-none mb-1">
+                <AnimNum target={card.value} />
+              </p>
+
+              <p className="text-xs font-bold uppercase tracking-widest opacity-80">
+                {card.label}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* ── NOTIFICATIONS LIST CARD ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">

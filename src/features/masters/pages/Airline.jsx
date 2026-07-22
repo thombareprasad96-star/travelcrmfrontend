@@ -313,6 +313,8 @@ export default function AirlineMaster() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
 
+  const [airlineStatsOpen, setAirlineStatsOpen] = useState(false);
+
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
@@ -702,7 +704,7 @@ const closeFormModal = () => {
       </div>
 
       {/* Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-4">
+      {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: "Total Airlines", value: airlines.length, gradient: "from-blue-500 to-indigo-600", icon: "bg-white/20" },
@@ -722,7 +724,132 @@ const closeFormModal = () => {
             </div>
           ))}
         </div>
+      </div> */}
+
+      {/* ── COLLAPSIBLE AIRLINE ANALYTICS ── */}
+<div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-4">
+  <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+
+    {/* Toggle header */}
+    <button
+      type="button"
+      onClick={() => setAirlineStatsOpen((previous) => !previous)}
+      aria-expanded={airlineStatsOpen}
+      className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3
+        hover:bg-slate-50 transition-colors"
+    >
+      <div className="flex items-center gap-3 flex-wrap min-w-0">
+        <div className="flex items-center gap-2">
+          <Plane size={16} className="text-blue-600" />
+
+          <span className="text-sm font-extrabold text-slate-700">
+            Airline Analytics
+          </span>
+        </div>
+
+        {/* Small values visible when closed */}
+        {!airlineStatsOpen && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+              {airlines.length} Total
+            </span>
+
+            <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+              {activeCount} Active
+            </span>
+
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+              {airlines.filter((a) => a.status === "Inactive").length} Inactive
+            </span>
+
+            <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-[11px] font-bold">
+              {airlines.filter((a) => a.status === "Suspended").length} Suspended
+            </span>
+          </div>
+        )}
       </div>
+
+      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+        {airlineStatsOpen ? (
+          <ChevronUp size={16} />
+        ) : (
+          <ChevronDown size={16} />
+        )}
+      </div>
+    </button>
+
+    {/* Expandable cards */}
+    <div
+      className={`grid transition-all duration-300 ease-in-out ${
+        airlineStatsOpen
+          ? "grid-rows-[1fr] opacity-100"
+          : "grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 pt-1">
+          {[
+            {
+              label: "Total Airlines",
+              value: airlines.length,
+              gradient: "from-blue-500 to-indigo-600",
+              icon: "bg-white/20",
+            },
+            {
+              label: "Active",
+              value: activeCount,
+              gradient: "from-green-500 to-emerald-600",
+              icon: "bg-white/20",
+            },
+            {
+              label: "Inactive",
+              value: airlines.filter(
+                (airline) => airline.status === "Inactive"
+              ).length,
+              gradient: "from-gray-400 to-gray-600",
+              icon: "bg-white/20",
+            },
+            {
+              label: "Suspended",
+              value: airlines.filter(
+                (airline) => airline.status === "Suspended"
+              ).length,
+              gradient: "from-red-500 to-rose-600",
+              icon: "bg-white/20",
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className={`relative overflow-hidden bg-gradient-to-br ${stat.gradient}
+                rounded-2xl px-4 py-4 flex items-center gap-3 shadow-lg
+                ring-1 ring-white/10 hover:-translate-y-0.5
+                transition-transform`}
+            >
+              <div className="absolute inset-x-0 -top-1/2 h-full bg-gradient-to-b from-white/20 to-transparent opacity-60 pointer-events-none" />
+
+              <div
+                className={`relative w-10 h-10 rounded-xl ${stat.icon}
+                  flex items-center justify-center flex-shrink-0 shadow-inner`}
+              >
+                <Plane size={18} className="text-white" />
+              </div>
+
+              <div className="relative">
+                <p className="text-2xl font-black text-white leading-none">
+                  {stat.value}
+                </p>
+
+                <p className="text-xs text-white/70 mt-0.5 font-medium">
+                  {stat.label}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
       {/* Cards Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10">

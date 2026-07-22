@@ -500,6 +500,8 @@ export default function BookingsPage({
   const [filterMonth,   setFilterMonth]   = useState("All Booking Months");
   const [filterTravel,  setFilterTravel]  = useState("All Travel Months");
   const [filtersOpen,   setFiltersOpen]   = useState(true);
+
+  const [statsOpen, setStatsOpen] = useState(false);
   // sort + page
   const [sortKey,  setSortKey]  = useState("id");
   const [sortDir,  setSortDir]  = useState("desc");
@@ -704,13 +706,99 @@ export default function BookingsPage({
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5 space-y-5">
 
         {/* ── 6 STAT CARDS ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
           {STAT_CARDS.map((card,i)=>(
             <div key={card.key} className="fade-up" style={{animationDelay:`${i*40}ms`}}>
               <StatCard card={card} value={stats[card.key]}/>
             </div>
           ))}
+        </div> */}
+
+        {/* ── COLLAPSIBLE BOOKING ANALYTICS ── */}
+<div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden fade-up">
+
+  {/* Toggle header */}
+  <button
+    type="button"
+    onClick={() => setStatsOpen((previous) => !previous)}
+    aria-expanded={statsOpen}
+    className="w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3
+      hover:bg-slate-50 transition-colors"
+  >
+    <div className="flex items-center gap-3 flex-wrap min-w-0">
+      <div className="flex items-center gap-2">
+        <FaPlane className="w-4 h-4 text-blue-600" />
+
+        <span className="text-sm font-extrabold text-slate-700">
+          Booking Analytics
+        </span>
+      </div>
+
+      {/* Compact values when cards are closed */}
+      {!statsOpen && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
+            {stats.total} Bookings
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+            {stats.confirmed} Confirmed
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold">
+            Revenue {fmtINR(stats.revenue)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-[11px] font-bold">
+            Net {fmtINR(stats.net)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-[11px] font-bold">
+            Refunds {fmtINR(stats.refunds)}
+          </span>
+
+          <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold">
+            Profit {fmtINR(stats.profit)}
+          </span>
         </div>
+      )}
+    </div>
+
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0">
+      {statsOpen ? (
+        <FiChevronUp className="w-4 h-4" />
+      ) : (
+        <FiChevronDown className="w-4 h-4" />
+      )}
+    </div>
+  </button>
+
+  {/* Expandable cards */}
+  <div
+    className={`grid transition-all duration-300 ease-in-out ${
+      statsOpen
+        ? "grid-rows-[1fr] opacity-100"
+        : "grid-rows-[0fr] opacity-0"
+    }`}
+  >
+    <div className="min-h-0 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 p-4 pt-1">
+        {STAT_CARDS.map((card, i) => (
+          <div
+            key={card.key}
+            className="fade-up"
+            style={{ animationDelay: `${i * 40}ms` }}
+          >
+            <StatCard
+              card={card}
+              value={stats[card.key]}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* ── TAX & PROFIT SUMMARY ── */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/60 shadow-sm px-5 py-4 fade-up">
